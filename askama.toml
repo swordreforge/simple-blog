@@ -1,0 +1,11 @@
+[general]
+# 模板目录
+dirs = ["templates"]
+
+# 语法
+# Askama 使用 {{ }} 和 {% %}，与 Go 模板类似
+# 但有些语法不同，需要调整
+
+[escapers]
+# HTML 转义器
+"html" = "askama::Html"

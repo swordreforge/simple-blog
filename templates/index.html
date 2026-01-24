@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>{{ title }}</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  position: relative;
+  background-image: url('{{ settings.background_image }}');
+  background-size: {{ settings.background_size }};
+  background-position: {{ settings.background_position }};
+  background-repeat: {{ settings.background_repeat }};
+  background-attachment: {{ settings.background_attachment }};
+  overflow-x: hidden;
+  --global-opacity: {{ settings.global_opacity }};
+}
+
+nav {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  position: fixed;
+  top: env(safe-area-inset-top);
+  right: 0;
+  padding: 15px env(safe-area-inset-right) 15px env(safe-area-inset-left);
+  width: 100%;
+  background: var(--navbar-glass-color, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 100;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+nav a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 登录按钮样式 */
+#loginBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#loginBtn:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 个人中心样式 */
+#userCenterToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  margin: 0 15px;
+  
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#userCenterToggle:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 个人中心模态框样式 */
+.user-center-modal {
+  max-width: 400px;
+}
+
+.user-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.user-avatar-container {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #007bff, #00b894);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.user-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user-profile h3 {
+  font-size: 1.4em;
+  color: #333;
+  font-weight: 600;
+}
+
+.user-center-menu {
+  padding: 20px 0;
+}
+
+.user-center-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 25px;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  margin: 5px 15px;
+  cursor: pointer;
+  font-size: 1em;
+  text-align: left;
+}
+
+.user-center-item:hover {
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+  transform: translateX(5px);
+}
+
+.user-center-item.logout-item {
+  color: #e74c3c;
+}
+
+.user-center-item.logout-item:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: #c0392b;
+}
+
+.user-center-menu .divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 15px 20px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007bff, #00b894);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* 个人中心下拉菜单 */
+#userCenter {
+  display: flex;
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 70px);
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 101;
+  min-width: 200px;
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+#userCenter.active {
+  display: block;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-center-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #007bff, #00b894);
+  color: white;
+}
+
+.user-center-header h3 {
+  font-size: 1.2em;
+  margin-bottom: 5px;
+}
+
+.user-center-header p {
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.user-center-menu {
+  padding: 10px 0;
+}
+
+.user-center-menu a {
+  display: block;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-shadow: none;
+  margin: 0;
+}
+
+.user-center-menu a:hover {
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+  transform: none;
+  box-shadow: none;
+}
+
+.user-center-menu .divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 10px 20px;
+}
+
+#logoutBtn {
+  display: block;
+  padding: 12px 20px;
+  color: #e74c3c;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-shadow: none;
+  margin: 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-size: 1em;
+}
+
+#logoutBtn:hover {
+  background: rgba(231, 76, 60, 0.1);
+  color: #c0392b;
+  transform: none;
+  box-shadow: none;
+}
+
+nav a:hover {
+  color: #fff;
+  background: rgba(0, 0, 0, 0);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+nav a.current {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+main {
+  flex: 1;
+  padding: 80px 20px 20px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title-container {
+  position: relative;
+  display: inline-block;
+  margin: 50px 0 40px;
+}
+
+.h1 {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 4em;
+  font-weight: 800;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3),
+               0 0 20px rgba(255, 255, 255, 0.5);
+  letter-spacing: 1.5px;
+  line-height: 1.1;
+  position: relative;
+  padding: 20px 40px;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+}
+
+.h1::after {
+  content: '';
+  position: absolute;
+  right: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 1.2em;
+  background-color: rgba(255, 255, 255, 0.9);
+  opacity: 0.9;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.8),
+              0 0 30px rgba(255, 255, 255, 0.4);
+  animation: blink 1s step-end infinite;
+  border-radius: 2px;
+}
+
+.title-container::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* 更显眼的闪烁动画 */
+@keyframes strong-blink {
+  0%, 45% {
+    opacity: 1;
+    transform: translateY(-50%) scaleX(1);
+  }
+  50%, 95% {
+    opacity: 0.2;
+    transform: translateY(-50%) scaleX(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scaleX(1);
+  }
+}
+
+.content-card {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, {{ settings.global_opacity }});
+  backdrop-filter: blur({{ settings.blur_amount }}) saturate({{ settings.saturate_amount }});
+  -webkit-backdrop-filter: blur({{ settings.blur_amount }}) saturate({{ settings.saturate_amount }});
+  padding: 40px;
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.content-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
+}
+
+.content-card p {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.1em;
+  line-height: 1.8;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 1;
+}
+
+footer {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, {{ settings.global_opacity }});
+  backdrop-filter: blur({{ settings.blur_amount }}) saturate({{ settings.saturate_amount }});
+  -webkit-backdrop-filter: blur({{ settings.blur_amount }}) saturate({{ settings.saturate_amount }});
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 光标样式示例 */
+.cursor-example {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.navbtn{
+ display:none;
+}
+.cursor-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cursor-option:hover {
+  background: rgba(0, 0, 0, 0);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.cursor-preview {
+  display: inline-block;
+  width: 8px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.9);
+  animation: blink 1s step-end infinite;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.cursor-preview.wide {
+  width: 12px;
+}
+
+.cursor-preview.extra-wide {
+  width: 18px;
+}
+
+/* 管理员专用元素 - 默认隐藏，只有管理员可见 */
+.admin-only {
+  display: none !important;
+}
+
+/* 移动端响应式导航栏 */
+@media (max-width: 768px) {
+  nav {
+    padding: 10px env(safe-area-inset-right) 10px env(safe-area-inset-left);
+  }
+
+  nav a, nav button {
+    font-size: 0;
+    margin: 0 4px;
+    padding: 10px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  /* 隐藏导航栏文字，只显示图标 */
+  nav a span:not(.shortcut-hint),
+  nav button span:not(.shortcut-hint),
+  #loginBtn span:not(:has(svg)) {
+    display: flex;
+  }
+
+  /* 隐藏快捷键按钮 */
+  .shortcuts-help-btn {
+    display: none !important;
+  }
+
+  /* 隐藏快捷键提示 */
+  .shortcut-hint {
+    display: none !important;
+  }
+
+  /* 确保图标可见 */
+  nav a svg,
+  nav button svg {
+    display: block;
+    font-size: initial;
+  }
+
+  /* 为没有图标的链接添加默认图标 */
+  nav a[href="/"]::before {
+    content: '🏠';
+    font-size: 18px;
+  }
+
+  nav a[href="/passage"]::before {
+    content: '📝';
+    font-size: 18px;
+  }
+
+  nav a[href="/collect"]::before {
+    content: '📁';
+    font-size: 18px;
+  }
+
+  nav a[href="/about"]::before {
+    content: 'ℹ️';
+    font-size: 18px;
+  }
+
+  nav a[href="/markdown-editor"]::before {
+    content: '✏️';
+    font-size: 18px;
+  }
+
+  nav a[href="/admin"]::before {
+    content: '⚙️';
+    font-size: 18px;
+  }
+
+  #userCenterToggle::before {
+    content: '👤';
+    font-size: 18px;
+  }
+
+  /* 登录按钮图标 */
+  #loginBtn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+</style>
+<!-- 模态框动画样式 -->
+<link rel="stylesheet" href="/css/modal-animations.css">
+<!-- 飘字效果样式 -->
+<link rel="stylesheet" href="/css/floating-text.css">
+</head>
+<body>
+<nav>
+  <button id="userCenterToggle">个人中心<span class="shortcut-hint">5</span></button>
+  <a href="/">主页</a>
+  <a href="/passage">文章</a>
+  <a href="/collect">归档</a>
+  <a href="/about">关于</a>
+  <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a>
+  <a class="navbtn admin-only" href="/admin">管理员设置</a>
+  <button id="loginBtn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+      <polyline points="10 17 15 12 10 7"></polyline>
+      <line x1="15" y1="12" x2="3" y2="12"></line>
+    </svg>
+    登录
+  </button>
+</nav>
+
+<!-- 个人中心模态框 -->
+<div class="modal" id="userCenterModal">
+  <div class="modal-content user-center-modal">
+    <div class="modal-header">
+      <h3>个人中心</h3>
+      <button class="modal-close" data-modal="userCenterModal">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="user-profile">
+        <div class="user-avatar-container">
+          <img src="/img/avatar.webp" alt="用户头像" class="user-avatar-image" id="userAvatar">
+        </div>
+        <h3 id="userCenterUsername">用户名</h3>
+      </div>
+      <div class="user-center-menu">
+        <a href="/admin" class="user-center-item admin-only">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          管理后台
+        </a>
+        <a href="/passage" class="user-center-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          我的文章
+        </a>
+        <div class="divider"></div>
+        <button id="logoutBtn" class="user-center-item logout-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          退出登录
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="title-container">
+    <h1 class="h1" id="main-title">{{ name }}</h1>
+  </div>  
+  <div class="content-card">
+    <p>{{ greting }}</p>
+  </div>
+</main>
+
+<footer>&copy; {{ year }} {{ foodes }}</footer>
+
+<!-- 登录模态框 -->
+<div class="modal" id="loginModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>用户登录</h3>
+      <button class="modal-close" data-modal="loginModal">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginUsername">用户名</label>
+          <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密码</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required autocomplete="current-password">
+        </div>
+        <div class="form-group" id="loginError" style="display: flex; color: #e74c3c; font-size: 0.9em;"></div>
+        <button type="submit" id="loginSubmitBtn" class="btn-primary" style="width: 100%;">登录</button>
+      </form>
+      <div style="margin-top: 20px; text-align: center; font-size: 0.9em;">
+        <a href="#" id="openRegisterModal" style="color: #007bff; text-decoration: none;">还没有账号？立即注册</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 注册模态框 -->
+<div class="modal" id="registerModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>用户注册</h3>
+      <button class="modal-close" data-modal="registerModal">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="registerForm">
+        <div class="form-group">
+          <label for="registerUsername">用户名</label>
+          <input type="text" id="registerUsername" class="form-control" placeholder="请输入用户名（3-20个字符，字母数字下划线）" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">邮箱</label>
+          <input type="email" id="registerEmail" class="form-control" placeholder="请输入邮箱" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">密码</label>
+          <input type="password" id="registerPassword" class="form-control" placeholder="请输入密码（至少6个字符）" required autocomplete="new-password">
+        </div>
+        <div class="form-group" id="registerError" style="display: flex; color: #e74c3c; font-size: 0.9em;"></div>
+        <button type="submit" id="registerSubmitBtn" class="btn-primary" style="width: 100%;">注册</button>
+      </form>
+      <div style="margin-top: 20px; text-align: center; font-size: 0.9em;">
+        <a href="#" id="openLoginModal" style="color: #007bff; text-decoration: none;">已有账号？立即登录</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 外部链接警告模态框 -->
+<div class="modal" id="externalLinkModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>⚠️ 外部链接警告</h3>
+      <button class="modal-close" data-modal="externalLinkModal">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 20px;">
+        {{ external_link_warning_text }}，请确认是否继续。
+      </p>
+      <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; word-break: break-all;">
+        <p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-bottom: 5px;">目标链接：</p>
+        <p id="externalLinkUrl" style="color: #007bff; font-weight: 500;"></p>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn-secondary" id="cancelExternalLinkBtn" style="flex: 1;">不跳转</button>
+        <button type="button" class="btn-primary" id="proceedExternalLinkBtn" style="flex: 1;">跳转</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框样式 -->
+<style>
+.modal {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal.active {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal.closing {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.modal-content {
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 100%;
+  transform: translateY(-50px) scale(0.9);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #007bff, #00b894);
+  width: 0%;
+  transition: width 3s linear;
+}
+
+.modal.active .modal-content::after {
+  width: 100%;
+}
+
+.modal.active .modal-content {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.modal.closing .modal-content {
+  transform: translateY(30px) scale(0.95);
+  opacity: 0;
+}
+
+.modal-header {
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 20px 30px;
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transform: translateY(-10px);
+  opacity: 0;
+  transition: transform 0.4s ease 0.1s, opacity 0.3s ease 0.1s;
+}
+
+.modal.active .modal-header {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.modal-header h3 {
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.5em;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 30px;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.4s ease 0.2s, opacity 0.3s ease 0.2s;
+}
+
+.modal.active .modal-body {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.4s ease 0.25s, opacity 0.3s ease 0.25s;
+}
+
+.modal.active .form-group {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.form-group:nth-child(2) {
+  transition-delay: 0.3s;
+}
+
+.form-group:nth-child(3) {
+  transition-delay: 0.35s;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  font-size: 1em;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary {
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  transform: translateY(10px);
+  opacity: 0;
+  margin-top: 10px;
+}
+
+.modal.active .btn-primary {
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.4s ease 0.4s, opacity 0.3s ease 0.4s;
+}
+
+.btn-primary:hover {
+  background: rgba(0, 0, 0, 0);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: translateY(0);
+}
+
+.btn-primary:disabled:hover {
+  background: rgba(0, 0, 0, 0);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* 用户中心模态框特殊样式 */
+.user-center-modal .user-profile {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.4s ease 0.2s, opacity 0.3s ease 0.2s;
+}
+
+.modal.active .user-center-modal .user-profile {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.user-center-modal .user-center-menu {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.4s ease 0.3s, opacity 0.3s ease 0.3s;
+}
+
+.modal.active .user-center-modal .user-center-menu {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.user-center-item {
+  transform: translateX(-10px);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal.active .user-center-item {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.modal.active .user-center-item:nth-child(1) {
+  transition-delay: 0.35s;
+}
+
+.modal.active .user-center-item:nth-child(2) {
+  transition-delay: 0.4s;
+}
+
+.modal.active .user-center-item:nth-child(3) {
+  transition-delay: 0.45s;
+}
+</style>
+
+<script>
+// 带动画的模态框关闭函数
+function closeModalWithAnimation(modal) {
+  if (!modal) return;
+  
+  modal.classList.add('closing');
+  
+  setTimeout(() => {
+    modal.classList.remove('active', 'closing');
+  }, 300);
+}
+
+// 通用模态框关闭函数
+function closeAllModals() {
+  document.querySelectorAll('.modal.active').forEach(modal => {
+    closeModalWithAnimation(modal);
+  });
+}
+
+// 个人中心模态框切换
+document.addEventListener('DOMContentLoaded', function() {
+  const userCenterToggle = document.getElementById('userCenterToggle');
+  const userCenterModal = document.getElementById('userCenterModal');
+  const modalClose = userCenterModal ? userCenterModal.querySelector('.modal-close') : null;
+  
+  if (userCenterToggle && userCenterModal) {
+    // 打开模态框
+    userCenterToggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      closeAllModals();
+      userCenterModal.classList.add('active');
+    });
+    
+    // 关闭按钮
+    if (modalClose) {
+      modalClose.addEventListener('click', function() {
+        closeModalWithAnimation(userCenterModal);
+      });
+    }
+    
+    // 点击模态框内容区域不关闭
+    const modalContent = userCenterModal.querySelector('.modal-content');
+    if (modalContent) {
+      modalContent.addEventListener('click', function(e) {
+        e.stopPropagation();
+      });
+    }
+    
+    // 点击模态框外部关闭
+    userCenterModal.addEventListener('click', function() {
+      closeModalWithAnimation(userCenterModal);
+    });
+  }
+  
+  // ESC键关闭所有模态框
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeAllModals();
+    }
+  });
+});
+</script>
+
+<!-- ECC加密工具 -->
+<script src="/js/ecc-encrypt.js"></script>
+<script src="/js/login.js"></script>
+<!-- 模态框动画控制脚本 -->
+<script src="/js/modal-animations.js"></script>
+<!-- 键盘快捷键脚本 -->
+<script src="/js/keyboard-shortcuts.js"></script>
+
+<script>
+// 浏览器标签页标题提示功能
+let originalTitle = document.title;
+const switchNoticeText = '{{ switch_notice_text }}';
+const isNoticeEnabled = {{ switch_notice }};
+
+// 外部链接警告功能
+const isExternalLinkWarningEnabled = {{ external_link_warning }};
+const externalLinkWhitelist = '{{ external_link_whitelist }}';
+
+// 监听页面可见性变化
+document.addEventListener('visibilitychange', function() {
+  if (!isNoticeEnabled || !switchNoticeText || switchNoticeText === '') return;
+
+  if (document.hidden) {
+    // 页面隐藏时，显示提示文字
+    document.title = switchNoticeText;
+  } else {
+    // 页面显示时，恢复原始标题
+    document.title = originalTitle;
+  }
+});
+
+// 监听页面获得焦点
+window.addEventListener('focus', function() {
+  if (!isNoticeEnabled) return;
+  document.title = originalTitle;
+});
+
+// 外部链接警告功能
+let currentExternalLink = '';
+
+function showExternalLinkWarning(url) {
+  currentExternalLink = url;
+  const modal = document.getElementById('externalLinkModal');
+  const urlDisplay = document.getElementById('externalLinkUrl');
+  
+  if (modal && urlDisplay) {
+    urlDisplay.textContent = url;
+    modal.classList.add('active');
+  }
+}
+
+function hideExternalLinkWarning() {
+  const modal = document.getElementById('externalLinkModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+function proceedToExternalLink() {
+  if (currentExternalLink) {
+    window.open(currentExternalLink, '_blank');
+  }
+  hideExternalLinkWarning();
+}
+
+// 检查链接是否在外部链接白名单中
+function isWhitelistedDomain(url, whitelist) {
+  try {
+    // 如果是相对路径，直接返回true
+    if (url.startsWith('/')) {
+      return true;
+    }
+    
+    // 如果是协议相对路径（//example.com），转换为绝对路径
+    if (url.startsWith('//')) {
+      url = window.location.protocol + url;
+    }
+    
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // 检查是否是本站链接
+    if (hostname === window.location.hostname) {
+      return true;
+    }
+    
+    // 检查白名单
+    const whitelistDomains = whitelist.split(',').map(d => d.trim().toLowerCase());
+    return whitelistDomains.some(domain => {
+      // 支持完全匹配和子域名匹配
+      return hostname === domain || hostname.endsWith('.' + domain);
+    });
+  } catch (e) {
+    // 如果URL解析失败，可能是相对路径，返回true
+    return true;
+  }
+}
+
+// 拦截所有链接点击
+document.addEventListener('click', function(e) {
+  const link = e.target.closest('a');
+  if (!link) return;
+  
+  const href = link.getAttribute('href');
+  if (!href) return;
+  
+  // 跳过锚点链接、mailto、tel等
+  if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+    return;
+  }
+  
+  // 跳过JavaScript链接
+  if (href.startsWith('javascript:')) {
+    return;
+  }
+  
+  // 检查是否启用了外部链接警告
+  if (!isExternalLinkWarningEnabled) {
+    return;
+  }
+  
+  // 检查是否在白名单中
+  if (isWhitelistedDomain(href, externalLinkWhitelist)) {
+    return;
+  }
+  
+  // 显示外部链接警告
+  e.preventDefault();
+  showExternalLinkWarning(href);
+});
+
+// 外部链接警告模态框事件
+document.addEventListener('DOMContentLoaded', function() {
+  const cancelBtn = document.getElementById('cancelExternalLinkBtn');
+  const proceedBtn = document.getElementById('proceedExternalLinkBtn');
+  const modal = document.getElementById('externalLinkModal');
+  const modalClose = modal ? modal.querySelector('.modal-close') : null;
+  
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', hideExternalLinkWarning);
+  }
+  
+  if (proceedBtn) {
+    proceedBtn.addEventListener('click', proceedToExternalLink);
+  }
+  
+  if (modalClose) {
+    modalClose.addEventListener('click', hideExternalLinkWarning);
+  }
+  
+  // 点击模态框外部关闭
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        hideExternalLinkWarning();
+      }
+    });
+  }
+});
+</script>
+
+<!-- Live2D 看板娘样式 -->
+<style>
+/* Live2D 看板娘容器 - 固定在最上层右下角 */
+#waifu {
+  position: fixed !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+/* 看板娘工具按钮 */
+#waifu-tool {
+  display: none !important;
+  position: fixed !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+}
+
+/* 确保看板娘不被其他元素遮挡 */
+.waifu-tips {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
+/* 看板娘拖拽区域 */
+.waifu {
+  position: fixed !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+}
+</style>
+
+<!-- 暗色模式样式 -->
+<link rel="stylesheet" href="/css/dark-mode.css">
+
+<!-- 毛玻璃效果样式 -->
+<link rel="stylesheet" href="/css/glass-effect.css">
+
+<!-- 键盘快捷键样式 -->
+<link rel="stylesheet" href="/css/keyboard-shortcuts.css">
+
+<!-- 加载外观设置 -->
+<script>
+// 加载外观设置并应用暗色模式
+(function() {
+  fetch('/api/settings/appearance')
+    .then(response => response.json())
+    .then(settings => {
+      // 保存到 localStorage 供其他组件使用
+      localStorage.setItem('appearanceSettings', JSON.stringify(settings));
+
+      if (settings.dark_mode_enabled) {
+        document.documentElement.classList.add('dark-mode');
+      }
+
+      // 应用毛玻璃颜色
+      if (settings.navbar_glass_color || settings.card_glass_color || settings.footer_glass_color) {
+        document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
+        document.documentElement.style.setProperty('--card-glass-color', settings.card_glass_color || 'rgba(255, 255, 255, 0.75)');
+        document.documentElement.style.setProperty('--footer-glass-color', settings.footer_glass_color || 'rgba(255, 255, 255, 0.9)');
+      }
+
+      // 响应式加载背景图片
+      function applyBackgroundImage() {
+        const isMobile = window.innerWidth <= 768;
+        const backgroundImage = isMobile && settings.mobile_background_image ? settings.mobile_background_image : settings.background_image;
+        if (backgroundImage) {
+          document.body.style.backgroundImage = `url('${backgroundImage}')`;
+        }
+      }
+
+      // 初始应用
+      applyBackgroundImage();
+
+      // 监听窗口大小变化
+      window.addEventListener('resize', applyBackgroundImage);
+    })
+    .catch(error => {
+      console.error('加载外观设置失败:', error);
+    });
+})();
+</script>
+
+<!-- Live2D 看板娘配置 -->
+<script>
+// Live2D 看板娘初始化配置
+(function() {
+  // 检查是否启用看板娘
+  const live2dEnabled = {{ live2d_enabled }};
+  const live2dShowOnIndex = {{ live2d_show_on_index }};
+
+  if (!live2dEnabled || !live2dShowOnIndex) {
+    return;
+  }
+
+  // 配置选项
+  const live2dConfig = {
+    waifuPath: 'https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json',
+    cdnPath: '{{ live2d_cdn_path }}',
+    cubism2Path: 'https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js',
+    cubism5Path: 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js',
+    modelId: {{ live2d_model_id }},
+    modelPath: '{{ live2d_model_path }}',
+    tools: ['switch-model', 'switch-texture', 'photo', 'info', 'quit'],
+    drag: true,
+    logLevel: 'error',
+    position: '{{ live2d_position }}',
+    width: '{{ live2d_width }}',
+    height: '{{ live2d_height }}'
+  };
+
+  // 等待页面完全加载
+  window.addEventListener('load', function() {
+    // 延迟加载，避免阻塞页面渲染
+    setTimeout(function() {
+      try {
+        // 检查是否已经加载过脚本
+        if (document.querySelector('script[src*="autoload.js"]')) {
+          return;
+        }
+
+        // 创建并加载 autoload.js
+        const script = document.createElement('script');
+        script.src = 'https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js';
+        script.async = true;
+        
+        script.onload = function() {
+          console.log('Live2D 看板娘加载完成');
+          // 如果有 initWidget 函数，则初始化
+          if (typeof initWidget === 'function') {
+            try {
+              initWidget(live2dConfig);
+            } catch (e) {
+              console.warn('Live2D 看板娘初始化失败:', e);
+            }
+          }
+        };
+        
+        script.onerror = function() {
+          console.warn('Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用');
+        };
+        
+        document.body.appendChild(script);
+      } catch (error) {
+        console.warn('Live2D 看板娘初始化错误:', error);
+      }
+    }, 1000); // 延迟1秒加载
+  });
+})();
+</script>
+
+<!-- 音乐播放器样式 -->
+<link rel="stylesheet" href="/css/music-player.css">
+<!-- 音乐播放器脚本 -->
+<script src="/js/music-player.js"></script>
+<!-- 飘字效果脚本 -->
+<script src="/js/floating-text.js"></script>
+</body>

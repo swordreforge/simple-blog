@@ -1,0 +1,60 @@
+mod config;
+mod routes;
+mod handlers;
+mod templates;
+mod r#static;
+
+use actix_web::{App, HttpServer, middleware};
+use config::AppConfig;
+use routes::configure_routes;
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // 加载配置
+    let config = AppConfig::default();
+    
+    println!("🚀 启动 RustBlog 服务器...");
+    println!("📡 访问地址: http://{}:{}", config.server.host, config.server.port);
+    println!("📁 模板目录: {}", config.templates.dir);
+    println!("📁 静态文件目录: {}", config.static_files.dir);
+    println!("💾 模板缓存: {}", if config.templates.cache_enabled { "启用" } else { "禁用" });
+    
+    // 创建必要的目录
+    create_directories();
+    
+    HttpServer::new(move || {
+        App::new()
+            // 配置所有路由
+            .configure(configure_routes)
+            // 添加中间件
+            .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::Condition::new(
+                config.static_files.cache_max_age > 0,
+                middleware::DefaultHeaders::new().add(("Cache-Control", 
+                    format!("public, max-age={}", config.static_files.cache_max_age)))
+            ))
+    })
+    .bind((config.server.host.as_str(), config.server.port))?
+    .run()
+    .await
+}
+
+/// 创建必要的目录
+fn create_directories() {
+    let dirs = vec![
+        "templates",
+        "templates/css",
+        "templates/js",
+        "img",
+        "music",
+        "attachments",
+        "markdown",
+    ];
+    
+    for dir in dirs {
+        std::fs::create_dir_all(dir).unwrap_or_else(|e| {
+            eprintln!("创建目录 {} 失败: {}", dir, e);
+        });
+    }
+}
