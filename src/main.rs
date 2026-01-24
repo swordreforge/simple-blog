@@ -3,6 +3,7 @@ mod routes;
 mod handlers;
 mod templates;
 mod r#static;
+mod db;
 
 use actix_web::{App, HttpServer, middleware};
 use config::AppConfig;
@@ -21,6 +22,13 @@ async fn main() -> std::io::Result<()> {
     
     // 创建必要的目录
     create_directories();
+    
+    // 初始化数据库
+    println!("🗄️  初始化数据库...");
+    if let Err(e) = db::init_db("data/blog.db") {
+        eprintln!("❌ 数据库初始化失败: {}", e);
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
+    }
     
     HttpServer::new(move || {
         App::new()
@@ -50,6 +58,7 @@ fn create_directories() {
         "music",
         "attachments",
         "markdown",
+        "data",
     ];
     
     for dir in dirs {

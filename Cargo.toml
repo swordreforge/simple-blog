@@ -12,4 +12,13 @@ lazy_static = "1.5"
 md-5 = "0.10"
 tokio = { version = "1.49", features = ["full"] }
 tera = "1.20"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+
+# SQLite 数据库
+rusqlite = { version = "0.32", features = ["bundled", "chrono", "serde_json"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.25"
+
+# 密码哈希
+argon2 = "0.5"
+rand = "0.8"
