@@ -3,7 +3,6 @@ use tera::{Tera, Context as TeraContext};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-/// 全局 Tera 实例
 lazy_static::lazy_static! {
     static ref TERA: Arc<RwLock<Tera>> = {
         let mut tera = match Tera::new("templates/**/*.html") {
@@ -23,6 +22,7 @@ lazy_static::lazy_static! {
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct TemplateSettings {
     pub background_image: String,
+    pub background_color: String,
     pub background_size: String,
     pub background_position: String,
     pub background_repeat: String,
@@ -40,7 +40,8 @@ pub struct TemplateSettings {
 impl Default for TemplateSettings {
     fn default() -> Self {
         Self {
-            background_image: String::new(),
+            background_image: "/img/test.webp".to_string(),  // 使用默认背景图片
+            background_color: "#1a1a2e".to_string(),
             background_size: "cover".to_string(),
             background_position: "center".to_string(),
             background_repeat: "no-repeat".to_string(),
@@ -58,12 +59,20 @@ impl Default for TemplateSettings {
 
 /// 渲染模板
 pub async fn render_template(template_name: &str, context: &TeraContext) -> HttpResponse {
-    let tera = TERA.read().await;
+    // 开发模式：每次重新加载模板
+    let tera = match Tera::new("templates/**/*.html") {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Template rendering error: {}", e);
+            return HttpResponse::InternalServerError()
+                .body(format!("Failed to parse templates: {}", e));
+        }
+    };
     
     match tera.render(template_name, context) {
         Ok(html) => HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
-            .insert_header(("Cache-Control", "public, max-age=300"))
+            .insert_header(("Cache-Control", "no-cache"))
             .body(html),
         Err(e) => {
             eprintln!("Template rendering error: {}", e);
@@ -224,6 +233,35 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("external_link_warning", &true);
     context.insert("external_link_warning_text", "您即将离开本站");
     context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    
+    context
+}
+
+/// 创建管理后台上下文
+pub fn create_admin_context() -> TeraContext {
+    let mut context = TeraContext::new();
+    let now = chrono::Local::now();
+    
+    context.insert("title", "管理后台 - RustBlog");
+    context.insert("name", "Dango");
+    context.insert("year", &now.format("%Y").to_string());
+    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("settings", &TemplateSettings::default());
+    context.insert("switch_notice", &true);
+    context.insert("switch_notice_text", "🎉 新文章发布！");
+    context.insert("external_link_warning", &true);
+    context.insert("external_link_warning_text", "您即将离开本站");
+    context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    
+    // Live2D
+    context.insert("live2d_enabled", &false);
+    context.insert("live2d_show_on_admin", &false);
+    context.insert("live2d_cdn_path", "https://unpkg.com/live2d-widget@latest");
+    context.insert("live2d_model_id", &1);
+    context.insert("live2d_model_path", "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json");
+    context.insert("live2d_position", "right");
+    context.insert("live2d_width", &280);
+    context.insert("live2d_height", &260);
     
     context
 }

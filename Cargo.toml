@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 actix-web = "4.9"
 actix-files = "0.6"
+actix-multipart = "0.7"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.5"
@@ -13,6 +14,7 @@ md-5 = "0.10"
 tokio = { version = "1.49", features = ["full"] }
 tera = "1.20"
 chrono = { version = "0.4", features = ["serde"] }
+futures-util = "0.3"
 
 # SQLite 数据库
 rusqlite = { version = "0.32", features = ["bundled", "chrono", "serde_json"] }
@@ -22,3 +24,23 @@ r2d2_sqlite = "0.25"
 # 密码哈希
 argon2 = "0.5"
 rand = "0.8"
+
+# ECC 加密
+p256 = { version = "0.13", features = ["ecdh"] }
+elliptic-curve = { version = "0.13", features = ["ecdh"] }
+ecdsa = "0.16"
+sha2 = "0.10"
+base64 = "0.22"
+hex = "0.4"
+
+# Markdown 解析
+pulldown-cmark = "0.12"
+
+# 文件上传
+mime_guess = "2.0"
+
+# URL 解码
+urlencoding = "2.1"
+
+# 异步 trait
+async-trait = "0.1"

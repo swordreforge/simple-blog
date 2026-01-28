@@ -4,8 +4,9 @@ mod handlers;
 mod templates;
 mod r#static;
 mod db;
+mod middleware;
 
-use actix_web::{App, HttpServer, middleware};
+use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use config::AppConfig;
 use routes::configure_routes;
 
@@ -30,16 +31,27 @@ async fn main() -> std::io::Result<()> {
         return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
     }
     
+    // 获取数据库连接池
+    let db_pool = db::get_db_pool().await.map_err(|e| {
+        eprintln!("❌ 获取数据库连接池失败: {}", e);
+        std::io::Error::new(std::io::ErrorKind::Other, e)
+    })?;
+    
+    // 创建 Repository 实例
+    let repository = db::repositories::create_repository(db_pool);
+    
     HttpServer::new(move || {
         App::new()
+            // 注入数据库连接池
+            .app_data(web::Data::new(repository.clone()))
             // 配置所有路由
             .configure(configure_routes)
             // 添加中间件
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
-            .wrap(middleware::Condition::new(
+            .wrap(actix_middleware::Logger::default())
+            .wrap(actix_middleware::Compress::default())
+            .wrap(actix_middleware::Condition::new(
                 config.static_files.cache_max_age > 0,
-                middleware::DefaultHeaders::new().add(("Cache-Control", 
+                actix_middleware::DefaultHeaders::new().add(("Cache-Control", 
                     format!("public, max-age={}", config.static_files.cache_max_age)))
             ))
     })

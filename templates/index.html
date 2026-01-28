@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>{{ title }}</title>
+<!-- Disable favicon -->
+<link rel="icon" href="data:,">
 <style>
 * {
   margin: 0;
@@ -28,7 +30,8 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   position: relative;
-  background-image: url('{{ settings.background_image }}');
+  background-image: url('{{ settings.background_image | safe }}');
+  background-color: {{ settings.background_color }};
   background-size: {{ settings.background_size }};
   background-position: {{ settings.background_position }};
   background-repeat: {{ settings.background_repeat }};

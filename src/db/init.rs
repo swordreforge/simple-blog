@@ -1,9 +1,5 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use tokio::sync::RwLock;
-
-use super::models::*;
-use super::repositories::*;
 
 /// 全局数据库连接池
 static DB_POOL: tokio::sync::OnceCell<Pool<SqliteConnectionManager>> = tokio::sync::OnceCell::const_new();
@@ -357,6 +353,85 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
         println!("✅ 默认设置已插入");
     }
 
+    // 检查是否已有文章
+    let passage_count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
+    
+    if passage_count == 0 {
+        // 插入示例文章
+        let sample_passages = vec![
+            (
+                "欢迎使用 RustBlog",
+                "# 欢迎使用 RustBlog\n\n这是一个使用 Rust 语言和 Actix-web 框架构建的现代化博客系统。\n\n## 主要特性\n\n- 🚀 高性能：基于 Rust 构建，内存安全且高效\n- 🎨 现代化 UI：支持暗色模式和自定义主题\n- 🔒 安全：ECC 加密、Argon2 密码哈希\n- 📝 Markdown 支持：原生支持 Markdown 编写\n- 🎵 音乐播放器：支持背景音乐播放\n- 💬 评论系统：支持文章评论功能\n\n## 技术栈\n\n- **后端**：Rust + Actix-web\n- **数据库**：SQLite\n- **前端**：原生 JavaScript + CSS\n- **加密**：ECC (P-256) + AES-256\n\n欢迎开始你的博客之旅！",
+                "欢迎使用 RustBlog，这是一个基于 Rust 和 Actix-web 构建的现代化博客系统。",
+                "admin",
+                "[\"Rust\", \"博客\", \"教程\"]",
+                "技术",
+                "published",
+                "markdown/welcome.md",
+                "public",
+            ),
+            (
+                "Rust 语言入门指南",
+                "# Rust 语言入门指南\n\nRust 是一门系统编程语言，注重安全、并发和性能。\n\n## 为什么选择 Rust？\n\n1. **内存安全**：编译时保证内存安全，无需垃圾回收\n2. **高性能**：与 C++ 相当的性能，无运行时开销\n3. **并发安全**：类型系统防止数据竞争\n4. **现代工具链**：Cargo 包管理器，优秀的文档\n\n## Hello World\n\n```rust\nfn main() {\n    println!(\"Hello, World!\");\n}\n```\n\n## 所有权系统\n\nRust 的核心特性是所有权系统，它让 Rust 在没有垃圾回收的情况下保证内存安全。\n\n```rust\nlet s1 = String::from(\"hello\");\nlet s2 = s1; // s1 的所有权转移给 s2\n// println!(\"{}\", s1); // 错误！s1 不再有效\nprintln!(\"{}\", s2); // 正确\n```\n\n开始你的 Rust 之旅吧！",
+                "Rust 是一门系统编程语言，注重安全、并发和性能。本文介绍了 Rust 的核心特性和入门知识。",
+                "admin",
+                "[\"Rust\", \"编程\", \"入门\"]",
+                "编程",
+                "published",
+                "markdown/rust-guide.md",
+                "public",
+            ),
+            (
+                "Actix-web 快速上手",
+                "# Actix-web 快速上手\n\nActix-web 是一个强大、实用的 Rust Web 框架。\n\n## 创建新项目\n\n```bash\ncargo new my_api\ncd my_api\ncargo add actix-web\n```\n\n## 基本路由\n\n```rust\nuse actix_web::{web, App, HttpServer, HttpResponse};\n\n#[actix_web::main]\nasync fn main() -> std::io::Result<()> {\n    HttpServer::new(|| {\n        App::new()\n            .route(\"/\", web::get().to(hello))\n    })\n    .bind(\"127.0.0.1:8080\")?\n    .run()\n    .await\n}\n\nasync fn hello() -> HttpResponse {\n    HttpResponse::Ok().body(\"Hello World!\")\n}\n```\n\n## 处理 JSON\n\n```rust\nuse serde::{Deserialize, Serialize};\n\n#[derive(Serialize, Deserialize)]\nstruct User {\n    name: String,\n    age: u32,\n}\n\nasync fn create_user(user: web::Json<User>) -> HttpResponse {\n    HttpResponse::Ok().json(user)\n}\n```\n\nActix-web 是构建高性能 Web 应用的绝佳选择！",
+                "Actix-web 是一个强大、实用的 Rust Web 框架。本文介绍了如何快速上手使用 Actix-web 构建 Web 应用。",
+                "admin",
+                "[\"Rust\", \"Web\", \"框架\"]",
+                "技术",
+                "published",
+                "markdown/actix-web.md",
+                "public",
+            ),
+        ];
+
+        for (title, content, summary, author, tags, category, status, file_path, visibility) in sample_passages {
+            // 将 Markdown 转换为 HTML
+            let html_content = convert_markdown_to_html(content);
+            
+            conn.execute(
+                "INSERT INTO passages (title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                rusqlite::params![
+                    title,
+                    html_content,
+                    content,
+                    summary,
+                    author,
+                    tags,
+                    category,
+                    status,
+                    file_path,
+                    visibility,
+                    chrono::Utc::now(),
+                    chrono::Utc::now(),
+                ],
+            )?;
+        }
+        
+        println!("✅ 已插入 3 篇示例文章");
+    }
+
     println!("✅ 默认数据插入完成");
     Ok(())
+}
+
+/// 将 Markdown 转换为 HTML
+fn convert_markdown_to_html(markdown: &str) -> String {
+    use pulldown_cmark::{Parser, html};
+    
+    let parser = Parser::new(markdown);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+    
+    html_output
 }

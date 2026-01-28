@@ -8,6 +8,8 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>{{ title }} - 文章阅读</title>
+<!-- Disable favicon -->
+<link rel="icon" href="data:,">
 <!-- Highlight.js CSS -->
 <link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
 <!-- KaTeX CSS -->
@@ -2738,10 +2740,86 @@ let articlesData = {
 };
 
 // 初始化应用
-function initApp() {
-  fetchArticlesData();
+async function initApp() {
+  // 从 URL 路径中提取文章 ID
+  const pathParts = window.location.pathname.split('/');
+  console.log('initApp - 当前路径:', window.location.pathname, 'pathParts:', pathParts);
+
+  if (pathParts.length === 6 && pathParts[1] === 'passage') {
+    // 格式: /passage/{year}/{month}/{day}/{title}
+    // 需要从后端 API 获取文章 ID
+    console.log('调用 loadCurrentArticleFromPath...');
+    await loadCurrentArticleFromPath();
+  } else if (pathParts.length === 3 && pathParts[1] === 'passage' && !isNaN(pathParts[2])) {
+    // 格式: /passage/{id}
+    currentPassageID = parseInt(pathParts[2]);
+  }
+  
+  await fetchArticlesData();
   setupEventListeners();
   updateUI();
+}
+
+// 从路径加载当前文章
+async function loadCurrentArticleFromPath() {
+  try {
+    const pathParts = window.location.pathname.split('/');
+    // 格式: /passage/{year}/{month}/{day}/{title}
+    const titleFromPath = decodeURIComponent(pathParts[4]);
+    console.log('从路径加载文章:', { path: window.location.pathname, titleFromPath });
+
+    // 尝试根据路径查找文章
+    const response = await fetch('/api/passages');
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      // 标准化标题进行比较
+      const normalizeTitle = (title) => title.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '')
+        .replace(/-+/g, '-');
+
+      console.log('数据库中的文章:', result.data.map(a => ({ id: a.id, title: a.title, normalized: normalizeTitle(a.title) })));
+      console.log('路径中的标题:', titleFromPath, '标准化后:', normalizeTitle(titleFromPath));
+
+      // 查找匹配路径的文章
+      const article = result.data.find(a => {
+        return normalizeTitle(a.title) === normalizeTitle(titleFromPath);
+      });
+      
+      if (article) {
+        currentPassageID = article.id;
+        console.log('从路径加载文章成功:', article.title, 'ID:', article.id);
+        // 直接使用 API 返回的数据渲染文章
+        const articleData = {
+          id: `article-${article.id}`,
+          title: article.title,
+          date: article.created_at || '2024-01-01',
+          readtime: '5分钟',
+          tags: article.tags || '[]',
+          content: article.content || '',
+          show_title: true,
+          status: article.status || 'published',
+          isScheduled: article.is_scheduled || false,
+          publishedAt: article.published_at || null
+        };
+        
+        // 渲染文章内容
+        renderArticle(articleData);
+        
+        // 更新活动文章
+        appState.activeArticleId = `article-${article.id}`;
+        if (!appState.openTabs.includes(`article-${article.id}`)) {
+          appState.openTabs.push(`article-${article.id}`);
+        }
+      } else {
+        console.warn('未找到匹配的文章:', titleFromPath);
+        console.log('可用文章:', result.data.map(a => a.title));
+      }
+    }
+  } catch (error) {
+    console.error('加载当前文章失败:', error);
+  }
 }
 
 // 从后端API获取文章数据
@@ -2769,10 +2847,11 @@ function organizeArticlesByFolder(articles) {
   
   articles.forEach(article => {
     // 从日期中提取年月日
-    const date = new Date(article.created_at);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    // created_at 格式: "2026-01-28 03:11:43"
+    const dateParts = article.created_at.split(' ')[0].split('-');
+    const year = dateParts[0];
+    const month = dateParts[1];
+    const day = dateParts[2];
     
     // 创建年份层级
     if (!years[year]) {
@@ -3482,12 +3561,6 @@ function openArticle(articleId) {
   
   if (!articleData) return;
   
-  // 如果有 markdown 路径，导航到该路径
-  if (articleData.markdownPath) {
-    window.location.href = `/passage/${articleData.markdownPath}`;
-    return;
-  }
-  
   // 更新活动文章
   appState.activeArticleId = articleId;
   
@@ -3582,6 +3655,7 @@ function renderArticle(articleData) {
   const articleEl = articleTemplate.cloneNode(true);
   articleEl.id = `article-${articleData.id}`;
   articleEl.classList.add('active');
+  articleEl.style.display = 'block'; // 显示文章元素
 
   // 检查文章状态
   const isUnpublished = articleData.status !== 'published';
@@ -3633,8 +3707,9 @@ function renderArticle(articleData) {
   const tagsInlineEl = articleEl.querySelector('.article-tags-inline');
   if (tagsInlineEl) {
     tagsInlineEl.innerHTML = '';
-    if (articleData.tags && articleData.tags.length > 0) {
-      articleData.tags.forEach(tag => {
+    const tags = typeof articleData.tags === 'string' ? JSON.parse(articleData.tags) : articleData.tags;
+    if (tags && tags.length > 0) {
+      tags.forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.className = 'inline-tag';
         tagEl.textContent = tag;
@@ -3655,7 +3730,12 @@ function renderArticle(articleData) {
   // 渲染标签
   const tagsContainer = articleEl.querySelector('.article-tags');
   tagsContainer.innerHTML = '';
-  articleData.tags.forEach(tag => {
+  
+  // 解析 tags - 从 JSON 字符串转换为数组
+  const tags = typeof articleData.tags === 'string' ? JSON.parse(articleData.tags) : articleData.tags;
+  articleData.tags = tags; // 更新 articleData 的 tags 为数组
+  
+  tags.forEach(tag => {
     const tagEl = document.createElement('span');
     tagEl.className = 'tag';
     tagEl.textContent = tag;
@@ -4096,7 +4176,7 @@ function handleWindowResize() {
 }
 
 // 初始化应用
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', () => initApp());
 </script>
 
 <!-- 全屏图片查看器 -->
@@ -4464,7 +4544,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // 评论相关变量
-let currentPassageID = {{ passage_id }};
+let currentPassageID = null; // 将从 URL 路径中提取
 
 // 初始化图片放大功能
 function initImageViewer() {
@@ -4680,8 +4760,9 @@ async function loadCurrentArticleCategoryAndTags() {
       const tagsInlineEl = document.getElementById('articleTagsInline');
       if (tagsInlineEl) {
         tagsInlineEl.innerHTML = '';
-        if (articleData.tags && articleData.tags.length > 0) {
-          articleData.tags.forEach(tag => {
+        const tags = typeof articleData.tags === 'string' ? JSON.parse(articleData.tags) : articleData.tags;
+        if (tags && tags.length > 0) {
+          tags.forEach(tag => {
             const tagEl = document.createElement('span');
             tagEl.className = 'inline-tag';
             tagEl.textContent = tag;

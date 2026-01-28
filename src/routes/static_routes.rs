@@ -1,5 +1,5 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use actix_files::{Files, NamedFile};
+use actix_web::web;
+use actix_files::Files;
 
 /// 配置静态文件路由
 /// 单职责：仅负责静态文件服务的路由配置

@@ -1,0 +1,181 @@
+use actix_web::{web, HttpResponse};
+use serde::{Deserialize, Serialize};
+use crate::db::repositories::{CommentRepository, Repository};
+use std::sync::Arc;
+
+/// 评论列表请求参数
+#[derive(Debug, Deserialize)]
+pub struct CommentListQuery {
+    pub passage_id: Option<i64>,
+    pub page: Option<u32>,
+    pub limit: Option<u32>,
+}
+
+/// 创建评论请求
+#[derive(Debug, Deserialize)]
+pub struct CreateCommentRequest {
+    pub username: String,
+    pub content: String,
+    pub passage_id: i64,
+}
+
+/// 评论响应
+#[derive(Debug, Serialize)]
+pub struct CommentResponse {
+    pub id: i64,
+    pub username: String,
+    pub content: String,
+    pub passage_id: i64,
+    pub created_at: String,
+}
+
+/// 分页响应
+#[derive(Debug, Serialize)]
+pub struct PaginatedResponse<T> {
+    pub success: bool,
+    pub data: Vec<T>,
+    pub pagination: Pagination,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Pagination {
+    pub page: u32,
+    pub limit: u32,
+    pub total: i64,
+}
+
+/// 通用响应
+#[derive(Debug, Serialize)]
+pub struct CommonResponse {
+    pub success: bool,
+    pub message: String,
+}
+
+/// 获取评论列表
+pub async fn list(
+    query: web::Query<CommentListQuery>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(10);
+    let offset = (page - 1) * limit;
+    
+    let comments = if let Some(passage_id) = query.passage_id {
+        comment_repo.get_by_passage_id(passage_id, limit as i64, offset as i64).await
+    } else {
+        comment_repo.get_all(limit as i64, offset as i64).await
+    };
+    
+    let total = if let Some(passage_id) = query.passage_id {
+        comment_repo.count_by_passage_id(passage_id).await
+    } else {
+        comment_repo.count().await
+    };
+    
+    match (comments, total) {
+        (Ok(comments), Ok(total)) => {
+            let data: Vec<CommentResponse> = comments.into_iter().map(|c| CommentResponse {
+                id: c.id.unwrap_or(0),
+                username: c.username,
+                content: c.content,
+                passage_id: c.passage_id,
+                created_at: c.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+            }).collect();
+            
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": data,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": total,
+                }
+            }))
+        }
+        _ => HttpResponse::InternalServerError().json(CommonResponse {
+            success: false,
+            message: "获取评论列表失败".to_string(),
+        })
+    }
+}
+
+/// 创建评论
+pub async fn create(
+    req: web::Json<CreateCommentRequest>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    // 验证必填字段
+    if req.username.is_empty() || req.content.is_empty() || req.passage_id == 0 {
+        return HttpResponse::BadRequest().json(CommonResponse {
+            success: false,
+            message: "用户名、内容和文章ID不能为空".to_string(),
+        });
+    }
+    
+    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    
+    let comment = crate::db::models::Comment {
+        id: None,
+        username: req.username.clone(),
+        content: req.content.clone(),
+        passage_id: req.passage_id,
+        created_at: chrono::Utc::now(),
+    };
+    
+    match comment_repo.create(&comment).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "评论创建成功",
+            "data": CommentResponse {
+                id: comment.id.unwrap_or(0),
+                username: comment.username,
+                content: comment.content,
+                passage_id: comment.passage_id,
+                created_at: comment.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+            }
+        })),
+        Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
+            success: false,
+            message: "创建评论失败".to_string(),
+        })
+    }
+}
+
+/// 删除评论
+pub async fn delete(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(CommonResponse {
+                success: false,
+                message: "无效的评论ID".to_string(),
+            });
+        }
+    };
+    
+    if id <= 0 {
+        return HttpResponse::BadRequest().json(CommonResponse {
+            success: false,
+            message: "缺少评论ID参数".to_string(),
+        });
+    }
+    
+    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    
+    match comment_repo.delete(id).await {
+        Ok(_) => HttpResponse::Ok().json(CommonResponse {
+            success: true,
+            message: "评论删除成功".to_string(),
+        }),
+        Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
+            success: false,
+            message: "删除评论失败".to_string(),
+        })
+    }
+}

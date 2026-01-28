@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::web;
 use crate::handlers::page_handlers;
 
 /// 配置页面路由
@@ -10,6 +10,8 @@ pub fn configure_page_routes(cfg: &mut web::ServiceConfig) {
 
     // 文章页面
     cfg.route("/passage", web::get().to(page_handlers::passage_list));
+    // 更具体的路由必须在前面
+    cfg.route("/passage/{year}/{month}/{day}/{title}", web::get().to(page_handlers::passage_detail_by_date));
     cfg.route("/passage/{id}", web::get().to(page_handlers::passage_detail));
 
     // 归档页面

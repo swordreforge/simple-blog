@@ -1,7 +1,68 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse};
+use serde::{Deserialize, Serialize};
+use crate::db::repositories::{AboutMainCardRepository, AboutSubCardRepository, Repository};
+use std::sync::Arc;
+
+/// 关于页面内容响应
+#[derive(Debug, Serialize)]
+pub struct AboutContent {
+    pub content: String,
+}
+
+/// 主卡片响应
+#[derive(Debug, Serialize)]
+pub struct MainCardResponse {
+    pub id: i64,
+    pub title: String,
+    pub icon: String,
+    pub layout_type: String,
+    pub custom_css: String,
+    pub sort_order: i32,
+    pub is_enabled: bool,
+}
+
+/// 次卡片响应
+#[derive(Debug, Serialize)]
+pub struct SubCardResponse {
+    pub id: i64,
+    pub main_card_id: i64,
+    pub title: String,
+    pub description: String,
+    pub icon: String,
+    pub link_url: String,
+    pub layout_type: String,
+    pub custom_css: String,
+    pub sort_order: i32,
+    pub is_enabled: bool,
+}
+
+/// 创建/更新主卡片请求
+#[derive(Debug, Deserialize)]
+pub struct MainCardRequest {
+    pub title: String,
+    pub icon: String,
+    pub layout_type: String,
+    pub custom_css: String,
+    pub sort_order: i32,
+    pub is_enabled: bool,
+}
+
+/// 创建/更新次卡片请求
+#[derive(Debug, Deserialize)]
+pub struct SubCardRequest {
+    pub main_card_id: i64,
+    pub title: String,
+    pub description: String,
+    pub icon: String,
+    pub link_url: String,
+    pub layout_type: String,
+    pub custom_css: String,
+    pub sort_order: i32,
+    pub is_enabled: bool,
+}
 
 /// 获取关于页面内容
-pub async fn get() -> impl Responder {
+pub async fn get() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "content": "About RustBlog"
@@ -9,9 +70,312 @@ pub async fn get() -> impl Responder {
 }
 
 /// 更新关于页面内容
-pub async fn update() -> impl Responder {
+pub async fn update() -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "About page updated"
     }))
+}
+
+/// 获取所有主卡片（管理员）
+pub async fn get_main_cards_admin(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    
+    match main_card_repo.get_all().await {
+        Ok(cards) => {
+            let data: Vec<MainCardResponse> = cards.into_iter()
+                .map(|card| MainCardResponse {
+                    id: card.id.unwrap_or(0),
+                    title: card.title,
+                    icon: card.icon,
+                    layout_type: card.layout_type,
+                    custom_css: card.custom_css,
+                    sort_order: card.sort_order,
+                    is_enabled: card.is_enabled,
+                })
+                .collect();
+            
+            HttpResponse::Ok().json(data)
+        }
+        Err(e) => {
+            eprintln!("获取主卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取主卡片失败"
+            }))
+        }
+    }
+}
+
+/// 获取所有次卡片（管理员）
+pub async fn get_sub_cards_admin(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    
+    match sub_card_repo.get_all().await {
+        Ok(cards) => {
+            let data: Vec<SubCardResponse> = cards.into_iter()
+                .map(|card| SubCardResponse {
+                    id: card.id.unwrap_or(0),
+                    main_card_id: card.main_card_id,
+                    title: card.title,
+                    description: card.description,
+                    icon: card.icon,
+                    link_url: card.link_url,
+                    layout_type: card.layout_type,
+                    custom_css: card.custom_css,
+                    sort_order: card.sort_order,
+                    is_enabled: card.is_enabled,
+                })
+                .collect();
+            
+            HttpResponse::Ok().json(data)
+        }
+        Err(e) => {
+            eprintln!("获取次卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取次卡片失败"
+            }))
+        }
+    }
+}
+
+/// 创建主卡片
+pub async fn create_main_card(
+    req: web::Json<MainCardRequest>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    let card = crate::db::models::AboutMainCard {
+        id: None,
+        title: req.title.clone(),
+        icon: req.icon.clone(),
+        layout_type: req.layout_type.clone(),
+        custom_css: req.custom_css.clone(),
+        sort_order: req.sort_order,
+        is_enabled: req.is_enabled,
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+    
+    match main_card_repo.create(&card).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "主卡片创建成功"
+        })),
+        Err(e) => {
+            eprintln!("创建主卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "创建主卡片失败"
+            }))
+        }
+    }
+}
+
+/// 更新主卡片
+pub async fn update_main_card(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    req: web::Json<MainCardRequest>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "无效的主卡片ID"
+            }));
+        }
+    };
+    
+    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    let mut card = match main_card_repo.get_by_id(id).await {
+        Ok(c) => c,
+        Err(_) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "主卡片不存在"
+            }));
+        }
+    };
+    
+    card.title = req.title.clone();
+    card.icon = req.icon.clone();
+    card.layout_type = req.layout_type.clone();
+    card.custom_css = req.custom_css.clone();
+    card.sort_order = req.sort_order;
+    card.is_enabled = req.is_enabled;
+    card.updated_at = chrono::Utc::now();
+    
+    match main_card_repo.update(&card).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "主卡片更新成功"
+        })),
+        Err(e) => {
+            eprintln!("更新主卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "更新主卡片失败"
+            }))
+        }
+    }
+}
+
+/// 删除主卡片
+pub async fn delete_main_card(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "无效的主卡片ID"
+            }));
+        }
+    };
+    
+    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    
+    match main_card_repo.delete(id).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "主卡片删除成功"
+        })),
+        Err(e) => {
+            eprintln!("删除主卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "删除主卡片失败"
+            }))
+        }
+    }
+}
+
+/// 创建次卡片
+pub async fn create_sub_card(
+    req: web::Json<SubCardRequest>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let card = crate::db::models::AboutSubCard {
+        id: None,
+        main_card_id: req.main_card_id,
+        title: req.title.clone(),
+        description: req.description.clone(),
+        icon: req.icon.clone(),
+        link_url: req.link_url.clone(),
+        layout_type: req.layout_type.clone(),
+        custom_css: req.custom_css.clone(),
+        sort_order: req.sort_order,
+        is_enabled: req.is_enabled,
+        created_at: chrono::Utc::now(),
+        updated_at: chrono::Utc::now(),
+    };
+    
+    match sub_card_repo.create(&card).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "次卡片创建成功"
+        })),
+        Err(e) => {
+            eprintln!("创建次卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "创建次卡片失败"
+            }))
+        }
+    }
+}
+
+/// 更新次卡片
+pub async fn update_sub_card(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    req: web::Json<SubCardRequest>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "无效的次卡片ID"
+            }));
+        }
+    };
+    
+    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let mut card = match sub_card_repo.get_by_id(id).await {
+        Ok(c) => c,
+        Err(_) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "次卡片不存在"
+            }));
+        }
+    };
+    
+    card.main_card_id = req.main_card_id;
+    card.title = req.title.clone();
+    card.description = req.description.clone();
+    card.icon = req.icon.clone();
+    card.link_url = req.link_url.clone();
+    card.layout_type = req.layout_type.clone();
+    card.custom_css = req.custom_css.clone();
+    card.sort_order = req.sort_order;
+    card.is_enabled = req.is_enabled;
+    card.updated_at = chrono::Utc::now();
+    
+    match sub_card_repo.update(&card).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "次卡片更新成功"
+        })),
+        Err(e) => {
+            eprintln!("更新次卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "更新次卡片失败"
+            }))
+        }
+    }
+}
+
+/// 删除次卡片
+pub async fn delete_sub_card(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "无效的次卡片ID"
+            }));
+        }
+    };
+    
+    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    
+    match sub_card_repo.delete(id).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "次卡片删除成功"
+        })),
+        Err(e) => {
+            eprintln!("删除次卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "删除次卡片失败"
+            }))
+        }
+    }
 }

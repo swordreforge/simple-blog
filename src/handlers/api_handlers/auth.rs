@@ -23,6 +23,9 @@ pub struct AuthResponse {
 
 /// 用户登录
 pub async fn login(req: web::Json<LoginRequest>) -> impl Responder {
+    let _username = &req.username;
+    let _password = &req.password;
+    
     HttpResponse::Ok().json(AuthResponse {
         success: true,
         message: "Login successful".to_string(),
@@ -32,6 +35,10 @@ pub async fn login(req: web::Json<LoginRequest>) -> impl Responder {
 
 /// 用户注册
 pub async fn register(req: web::Json<RegisterRequest>) -> impl Responder {
+    let _username = &req.username;
+    let _email = &req.email;
+    let _password = &req.password;
+    
     HttpResponse::Ok().json(AuthResponse {
         success: true,
         message: "Registration successful".to_string(),
