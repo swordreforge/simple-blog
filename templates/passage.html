@@ -47,7 +47,7 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
-  background-image: url('{{ settings.background_image }}');
+  background-image: url('{{ settings.background_image | safe }}');
   background-size: {{ settings.background_size }};
   background-position: {{ settings.background_position }};
   background-repeat: {{ settings.background_repeat }};
@@ -1228,83 +1228,156 @@ nav a.current {
   font-size: 0.95em;
 }
 
-/* 评论表单 */
-.comment-form {
+/* 评论表单 - GitHub 风格 */
+.github-comment-form {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 20px;
   background-color: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 30px;
 }
 
-.comment-form .form-group {
-  margin-bottom: 0px;
+.comment-user-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-top: 4px;
 }
 
-.comment-form label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--text-dark);
-  font-weight: 500;
-  font-size: 0.95em;
+.comment-input-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.comment-form .form-input,
-.comment-form .form-textarea {
+.comment-username-input {
   width: 100%;
-  padding: 12px 15px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 0.95em;
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  color: var(--text-dark);
-  transition: all 0.3s ease;
-  font-family: inherit;
+  padding: 10px 14px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
-.comment-form .form-input:focus,
-.comment-form .form-textarea:focus {
+.comment-username-input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  background-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: #0969da;
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
 }
 
-.comment-form .form-textarea {
+.comment-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
   resize: vertical;
   min-height: 100px;
 }
 
+.comment-textarea:focus {
+  outline: none;
+  border-color: #0969da;
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+}
+
+.comment-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.comment-tips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6e7781;
+  font-size: 12px;
+}
+
 .submit-comment-btn {
-  background: linear-gradient(135deg, var(--primary-color), #0056b3);
+  background: #2da44e;
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 12px 30px;
-  font-size: 1em;
-  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
 .submit-comment-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+  background: #2c974b;
 }
 
 .submit-comment-btn:active {
-  transform: translateY(0);
+  background: #298e46;
 }
 
-.submit-comment-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+html.dark-mode .comment-username-input,
+html.dark-mode .comment-textarea {
+  background-color: rgba(30, 30, 30, 0.9);
+  border-color: #30363d;
+  color: #c9d1d9;
+}
+
+html.dark-mode .comment-username-input:focus,
+html.dark-mode .comment-textarea:focus {
+  border-color: #58a6ff;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+html.dark-mode .comment-tips {
+  color: #8b949e;
+}
+
+html.dark-mode .submit-comment-btn {
+  background: #238636;
+}
+
+html.dark-mode .submit-comment-btn:hover {
+  background: #2ea043;
+}
+
+@media (max-width: 768px) {
+  .github-comment-form {
+    flex-direction: column;
+  }
+
+  .comment-user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .comment-actions {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .comment-tips {
+    justify-content: center;
+  }
 }
 
 /* 评论列表 */
@@ -2438,31 +2511,74 @@ body.focus-mode-right .sidebar {
           </div>
         </div>
 
-        <!-- 赞助区域 -->
+        <!-- 赞助区域 - Bing 风格 -->
         {% if sponsor_enabled %}
         <div class="sponsor-section">
-          <button class="sponsor-btn" id="sponsorBtn">{{ sponsor_button_text }}</button>
+          <div class="sponsor-card">
+            <div class="sponsor-header">
+              <div class="sponsor-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </div>
+              <div class="sponsor-title">
+                <h3>感谢您的支持</h3>
+                <p>{{ sponsor_description }}</p>
+              </div>
+            </div>
+            <div class="sponsor-options">
+              <button class="sponsor-option-btn" data-amount="5">
+                <span class="amount">¥5</span>
+                <span class="label">咖啡</span>
+              </button>
+              <button class="sponsor-option-btn" data-amount="10">
+                <span class="amount">¥10</span>
+                <span class="label">奶茶</span>
+              </button>
+              <button class="sponsor-option-btn" data-amount="20">
+                <span class="amount">¥20</span>
+                <span class="label">午餐</span>
+              </button>
+              <button class="sponsor-option-btn custom-amount">
+                <span class="amount">自定义</span>
+              </button>
+            </div>
+            <button class="sponsor-submit-btn" id="sponsorSubmitBtn">支持作者</button>
+          </div>
         </div>
         {% endif %}
 
-        <!-- 评论区域 -->
+        <!-- 评论区域 - GitHub 风格 -->
         <div class="comments-section" id="commentsSection" {% if is_unpublished %}style="display: none;"{% endif %}>
           <div class="comments-header">
-            <h3>评论</h3>
+            <h3>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              评论
+            </h3>
             <span class="comments-count" id="commentsCount">0 条评论</span>
           </div>
 
-          <!-- 评论表单 -->
-          <div class="comment-form" id="commentForm">
-            <div>
-              <label for="commentUsername">用户名</label>
-              <input type="text" id="commentUsername" class="form-input" placeholder="请输入用户名" required>
+          <!-- GitHub 风格的评论表单 -->
+          <div class="github-comment-form">
+            <div class="comment-user-avatar">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
             </div>
-            <div>
-              <label for="commentContent">评论内容</label>
-              <textarea id="commentContent" class="form-textarea" placeholder="写下你的评论..." rows="4" required></textarea>
+            <div class="comment-input-wrapper">
+              <input type="text" id="commentUsername" class="comment-username-input" placeholder="用户名" required>
+              <textarea id="commentContent" class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea>
+              <div class="comment-actions">
+                <div class="comment-tips">
+                  <span class="tip">支持 Markdown 语法</span>
+                  <span class="tip">•</span>
+                  <span class="tip">Ctrl+Enter 提交</span>
+                </div>
+                <button type="button" class="submit-comment-btn" id="submitCommentBtn">发表评论</button>
+              </div>
             </div>
-            <button type="button" class="submit-comment-btn" id="submitCommentBtn">发表评论</button>
           </div>
 
           <!-- 评论列表 -->
@@ -2541,6 +2657,61 @@ body.focus-mode-right .sidebar {
         <div class="article-content">
           <!-- 文章内容将通过JavaScript动态生成 -->
         </div>
+
+        <!-- 文章评论系统 - 每篇文章都有独立的评论区域 -->
+        <div class="article-comments" data-article-id="">
+          <div class="comments-section">
+            <div class="comments-header">
+              <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+                评论
+              </h3>
+              <span class="comments-count">0 条评论</span>
+            </div>
+
+            <!-- GitHub 风格的评论表单 -->
+            <div class="github-comment-form">
+              <div class="comment-user-avatar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+              </div>
+              <div class="comment-input-wrapper">
+                <input type="text" class="comment-username-input" placeholder="用户名" required>
+                <textarea class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea>
+                <div class="comment-actions">
+                  <div class="comment-tips">
+                    <span class="tip">支持 Markdown 语法</span>
+                    <span class="tip">•</span>
+                    <span class="tip">Ctrl+Enter 提交</span>
+                  </div>
+                  <button type="button" class="submit-comment-btn">发表评论</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 评论列表 -->
+            <div class="comments-list">
+              <!-- 评论将通过JavaScript动态加载 -->
+            </div>
+
+            <!-- 加载状态 -->
+            <div class="loading-state" style="display: none;">
+              <div class="spinner"></div>
+              <span>加载评论中...</span>
+            </div>
+
+            <!-- 空状态 -->
+            <div class="empty-comments" style="display: none;">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              <p>还没有评论，快来发表第一条评论吧！</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2560,12 +2731,12 @@ body.focus-mode-right .sidebar {
   </button>
 </div>
 
-<!-- KaTeX JavaScript -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-<!-- KaTeX auto-render extension -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<!-- KaTeX JavaScript - 暂时禁用，因为 auto-render 文件不存在 -->
+<!-- <script src="/js/npm/katex@0.16.27/dist/katex.min.js"></script> -->
+<!-- KaTeX auto-render extension - 暂时禁用，因为 auto-render 文件不存在 -->
+<!-- <script src="/js/npm/katex@0.16.27/dist/contrib/auto-render.min.js"></script> -->
 <!-- Mermaid JavaScript -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+<script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
 
 <script>
 // 初始化 Mermaid
@@ -2677,7 +2848,8 @@ async function renderMathAndDiagrams(container) {
       .replace(/&#39;/g, "'");
   });
 
-  // 渲染数学公式
+  // 渲染数学公式 - 暂时禁用，因为 KaTeX auto-render 文件不存在
+  /*
   console.log('开始渲染数学公式');
   renderMathInElement(container, {
     delimiters: [
@@ -2690,6 +2862,7 @@ async function renderMathAndDiagrams(container) {
     strict: false
   });
   console.log('数学公式渲染完成');
+  */
 
   // 渲染 Mermaid 流程图
   const mermaidBlocks = container.querySelectorAll('.mermaid');
@@ -2763,6 +2936,9 @@ async function initApp() {
   await fetchArticlesData();
   setupEventListeners();
   updateUI();
+  
+  // 初始化评论功能（确保在 currentPassageID 设置完成后）
+  initComments();
 }
 
 // 从路径加载当前文章
@@ -3984,6 +4160,18 @@ function openArticleInNewTab(articleId) {
 
 // 渲染文章内容
 function renderArticle(articleData) {
+  // 隐藏服务器端渲染的内容
+  const serverRenderedContent = document.getElementById('articleContent');
+  if (serverRenderedContent) {
+    serverRenderedContent.style.display = 'none';
+  }
+
+  // 隐藏空状态提示
+  const emptyState = document.getElementById('emptyState');
+  if (emptyState) {
+    emptyState.style.display = 'none';
+  }
+
   // 移除所有活动的文章
   document.querySelectorAll('.article').forEach(el => {
     if (el.id !== 'articleTemplate') {
@@ -4099,9 +4287,186 @@ function renderArticle(articleData) {
   // 加载附件列表
   loadAttachments(articleData.date);
 
+  // 初始化并加载文章评论系统
+  initArticleComments(articleEl, articleData.id, articleData);
+
   // 如果当前是目录模式，重新生成目录
   if (appState.readingMode === 'toc') {
     generateTableOfContents();
+  }
+}
+
+// 初始化文章评论系统
+function initArticleComments(articleEl, articleId, articleData) {
+  console.log('initArticleComments 被调用', { articleId, articleEl, articleData });
+  const commentsSection = articleEl.querySelector('.article-comments');
+  console.log('找到的评论区域:', commentsSection);
+  if (!commentsSection) {
+    console.warn('未找到评论区域 .article-comments');
+    return;
+  }
+
+  // 从 articleId 中提取纯数字 ID（articleId 可能是 "article-3" 格式）
+  const numericArticleId = typeof articleId === 'string' ? parseInt(articleId.replace('article-', ''), 10) : articleId;
+  console.log('提取的纯数字 ID:', numericArticleId);
+
+  // 设置文章ID（使用纯数字ID用于API调用）
+  commentsSection.dataset.articleId = numericArticleId;
+
+  // 确保评论区域可见
+  commentsSection.style.display = 'block';
+
+  // 隐藏评论系统（如果文章未发布）
+  if (articleData && articleData.status !== 'published') {
+    console.log('文章未发布，隐藏评论系统');
+    commentsSection.style.display = 'none';
+    return;
+  }
+
+  // 获取评论元素
+  const usernameInput = commentsSection.querySelector('.comment-username-input');
+  const contentTextarea = commentsSection.querySelector('.comment-textarea');
+  const submitBtn = commentsSection.querySelector('.submit-comment-btn');
+  const commentsList = commentsSection.querySelector('.comments-list');
+  const loadingState = commentsSection.querySelector('.loading-state');
+  const emptyState = commentsSection.querySelector('.empty-comments');
+  const commentsCount = commentsSection.querySelector('.comments-count');
+
+  // 加载评论（使用纯数字ID）
+  loadArticleComments(numericArticleId, commentsList, loadingState, emptyState, commentsCount);
+
+  // 绑定提交按钮事件
+  if (submitBtn) {
+    submitBtn.addEventListener('click', function() {
+      submitArticleComment(numericArticleId, usernameInput, contentTextarea, commentsList, commentsCount);
+    });
+  }
+
+  // 绑定 Ctrl+Enter 提交
+  if (contentTextarea) {
+    contentTextarea.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        submitArticleComment(numericArticleId, usernameInput, contentTextarea, commentsList, commentsCount);
+      }
+    });
+  }
+}
+
+// 加载文章评论
+async function loadArticleComments(articleId, commentsList, loadingState, emptyState, commentsCount) {
+  // 显示加载状态
+  if (loadingState) loadingState.style.display = 'flex';
+  if (commentsList) commentsList.style.display = 'none';
+  if (emptyState) emptyState.style.display = 'none';
+
+  try {
+    const response = await fetch(`/api/comments?passage_id=${articleId}`);
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      // 更新评论数量
+      if (commentsCount) {
+        commentsCount.textContent = `${result.data.length} 条评论`;
+      }
+
+      // 隐藏加载状态
+      if (loadingState) loadingState.style.display = 'none';
+
+      if (result.data.length > 0) {
+        // 显示评论列表
+        if (commentsList) {
+          commentsList.style.display = 'flex';
+          renderArticleComments(result.data, commentsList);
+        }
+      } else {
+        // 显示空状态
+        if (emptyState) emptyState.style.display = 'flex';
+      }
+    } else {
+      console.error('加载评论失败:', result);
+      if (loadingState) loadingState.style.display = 'none';
+      if (emptyState) emptyState.style.display = 'flex';
+    }
+  } catch (error) {
+    console.error('加载评论时出错:', error);
+    if (loadingState) loadingState.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'flex';
+  }
+}
+
+// 渲染文章评论列表
+function renderArticleComments(comments, commentsList) {
+  commentsList.innerHTML = '';
+
+  comments.forEach(comment => {
+    const commentEl = document.createElement('div');
+    commentEl.className = 'comment-item';
+
+    commentEl.innerHTML = `
+      <div class="comment-avatar">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+      </div>
+      <div class="comment-body">
+        <div class="comment-header">
+          <span class="comment-author">${comment.username || '匿名用户'}</span>
+          <span class="comment-date">${formatDate(comment.created_at)}</span>
+        </div>
+        <div class="comment-content">${comment.content}</div>
+      </div>
+    `;
+
+    commentsList.appendChild(commentEl);
+  });
+}
+
+// 提交文章评论
+async function submitArticleComment(articleId, usernameInput, contentTextarea, commentsList, commentsCount) {
+  const username = usernameInput.value.trim();
+  const content = contentTextarea.value.trim();
+
+  if (!username || !content) {
+    showToast('请填写用户名和评论内容', 'warning');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/comments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        passage_id: articleId,
+        username: username,
+        content: content
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showToast('评论发表成功！', 'success');
+      // 清空输入框
+      usernameInput.value = '';
+      contentTextarea.value = '';
+      // 重新加载评论
+      const commentsSection = usernameInput.closest('.article-comments');
+      loadArticleComments(
+        articleId,
+        commentsSection.querySelector('.comments-list'),
+        commentsSection.querySelector('.loading-state'),
+        commentsSection.querySelector('.empty-comments'),
+        commentsSection.querySelector('.comments-count')
+      );
+    } else {
+      showToast('评论发表失败：' + (result.message || '未知错误'), 'error');
+    }
+  } catch (error) {
+    console.error('提交评论时出错:', error);
+    showToast('评论发表失败，请稍后重试', 'error');
   }
 }
 
@@ -4880,9 +5245,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     subtree: true
   });
 
-  // 初始化评论功能
-  initComments();
-
   // 获取当前文章的分类和标签
   loadCurrentArticleCategoryAndTags();
 });
@@ -5183,6 +5545,17 @@ function initComments() {
   const submitBtn = document.getElementById('submitCommentBtn');
   if (submitBtn) {
     submitBtn.addEventListener('click', submitComment);
+  }
+
+  // 绑定 Ctrl+Enter 提交评论
+  const commentContent = document.getElementById('commentContent');
+  if (commentContent) {
+    commentContent.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        submitComment();
+      }
+    });
   }
 }
 
@@ -5626,67 +5999,178 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <style>
+/* 赞助区域 - Bing 风格 */
 .sponsor-section {
-  text-align: right;
-  margin: 30px 0;
-  padding: 20px;
+  margin: 40px 0;
 }
 
-.sponsor-btn {
-  background: var(--card-glass-color, rgba(255, 255, 255, 0.75));
+.sponsor-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 30px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.sponsor-card:hover {
+  transform: translateY(-5px);
+}
+
+.sponsor-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sponsor-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   backdrop-filter: blur(10px);
-  color: #333;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 12px 30px;
-  font-size: 16px;
-  border-radius: 8px;
+}
+
+.sponsor-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.sponsor-title h3 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+}
+
+.sponsor-title p {
+  font-size: 0.95em;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.sponsor-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sponsor-option-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  color: white;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
-.sponsor-btn:hover {
-  background: var(--card-glass-color, rgba(255, 255, 255, 0.85));
+.sponsor-option-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.sponsor-option-btn.selected {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: white;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.sponsor-option-btn .amount {
+  font-size: 1.3em;
+  font-weight: 700;
+}
+
+.sponsor-option-btn .label {
+  font-size: 0.85em;
+  opacity: 0.9;
+}
+
+.sponsor-submit-btn {
+  width: 100%;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 1.1em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.sponsor-submit-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-.sponsor-btn:active {
-  transform: translateY(0);
+html.dark-mode .sponsor-card {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
 }
 
-html.dark-mode .sponsor-btn {
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-html.dark-mode .sponsor-btn:hover {
-  background: rgba(60, 60, 60, 0.8);
+@media (max-width: 768px) {
+  .sponsor-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const sponsorBtn = document.getElementById('sponsorBtn');
-  const sponsorModal = document.getElementById('sponsorModal');
-  const modalClose = sponsorModal ? sponsorModal.querySelector('.modal-close') : null;
+  // 赞助选项按钮交互
+  const sponsorOptionBtns = document.querySelectorAll('.sponsor-option-btn');
+  const sponsorSubmitBtn = document.getElementById('sponsorSubmitBtn');
+  let selectedAmount = null;
 
-  if (sponsorBtn && sponsorModal) {
-    sponsorBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      sponsorModal.classList.add('active');
-    });
-
-    if (modalClose) {
-      modalClose.addEventListener('click', function() {
-        sponsorModal.classList.remove('active');
-      });
-    }
-
-    sponsorModal.addEventListener('click', function(e) {
-      if (e.target === sponsorModal) {
-        sponsorModal.classList.remove('active');
+  sponsorOptionBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      // 移除其他按钮的选中状态
+      sponsorOptionBtns.forEach(b => b.classList.remove('selected'));
+      
+      // 如果点击的是自定义金额
+      if (this.classList.contains('custom-amount')) {
+        const customAmount = prompt('请输入赞助金额：');
+        if (customAmount && !isNaN(customAmount) && parseFloat(customAmount) > 0) {
+          selectedAmount = parseFloat(customAmount);
+          this.querySelector('.amount').textContent = '¥' + selectedAmount;
+          this.classList.add('selected');
+        } else {
+          selectedAmount = null;
+          this.querySelector('.amount').textContent = '自定义';
+        }
+      } else {
+        // 获取预设金额
+        selectedAmount = parseInt(this.dataset.amount);
+        this.classList.add('selected');
       }
+    });
+  });
+
+  // 提交赞助
+  if (sponsorSubmitBtn) {
+    sponsorSubmitBtn.addEventListener('click', function() {
+      if (!selectedAmount) {
+        showToast('请选择或输入赞助金额', 'warning');
+        return;
+      }
+      
+      // 这里可以添加实际的赞助逻辑，比如跳转到支付页面或调用 API
+      showToast(`感谢您 ¥${selectedAmount} 的支持！`, 'success');
+      
+      // 重置选中状态
+      sponsorOptionBtns.forEach(b => b.classList.remove('selected'));
+      selectedAmount = null;
     });
   }
 });

@@ -46,7 +46,7 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   position: relative;
-  background-image: url('{{ settings.background_image }}');
+  background-image: url('{{ settings.background_image | safe }}');
   background-size: {{ settings.background_size }};
   background-position: {{ settings.background_position }};
   background-repeat: {{ settings.background_repeat }};
@@ -6790,12 +6790,13 @@ function bindActionButtons() {
           });
           const result = await response.json();
 
-          if (result.success && result.data) {
+          if (result.success && result.data && result.data.length > 0) {
+            const userData = result.data[0];
             // 填充编辑表单
-            document.getElementById('editUserName').value = result.data.username || '';
-            document.getElementById('editUserEmail').value = result.data.email || '';
-            document.getElementById('editUserRole').value = result.data.role || 'user';
-            document.getElementById('editUserStatus').value = result.data.status || 'active';
+            document.getElementById('editUserName').value = userData.username || '';
+            document.getElementById('editUserEmail').value = userData.email || '';
+            document.getElementById('editUserRole').value = userData.role || 'user';
+            document.getElementById('editUserStatus').value = userData.status || 'active';
             document.getElementById('editUserPassword').value = ''; // 密码留空
 
             // 保存当前编辑的用户ID
@@ -6825,14 +6826,15 @@ function bindActionButtons() {
           });
           const result = await response.json();
 
-          if (result.success && result.data) {
+          if (result.success && result.data && result.data.length > 0) {
+            const userData = result.data[0];
             // 填充详情模态框
-            document.getElementById('viewUserId').textContent = '#' + result.data.id;
-            document.getElementById('viewUserName').textContent = result.data.username || '';
-            document.getElementById('viewUserEmail').textContent = result.data.email || '';
-            document.getElementById('viewUserRole').textContent = result.data.role || '普通用户';
-            document.getElementById('viewUserStatus').textContent = result.data.status || '正常';
-            document.getElementById('viewUserDate').textContent = result.data.created_at || '';
+            document.getElementById('viewUserId').textContent = '#' + userData.id;
+            document.getElementById('viewUserName').textContent = userData.username || '';
+            document.getElementById('viewUserEmail').textContent = userData.email || '';
+            document.getElementById('viewUserRole').textContent = userData.role || '普通用户';
+            document.getElementById('viewUserStatus').textContent = userData.status || '正常';
+            document.getElementById('viewUserDate').textContent = userData.created_at || '';
             
             openModal('viewUserModal');
           } else {

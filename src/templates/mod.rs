@@ -5,15 +5,15 @@ use tokio::sync::RwLock;
 
 lazy_static::lazy_static! {
     static ref TERA: Arc<RwLock<Tera>> = {
-        let mut tera = match Tera::new("templates/**/*.html") {
+        let tera = match Tera::new("templates/**/*.html") {
             Ok(t) => t,
             Err(e) => {
                 eprintln!("Error parsing templates: {}", e);
                 panic!("Failed to parse templates");
             }
         };
-        // 开发模式下启用自动重载
-        tera.autoescape_on(vec![".html", ".htm"]);
+        // 不启用自动转义，避免 CSS URL 中的字符被转义
+        // 如需转义，在模板中使用 | escape 过滤器
         Arc::new(RwLock::new(tera))
     };
 }

@@ -31,7 +31,7 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   position: relative;
-  background-image: url('{{ settings.background_image }}');
+  background-image: url('{{ settings.background_image | safe }}');
   background-size: {{ settings.background_size }};
   background-position: {{ settings.background_position }};
   background-repeat: {{ settings.background_repeat }};
