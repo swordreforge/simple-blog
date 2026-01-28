@@ -10,7 +10,7 @@ pub use api_routes::configure_api_routes;
 
 /// 配置所有路由
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
-    cfg.configure(configure_static_routes)
+    cfg.configure(configure_api_routes)
        .configure(configure_page_routes)
-       .configure(configure_api_routes);
+       .configure(configure_static_routes);
 }

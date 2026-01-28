@@ -268,12 +268,15 @@ pub async fn create(
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
+    // 转换 Markdown 为 HTML
+    let html_content = convert_markdown_to_html(&req.content);
+    
     let now = Utc::now();
     let passage = Passage {
         id: None,
         title: req.title.clone(),
-        content: req.content.clone(),
-        original_content: req.original_content.clone(),
+        content: html_content,
+        original_content: Some(req.content.clone()),
         summary: req.summary.clone(),
         author: req.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
         tags: req.tags.clone().unwrap_or_else(|| "[]".to_string()),
@@ -330,7 +333,10 @@ pub async fn update(
         passage.title = title.clone();
     }
     if let Some(ref content) = req.content {
-        passage.content = content.clone();
+        // 转换 Markdown 为 HTML
+        let html_content = convert_markdown_to_html(content);
+        passage.content = html_content;
+        passage.original_content = Some(content.clone());
     }
     if let Some(ref original_content) = req.original_content {
         passage.original_content = Some(original_content.clone());
@@ -406,4 +412,15 @@ pub async fn delete(
             }))
         }
     }
+}
+
+/// 将 Markdown 转换为 HTML
+fn convert_markdown_to_html(markdown: &str) -> String {
+    use pulldown_cmark::{Parser, html};
+    
+    let parser = Parser::new(markdown);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+    
+    html_output
 }

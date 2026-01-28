@@ -422,6 +422,11 @@ nav a.current {
   overflow: hidden;
   text-overflow: ellipsis;
   color: #ffffff !important;
+  font-size: 0.95em;
+  font-weight: 400;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
 }
 
 .file-tree .file-item .file-date {
@@ -3440,93 +3445,429 @@ function renderFileTree() {
 }
 
 // 递归创建文件夹元素
+
 function createFolderElement(folder) {
+
   const folderEl = document.createElement('div');
+
   folderEl.className = `folder ${folder.open ? 'open' : ''}`;
+
   folderEl.dataset.folderId = folder.id;
+
   
+
   // 计算文件总数（包括子文件夹中的文件）
+
   const totalFiles = countFilesInFolder(folder);
+
   
-  folderEl.innerHTML = `
-    <div class="folder-header">
-      <span class="folder-icon">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-        </svg>
-      </span>
-      <span class="folder-name">${folder.name}</span>
-      <span class="file-count">${totalFiles}</span>
-    </div>
-    <div class="folder-content">
-      ${folder.subfolders ? folder.subfolders.map(subfolder => createFolderElement(subfolder).outerHTML).join('') : ''}
-      ${folder.files ? folder.files.map(file => `
-        <div class="file-item ${file.status !== 'published' ? 'file-unpublished' : ''}" data-file-id="${file.id}" data-status="${file.status}" data-scheduled="${file.isScheduled}" data-published-at="${file.publishedAt || ''}">
-          <span class="file-icon">
-            ${file.status !== 'published' ? `
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            ` : `
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                <polyline points="13 2 13 9 20 9"></polyline>
-              </svg>
-            `}
-          </span>
-          <span class="file-name">${file.title}</span>
-          <span class="file-date">${file.date}</span>
-          ${file.status !== 'published' ? `<span class="file-status">${file.status === 'draft' ? '草稿' : file.status === 'pending' ? '待审核' : '定时发布'}</span>` : ''}
-        </div>
-      `).join('') : ''}
-    </div>
+
+  // 创建文件夹头部
+
+  const folderHeader = document.createElement('div');
+
+  folderHeader.className = 'folder-header';
+
+  folderHeader.innerHTML = `
+
+    <span class="folder-icon">
+
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+
+      </svg>
+
+    </span>
+
+    <span class="folder-name">${folder.name}</span>
+
+    <span class="file-count">${totalFiles}</span>
+
   `;
+
+  folderEl.appendChild(folderHeader);
+
   
-  // 文件夹点击事件
-  const folderHeader = folderEl.querySelector('.folder-header');
-  folderHeader.addEventListener('click', () => {
-    folder.open = !folder.open;
-    folderEl.classList.toggle('open');
-  });
+
+  // 创建文件夹内容容器
+
+  const folderContent = document.createElement('div');
+
+  folderContent.className = 'folder-content';
+
   
-  // 递归绑定子文件夹的事件
+
+  // 递归添加子文件夹
+
   if (folder.subfolders) {
-    folderEl.querySelectorAll('.folder').forEach(subfolderEl => {
-      const subfolderId = subfolderEl.dataset.folderId;
-      const subfolder = findFolderById(folder, subfolderId);
-      if (subfolder) {
-        const subfolderHeader = subfolderEl.querySelector('.folder-header');
-        subfolderHeader.addEventListener('click', () => {
-          subfolder.open = !subfolder.open;
-          subfolderEl.classList.toggle('open');
-        });
-      }
+
+    folder.subfolders.forEach(subfolder => {
+
+      const subfolderEl = createFolderElement(subfolder);
+
+      folderContent.appendChild(subfolderEl);
+
     });
+
   }
+
   
-  // 文件点击事件
-  folderEl.querySelectorAll('.file-item').forEach(item => {
-    const fileId = item.dataset.fileId;
-    
-    // 单击打开文章
-    item.addEventListener('click', () => {
-      openArticle(fileId);
-    });
-    
-    // 双击在新标签页打开
-    item.addEventListener('dblclick', () => {
-      openArticleInNewTab(fileId);
-    });
-    
-    // 右键菜单（可选）
-    item.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      // 可以添加右键菜单功能
-    });
+
+  // 添加文件
+
+  
+
+    if (folder.files) {
+
+  
+
+      folder.files.forEach(file => {
+
+  
+
+        const fileItem = document.createElement('div');
+
+  
+
+        fileItem.className = 'file-item' + (file.status !== 'published' ? ' file-unpublished' : '');
+
+  
+
+        fileItem.dataset.fileId = file.id;
+
+  
+
+        fileItem.dataset.status = file.status;
+
+  
+
+        fileItem.dataset.scheduled = file.isScheduled;
+
+  
+
+        fileItem.dataset.publishedAt = file.publishedAt || '';
+
+  
+
+        
+
+  
+
+        // 创建文件图标
+
+  
+
+        const fileIcon = document.createElement('span');
+
+  
+
+        fileIcon.className = 'file-icon';
+
+  
+
+        if (file.status !== 'published') {
+
+  
+
+          fileIcon.innerHTML = `
+
+  
+
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+  
+
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+
+  
+
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+
+  
+
+            </svg>
+
+  
+
+          `;
+
+  
+
+        } else {
+
+  
+
+          fileIcon.innerHTML = `
+
+  
+
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+  
+
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+
+  
+
+              <polyline points="13 2 13 9 20 9"></polyline>
+
+  
+
+            </svg>
+
+  
+
+          `;
+
+  
+
+        }
+
+  
+
+        fileItem.appendChild(fileIcon);
+
+  
+
+        
+
+  
+
+        // 创建文件名
+
+  
+
+        const fileName = document.createElement('span');
+
+  
+
+        fileName.className = 'file-name';
+
+  
+
+        fileName.textContent = file.title;
+
+  
+
+        fileItem.appendChild(fileName);
+
+  
+
+        
+
+  
+
+        // 创建文件日期
+
+  
+
+        
+
+  
+
+                const fileDate = document.createElement('span');
+
+  
+
+        
+
+  
+
+                fileDate.className = 'file-date';
+
+  
+
+        
+
+  
+
+                // 只显示日期部分（年-月-日），不显示时间
+
+  
+
+        
+
+  
+
+                const dateOnly = file.date ? file.date.split(' ')[0] : '';
+
+  
+
+        
+
+  
+
+                fileDate.textContent = dateOnly;
+
+  
+
+        fileItem.appendChild(fileDate);
+
+  
+
+        
+
+  
+
+        // 添加状态标签（如果需要）
+
+  
+
+        if (file.status !== 'published') {
+
+  
+
+          const fileStatus = document.createElement('span');
+
+  
+
+          fileStatus.className = 'file-status';
+
+  
+
+          if (file.status === 'draft') {
+
+  
+
+            fileStatus.textContent = '草稿';
+
+  
+
+          } else if (file.status === 'pending') {
+
+  
+
+            fileStatus.textContent = '待审核';
+
+  
+
+          } else {
+
+  
+
+            fileStatus.textContent = '定时发布';
+
+  
+
+          }
+
+  
+
+          fileItem.appendChild(fileStatus);
+
+  
+
+        }
+
+  
+
+        
+
+  
+
+        folderContent.appendChild(fileItem);
+
+  
+
+      });
+
+  
+
+    }
+
+  
+
+  folderEl.appendChild(folderContent);
+
+  
+
+  // 文件夹点击事件
+
+  folderHeader.addEventListener('click', () => {
+
+    folder.open = !folder.open;
+
+    folderEl.classList.toggle('open');
+
   });
+
   
+
+  // 递归绑定子文件夹的事件
+
+  if (folder.subfolders) {
+
+    folderEl.querySelectorAll('.folder').forEach(subfolderEl => {
+
+      const subfolderId = subfolderEl.dataset.folderId;
+
+      const subfolder = findFolderById(folder, subfolderId);
+
+      if (subfolder) {
+
+        const subfolderHeader = subfolderEl.querySelector('.folder-header');
+
+        subfolderHeader.addEventListener('click', () => {
+
+          subfolder.open = !subfolder.open;
+
+          subfolderEl.classList.toggle('open');
+
+        });
+
+      }
+
+    });
+
+  }
+
+  
+
+  // 文件点击事件
+
+  folderEl.querySelectorAll('.file-item').forEach(item => {
+
+    const fileId = item.dataset.fileId;
+
+    
+
+    // 单击打开文章
+
+    item.addEventListener('click', () => {
+
+      openArticle(fileId);
+
+    });
+
+    
+
+    // 双击在新标签页打开
+
+    item.addEventListener('dblclick', () => {
+
+      openArticleInNewTab(fileId);
+
+    });
+
+    
+
+    // 右键菜单（可选）
+
+    item.addEventListener('contextmenu', (e) => {
+
+      e.preventDefault();
+
+      // 可以添加右键菜单功能
+
+    });
+
+  });
+
+  
+
   return folderEl;
+
 }
 
 // 递归计算文件夹中的文件总数

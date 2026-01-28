@@ -147,6 +147,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::about::get_sub_cards_admin))
     ).service(
         web::resource("/api/about/main-cards")
+            .route(web::get().to(api_handlers::about::get_main_cards))
             .route(web::post().to(api_handlers::about::create_main_card))
     ).service(
         web::resource("/api/about/main-cards/update")
@@ -156,6 +157,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::delete().to(api_handlers::about::delete_main_card))
     ).service(
         web::resource("/api/about/sub-cards")
+            .route(web::get().to(api_handlers::about::get_sub_cards))
             .route(web::post().to(api_handlers::about::create_sub_card))
     ).service(
         web::resource("/api/about/sub-cards/update")

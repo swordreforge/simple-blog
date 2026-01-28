@@ -77,6 +77,38 @@ pub async fn update() -> HttpResponse {
     }))
 }
 
+/// 获取所有主卡片（公开）
+pub async fn get_main_cards(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    
+    match main_card_repo.get_all().await {
+        Ok(cards) => {
+            // 只返回启用的卡片
+            let data: Vec<MainCardResponse> = cards.into_iter()
+                .filter(|card| card.is_enabled)
+                .map(|card| MainCardResponse {
+                    id: card.id.unwrap_or(0),
+                    title: card.title,
+                    icon: card.icon,
+                    layout_type: card.layout_type,
+                    custom_css: card.custom_css,
+                    sort_order: card.sort_order,
+                    is_enabled: card.is_enabled,
+                })
+                .collect();
+            
+            HttpResponse::Ok().json(data)
+        }
+        Err(e) => {
+            eprintln!("获取主卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取主卡片失败"
+            }))
+        }
+    }
+}
+
 /// 获取所有主卡片（管理员）
 pub async fn get_main_cards_admin(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
     let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
@@ -102,6 +134,52 @@ pub async fn get_main_cards_admin(repo: web::Data<Arc<dyn Repository>>) -> HttpR
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": "获取主卡片失败"
+            }))
+        }
+    }
+}
+
+/// 获取所有次卡片（公开）
+pub async fn get_sub_cards(
+    repo: web::Data<Arc<dyn Repository>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
+    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    
+    match sub_card_repo.get_all().await {
+        Ok(cards) => {
+            // 获取查询参数中的 main_card_id
+            let filter_main_card_id = query.get("main_card_id").and_then(|id| id.parse::<i64>().ok());
+            
+            // 只返回启用的卡片，并按 main_card_id 过滤
+            let data: Vec<SubCardResponse> = cards.into_iter()
+                .filter(|card| {
+                    card.is_enabled && (
+                        filter_main_card_id.is_none() || 
+                        filter_main_card_id == Some(card.main_card_id)
+                    )
+                })
+                .map(|card| SubCardResponse {
+                    id: card.id.unwrap_or(0),
+                    main_card_id: card.main_card_id,
+                    title: card.title,
+                    description: card.description,
+                    icon: card.icon,
+                    link_url: card.link_url,
+                    layout_type: card.layout_type,
+                    custom_css: card.custom_css,
+                    sort_order: card.sort_order,
+                    is_enabled: card.is_enabled,
+                })
+                .collect();
+            
+            HttpResponse::Ok().json(data)
+        }
+        Err(e) => {
+            eprintln!("获取次卡片失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取次卡片失败"
             }))
         }
     }

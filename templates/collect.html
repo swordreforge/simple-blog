@@ -1278,7 +1278,19 @@ function renderArchive() {
     passages.forEach(passage => {
       const date = new Date(passage.created_at);
       const formattedDate = date.toISOString().split('T')[0];
-      const tags = passage.tags || [];
+      
+      // 处理 tags 字段：可能是 JSON 字符串或数组
+      let tags = [];
+      if (typeof passage.tags === 'string') {
+        try {
+          tags = JSON.parse(passage.tags);
+        } catch (e) {
+          tags = [];
+        }
+      } else if (Array.isArray(passage.tags)) {
+        tags = passage.tags;
+      }
+      
       const tagsStr = tags.join(', ');
       
       // 生成 markdown 路径
@@ -1655,7 +1667,19 @@ function bindFilterEvents() {
           yearPassages.forEach(passage => {
             const date = new Date(passage.created_at);
             const formattedDate = date.toISOString().split('T')[0];
-            const tags = passage.tags || [];
+            
+            // 处理 tags 字段：可能是 JSON 字符串或数组
+            let tags = [];
+            if (typeof passage.tags === 'string') {
+              try {
+                tags = JSON.parse(passage.tags);
+              } catch (e) {
+                tags = [];
+              }
+            } else if (Array.isArray(passage.tags)) {
+              tags = passage.tags;
+            }
+            
             const tagsStr = tags.join(', ');
 
             // 生成 markdown 路径
