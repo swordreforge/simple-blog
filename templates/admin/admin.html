@@ -7901,7 +7901,7 @@ document.getElementById('confirmAction').addEventListener('click', async functio
       if (currentAction === 'delete') {
         apiUrl = `/api/admin/passages?id=${currentItemId}`;
       } else if (currentAction === 'delete-comment') {
-        apiUrl = `/api/admin/comments?id=${currentItemId}`;
+        apiUrl = `/api/admin/comments/${currentItemId}`;
       } else if (currentAction === 'delete-user') {
         apiUrl = `/api/admin/users?id=${currentItemId}`;
       } else if (currentAction === 'delete-category') {
@@ -7960,15 +7960,6 @@ document.getElementById('confirmAction').addEventListener('click', async functio
       const result = await response.json();
 
       if (result.success) {
-        const row = document.querySelector(`button[data-action="${currentAction}"][data-id="${currentItemId}"]`).closest('tr');
-        if (row) {
-          row.style.opacity = '0.5';
-          row.style.transition = 'opacity 0.3s ease';
-
-          setTimeout(() => {
-            row.remove();
-          }, 300);
-        }
         closeModal('confirmModal');
         showToast('删除成功！', 'success');
         // 刷新数据

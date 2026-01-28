@@ -145,24 +145,15 @@ pub async fn create(
 
 /// 删除评论
 pub async fn delete(
-    query: web::Query<std::collections::HashMap<String, String>>,
+    path: web::Path<i64>,
     repo: web::Data<Arc<dyn Repository>>,
 ) -> HttpResponse {
-    let id_str = query.get("id").cloned().unwrap_or_default();
-    let id: i64 = match id_str.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(CommonResponse {
-                success: false,
-                message: "无效的评论ID".to_string(),
-            });
-        }
-    };
+    let id = path.into_inner();
     
     if id <= 0 {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
-            message: "缺少评论ID参数".to_string(),
+            message: "无效的评论ID".to_string(),
         });
     }
     
