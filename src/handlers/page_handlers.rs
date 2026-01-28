@@ -29,13 +29,23 @@ pub async fn passage_list() -> HttpResponse {
 fn create_passage_context_with_article(passage: &Passage) -> TeraContext {
     let mut context = create_passage_context();
     
+    // 移除第一个 H1 标签（避免标题重复显示）
+    let content = remove_first_h1(&passage.content);
+    
     // 添加文章数据到上下文
     context.insert("passage_id", &passage.id.unwrap_or(0).to_string());
     context.insert("passage_title", &passage.title);
-    context.insert("passage_content", &passage.content);
+    context.insert("passage_content", &content);
     context.insert("passage_date", &passage.created_at.format("%Y-%m-%d").to_string());
     
     context
+}
+
+/// 移除内容中的第一个 H1 标签
+fn remove_first_h1(content: &str) -> String {
+    // 使用正则表达式移除第一个 H1 标签
+    let re = regex::Regex::new(r"^\s*<h1[^>]*>.*?</h1>\s*").unwrap();
+    re.replace(content, "").to_string()
 }
 
 /// 文章详情页（通过 ID）

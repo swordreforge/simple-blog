@@ -4083,8 +4083,11 @@ function renderArticle(articleData) {
     tagsContainer.appendChild(tagEl);
   });
   
-  // 渲染内容
-  articleEl.querySelector('.article-content').innerHTML = articleData.content;
+  // 渲染内容，移除第一个 H1 标签（避免标题重复显示）
+  let content = articleData.content;
+  // 移除开头的 H1 标签
+  content = content.replace(/^\s*<h1[^>]*>.*?<\/h1>\s*/i, '');
+  articleEl.querySelector('.article-content').innerHTML = content;
 
   // 添加到容器
   articleContainer.appendChild(articleEl);
