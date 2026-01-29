@@ -223,9 +223,28 @@ pub fn create_index_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
     
+    // 默认值
+    let mut name = "Dango".to_string();
+    let mut greting = "欢迎来到 RustBlog，一个基于 Rust 和 Actix-web 构建的现代化博客系统".to_string();
+    
+    // 尝试从数据库加载模板设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            // 加载 name
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_name") {
+                name = setting.value;
+            }
+            
+            // 加载 greting
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_greting") {
+                greting = setting.value;
+            }
+        }
+    }
+    
     context.insert("title", "RustBlog");
-    context.insert("name", "Dango");
-    context.insert("greting", "欢迎来到 RustBlog，一个基于 Rust 和 Actix-web 构建的现代化博客系统");
+    context.insert("name", &name);
+    context.insert("greting", &greting);
     context.insert("year", &now.format("%Y").to_string());
     context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
     context.insert("settings", &TemplateSettings::default());
