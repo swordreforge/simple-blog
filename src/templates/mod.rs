@@ -41,12 +41,12 @@ impl Default for TemplateSettings {
     fn default() -> Self {
         Self {
             background_image: "/img/test.webp".to_string(),  // 使用默认背景图片
-            background_color: "#1a1a2e".to_string(),
+            background_color: "#ffffff".to_string(),
             background_size: "cover".to_string(),
             background_position: "center".to_string(),
             background_repeat: "no-repeat".to_string(),
             background_attachment: "fixed".to_string(),
-            global_opacity: 0.95,
+            global_opacity: 0.15,
             blur_amount: 20,
             saturate_amount: 180,
             floating_text_enabled: false,
