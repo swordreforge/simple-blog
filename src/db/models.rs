@@ -141,15 +141,6 @@ pub struct Tag {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 文章-标签关联模型
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PassageTag {
-    pub id: Option<i64>,
-    pub passage_id: i64,
-    pub tag_id: i64,
-    pub created_at: DateTime<Utc>,
-}
-
 /// 附件模型
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attachment {

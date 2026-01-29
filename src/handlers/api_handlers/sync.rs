@@ -163,6 +163,9 @@ async fn sync_markdown_file_async(
     let tag_names = extract_tag_names(&file_path);
     let tags_json = serde_json::to_string(&tag_names).unwrap_or_else(|_| "[]".to_string());
     
+    // 确保标签存在于 tags 表中
+    ensure_tags_exist(&tag_names).await?;
+    
     let now = Utc::now();
     
     // 检查是否已存在
@@ -190,11 +193,6 @@ async fn sync_markdown_file_async(
         update_passage(passage_repo, &updated_passage).await
             .map_err(|e| format!("更新文章失败: {}", e))?;
         
-        // 更新标签关联
-        if let Some(passage_id) = existing.id {
-            update_passage_tags(passage_id, &tag_names).await?;
-        }
-        
         *updated_count += 1;
         println!("✏️  已更新文章: {}", file_path);
     } else {
@@ -217,11 +215,8 @@ async fn sync_markdown_file_async(
             updated_at: now,
         };
         
-        let passage_id = passage_repo.create(&passage).await
+        passage_repo.create(&passage).await
             .map_err(|e| format!("创建文章失败: {}", e))?;
-        
-        // 创建标签关联
-        create_passage_tags(passage_id, &tag_names).await?;
         
         *synced_count += 1;
         println!("✅ 已同步文章: {}", file_path);
@@ -293,74 +288,35 @@ fn extract_tag_names(path: &str) -> Vec<String> {
     tags
 }
 
-/// 创建文章标签关联
-async fn create_passage_tags(passage_id: i64, tag_names: &[String]) -> Result<(), String> {
+/// 确保标签存在于 tags 表中
+async fn ensure_tags_exist(tag_names: &[String]) -> Result<(), String> {
     use crate::db::get_db_pool_sync;
     use crate::db::repositories::TagRepository;
-    use rusqlite::params;
     use std::sync::Arc;
     
     let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
-    let conn = pool.get().map_err(|e| format!("获取连接失败: {}", e))?;
-    
     let tag_repo = TagRepository::new(Arc::new(pool.clone()));
     
     for tag_name in tag_names {
-        // 查找或创建标签
-        let tag_id = match tag_repo.get_by_name(tag_name).await {
-            Ok(tag) => {
-                tag.id.unwrap_or(0)
-            }
-            Err(_) => {
-                // 标签不存在，创建新标签
-                let now = chrono::Utc::now();
-                let new_tag = crate::db::models::Tag {
-                    id: None,
-                    name: tag_name.clone(),
-                    description: format!("自动生成的标签: {}", tag_name),
-                    color: "#007bff".to_string(),
-                    category_id: 0,
-                    sort_order: 0,
-                    is_enabled: true,
-                    created_at: now,
-                    updated_at: now,
-                };
-                
-                tag_repo.create(&new_tag).await
-                    .map_err(|e| format!("创建标签失败: {}", e))?
-            }
-        };
-        
-        // 创建文章-标签关联
-        conn.execute(
-            "INSERT OR IGNORE INTO passage_tags (passage_id, tag_id, created_at) VALUES (?, ?, ?)",
-            params![passage_id, tag_id, chrono::Utc::now()],
-        ).map_err(|e| format!("创建标签关联失败: {}", e))?;
+        // 查找标签，如果不存在则创建
+        if tag_repo.get_by_name(tag_name).await.is_err() {
+            let now = chrono::Utc::now();
+            let new_tag = crate::db::models::Tag {
+                id: None,
+                name: tag_name.clone(),
+                description: format!("自动生成的标签: {}", tag_name),
+                color: "#007bff".to_string(),
+                category_id: 0,
+                sort_order: 0,
+                is_enabled: true,
+                created_at: now,
+                updated_at: now,
+            };
+            
+            tag_repo.create(&new_tag).await
+                .map_err(|e| format!("创建标签失败: {}", e))?;
+        }
     }
-    
-    Ok(())
-}
-
-/// 更新文章标签关联
-async fn update_passage_tags(passage_id: i64, tag_names: &[String]) -> Result<(), String> {
-    use crate::db::get_db_pool_sync;
-    use crate::db::repositories::TagRepository;
-    use rusqlite::params;
-    use std::sync::Arc;
-    
-    let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
-    let conn = pool.get().map_err(|e| format!("获取连接失败: {}", e))?;
-    
-    let tag_repo = TagRepository::new(Arc::new(pool.clone()));
-    
-    // 删除旧的标签关联
-    conn.execute(
-        "DELETE FROM passage_tags WHERE passage_id = ?",
-        params![passage_id],
-    ).map_err(|e| format!("删除旧标签关联失败: {}", e))?;
-    
-    // 创建新的标签关联
-    create_passage_tags(passage_id, tag_names).await?;
     
     Ok(())
 }
