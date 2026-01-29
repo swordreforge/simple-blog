@@ -3702,23 +3702,35 @@ function formatFileSize(bytes) {
 }
 
 // 渲染文件树
+if (!window._renderFileTreeCount) {
+  window._renderFileTreeCount = 0;
+}
+window._renderFileTreeCount++;
+console.log(`renderFileTree 被调用，第 ${window._renderFileTreeCount} 次，调用栈:`, new Error().stack);
+
 function renderFileTree() {
   fileTree.innerHTML = '';
-  
-  articlesData.folders.forEach(folder => {
+
+  console.log('renderFileTree - articlesData.folders 数量:', articlesData.folders?.length);
+  articlesData.folders.forEach((folder, index) => {
+    console.log(`renderFileTree - 处理文件夹 ${index}:`, folder.name, '文件数量:', folder.files?.length);
     const folderEl = createFolderElement(folder);
     fileTree.appendChild(folderEl);
   });
 }
 
 // 递归创建文件夹元素
+if (!window._createFolderElementDepth) {
+  window._createFolderElementDepth = 0;
+}
 
 function createFolderElement(folder) {
+  window._createFolderElementDepth++;
+  const depth = window._createFolderElementDepth;
+  console.log(`[深度${depth}] createFolderElement 被调用，文件夹: ${folder.name}, ID: ${folder.id}`);
 
   const folderEl = document.createElement('div');
-
   folderEl.className = `folder ${folder.open ? 'open' : ''}`;
-
   folderEl.dataset.folderId = folder.id;
 
   
@@ -3782,38 +3794,17 @@ function createFolderElement(folder) {
   
 
   // 添加文件
+  if (folder.files) {
+    console.log(`[深度${depth}] 文件夹 ${folder.name} 有 ${folder.files.length} 个文件`);
+    folder.files.forEach((file, fileIndex) => {
+      console.log(`[深度${depth}] 处理文件 ${fileIndex}: ${file.title}, ID: ${file.id}`);
 
-  
-
-    if (folder.files) {
-
-  
-
-      folder.files.forEach(file => {
-
-  
-
-        const fileItem = document.createElement('div');
-
-  
-
-        fileItem.className = 'file-item' + (file.status !== 'published' ? ' file-unpublished' : '');
-
-  
-
-        fileItem.dataset.fileId = file.id;
-
-  
-
-        fileItem.dataset.status = file.status;
-
-  
-
-        fileItem.dataset.scheduled = file.isScheduled;
-
-  
-
-        fileItem.dataset.publishedAt = file.publishedAt || '';
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item' + (file.status !== 'published' ? ' file-unpublished' : '');
+      fileItem.dataset.fileId = file.id;
+      fileItem.dataset.status = file.status;
+      fileItem.dataset.scheduled = file.isScheduled;
+      fileItem.dataset.publishedAt = file.publishedAt || '';
 
   
 
@@ -3979,61 +3970,47 @@ function createFolderElement(folder) {
 
         // 添加状态标签（如果需要）
 
-  
+  if (file.status !== 'published') {
 
-        if (file.status !== 'published') {
+    const fileStatus = document.createElement('span');
 
-  
+    fileStatus.className = 'file-status';
 
-          const fileStatus = document.createElement('span');
+    if (file.status === 'draft') {
 
-  
+      fileStatus.textContent = '草稿';
 
-          fileStatus.className = 'file-status';
+    } else if (file.status === 'pending') {
 
-  
+      fileStatus.textContent = '待审核';
 
-          if (file.status === 'draft') {
+    } else {
 
-  
+      fileStatus.textContent = '定时发布';
 
-            fileStatus.textContent = '草稿';
+    }
 
-  
+    fileItem.appendChild(fileStatus);
 
-          } else if (file.status === 'pending') {
+  }
 
-  
+  // 添加文件项点击事件监听器（只在创建时添加一次）
+  fileItem.addEventListener('click', () => {
+    openArticle(file.id);
+  });
 
-            fileStatus.textContent = '待审核';
+  // 双击在新标签页打开
+  fileItem.addEventListener('dblclick', () => {
+    openArticleInNewTab(file.id);
+  });
 
-  
+  // 右键菜单（可选）
+  fileItem.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // 可以添加右键菜单功能
+  });
 
-          } else {
-
-  
-
-            fileStatus.textContent = '定时发布';
-
-  
-
-          }
-
-  
-
-          fileItem.appendChild(fileStatus);
-
-  
-
-        }
-
-  
-
-        
-
-  
-
-        folderContent.appendChild(fileItem);
+  folderContent.appendChild(fileItem);
 
   
 
@@ -4091,50 +4068,9 @@ function createFolderElement(folder) {
 
   
 
-  // 文件点击事件
-
-  folderEl.querySelectorAll('.file-item').forEach(item => {
-
-    const fileId = item.dataset.fileId;
-
-    
-
-    // 单击打开文章
-
-    item.addEventListener('click', () => {
-
-      openArticle(fileId);
-
-    });
-
-    
-
-    // 双击在新标签页打开
-
-    item.addEventListener('dblclick', () => {
-
-      openArticleInNewTab(fileId);
-
-    });
-
-    
-
-    // 右键菜单（可选）
-
-    item.addEventListener('contextmenu', (e) => {
-
-      e.preventDefault();
-
-      // 可以添加右键菜单功能
-
-    });
-
-  });
-
-  
-
+  console.log(`[深度${depth}] createFolderElement 完成，文件夹: ${folder.name}`);
+  window._createFolderElementDepth--;
   return folderEl;
-
 }
 
 // 递归计算文件夹中的文件总数
@@ -4164,6 +4100,8 @@ function findFolderById(folder, id) {
 
 // 打开文章
 async function openArticle(articleId) {
+  console.log('openArticle 被调用:', articleId, '调用栈:', new Error().stack);
+
   // 查找文章数据
   const articleData = findArticleById(articleId);
 
@@ -4215,6 +4153,8 @@ async function openArticle(articleId) {
 
 // 加载文章完整内容（带缓存）
 async function loadArticleContent(articleId) {
+  console.log('loadArticleContent 被调用:', articleId, '调用栈:', new Error().stack);
+
   try {
     // 检查缓存
     if (articleContentCache.has(articleId)) {
@@ -4364,6 +4304,8 @@ async function openArticleInNewTab(articleId) {
 
 // 渲染文章内容
 function renderArticle(articleData) {
+  console.log('renderArticle 被调用:', articleData.id, '调用栈:', new Error().stack);
+
   // 隐藏服务器端渲染的内容
   const serverRenderedContent = document.getElementById('articleContent');
   if (serverRenderedContent) {
@@ -4569,6 +4511,8 @@ function initArticleComments(articleEl, articleId, articleData) {
 
 // 加载文章评论
 async function loadArticleComments(articleId, commentsList, loadingState, emptyState, commentsCount) {
+  console.log('loadArticleComments 被调用:', articleId, '调用栈:', new Error().stack);
+
   // 检查是否已经加载过该文章的评论
   if (commentsLoadedCache.has(articleId)) {
     console.log(`评论已加载，跳过重复加载: ${articleId}`);
@@ -4759,6 +4703,8 @@ function updateTabBar() {
 
 // 切换到标签
 function switchToTab(articleId) {
+  console.log('switchToTab 被调用:', articleId, '调用栈:', new Error().stack);
+
   appState.activeArticleId = articleId;
 
   // 查找文章数据
