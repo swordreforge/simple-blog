@@ -55,6 +55,18 @@ async fn main() -> std::io::Result<()> {
         }
     }
     
+    // 同步 markdown 文件到数据库
+    println!("📝 同步 Markdown 文件...");
+    let passage_repo = db::repositories::PassageRepository::new(repository.get_pool().clone());
+    match handlers::api_handlers::sync::sync_directory_internal(&passage_repo).await {
+        Ok(result) => {
+            println!("✅ {}", result.message);
+        }
+        Err(e) => {
+            eprintln!("⚠️  文章同步失败: {}", e);
+        }
+    }
+    
     HttpServer::new(move || {
         App::new()
             // 注入数据库连接池
