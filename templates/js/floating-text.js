@@ -1,7 +1,6 @@
 // 飘字效果控制器 - 基于 Canvas 实现
 class FloatingTextController {
   constructor() {
-    console.log('[FloatingText] Constructor called');
     this.canvas = null;
     this.ctx = null;
     this.isEnabled = false;
@@ -13,7 +12,6 @@ class FloatingTextController {
   }
 
   init() {
-    console.log('[FloatingText] Initializing...');
     // 创建 canvas
     this.createCanvas();
 
@@ -31,7 +29,6 @@ class FloatingTextController {
   }
 
   createCanvas() {
-    console.log('[FloatingText] Creating canvas...');
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'floating-text-canvas';
     // 移除 pointer-events: none，允许 canvas 接收点击事件
@@ -39,73 +36,55 @@ class FloatingTextController {
     this.ctx = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
     this.handleResize();
-    console.log('[FloatingText] Canvas created and added to body');
   }
 
   handleResize() {
     if (this.canvas) {
       this.canvas.width = window.innerWidth;
       this.canvas.height = window.innerHeight;
-      console.log(`[FloatingText] Canvas resized to ${this.canvas.width}x${this.canvas.height}`);
     }
   }
 
   setupClickHandler() {
-    console.log('[FloatingText] Setting up click handler...');
     // 监听整个文档的点击事件
     document.addEventListener('click', (e) => {
       if (!this.isEnabled) {
         return;
       }
-      console.log(`[FloatingText] Click detected at (${e.clientX}, ${e.clientY})`);
       this.createParticle(e.clientX, e.clientY);
     });
   }
 
   loadSettings() {
-    console.log('[FloatingText] Loading settings from localStorage...');
     try {
       const settings = localStorage.getItem('appearanceSettings');
-      console.log('[FloatingText] Settings from localStorage:', settings);
-      
+
       if (settings) {
         const parsed = JSON.parse(settings);
         this.isEnabled = parsed.floating_text_enabled || false;
-        console.log('[FloatingText] floating_text_enabled:', this.isEnabled);
 
         // 从设置中读取自定义飘字文本
         if (parsed.floating_texts && Array.isArray(parsed.floating_texts) && parsed.floating_texts.length > 0) {
           this.texts = parsed.floating_texts;
-          console.log('[FloatingText] Loaded custom texts:', this.texts);
-        } else {
-          console.log('[FloatingText] No custom texts found, will use defaults');
         }
-      } else {
-        console.log('[FloatingText] No settings found in localStorage');
       }
     } catch (e) {
-      console.error('[FloatingText] Failed to load floating text settings:', e);
+      // 忽略错误
     }
 
     if (this.isEnabled) {
-      console.log('[FloatingText] Starting floating text effect (enabled)');
       this.start();
-    } else {
-      console.log('[FloatingText] Floating text effect is disabled');
     }
   }
 
   listenToSettings() {
-    console.log('[FloatingText] Setting up settings change listener...');
     // 监听自定义事件
     window.addEventListener('appearanceSettingsChanged', (e) => {
-      console.log('[FloatingText] Settings changed event received:', e.detail);
       if (e.detail) {
         if (e.detail.floating_text_enabled !== undefined) {
           const prevEnabled = this.isEnabled;
           this.isEnabled = e.detail.floating_text_enabled;
-          console.log(`[FloatingText] floating_text_enabled changed from ${prevEnabled} to ${this.isEnabled}`);
-          
+
           if (this.isEnabled) {
             this.start();
           } else {
@@ -116,56 +95,43 @@ class FloatingTextController {
         // 更新飘字文本
         if (e.detail.floating_texts && Array.isArray(e.detail.floating_texts) && e.detail.floating_texts.length > 0) {
           this.texts = e.detail.floating_texts;
-          console.log('[FloatingText] Texts updated:', this.texts);
         }
       }
     });
   }
 
   start() {
-    console.log('[FloatingText] Starting...');
-    
     if (this.animationId) {
-      console.log('[FloatingText] Already started, skipping');
       return;
     }
 
     // 如果没有设置文本，使用默认值
     if (!this.texts || this.texts.length === 0) {
       this.texts = ['perfect', 'good', 'excellent', 'extraordinary', 'legend'];
-      console.log('[FloatingText] Using default texts:', this.texts);
     }
 
     // 开始动画循环
-    console.log('[FloatingText] Starting animation loop');
     this.animate();
   }
 
   stop() {
-    console.log('[FloatingText] Stopping...');
-    
     // 停止动画循环
     if (this.animationId) {
-      console.log('[FloatingText] Canceling animation frame');
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
 
     // 清除所有粒子
-    const particleCount = this.particles.length;
     this.particles = [];
-    console.log(`[FloatingText] Cleared ${particleCount} particles`);
 
     // 清除画布
     if (this.ctx && this.canvas) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      console.log('[FloatingText] Canvas cleared');
     }
   }
 
   createParticle(x, y) {
     if (!this.isEnabled) {
-      console.warn('[FloatingText] createParticle called but effect is disabled');
       return;
     }
 
@@ -181,12 +147,10 @@ class FloatingTextController {
     };
 
     this.particles.push(particle);
-    console.log(`[FloatingText] Created particle: "${particle.text}" at (${Math.round(particle.x)}, ${Math.round(particle.y)}), color: ${particle.color}, total particles: ${this.particles.length}`);
   }
 
   animate() {
     if (!this.ctx || !this.canvas) {
-      console.warn('[FloatingText] animate called but ctx or canvas is null');
       return;
     }
 
@@ -223,13 +187,9 @@ class FloatingTextController {
 
   // 公共方法：更新设置
   updateSettings(settings) {
-    console.log('[FloatingText] updateSettings called with:', settings);
-    
     if (settings.floating_text_enabled !== undefined) {
-      const prevEnabled = this.isEnabled;
       this.isEnabled = settings.floating_text_enabled;
-      console.log(`[FloatingText] updateSettings: floating_text_enabled changed from ${prevEnabled} to ${this.isEnabled}`);
-      
+
       if (this.isEnabled) {
         this.start();
       } else {
@@ -239,19 +199,16 @@ class FloatingTextController {
 
     if (settings.floating_texts && Array.isArray(settings.floating_texts) && settings.floating_texts.length > 0) {
       this.texts = settings.floating_texts;
-      console.log('[FloatingText] updateSettings: Texts updated:', this.texts);
     }
   }
 
   // 公共方法：设置自定义文本
   setTexts(texts) {
-    console.log('[FloatingText] setTexts called with:', texts);
     this.texts = texts;
   }
 
   // 公共方法：在指定位置创建飘字
   createAt(x, y) {
-    console.log(`[FloatingText] createAt called at (${x}, ${y})`);
     this.createParticle(x, y);
   }
 }
@@ -260,7 +217,6 @@ class FloatingTextController {
 let floatingTextController = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('[FloatingText] DOM loaded, initializing controller in 1000ms...');
   // 延迟初始化，等待外观设置加载
   setTimeout(() => {
     floatingTextController = new FloatingTextController();
