@@ -3702,33 +3702,16 @@ function formatFileSize(bytes) {
 }
 
 // 渲染文件树
-if (!window._renderFileTreeCount) {
-  window._renderFileTreeCount = 0;
-}
-window._renderFileTreeCount++;
-console.log(`renderFileTree 被调用，第 ${window._renderFileTreeCount} 次，调用栈:`, new Error().stack);
-
 function renderFileTree() {
   fileTree.innerHTML = '';
-
-  console.log('renderFileTree - articlesData.folders 数量:', articlesData.folders?.length);
   articlesData.folders.forEach((folder, index) => {
-    console.log(`renderFileTree - 处理文件夹 ${index}:`, folder.name, '文件数量:', folder.files?.length);
     const folderEl = createFolderElement(folder);
     fileTree.appendChild(folderEl);
   });
 }
 
 // 递归创建文件夹元素
-if (!window._createFolderElementDepth) {
-  window._createFolderElementDepth = 0;
-}
-
 function createFolderElement(folder) {
-  window._createFolderElementDepth++;
-  const depth = window._createFolderElementDepth;
-  console.log(`[深度${depth}] createFolderElement 被调用，文件夹: ${folder.name}, ID: ${folder.id}`);
-
   const folderEl = document.createElement('div');
   folderEl.className = `folder ${folder.open ? 'open' : ''}`;
   folderEl.dataset.folderId = folder.id;
@@ -3795,10 +3778,7 @@ function createFolderElement(folder) {
 
   // 添加文件
   if (folder.files) {
-    console.log(`[深度${depth}] 文件夹 ${folder.name} 有 ${folder.files.length} 个文件`);
     folder.files.forEach((file, fileIndex) => {
-      console.log(`[深度${depth}] 处理文件 ${fileIndex}: ${file.title}, ID: ${file.id}`);
-
       const fileItem = document.createElement('div');
       fileItem.className = 'file-item' + (file.status !== 'published' ? ' file-unpublished' : '');
       fileItem.dataset.fileId = file.id;
@@ -4068,8 +4048,7 @@ function createFolderElement(folder) {
 
   
 
-  console.log(`[深度${depth}] createFolderElement 完成，文件夹: ${folder.name}`);
-  window._createFolderElementDepth--;
+
   return folderEl;
 }
 
@@ -4100,8 +4079,6 @@ function findFolderById(folder, id) {
 
 // 打开文章
 async function openArticle(articleId) {
-  console.log('openArticle 被调用:', articleId, '调用栈:', new Error().stack);
-
   // 查找文章数据
   const articleData = findArticleById(articleId);
 
@@ -4153,8 +4130,6 @@ async function openArticle(articleId) {
 
 // 加载文章完整内容（带缓存）
 async function loadArticleContent(articleId) {
-  console.log('loadArticleContent 被调用:', articleId, '调用栈:', new Error().stack);
-
   try {
     // 检查缓存
     if (articleContentCache.has(articleId)) {
@@ -4304,8 +4279,6 @@ async function openArticleInNewTab(articleId) {
 
 // 渲染文章内容
 function renderArticle(articleData) {
-  console.log('renderArticle 被调用:', articleData.id, '调用栈:', new Error().stack);
-
   // 隐藏服务器端渲染的内容
   const serverRenderedContent = document.getElementById('articleContent');
   if (serverRenderedContent) {
@@ -4511,8 +4484,6 @@ function initArticleComments(articleEl, articleId, articleData) {
 
 // 加载文章评论
 async function loadArticleComments(articleId, commentsList, loadingState, emptyState, commentsCount) {
-  console.log('loadArticleComments 被调用:', articleId, '调用栈:', new Error().stack);
-
   // 检查是否已经加载过该文章的评论
   if (commentsLoadedCache.has(articleId)) {
     console.log(`评论已加载，跳过重复加载: ${articleId}`);
@@ -4703,8 +4674,6 @@ function updateTabBar() {
 
 // 切换到标签
 function switchToTab(articleId) {
-  console.log('switchToTab 被调用:', articleId, '调用栈:', new Error().stack);
-
   appState.activeArticleId = articleId;
 
   // 查找文章数据
