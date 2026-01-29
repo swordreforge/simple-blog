@@ -46,7 +46,7 @@ impl Default for TemplateSettings {
             background_position: "center".to_string(),
             background_repeat: "no-repeat".to_string(),
             background_attachment: "fixed".to_string(),
-            global_opacity: 0.9,
+            global_opacity: 0.95,
             blur_amount: 20,
             saturate_amount: 180,
             floating_text_enabled: false,
