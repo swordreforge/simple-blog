@@ -2967,22 +2967,39 @@ async function loadCurrentArticleFromPath() {
       if (article) {
         currentPassageID = article.id;
         console.log('从路径加载文章成功:', article.title, 'ID:', article.id);
-        // 直接使用 API 返回的数据渲染文章
-        const articleData = {
-          id: `article-${article.id}`,
-          title: article.title,
-          date: article.created_at || '2024-01-01',
-          readtime: '5分钟',
-          tags: article.tags || '[]',
-          content: article.content || '',
-          show_title: true,
-          status: article.status || 'published',
-          isScheduled: article.is_scheduled || false,
-          publishedAt: article.published_at || null
-        };
-        
-        // 渲染文章内容
-        renderArticle(articleData);
+
+        // 调用详情接口获取完整的文章内容（包括 html_content）
+        const detailResponse = await fetch(`/api/passages/${article.id}`);
+        const detailResult = await detailResponse.json();
+
+        if (detailResult.success && detailResult.data) {
+          // 使用详情接口返回的 html_content（已渲染的HTML）或 content（原始Markdown）
+          const renderedContent = detailResult.data.html_content || detailResult.data.content;
+
+          const articleData = {
+            id: `article-${article.id}`,
+            title: article.title,
+            date: article.created_at || '2024-01-01',
+            readtime: '5分钟',
+            tags: article.tags || '[]',
+            content: renderedContent || '',
+            show_title: true,
+            status: article.status || 'published',
+            isScheduled: article.is_scheduled || false,
+            publishedAt: article.published_at || null
+          };
+
+          // 渲染文章内容
+          renderArticle(articleData);
+
+          // 更新活动文章
+          appState.activeArticleId = `article-${article.id}`;
+          if (!appState.openTabs.includes(`article-${article.id}`)) {
+            appState.openTabs.push(`article-${article.id}`);
+          }
+        } else {
+          console.error('获取文章详情失败:', detailResult.message);
+        }
         
         // 更新活动文章
         appState.activeArticleId = `article-${article.id}`;

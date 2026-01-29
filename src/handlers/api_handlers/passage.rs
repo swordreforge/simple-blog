@@ -101,18 +101,22 @@ pub async fn list(
                 .collect();
             
             let total_pages = (total + limit - 1) / limit;
-            
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "data": data,
-                "pagination": {
-                    "page": page,
-                    "limit": limit,
-                    "total": total,
-                    "total_pages": total_pages,
-                    "has_more": page < total_pages
-                }
-            }))
+
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
+                .insert_header(("Pragma", "no-cache"))
+                .insert_header(("Expires", "0"))
+                .json(serde_json::json!({
+                    "success": true,
+                    "data": data,
+                    "pagination": {
+                        "page": page,
+                        "limit": limit,
+                        "total": total,
+                        "total_pages": total_pages,
+                        "has_more": page < total_pages
+                    }
+                }))
         }
         Err(e) => {
             eprintln!("获取文章列表失败: {}", e);
@@ -274,10 +278,14 @@ pub async fn get(
                 created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
             };
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "data": response
-            }))
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
+                .insert_header(("Pragma", "no-cache"))
+                .insert_header(("Expires", "0"))
+                .json(serde_json::json!({
+                    "success": true,
+                    "data": response
+                }))
         }
         Err(e) => {
             eprintln!("获取文章失败: {}", e);

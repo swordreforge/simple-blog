@@ -76,11 +76,6 @@ async fn main() -> std::io::Result<()> {
             // 添加中间件
             .wrap(LoggingMiddleware)
             .wrap(actix_middleware::Compress::default())
-            .wrap(actix_middleware::Condition::new(
-                config.static_files.cache_max_age > 0,
-                actix_middleware::DefaultHeaders::new().add(("Cache-Control", 
-                    format!("public, max-age={}", config.static_files.cache_max_age)))
-            ))
     })
     .bind((config.server.host.as_str(), config.server.port))?
     .run()
