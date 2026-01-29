@@ -52,3 +52,6 @@ async-trait = "0.1"
 id3 = "0.6"
 mp3-metadata = "0.3"
 metaflac = "0.2"
+
+# Flake ID 生成
+flake = "0.0.1"

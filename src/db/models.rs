@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Passage {
     pub id: Option<i64>,
+    pub uuid: Option<String>,  // Flake UUID
     pub title: String,
     pub content: String,
     pub original_content: Option<String>,
@@ -48,7 +49,7 @@ pub struct Visitor {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArticleView {
     pub id: Option<i64>,
-    pub passage_id: i64,
+    pub passage_uuid: String,  // 使用 uuid 而不是 passage_id
     pub ip: String,
     pub user_agent: Option<String>,
     pub country: String,
@@ -66,7 +67,7 @@ pub struct Comment {
     pub id: Option<i64>,
     pub username: String,
     pub content: String,
-    pub passage_id: i64,
+    pub passage_uuid: String,  // 使用 uuid 而不是 passage_id
     pub created_at: DateTime<Utc>,
 }
 
@@ -151,7 +152,7 @@ pub struct Attachment {
     pub file_type: String,
     pub content_type: String,
     pub file_size: i64,
-    pub passage_id: Option<i64>,
+    pub passage_uuid: Option<String>,  // 使用 uuid 而不是 passage_id
     pub visibility: String,
     pub show_in_passage: bool,
     pub uploaded_at: DateTime<Utc>,

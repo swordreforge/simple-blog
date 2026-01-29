@@ -162,6 +162,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute(
         "CREATE TABLE IF NOT EXISTS passages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
             content TEXT NOT NULL,
             original_content TEXT,
@@ -181,6 +182,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     )?;
 
     // 创建文章表索引
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_passages_uuid ON passages(uuid)", [])?;
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_passages_file_path ON passages(file_path)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status ON passages(status)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_category ON passages(category)", [])?;
@@ -226,7 +228,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute(
         "CREATE TABLE IF NOT EXISTS article_views (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            passage_id INTEGER NOT NULL,
+            passage_uuid TEXT NOT NULL,
             ip TEXT NOT NULL,
             user_agent TEXT,
             country TEXT DEFAULT '',
@@ -236,12 +238,12 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             view_time DATETIME DEFAULT CURRENT_TIMESTAMP,
             duration INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (passage_id) REFERENCES passages(id) ON DELETE CASCADE
+            FOREIGN KEY (passage_uuid) REFERENCES passages(uuid) ON DELETE CASCADE
         )",
         [],
     )?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_passage_id ON article_views(passage_id)", [])?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_passage_date ON article_views(passage_id, view_date)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_passage_uuid ON article_views(passage_uuid)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_passage_date ON article_views(passage_uuid, view_date)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_ip_date ON article_views(ip, view_date)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_date ON article_views(view_date)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_country ON article_views(country)", [])?;
@@ -253,14 +255,14 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
             content TEXT NOT NULL,
-            passage_id INTEGER NOT NULL,
+            passage_uuid TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (passage_id) REFERENCES passages(id) ON DELETE CASCADE
+            FOREIGN KEY (passage_uuid) REFERENCES passages(uuid) ON DELETE CASCADE
         )",
         [],
     )?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_comments_passage_id ON comments(passage_id)", [])?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_comments_passage_created ON comments(passage_id, created_at DESC)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_comments_passage_uuid ON comments(passage_uuid)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_comments_passage_created ON comments(passage_uuid, created_at DESC)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at)", [])?;
 
     // 创建设置表
@@ -365,15 +367,15 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             file_type TEXT NOT NULL,
             content_type TEXT NOT NULL,
             file_size INTEGER NOT NULL,
-            passage_id INTEGER,
+            passage_uuid TEXT,
             visibility TEXT DEFAULT 'public',
             show_in_passage INTEGER DEFAULT 1,
             uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (passage_id) REFERENCES passages(id) ON DELETE CASCADE
+            FOREIGN KEY (passage_uuid) REFERENCES passages(uuid) ON DELETE CASCADE
         )",
         [],
     )?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_passage_id ON attachments(passage_id)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_passage_uuid ON attachments(passage_uuid)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_type ON attachments(file_type)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_visibility ON attachments(visibility)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_uploaded_at ON attachments(uploaded_at)", [])?;
