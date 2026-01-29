@@ -35,7 +35,7 @@ impl PassageRepository {
     }
 
     /// 创建文章
-    pub async fn create(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
             "INSERT INTO passages (title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at) 
@@ -57,7 +57,7 @@ impl PassageRepository {
                 &passage.updated_at,
             ],
         )?;
-        Ok(())
+        Ok(conn.last_insert_rowid())
     }
 
     /// 根据 ID 获取文章
@@ -827,6 +827,31 @@ impl TagRepository {
         )?;
         
         let tag = stmt.query_row(params![id], |row| {
+            Ok(Tag {
+                id: Some(row.get(0)?),
+                name: row.get(1)?,
+                description: row.get(2)?,
+                color: row.get(3)?,
+                category_id: row.get(4)?,
+                sort_order: row.get(5)?,
+                is_enabled: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+            })
+        })?;
+        
+        Ok(tag)
+    }
+
+    /// 根据名称获取标签
+    pub async fn get_by_name(&self, name: &str) -> Result<Tag, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
+             FROM tags WHERE name = ?"
+        )?;
+        
+        let tag = stmt.query_row(params![name], |row| {
             Ok(Tag {
                 id: Some(row.get(0)?),
                 name: row.get(1)?,

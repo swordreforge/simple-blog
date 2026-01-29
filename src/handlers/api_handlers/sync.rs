@@ -159,8 +159,9 @@ async fn sync_markdown_file_async(
     // 生成摘要
     let summary = extract_summary(&html_content);
     
-    // 生成标签
-    let tags = extract_tags(&file_path);
+    // 生成标签名称列表
+    let tag_names = extract_tag_names(&file_path);
+    let tags_json = serde_json::to_string(&tag_names).unwrap_or_else(|_| "[]".to_string());
     
     let now = Utc::now();
     
@@ -174,7 +175,7 @@ async fn sync_markdown_file_async(
             original_content: Some(content.clone()),
             summary,
             author: existing.author,
-            tags,
+            tags: tags_json.clone(),
             category: existing.category,
             status: existing.status,
             file_path: Some(file_path.clone()),
@@ -188,6 +189,12 @@ async fn sync_markdown_file_async(
         // 更新文章（使用 SQL 直接更新）
         update_passage(passage_repo, &updated_passage).await
             .map_err(|e| format!("更新文章失败: {}", e))?;
+        
+        // 更新标签关联
+        if let Some(passage_id) = existing.id {
+            update_passage_tags(passage_id, &tag_names).await?;
+        }
+        
         *updated_count += 1;
         println!("✏️  已更新文章: {}", file_path);
     } else {
@@ -199,7 +206,7 @@ async fn sync_markdown_file_async(
             original_content: Some(content.clone()),
             summary,
             author: "Admin".to_string(),
-            tags,
+            tags: tags_json.clone(),
             category: "未分类".to_string(),
             status: "published".to_string(),
             file_path: Some(file_path.clone()),
@@ -210,8 +217,12 @@ async fn sync_markdown_file_async(
             updated_at: now,
         };
         
-        passage_repo.create(&passage).await
+        let passage_id = passage_repo.create(&passage).await
             .map_err(|e| format!("创建文章失败: {}", e))?;
+        
+        // 创建标签关联
+        create_passage_tags(passage_id, &tag_names).await?;
+        
         *synced_count += 1;
         println!("✅ 已同步文章: {}", file_path);
     }
@@ -263,8 +274,8 @@ fn extract_summary(html_content: &str) -> Option<String> {
     }
 }
 
-/// 提取标签
-fn extract_tags(path: &str) -> String {
+/// 提取标签名称列表
+fn extract_tag_names(path: &str) -> Vec<String> {
     // 移除 markdown/ 前缀和 .md 后缀
     let path = path.strip_prefix("markdown/").unwrap_or(path);
     let path = path.strip_suffix(".md").unwrap_or(path);
@@ -275,16 +286,83 @@ fn extract_tags(path: &str) -> String {
     // 使用年份和月份作为标签
     let mut tags = Vec::new();
     if parts.len() >= 2 {
-        tags.push(format!("\"{}\"", parts[0]));  // 年份
-        tags.push(format!("\"{}\"", parts[1]));  // 月份
+        tags.push(parts[0].to_string());  // 年份
+        tags.push(parts[1].to_string());  // 月份
     }
     
-    // 转换为 JSON 格式
-    if tags.is_empty() {
-        "[]".to_string()
-    } else {
-        format!("[{}]", tags.join(","))
+    tags
+}
+
+/// 创建文章标签关联
+async fn create_passage_tags(passage_id: i64, tag_names: &[String]) -> Result<(), String> {
+    use crate::db::get_db_pool_sync;
+    use crate::db::repositories::TagRepository;
+    use rusqlite::params;
+    use std::sync::Arc;
+    
+    let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
+    let conn = pool.get().map_err(|e| format!("获取连接失败: {}", e))?;
+    
+    let tag_repo = TagRepository::new(Arc::new(pool.clone()));
+    
+    for tag_name in tag_names {
+        // 查找或创建标签
+        let tag_id = match tag_repo.get_by_name(tag_name).await {
+            Ok(tag) => {
+                tag.id.unwrap_or(0)
+            }
+            Err(_) => {
+                // 标签不存在，创建新标签
+                let now = chrono::Utc::now();
+                let new_tag = crate::db::models::Tag {
+                    id: None,
+                    name: tag_name.clone(),
+                    description: format!("自动生成的标签: {}", tag_name),
+                    color: "#007bff".to_string(),
+                    category_id: 0,
+                    sort_order: 0,
+                    is_enabled: true,
+                    created_at: now,
+                    updated_at: now,
+                };
+                
+                tag_repo.create(&new_tag).await
+                    .map_err(|e| format!("创建标签失败: {}", e))?
+            }
+        };
+        
+        // 创建文章-标签关联
+        conn.execute(
+            "INSERT OR IGNORE INTO passage_tags (passage_id, tag_id, created_at) VALUES (?, ?, ?)",
+            params![passage_id, tag_id, chrono::Utc::now()],
+        ).map_err(|e| format!("创建标签关联失败: {}", e))?;
     }
+    
+    Ok(())
+}
+
+/// 更新文章标签关联
+async fn update_passage_tags(passage_id: i64, tag_names: &[String]) -> Result<(), String> {
+    use crate::db::get_db_pool_sync;
+    use crate::db::repositories::TagRepository;
+    use rusqlite::params;
+    use std::sync::Arc;
+    
+    let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
+    let conn = pool.get().map_err(|e| format!("获取连接失败: {}", e))?;
+    
+    let tag_repo = TagRepository::new(Arc::new(pool.clone()));
+    
+    // 删除旧的标签关联
+    conn.execute(
+        "DELETE FROM passage_tags WHERE passage_id = ?",
+        params![passage_id],
+    ).map_err(|e| format!("删除旧标签关联失败: {}", e))?;
+    
+    // 创建新的标签关联
+    create_passage_tags(passage_id, tag_names).await?;
+    
+    Ok(())
 }
 
 /// 更新文章
