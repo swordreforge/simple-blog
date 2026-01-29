@@ -40,6 +40,14 @@ class PassageShortcuts {
     // 如果快捷键功能被禁用,不处理
     if (!this.enabled) return;
 
+    // 如果图片查看器或代码查看器打开，不处理快捷键
+    const imageViewer = document.getElementById('imageViewer');
+    const codeViewer = document.getElementById('codeViewer');
+    if ((imageViewer && imageViewer.classList.contains('active')) ||
+        (codeViewer && codeViewer.classList.contains('active'))) {
+      return;
+    }
+
     // 如果用户正在输入框中输入,不触发快捷键
     const activeElement = document.activeElement;
     if (activeElement && (

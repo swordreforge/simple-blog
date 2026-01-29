@@ -3008,6 +3008,9 @@ let isLoadingArticles = false;
 // 文章内容缓存
 const articleContentCache = new Map(); // key: articleId, value: { content, timestamp }
 
+// 评论加载状态缓存，避免重复加载评论
+const commentsLoadedCache = new Set(); // key: articleId
+
 // 从后端API获取文章数据（支持分页）
 async function fetchArticlesData() {
   if (isLoadingArticles || !hasMoreArticles) {
@@ -4163,31 +4166,46 @@ function findFolderById(folder, id) {
 async function openArticle(articleId) {
   // 查找文章数据
   const articleData = findArticleById(articleId);
-  
+
   if (!articleData) return;
-  
+
   // 更新活动文章
   appState.activeArticleId = articleId;
-  
+
   // 如果文章不在已打开标签中，则添加
   if (!appState.openTabs.includes(articleId)) {
     appState.openTabs.push(articleId);
   }
-  
+
   // 更新UI
   updateUI();
-  
-  // 如果文章内容为空，则加载完整内容
-  if (!articleData.content) {
-    await loadArticleContent(articleId);
+
+  // 检查文章是否已经渲染
+  const articleEl = document.getElementById(`article-${articleId}`);
+
+  if (!articleEl) {
+    // 如果文章未渲染，则加载内容并渲染
+    if (!articleData.content) {
+      await loadArticleContent(articleId);
+    } else {
+      // 渲染文章内容
+      renderArticle(articleData);
+    }
   } else {
-    // 渲染文章内容
-    renderArticle(articleData);
+    // 如果文章已渲染，只需显示该文章并隐藏其他文章
+    document.querySelectorAll('.article').forEach(el => {
+      if (el.id !== 'articleTemplate') {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      }
+    });
+    articleEl.classList.add('active');
+    articleEl.style.display = 'block';
   }
-  
+
   // 隐藏空状态
   emptyState.style.display = 'none';
-  
+
   // 在移动设备上自动关闭侧边栏
   if (window.innerWidth < 992) {
     appState.sidebarOpen = false;
@@ -4521,16 +4539,26 @@ function initArticleComments(articleEl, articleId, articleData) {
   // 加载评论（使用纯数字ID）
   loadArticleComments(numericArticleId, commentsList, loadingState, emptyState, commentsCount);
 
-  // 绑定提交按钮事件
+  // 绑定提交按钮事件（先移除旧的事件监听器以避免重复绑定）
   if (submitBtn) {
-    submitBtn.addEventListener('click', function() {
+    // 克隆节点以移除所有旧的事件监听器
+    const newSubmitBtn = submitBtn.cloneNode(true);
+    submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+    
+    // 为新按钮添加事件监听器
+    newSubmitBtn.addEventListener('click', function() {
       submitArticleComment(numericArticleId, usernameInput, contentTextarea, commentsList, commentsCount);
     });
   }
 
-  // 绑定 Ctrl+Enter 提交
+  // 绑定 Ctrl+Enter 提交（先移除旧的事件监听器以避免重复绑定）
   if (contentTextarea) {
-    contentTextarea.addEventListener('keydown', function(e) {
+    // 克隆节点以移除所有旧的事件监听器
+    const newTextarea = contentTextarea.cloneNode(true);
+    contentTextarea.parentNode.replaceChild(newTextarea, contentTextarea);
+    
+    // 为新 textarea 添加事件监听器
+    newTextarea.addEventListener('keydown', function(e) {
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         submitArticleComment(numericArticleId, usernameInput, contentTextarea, commentsList, commentsCount);
@@ -4541,6 +4569,12 @@ function initArticleComments(articleEl, articleId, articleData) {
 
 // 加载文章评论
 async function loadArticleComments(articleId, commentsList, loadingState, emptyState, commentsCount) {
+  // 检查是否已经加载过该文章的评论
+  if (commentsLoadedCache.has(articleId)) {
+    console.log(`评论已加载，跳过重复加载: ${articleId}`);
+    return;
+  }
+
   // 显示加载状态
   if (loadingState) loadingState.style.display = 'flex';
   if (commentsList) commentsList.style.display = 'none';
@@ -4551,6 +4585,9 @@ async function loadArticleComments(articleId, commentsList, loadingState, emptyS
     const result = await response.json();
 
     if (result.success && result.data) {
+      // 标记评论已加载
+      commentsLoadedCache.add(articleId);
+
       // 更新评论数量
       if (commentsCount) {
         commentsCount.textContent = `${result.data.length} 条评论`;
@@ -4643,6 +4680,8 @@ async function submitArticleComment(articleId, usernameInput, contentTextarea, c
       // 清空输入框
       usernameInput.value = '';
       contentTextarea.value = '';
+      // 清除评论缓存，以便重新加载评论
+      commentsLoadedCache.delete(articleId);
       // 重新加载评论
       const commentsSection = usernameInput.closest('.article-comments');
       loadArticleComments(
@@ -4708,8 +4747,8 @@ function updateTabBar() {
       if (e.target.closest('.tab-close')) {
         closeTab(articleId);
         e.stopPropagation();
-      } else {
-        // 否则切换到该标签
+      } else if (articleId !== appState.activeArticleId) {
+        // 否则切换到该标签（仅当不是当前活动标签时）
         switchToTab(articleId);
       }
     });
@@ -4721,15 +4760,30 @@ function updateTabBar() {
 // 切换到标签
 function switchToTab(articleId) {
   appState.activeArticleId = articleId;
-  
+
   // 查找文章数据
   const articleData = findArticleById(articleId);
-  
+
   if (!articleData) return;
-  
-  // 渲染文章内容
-  renderArticle(articleData);
-  
+
+  // 检查文章是否已经渲染（DOM 中是否存在该文章元素）
+  const articleEl = document.getElementById(`article-${articleId}`);
+
+  if (!articleEl) {
+    // 如果文章还未渲染，则渲染文章内容
+    renderArticle(articleData);
+  } else {
+    // 如果文章已渲染，只需显示该文章并隐藏其他文章
+    document.querySelectorAll('.article').forEach(el => {
+      if (el.id !== 'articleTemplate') {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      }
+    });
+    articleEl.classList.add('active');
+    articleEl.style.display = 'block';
+  }
+
   // 更新UI
   updateUI();
 }
@@ -5361,14 +5415,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     codeViewerClose.addEventListener('click', closeCodeViewer);
   }
 
-  // 按 ESC 键关闭代码查看器
-  document.addEventListener('keydown', function(e) {
-    const codeViewer = document.getElementById('codeViewer');
-    if (e.key === 'Escape' && codeViewer && codeViewer.classList.contains('active')) {
-      closeCodeViewer();
-    }
-  });
-
   // 高亮所有代码块
   document.querySelectorAll('pre code').forEach((block) => {
     hljs.highlightElement(block);
@@ -5470,10 +5516,16 @@ function initImageViewer() {
     }
   });
 
-  // 按 ESC 键关闭
+  // 按 ESC 键关闭（同时处理图片查看器和代码查看器）
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && imageViewer.classList.contains('active')) {
-      closeImageViewer();
+    if (e.key === 'Escape') {
+      if (imageViewer.classList.contains('active')) {
+        closeImageViewer();
+      }
+      const codeViewer = document.getElementById('codeViewer');
+      if (codeViewer && codeViewer.classList.contains('active')) {
+        closeCodeViewer();
+      }
     }
   });
 }
