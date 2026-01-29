@@ -159,12 +159,8 @@ async fn sync_markdown_file_async(
     // 生成摘要
     let summary = extract_summary(&html_content);
     
-    // 生成标签名称列表
-    let tag_names = extract_tag_names(&file_path);
-    let tags_json = serde_json::to_string(&tag_names).unwrap_or_else(|_| "[]".to_string());
-    
-    // 确保标签存在于 tags 表中
-    ensure_tags_exist(&tag_names).await?;
+    // 不自动生成标签，保持为空数组
+    let tags_json = "[]".to_string();
     
     let now = Utc::now();
     
@@ -267,58 +263,6 @@ fn extract_summary(html_content: &str) -> Option<String> {
     } else {
         Some(text)
     }
-}
-
-/// 提取标签名称列表
-fn extract_tag_names(path: &str) -> Vec<String> {
-    // 移除 markdown/ 前缀和 .md 后缀
-    let path = path.strip_prefix("markdown/").unwrap_or(path);
-    let path = path.strip_suffix(".md").unwrap_or(path);
-    
-    // 分割路径
-    let parts: Vec<&str> = path.split('/').collect();
-    
-    // 使用年份和月份作为标签
-    let mut tags = Vec::new();
-    if parts.len() >= 2 {
-        tags.push(parts[0].to_string());  // 年份
-        tags.push(parts[1].to_string());  // 月份
-    }
-    
-    tags
-}
-
-/// 确保标签存在于 tags 表中
-async fn ensure_tags_exist(tag_names: &[String]) -> Result<(), String> {
-    use crate::db::get_db_pool_sync;
-    use crate::db::repositories::TagRepository;
-    use std::sync::Arc;
-    
-    let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
-    let tag_repo = TagRepository::new(Arc::new(pool.clone()));
-    
-    for tag_name in tag_names {
-        // 查找标签，如果不存在则创建
-        if tag_repo.get_by_name(tag_name).await.is_err() {
-            let now = chrono::Utc::now();
-            let new_tag = crate::db::models::Tag {
-                id: None,
-                name: tag_name.clone(),
-                description: format!("自动生成的标签: {}", tag_name),
-                color: "#007bff".to_string(),
-                category_id: 0,
-                sort_order: 0,
-                is_enabled: true,
-                created_at: now,
-                updated_at: now,
-            };
-            
-            tag_repo.create(&new_tag).await
-                .map_err(|e| format!("创建标签失败: {}", e))?;
-        }
-    }
-    
-    Ok(())
 }
 
 /// 更新文章
