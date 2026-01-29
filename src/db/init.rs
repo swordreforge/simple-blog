@@ -315,11 +315,13 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
     let setting_count: i64 = conn.query_row("SELECT COUNT(*) FROM settings", [], |row| row.get(0))?;
     
     if setting_count == 0 {
-        // 插入默认设置
+        // 插入默认设置（表为空时）
         let default_settings = vec![
+            // 外观设置
             ("background_image", "/img/test.webp", "string", "页面背景图片路径", "appearance"),
+            ("mobile_background_image", "/img/mobile-test.webp", "string", "移动端背景图片", "appearance"),
             ("global_opacity", "0.15", "number", "全局透明度 (0-1)", "appearance"),
-            ("background_size", "cover", "string", "背景图片尺寸", "appearance"),
+            ("background_size", "cover", "string", "背景图片尺寸 (cover, contain, auto)", "appearance"),
             ("background_position", "center", "string", "背景图片位置", "appearance"),
             ("background_repeat", "no-repeat", "string", "背景图片重复方式", "appearance"),
             ("background_attachment", "fixed", "string", "背景图片滚动方式", "appearance"),
@@ -331,24 +333,57 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ("card_glass_color", "rgba(220, 138, 221, 0.2)", "string", "页面卡片毛玻璃颜色", "appearance"),
             ("footer_glass_color", "rgba(220, 138, 221, 0.25)", "string", "底栏毛玻璃颜色", "appearance"),
             ("floating_text_enabled", "false", "boolean", "是否启用飘字效果", "appearance"),
-            ("floating_texts", "[\"perfect\",\"good\",\"excellent\"]", "json", "飘字效果文本列表", "appearance"),
-            ("mobile_background_image", "/img/mobile-test.webp", "string", "移动端背景图片", "appearance"),
+            ("floating_texts", "[\"perfect\",\"good\",\"excellent\",\"extraordinary\",\"legend\"]", "json", "飘字效果文本列表", "appearance"),
+            
+            // 模板设置
             ("template_name", "欢迎来到我的博客", "string", "个人主页标题", "template"),
-            ("template_greting", "这是一个使用 Rust 语言构建的个人博客系统", "string", "首页欢迎语", "template"),
+            ("template_greting", "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。", "string", "首页欢迎语", "template"),
             ("template_year", "2026", "string", "版权年份", "template"),
             ("template_foods", "我的博客", "string", "页脚信息", "template"),
+            ("template_article_title", "true", "boolean", "是否显示文章标题", "template"),
+            ("template_article_title_prefix", "文章", "string", "文章标题前缀", "template"),
+            ("template_switch_notice", "true", "boolean", "是否显示切换界面提示", "template"),
+            ("template_switch_notice_text", "回来继续阅读", "string", "切换标签页时显示的提示文字", "template"),
+            ("external_link_warning", "true", "boolean", "是否启用外部链接跳转警告", "template"),
+            ("external_link_whitelist", "github.com,gitee.com,stackoverflow.com", "string", "外部链接白名单（逗号分隔的域名）", "template"),
+            ("external_link_warning_text", "您即将离开本站，前往外部链接", "string", "外部链接警告提示文字", "template"),
+            
+            // Live2D 设置
             ("live2d_enabled", "false", "boolean", "是否启用 Live2D 看板娘", "template"),
+            ("live2d_show_on_index", "true", "boolean", "是否在首页显示 Live2D", "template"),
+            ("live2d_show_on_passage", "true", "boolean", "是否在文章页显示 Live2D", "template"),
+            ("live2d_show_on_collect", "true", "boolean", "是否在归档页显示 Live2D", "template"),
+            ("live2d_show_on_about", "true", "boolean", "是否在关于页显示 Live2D", "template"),
+            ("live2d_show_on_admin", "false", "boolean", "是否在管理页显示 Live2D", "template"),
             ("live2d_model_id", "1", "string", "Live2D 模型 ID", "template"),
-            ("live2d_model_path", "", "string", "Live2D 自定义模型路径", "template"),
+            ("live2d_model_path", "", "string", "Live2D 自定义模型路径（留空使用 CDN）", "template"),
             ("live2d_cdn_path", "https://unpkg.com/live2d-widget-model@1.0.5/", "string", "Live2D CDN 路径", "template"),
-            ("live2d_position", "right", "string", "Live2D 显示位置", "template"),
+            ("live2d_position", "right", "string", "Live2D 显示位置（left/right）", "template"),
             ("live2d_width", "280px", "string", "Live2D 宽度", "template"),
             ("live2d_height", "250px", "string", "Live2D 高度", "template"),
+            
+            // 赞助设置
+            ("sponsor_enabled", "false", "boolean", "是否启用赞助功能", "template"),
+            ("sponsor_title", "感谢您的支持", "string", "赞助模态框标题", "template"),
+            ("sponsor_image", "/img/avatar.webp", "string", "赞助图片路径", "template"),
+            ("sponsor_description", "如果您觉得这个博客对您有帮助，欢迎赞助支持！", "string", "赞助描述文字", "template"),
+            ("sponsor_button_text", "❤️ 赞助支持", "string", "赞助按钮文字", "template"),
+            
+            // 全局设置
+            ("global_avatar", "/img/avatar.webp", "string", "全局头像路径", "template"),
+            
+            // 附件设置
+            ("attachment_default_visibility", "public", "string", "附件默认可见性", "template"),
+            ("attachment_max_size", "524288000", "number", "附件最大文件大小（字节）", "template"),
+            ("attachment_allowed_types", "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz", "string", "附件允许的文件类型", "template"),
+            
+            // 音乐设置
             ("music_enabled", "false", "boolean", "是否启用音乐播放器", "appearance"),
             ("music_auto_play", "false", "boolean", "音乐是否自动播放", "appearance"),
-            ("music_control_size", "medium", "string", "音乐控件大小", "appearance"),
-            ("music_player_color", "rgba(66, 133, 244, 0.9)", "string", "音乐播放器颜色", "appearance"),
-            ("music_position", "bottom-right", "string", "音乐播放器显示位置", "template"),
+            ("music_control_size", "medium", "string", "音乐控件大小 (small, medium, large)", "appearance"),
+            ("music_custom_css", "", "string", "音乐播放器自定义CSS样式", "appearance"),
+            ("music_player_color", "rgba(66, 133, 244, 0.9)", "string", "音乐播放器颜色 (RGBA格式)", "appearance"),
+            ("music_position", "bottom-right", "string", "音乐播放器显示位置 (top-left, top-right, bottom-left, bottom-right)", "template"),
         ];
 
         for (key, value, setting_type, description, category) in default_settings {
@@ -358,6 +393,103 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             )?;
         }
         println!("✅ 默认设置已插入");
+    } else {
+        // 补全缺失的设置项（表不为空时）
+        let default_settings = vec![
+            // 外观设置
+            ("background_image", "/img/test.webp", "string", "页面背景图片路径", "appearance"),
+            ("mobile_background_image", "/img/mobile-test.webp", "string", "移动端背景图片", "appearance"),
+            ("global_opacity", "0.15", "number", "全局透明度 (0-1)", "appearance"),
+            ("background_size", "cover", "string", "背景图片尺寸 (cover, contain, auto)", "appearance"),
+            ("background_position", "center", "string", "背景图片位置", "appearance"),
+            ("background_repeat", "no-repeat", "string", "背景图片重复方式", "appearance"),
+            ("background_attachment", "fixed", "string", "背景图片滚动方式", "appearance"),
+            ("blur_amount", "20px", "string", "背景模糊程度", "appearance"),
+            ("saturate_amount", "180%", "string", "背景饱和度", "appearance"),
+            ("dark_mode_enabled", "false", "boolean", "是否启用暗色模式", "appearance"),
+            ("navbar_glass_color", "rgba(220, 138, 221, 0.15)", "string", "导航栏毛玻璃颜色", "appearance"),
+            ("navbar_text_color", "#333333", "string", "导航栏文字颜色", "appearance"),
+            ("card_glass_color", "rgba(220, 138, 221, 0.2)", "string", "页面卡片毛玻璃颜色", "appearance"),
+            ("footer_glass_color", "rgba(220, 138, 221, 0.25)", "string", "底栏毛玻璃颜色", "appearance"),
+            ("floating_text_enabled", "false", "boolean", "是否启用飘字效果", "appearance"),
+            ("floating_texts", "[\"perfect\",\"good\",\"excellent\",\"extraordinary\",\"legend\"]", "json", "飘字效果文本列表", "appearance"),
+            
+            // 模板设置
+            ("template_name", "欢迎来到我的博客", "string", "个人主页标题", "template"),
+            ("template_greting", "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。", "string", "首页欢迎语", "template"),
+            ("template_year", "2026", "string", "版权年份", "template"),
+            ("template_foods", "我的博客", "string", "页脚信息", "template"),
+            ("template_article_title", "true", "boolean", "是否显示文章标题", "template"),
+            ("template_article_title_prefix", "文章", "string", "文章标题前缀", "template"),
+            ("template_switch_notice", "true", "boolean", "是否显示切换界面提示", "template"),
+            ("template_switch_notice_text", "回来继续阅读", "string", "切换标签页时显示的提示文字", "template"),
+            ("external_link_warning", "true", "boolean", "是否启用外部链接跳转警告", "template"),
+            ("external_link_whitelist", "github.com,gitee.com,stackoverflow.com", "string", "外部链接白名单（逗号分隔的域名）", "template"),
+            ("external_link_warning_text", "您即将离开本站，前往外部链接", "string", "外部链接警告提示文字", "template"),
+            
+            // Live2D 设置
+            ("live2d_enabled", "false", "boolean", "是否启用 Live2D 看板娘", "template"),
+            ("live2d_show_on_index", "true", "boolean", "是否在首页显示 Live2D", "template"),
+            ("live2d_show_on_passage", "true", "boolean", "是否在文章页显示 Live2D", "template"),
+            ("live2d_show_on_collect", "true", "boolean", "是否在归档页显示 Live2D", "template"),
+            ("live2d_show_on_about", "true", "boolean", "是否在关于页显示 Live2D", "template"),
+            ("live2d_show_on_admin", "false", "boolean", "是否在管理页显示 Live2D", "template"),
+            ("live2d_model_id", "1", "string", "Live2D 模型 ID", "template"),
+            ("live2d_model_path", "", "string", "Live2D 自定义模型路径（留空使用 CDN）", "template"),
+            ("live2d_cdn_path", "https://unpkg.com/live2d-widget-model@1.0.5/", "string", "Live2D CDN 路径", "template"),
+            ("live2d_position", "right", "string", "Live2D 显示位置（left/right）", "template"),
+            ("live2d_width", "280px", "string", "Live2D 宽度", "template"),
+            ("live2d_height", "250px", "string", "Live2D 高度", "template"),
+            
+            // 赞助设置
+            ("sponsor_enabled", "false", "boolean", "是否启用赞助功能", "template"),
+            ("sponsor_title", "感谢您的支持", "string", "赞助模态框标题", "template"),
+            ("sponsor_image", "/img/avatar.webp", "string", "赞助图片路径", "template"),
+            ("sponsor_description", "如果您觉得这个博客对您有帮助，欢迎赞助支持！", "string", "赞助描述文字", "template"),
+            ("sponsor_button_text", "❤️ 赞助支持", "string", "赞助按钮文字", "template"),
+            
+            // 全局设置
+            ("global_avatar", "/img/avatar.webp", "string", "全局头像路径", "template"),
+            
+            // 附件设置
+            ("attachment_default_visibility", "public", "string", "附件默认可见性", "template"),
+            ("attachment_max_size", "524288000", "number", "附件最大文件大小（字节）", "template"),
+            ("attachment_allowed_types", "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz", "string", "附件允许的文件类型", "template"),
+            
+            // 音乐设置
+            ("music_enabled", "false", "boolean", "是否启用音乐播放器", "appearance"),
+            ("music_auto_play", "false", "boolean", "音乐是否自动播放", "appearance"),
+            ("music_control_size", "medium", "string", "音乐控件大小 (small, medium, large)", "appearance"),
+            ("music_custom_css", "", "string", "音乐播放器自定义CSS样式", "appearance"),
+            ("music_player_color", "rgba(66, 133, 244, 0.9)", "string", "音乐播放器颜色 (RGBA格式)", "appearance"),
+            ("music_position", "bottom-right", "string", "音乐播放器显示位置 (top-left, top-right, bottom-left, bottom-right)", "template"),
+        ];
+
+        // 获取所有现有设置的键名
+        let mut existing_keys = std::collections::HashSet::new();
+        let mut stmt = conn.prepare("SELECT key FROM settings")?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            let key: String = row.get(0)?;
+            existing_keys.insert(key);
+        }
+        drop(rows);
+
+        // 只插入不存在的设置项
+        let mut inserted_count = 0;
+        for (key, value, setting_type, description, category) in default_settings {
+            if !existing_keys.contains(key) {
+                conn.execute(
+                    "INSERT INTO settings (key, value, type, description, category) VALUES (?, ?, ?, ?, ?)",
+                    [key, value, setting_type, description, category],
+                )?;
+                inserted_count += 1;
+            }
+        }
+        
+        if inserted_count > 0 {
+            println!("✅ 补全了 {} 个缺失的默认设置", inserted_count);
+        }
     }
 
     // 检查是否已有文章

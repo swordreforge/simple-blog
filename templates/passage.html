@@ -5105,7 +5105,7 @@ document.addEventListener('DOMContentLoaded', () => initApp());
     </div>
     <div class="modal-body">
       <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 20px;">
-        {{ external_link_warning_text }}，请确认是否继续。
+        {{ external_link_warning_text }}
       </p>
       <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; word-break: break-all;">
         <p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-bottom: 5px;">目标链接：</p>
@@ -6052,7 +6052,11 @@ function isWhitelistedDomain(url, whitelist) {
     
     const whitelistDomains = whitelist.split(',').map(d => d.trim().toLowerCase());
     return whitelistDomains.some(domain => {
-      return hostname === domain || hostname.endsWith('.' + domain);
+      // 支持：完全匹配、子域名匹配、www 前缀匹配
+      return hostname === domain || 
+             hostname.endsWith('.' + domain) ||
+             hostname === 'www.' + domain ||
+             hostname.startsWith('www.') && hostname.slice(4) === domain;
     });
   } catch (e) {
     // 如果URL解析失败，可能是相对路径，返回true

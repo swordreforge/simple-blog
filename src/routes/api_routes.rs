@@ -42,6 +42,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     ).service(
         web::resource("/api/settings/all")
             .route(web::get().to(api_handlers::settings::get_all))
+    ).service(
+        web::resource("/api/settings/single")
+            .route(web::put().to(api_handlers::settings::update_single))
     );
 
     // 音乐相关 API

@@ -21,6 +21,13 @@ lazy_static::lazy_static! {
 /// 模板设置
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct TemplateSettings {
+    // 基础模板设置
+    pub name: String,
+    pub greting: String,
+    pub year: String,
+    pub foodes: String,
+    
+    // 外观相关
     pub background_image: String,
     pub background_color: String,
     pub background_size: String,
@@ -31,16 +38,66 @@ pub struct TemplateSettings {
     pub blur_amount: u32,
     pub saturate_amount: u32,
     pub floating_text_enabled: bool,
+    
     // Admin 相关
     pub navbar_glass_color: String,
     pub card_glass_color: String,
     pub footer_glass_color: String,
+    
+    // 文章相关
+    pub article_title: bool,
+    pub article_title_prefix: String,
+    
+    // 切换提示
+    pub switch_notice: bool,
+    pub switch_notice_text: String,
+    
+    // 外部链接警告
+    pub external_link_warning: bool,
+    pub external_link_whitelist: String,
+    pub external_link_warning_text: String,
+    
+    // Live2D 设置
+    pub live2d_enabled: bool,
+    pub live2d_show_on_index: bool,
+    pub live2d_show_on_passage: bool,
+    pub live2d_show_on_collect: bool,
+    pub live2d_show_on_about: bool,
+    pub live2d_show_on_admin: bool,
+    pub live2d_model_id: String,
+    pub live2d_model_path: String,
+    pub live2d_cdn_path: String,
+    pub live2d_position: String,
+    pub live2d_width: String,
+    pub live2d_height: String,
+    
+    // 赞助设置
+    pub sponsor_enabled: bool,
+    pub sponsor_title: String,
+    pub sponsor_image: String,
+    pub sponsor_description: String,
+    pub sponsor_button_text: String,
+    
+    // 全局设置
+    pub global_avatar: String,
+    
+    // 附件设置
+    pub attachment_default_visibility: String,
+    pub attachment_max_size: i64,
+    pub attachment_allowed_types: String,
 }
 
 impl Default for TemplateSettings {
     fn default() -> Self {
         Self {
-            background_image: "/img/test.webp".to_string(),  // 使用默认背景图片
+            // 基础模板设置
+            name: "欢迎来到我的博客".to_string(),
+            greting: "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。".to_string(),
+            year: "2026".to_string(),
+            foodes: "我的博客".to_string(),
+            
+            // 外观相关
+            background_image: "/img/test.webp".to_string(),
             background_color: "#ffffff".to_string(),
             background_size: "cover".to_string(),
             background_position: "center".to_string(),
@@ -50,9 +107,53 @@ impl Default for TemplateSettings {
             blur_amount: 20,
             saturate_amount: 180,
             floating_text_enabled: false,
-            navbar_glass_color: "rgba(255, 255, 255, 0.85)".to_string(),
-            card_glass_color: "rgba(255, 255, 255, 0.7)".to_string(),
-            footer_glass_color: "rgba(255, 255, 255, 0.5)".to_string(),
+            
+            // Admin 相关
+            navbar_glass_color: "rgba(220, 138, 221, 0.15)".to_string(),
+            card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
+            footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
+            
+            // 文章相关
+            article_title: true,
+            article_title_prefix: "文章".to_string(),
+            
+            // 切换提示
+            switch_notice: true,
+            switch_notice_text: "回来继续阅读".to_string(),
+            
+            // 外部链接警告
+            external_link_warning: true,
+            external_link_whitelist: "github.com,gitee.com,stackoverflow.com".to_string(),
+            external_link_warning_text: "您即将离开本站，前往外部链接".to_string(),
+            
+            // Live2D 设置
+            live2d_enabled: false,
+            live2d_show_on_index: true,
+            live2d_show_on_passage: true,
+            live2d_show_on_collect: true,
+            live2d_show_on_about: true,
+            live2d_show_on_admin: false,
+            live2d_model_id: "1".to_string(),
+            live2d_model_path: "".to_string(),
+            live2d_cdn_path: "https://unpkg.com/live2d-widget-model@1.0.5/".to_string(),
+            live2d_position: "right".to_string(),
+            live2d_width: "280px".to_string(),
+            live2d_height: "250px".to_string(),
+            
+            // 赞助设置
+            sponsor_enabled: false,
+            sponsor_title: "感谢您的支持".to_string(),
+            sponsor_image: "/img/avatar.webp".to_string(),
+            sponsor_description: "如果您觉得这个博客对您有帮助，欢迎赞助支持！".to_string(),
+            sponsor_button_text: "❤️ 赞助支持".to_string(),
+            
+            // 全局设置
+            global_avatar: "/img/avatar.webp".to_string(),
+            
+            // 附件设置
+            attachment_default_visibility: "public".to_string(),
+            attachment_max_size: 524288000, // 500MB
+            attachment_allowed_types: "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz".to_string(),
         }
     }
 }
@@ -174,6 +275,73 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
     Ok(settings)
 }
 
+/// 从数据库加载模板设置
+pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::Error>> {
+    let pool = crate::db::get_db_pool_sync()?;
+    let conn = pool.get()?;
+    
+    let mut settings = TemplateSettings::default();
+    
+    // 定义要加载的设置项
+    let keys = vec![
+        "template_name", "template_greting", "template_year", "template_foods",
+        "template_article_title", "template_article_title_prefix",
+        "template_switch_notice", "template_switch_notice_text",
+        "external_link_warning", "external_link_whitelist", "external_link_warning_text",
+        "live2d_enabled",
+        "live2d_show_on_index", "live2d_show_on_passage", "live2d_show_on_collect",
+        "live2d_show_on_about", "live2d_show_on_admin",
+        "live2d_model_id", "live2d_model_path", "live2d_cdn_path",
+        "live2d_position", "live2d_width", "live2d_height",
+        "sponsor_enabled", "sponsor_title", "sponsor_image",
+        "sponsor_description", "sponsor_button_text",
+        "global_avatar",
+        "attachment_default_visibility", "attachment_max_size", "attachment_allowed_types",
+    ];
+    
+    for db_key in keys {
+        if let Some(setting) = crate::db::repositories::SettingRepository::get(&conn, db_key)? {
+            match db_key {
+                "template_name" => settings.name = setting.value,
+                "template_greting" => settings.greting = setting.value,
+                "template_year" => settings.year = setting.value,
+                "template_foods" => settings.foodes = setting.value,
+                "template_article_title" => settings.article_title = setting.value == "true",
+                "template_article_title_prefix" => settings.article_title_prefix = setting.value,
+                "template_switch_notice" => settings.switch_notice = setting.value == "true",
+                "template_switch_notice_text" => settings.switch_notice_text = setting.value,
+                "external_link_warning" => settings.external_link_warning = setting.value == "true",
+                "external_link_whitelist" => settings.external_link_whitelist = setting.value,
+                "external_link_warning_text" => settings.external_link_warning_text = setting.value,
+                "live2d_enabled" => settings.live2d_enabled = setting.value == "true",
+                "live2d_show_on_index" => settings.live2d_show_on_index = setting.value == "true",
+                "live2d_show_on_passage" => settings.live2d_show_on_passage = setting.value == "true",
+                "live2d_show_on_collect" => settings.live2d_show_on_collect = setting.value == "true",
+                "live2d_show_on_about" => settings.live2d_show_on_about = setting.value == "true",
+                "live2d_show_on_admin" => settings.live2d_show_on_admin = setting.value == "true",
+                "live2d_model_id" => settings.live2d_model_id = setting.value,
+                "live2d_model_path" => settings.live2d_model_path = setting.value,
+                "live2d_cdn_path" => settings.live2d_cdn_path = setting.value,
+                "live2d_position" => settings.live2d_position = setting.value,
+                "live2d_width" => settings.live2d_width = setting.value,
+                "live2d_height" => settings.live2d_height = setting.value,
+                "sponsor_enabled" => settings.sponsor_enabled = setting.value == "true",
+                "sponsor_title" => settings.sponsor_title = setting.value,
+                "sponsor_image" => settings.sponsor_image = setting.value,
+                "sponsor_description" => settings.sponsor_description = setting.value,
+                "sponsor_button_text" => settings.sponsor_button_text = setting.value,
+                "global_avatar" => settings.global_avatar = setting.value,
+                "attachment_default_visibility" => settings.attachment_default_visibility = setting.value,
+                "attachment_max_size" => settings.attachment_max_size = setting.value.parse().unwrap_or(524288000),
+                "attachment_allowed_types" => settings.attachment_allowed_types = setting.value,
+                _ => {}
+            }
+        }
+    }
+    
+    Ok(settings)
+}
+
 /// 将 AppearanceSettings 转换为 TemplateSettings
 pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> TemplateSettings {
     TemplateSettings {
@@ -190,6 +358,7 @@ pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> Templ
         navbar_glass_color: appearance.navbar_glass_color.clone(),
         card_glass_color: appearance.card_glass_color.clone(),
         footer_glass_color: appearance.footer_glass_color.clone(),
+        ..TemplateSettings::default()
     }
 }
 
@@ -226,6 +395,10 @@ pub fn create_index_context() -> TeraContext {
     // 默认值
     let mut name = "Dango".to_string();
     let mut greting = "欢迎来到 RustBlog，一个基于 Rust 和 Actix-web 构建的现代化博客系统".to_string();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
     
     // 尝试从数据库加载模板设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -239,6 +412,26 @@ pub fn create_index_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_greting") {
                 greting = setting.value;
             }
+            
+            // 加载 foodes
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            
+            // 加载 external_link_warning
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            
+            // 加载 external_link_whitelist
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            
+            // 加载 external_link_warning_text
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
         }
     }
     
@@ -246,7 +439,10 @@ pub fn create_index_context() -> TeraContext {
     context.insert("name", &name);
     context.insert("greting", &greting);
     context.insert("year", &now.format("%Y").to_string());
-    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &true);
     context.insert("switch_notice_text", "🎉 新文章发布！");
@@ -273,17 +469,39 @@ pub fn create_index_context() -> TeraContext {
 pub fn create_passage_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
+    
+    // 从数据库加载设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
+        }
+    }
     
     context.insert("title", "文章 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
-    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &true);
     context.insert("switch_notice_text", "🎉 新文章发布！");
-    context.insert("external_link_warning", &true);
-    context.insert("external_link_warning_text", "您即将离开本站");
-    context.insert("external_link_whitelist", "github.com,rust-lang.org");
     
     // 文章内容
     context.insert("content", "");
@@ -319,11 +537,36 @@ pub fn create_passage_context() -> TeraContext {
 pub fn create_collect_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
+    
+    // 从数据库加载设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
+        }
+    }
     
     context.insert("title", "归档 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
-    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &true);
     context.insert("switch_notice_text", "🎉 新文章发布！");
@@ -348,11 +591,36 @@ pub fn create_collect_context() -> TeraContext {
 pub fn create_about_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
+    
+    // 从数据库加载设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
+        }
+    }
     
     context.insert("title", "关于 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
-    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &true);
     context.insert("switch_notice_text", "🎉 新文章发布！");
@@ -377,11 +645,36 @@ pub fn create_about_context() -> TeraContext {
 pub fn create_markdown_editor_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
+    
+    // 从数据库加载设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
+        }
+    }
     
     context.insert("title", "编辑器 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
-    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &true);
     context.insert("switch_notice_text", "🎉 新文章发布！");
@@ -396,11 +689,36 @@ pub fn create_markdown_editor_context() -> TeraContext {
 pub fn create_admin_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
+    
+    // 从数据库加载设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
+        }
+    }
     
     context.insert("title", "管理后台 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
-    context.insert("foodes", "RustBlog - 使用 Rust + Actix-web 构建");
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &true);
     context.insert("switch_notice_text", "🎉 新文章发布！");

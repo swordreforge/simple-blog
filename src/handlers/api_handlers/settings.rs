@@ -348,40 +348,16 @@ pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Res
 
 /// 获取模板设置
 pub async fn get_template() -> HttpResponse {
-    HttpResponse::Ok().json(serde_json::json!({
-        "success": true,
-        "settings": {
-            "name": "RustBlog",
-            "greting": "欢迎来到 RustBlog",
-            "year": "2026",
-            "foodes": "RustBlog - 使用 Rust + Actix-web 构建",
-            "global_avatar": "/img/avatar.webp",
-            "article_title": false,
-            "article_title_prefix": "",
-            "switch_notice": true,
-            "switch_notice_text": "🎉 新文章发布！",
-            "external_link_warning": true,
-            "external_link_whitelist": "github.com,rust-lang.org",
-            "external_link_warning_text": "您即将离开本站",
-            "live2d_enabled": false,
-            "live2d_show_on_index": true,
-            "live2d_show_on_passage": true,
-            "live2d_show_on_collect": true,
-            "live2d_show_on_about": true,
-            "live2d_show_on_admin": false,
-            "live2d_model_id": 1,
-            "live2d_model_path": "",
-            "live2d_cdn_path": "https://unpkg.com/live2d-widget-model@1.0.5/",
-            "live2d_position": "right",
-            "live2d_width": "280px",
-            "live2d_height": "250px",
-            "sponsor_enabled": false,
-            "sponsor_title": "感谢您的支持",
-            "sponsor_image": "/img/avatar.webp",
-            "sponsor_description": "如果您觉得这个博客对您有帮助，欢迎赞助支持！",
-            "sponsor_button_text": "❤️ 赞助支持"
+    match crate::templates::load_template_settings() {
+        Ok(settings) => {
+            HttpResponse::Ok().json(settings)
         }
-    }))
+        Err(e) => {
+            eprintln!("Failed to load template settings: {}", e);
+            // 返回默认设置
+            HttpResponse::Ok().json(crate::templates::TemplateSettings::default())
+        }
+    }
 }
 
 /// 更新模板设置
@@ -487,5 +463,76 @@ pub async fn update() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "Settings updated"
+    }))
+}
+
+/// 更新单个设置
+pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder {
+    let updates = req.into_inner();
+    
+    // 获取 key 和 value
+    let key = updates.get("key")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| HttpResponse::BadRequest().json(serde_json::json!({
+            "success": false,
+            "message": "Key is required"
+        })));
+    
+    if key.is_err() {
+        return key.unwrap_err();
+    }
+    
+    let key = key.unwrap();
+    
+    let value = updates.get("value")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| HttpResponse::BadRequest().json(serde_json::json!({
+            "success": false,
+            "message": "Value is required"
+        })));
+    
+    if value.is_err() {
+        return value.unwrap_err();
+    }
+    
+    let value = value.unwrap();
+    
+    // 获取数据库连接池
+    let pool = match crate::db::get_db_pool().await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("Failed to get database pool: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "数据库连接失败"
+            }));
+        }
+    };
+    
+    // 更新设置到数据库
+    if let Ok(conn) = pool.get() {
+        let setting = crate::db::models::Setting {
+            id: None,
+            key: key.to_string(),
+            value: value.to_string(),
+            r#type: "string".to_string(),
+            description: None,
+            category: "template".to_string(),
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        };
+        
+        if let Err(e) = crate::db::repositories::SettingRepository::set(&conn, &setting) {
+            eprintln!("Failed to update setting {}: {}", key, e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "更新设置失败"
+            }));
+        }
+    }
+    
+    HttpResponse::Ok().json(serde_json::json!({
+        "success": true,
+        "message": "设置已更新"
     }))
 }
