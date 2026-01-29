@@ -57,6 +57,142 @@ impl Default for TemplateSettings {
     }
 }
 
+/// 外观设置结构（用于 API 和前端）
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppearanceSettings {
+    pub background_image: String,
+    pub mobile_background_image: String,
+    pub global_opacity: String,
+    pub background_size: String,
+    pub background_position: String,
+    pub background_repeat: String,
+    pub background_attachment: String,
+    pub blur_amount: String,
+    pub saturate_amount: String,
+    pub dark_mode_enabled: bool,
+    pub navbar_glass_color: String,
+    pub navbar_text_color: String,
+    pub card_glass_color: String,
+    pub footer_glass_color: String,
+    pub floating_text_enabled: bool,
+    pub floating_texts: Vec<String>,
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        Self {
+            background_image: "/img/test.webp".to_string(),
+            mobile_background_image: "/img/mobile-test.webp".to_string(),
+            global_opacity: "0.15".to_string(),
+            background_size: "cover".to_string(),
+            background_position: "center".to_string(),
+            background_repeat: "no-repeat".to_string(),
+            background_attachment: "fixed".to_string(),
+            blur_amount: "20px".to_string(),
+            saturate_amount: "180%".to_string(),
+            dark_mode_enabled: false,
+            navbar_glass_color: "rgba(220, 138, 221, 0.15)".to_string(),
+            navbar_text_color: "#333333".to_string(),
+            card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
+            footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
+            floating_text_enabled: false,
+            floating_texts: vec![
+                "perfect".to_string(),
+                "good".to_string(),
+                "excellent".to_string(),
+                "extraordinary".to_string(),
+                "legend".to_string(),
+            ],
+        }
+    }
+}
+
+/// 从数据库加载外观设置
+pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::error::Error>> {
+    // 使用同步方法获取数据库连接池
+    let pool = crate::db::get_db_pool_sync()?;
+    let conn = pool.get()?;
+    
+    let mut settings = AppearanceSettings::default();
+    
+    // 定义要加载的设置项
+    let keys = vec![
+        ("background_image", "background_image"),
+        ("mobile_background_image", "mobile_background_image"),
+        ("global_opacity", "global_opacity"),
+        ("background_size", "background_size"),
+        ("background_position", "background_position"),
+        ("background_repeat", "background_repeat"),
+        ("background_attachment", "background_attachment"),
+        ("blur_amount", "blur_amount"),
+        ("saturate_amount", "saturate_amount"),
+        ("dark_mode_enabled", "dark_mode_enabled"),
+        ("navbar_glass_color", "navbar_glass_color"),
+        ("navbar_text_color", "navbar_text_color"),
+        ("card_glass_color", "card_glass_color"),
+        ("footer_glass_color", "footer_glass_color"),
+        ("floating_text_enabled", "floating_text_enabled"),
+        ("floating_texts", "floating_texts"),
+    ];
+    
+    for (db_key, field_name) in keys {
+        if let Some(setting) = crate::db::repositories::SettingRepository::get(&conn, db_key)? {
+            match field_name {
+                "background_image" => settings.background_image = setting.value,
+                "mobile_background_image" => settings.mobile_background_image = setting.value,
+                "global_opacity" => settings.global_opacity = setting.value,
+                "background_size" => settings.background_size = setting.value,
+                "background_position" => settings.background_position = setting.value,
+                "background_repeat" => settings.background_repeat = setting.value,
+                "background_attachment" => settings.background_attachment = setting.value,
+                "blur_amount" => settings.blur_amount = setting.value,
+                "saturate_amount" => settings.saturate_amount = setting.value,
+                "dark_mode_enabled" => settings.dark_mode_enabled = setting.value == "true",
+                "navbar_glass_color" => settings.navbar_glass_color = setting.value,
+                "navbar_text_color" => settings.navbar_text_color = setting.value,
+                "card_glass_color" => settings.card_glass_color = setting.value,
+                "footer_glass_color" => settings.footer_glass_color = setting.value,
+                "floating_text_enabled" => settings.floating_text_enabled = setting.value == "true",
+                "floating_texts" => {
+                    // 尝试解析 JSON 数组
+                    if let Ok(arr) = serde_json::from_str::<Vec<String>>(&setting.value) {
+                        settings.floating_texts = arr;
+                    } else {
+                        // 如果不是有效的 JSON，尝试按逗号分割
+                        settings.floating_texts = setting.value
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect();
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    
+    Ok(settings)
+}
+
+/// 将 AppearanceSettings 转换为 TemplateSettings
+pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> TemplateSettings {
+    TemplateSettings {
+        background_image: appearance.background_image.clone(),
+        background_color: "#1a1a2e".to_string(),
+        background_size: appearance.background_size.clone(),
+        background_position: appearance.background_position.clone(),
+        background_repeat: appearance.background_repeat.clone(),
+        background_attachment: appearance.background_attachment.clone(),
+        global_opacity: appearance.global_opacity.parse().unwrap_or(0.9),
+        blur_amount: appearance.blur_amount.trim_end_matches("px").parse().unwrap_or(20),
+        saturate_amount: appearance.saturate_amount.trim_end_matches("%").parse().unwrap_or(180),
+        floating_text_enabled: appearance.floating_text_enabled,
+        navbar_glass_color: appearance.navbar_glass_color.clone(),
+        card_glass_color: appearance.card_glass_color.clone(),
+        footer_glass_color: appearance.footer_glass_color.clone(),
+    }
+}
+
 /// 渲染模板
 pub async fn render_template(template_name: &str, context: &TeraContext) -> HttpResponse {
     // 开发模式：每次重新加载模板

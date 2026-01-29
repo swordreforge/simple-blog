@@ -1125,6 +1125,47 @@ impl MusicTrackRepository {
         Ok(())
     }
 
+    pub async fn update_cover(&self, id: i64, cover_image: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "UPDATE music_tracks SET cover_image = ? WHERE id = ?",
+            params![cover_image, id],
+        )?;
+        Ok(())
+    }
+
+    pub async fn update_cover_by_filename(&self, file_name: &str, cover_image: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "UPDATE music_tracks SET cover_image = ? WHERE file_name = ?",
+            params![cover_image, file_name],
+        )?;
+        Ok(())
+    }
+
+    pub async fn get_by_id(&self, id: i64) -> Result<MusicTrack, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
+             FROM music_tracks WHERE id = ?"
+        )?;
+        
+        let track = stmt.query_row(params![id], |row| {
+            Ok(MusicTrack {
+                id: Some(row.get(0)?),
+                title: row.get(1)?,
+                artist: row.get(2)?,
+                file_path: row.get(3)?,
+                file_name: row.get(4)?,
+                duration: row.get(5)?,
+                cover_image: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
+        
+        Ok(track)
+    }
+
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute("DELETE FROM music_tracks WHERE id = ?", params![id])?;

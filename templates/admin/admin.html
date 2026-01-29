@@ -6066,11 +6066,20 @@ function updateCommentsTable(comments) {
 
   comments.forEach(comment => {
     const row = document.createElement('tr');
+    
+    // 生成 identicon 头像
+    const avatarUrl = generateAdminIdenticon(comment.username || 'anonymous', 24);
+    
     row.innerHTML = `
       <td>#${comment.id}</td>
       <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${comment.content}</td>
       <td>${comment.passage_id}</td>
-      <td>${comment.username}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="${avatarUrl}" alt="${comment.username || '匿名用户'}" style="width: 24px; height: 24px; border-radius: 50%;"/>
+          <span>${comment.username}</span>
+        </div>
+      </td>
       <td>${comment.created_at}</td>
       <td class="action-buttons">
         <button class="btn btn-sm btn-delete" data-action="delete-comment" data-id="${comment.id}">删除</button>
@@ -6081,6 +6090,59 @@ function updateCommentsTable(comments) {
 
   // 重新绑定事件
   bindActionButtons();
+}
+
+// 生成管理员面板的 identicon 头像
+function generateAdminIdenticon(username, size = 24) {
+  const hash = simpleAdminHash(username);
+  const hue = hash % 360;
+  const saturation = 65 + (hash % 15);
+  const lightness = 55 + (hash % 10);
+  const bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const textColor = `hsl(${hue}, ${saturation}%, ${lightness - 25}%)`;
+  
+  const svgSize = 5;
+  let svgContent = '';
+  
+  for (let y = 0; y < svgSize; y++) {
+    for (let x = 0; x < Math.ceil(svgSize / 2); x++) {
+      const index = y * svgSize + x;
+      const bit = (hash >> index) & 1;
+      
+      if (bit) {
+        svgContent += `<rect x="${x}" y="${y}" width="1" height="1" fill="${bgColor}"/>`;
+        svgContent += `<rect x="${svgSize - 1 - x}" y="${y}" width="1" height="1" fill="${bgColor}"/>`;
+      }
+    }
+  }
+  
+  const initial = username ? username.charAt(0).toUpperCase() : '?';
+  
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgSize} ${svgSize}" width="${size}" height="${size}">
+      <rect width="${svgSize}" height="${svgSize}" fill="#f0f0f0"/>
+      ${svgContent}
+      <text x="${svgSize / 2}" y="${svgSize / 2 + 0.35}" 
+            text-anchor="middle" 
+            font-size="${svgSize * 0.5}" 
+            font-weight="bold" 
+            fill="${textColor}"
+            font-family="system-ui, -apple-system, sans-serif">${initial}</text>
+    </svg>
+  `;
+  
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+
+// 简单哈希函数（管理员面板）
+function simpleAdminHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
 }
 
 // 更新评论分页信息

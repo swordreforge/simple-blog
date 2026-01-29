@@ -39,6 +39,13 @@ pub async fn get_db_pool() -> Result<Pool<SqliteConnectionManager>, String> {
         .ok_or_else(|| "数据库未初始化".to_string())
 }
 
+/// 同步获取数据库连接池（用于非异步上下文）
+pub fn get_db_pool_sync() -> Result<Pool<SqliteConnectionManager>, String> {
+    DB_POOL.get()
+        .cloned()
+        .ok_or_else(|| "数据库未初始化".to_string())
+}
+
 /// 创建所有数据库表
 fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::Error>> {
     // 创建文章表

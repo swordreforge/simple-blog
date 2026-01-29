@@ -5,10 +5,13 @@ mod templates;
 mod r#static;
 mod db;
 mod middleware;
+mod audio_metadata;
+mod music_sync;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use config::AppConfig;
 use routes::configure_routes;
+use middleware::logging::LoggingMiddleware;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -38,7 +41,19 @@ async fn main() -> std::io::Result<()> {
     })?;
     
     // 创建 Repository 实例
-    let repository = db::repositories::create_repository(db_pool);
+    let repository = db::repositories::create_repository(db_pool.clone());
+    
+    // 同步音乐文件到数据库
+    println!("🎵 同步音乐文件...");
+    let music_sync_service = music_sync::MusicSyncService::new(repository.clone());
+    match music_sync_service.sync_music_files_to_db().await {
+        Ok(result) => {
+            println!("✅ {}", result.message);
+        }
+        Err(e) => {
+            eprintln!("⚠️  音乐同步失败: {}", e);
+        }
+    }
     
     HttpServer::new(move || {
         App::new()
@@ -47,7 +62,7 @@ async fn main() -> std::io::Result<()> {
             // 配置所有路由
             .configure(configure_routes)
             // 添加中间件
-            .wrap(actix_middleware::Logger::default())
+            .wrap(LoggingMiddleware)
             .wrap(actix_middleware::Compress::default())
             .wrap(actix_middleware::Condition::new(
                 config.static_files.cache_max_age > 0,

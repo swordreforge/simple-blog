@@ -63,7 +63,7 @@ class MusicPlayer {
       if (this.audio) {
         this.audio.addEventListener('timeupdate', () => {
           // 每5秒保存一次当前播放位置
-          if (Math.floor(this.audio.currentTime) % 5 === 0) {
+          if (isFinite(this.audio.currentTime) && Math.floor(this.audio.currentTime) % 5 === 0) {
             this.saveState();
           }
         });
@@ -532,7 +532,7 @@ class MusicPlayer {
 
         // 监听音频加载完成事件，获取时长
         const onLoadedMetadata = () => {
-          if (this.audio && !isNaN(this.audio.duration)) {
+          if (this.audio && isFinite(this.audio.duration)) {
             const duration = this.formatTime(this.audio.duration);
             this.playlist[index].duration = duration;
             this.updatePlaylistUI();
@@ -573,14 +573,16 @@ class MusicPlayer {
   }
 
   rewind() {
-    if (this.audio) {
-      this.audio.currentTime = Math.max(0, this.audio.currentTime - 5);
+    if (this.audio && isFinite(this.audio.currentTime)) {
+      const newTime = Math.max(0, this.audio.currentTime - 5);
+      this.audio.currentTime = newTime;
     }
   }
 
   forward() {
-    if (this.audio) {
-      this.audio.currentTime = Math.min(this.audio.duration, this.audio.currentTime + 5);
+    if (this.audio && isFinite(this.audio.duration) && isFinite(this.audio.currentTime)) {
+      const newTime = Math.min(this.audio.duration, this.audio.currentTime + 5);
+      this.audio.currentTime = newTime;
     }
   }
 
@@ -674,7 +676,7 @@ class MusicPlayer {
   }
 
   updateProgress() {
-    if (this.audio) {
+    if (this.audio && isFinite(this.audio.duration) && isFinite(this.audio.currentTime)) {
       const countdownTime = document.querySelector('#countdownTime');
       if (countdownTime) {
         const remaining = this.audio.duration - this.audio.currentTime;
@@ -760,7 +762,7 @@ class MusicPlayer {
       const state = {
         currentTrackIndex: this.currentTrackIndex,
         isPlaying: this.isPlaying,
-        currentTime: this.audio ? this.audio.currentTime : 0,
+        currentTime: (this.audio && isFinite(this.audio.currentTime)) ? this.audio.currentTime : 0,
         volume: volumeBar ? volumeBar.value : (this.audio ? this.audio.volume * 100 : 80),
         playlist: this.playlist
       };
@@ -793,7 +795,10 @@ class MusicPlayer {
         if (this.currentTrackIndex < this.playlist.length) {
           const track = this.playlist[this.currentTrackIndex];
           this.audio.src = track.url;
-          this.audio.currentTime = state.currentTime || 0;
+          // 添加有效性检查
+          if (isFinite(state.currentTime)) {
+            this.audio.currentTime = state.currentTime;
+          }
 
           // 恢复音量设置
           const volumeBar = document.querySelector('#volumeBar');

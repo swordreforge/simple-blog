@@ -130,7 +130,22 @@ pub async fn keyboard_test() -> HttpResponse {
 
 /// 管理后台
 pub async fn admin() -> HttpResponse {
-    let context = crate::templates::create_admin_context();
+    let mut context = crate::templates::create_admin_context();
+    
+    // 尝试从数据库加载外观设置
+    match crate::templates::load_appearance_settings() {
+        Ok(appearance_settings) => {
+            // 将外观设置转换为模板设置
+            let template_settings = crate::templates::appearance_to_template_settings(&appearance_settings);
+            context.insert("settings", &template_settings);
+        }
+        Err(e) => {
+            eprintln!("Failed to load appearance settings for admin page: {}", e);
+            // 使用默认设置
+            context.insert("settings", &crate::templates::TemplateSettings::default());
+        }
+    }
+    
     render_template("admin/admin.html", &context).await
 }
 

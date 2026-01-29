@@ -1245,13 +1245,12 @@ nav a.current {
   flex-shrink: 0;
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
   margin-top: 4px;
+  overflow: hidden;
 }
 
 .comment-input-wrapper {
@@ -1430,13 +1429,10 @@ html.dark-mode .submit-comment-btn:hover {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.1em;
+  overflow: hidden;
 }
 
 .comment-username {
@@ -4397,29 +4393,34 @@ async function loadArticleComments(articleId, commentsList, loadingState, emptyS
 
 // 渲染文章评论列表
 function renderArticleComments(comments, commentsList) {
+  console.log('renderArticleComments 被调用', { commentsCount: comments.length, comments });
   commentsList.innerHTML = '';
 
   comments.forEach(comment => {
+    console.log('渲染评论:', comment);
     const commentEl = document.createElement('div');
     commentEl.className = 'comment-item';
 
+    // 生成基于用户名的 identicon 头像
+    const avatarUrl = generateIdenticon(comment.username || 'anonymous', 40);
+
     commentEl.innerHTML = `
-      <div class="comment-avatar">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-        </svg>
-      </div>
-      <div class="comment-body">
-        <div class="comment-header">
-          <span class="comment-author">${comment.username || '匿名用户'}</span>
-          <span class="comment-date">${formatDate(comment.created_at)}</span>
+      <div class="comment-header">
+        <div class="comment-user">
+          <div class="comment-avatar">
+            <img src="${avatarUrl}" alt="${comment.username || '匿名用户'}" style="width: 100%; height: 100%; border-radius: 50%;"/>
+          </div>
+          <span class="comment-username">${comment.username || '匿名用户'}</span>
         </div>
-        <div class="comment-content">${comment.content}</div>
+        <span class="comment-date">${formatDate(comment.created_at)}</span>
       </div>
+      <div class="comment-content">${comment.content}</div>
     `;
 
     commentsList.appendChild(commentEl);
+    console.log('评论元素已添加到列表');
   });
+  console.log('评论渲染完成，列表长度:', commentsList.children.length);
 }
 
 // 提交文章评论
@@ -5370,15 +5371,15 @@ function copyCode(codeBlock, wrapper) {
   const code = codeBlock.textContent;
 
   navigator.clipboard.writeText(code).then(() => {
-    showToast(wrapper, '复制成功！');
+    showCopyToast(wrapper, '复制成功！');
   }).catch(err => {
     console.error('复制失败:', err);
-    showToast(wrapper, '复制失败，请手动复制');
+    showCopyToast(wrapper, '复制失败，请手动复制');
   });
 }
 
-// 显示提示
-function showToast(wrapper, message) {
+// 显示复制提示
+function showCopyToast(wrapper, message) {
   let toast = wrapper.querySelector('.copy-toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -5557,6 +5558,21 @@ function initComments() {
       }
     });
   }
+
+  // 绑定用户名输入框的实时头像预览
+  const usernameInput = document.getElementById('commentUsername');
+  const userAvatar = document.querySelector('.comment-user-avatar');
+  if (usernameInput && userAvatar) {
+    usernameInput.addEventListener('input', function() {
+      const username = this.value.trim() || 'anonymous';
+      const avatarUrl = generateIdenticon(username, 40);
+      userAvatar.innerHTML = `<img src="${avatarUrl}" alt="${username}" style="width: 100%; height: 100%; border-radius: 50%;"/>`;
+    });
+    
+    // 初始化默认头像
+    const defaultAvatarUrl = generateIdenticon('anonymous', 40);
+    userAvatar.innerHTML = `<img src="${defaultAvatarUrl}" alt="anonymous" style="width: 100%; height: 100%; border-radius: 50%;"/>`;
+  }
 }
 
 // 加载评论
@@ -5619,18 +5635,80 @@ function renderComments(comments) {
   });
 }
 
+// 生成基于用户名的 identicon 头像
+function generateIdenticon(username, size = 40) {
+  // 使用用户名生成哈希值
+  const hash = simpleHash(username);
+  
+  // 从哈希值生成颜色
+  const hue = hash % 360;
+  const saturation = 65 + (hash % 15);
+  const lightness = 55 + (hash % 10);
+  const bgColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const textColor = `hsl(${hue}, ${saturation}%, ${lightness - 25}%)`;
+  
+  // 创建 SVG identicon
+  const svgSize = 5; // 5x5 网格
+  let svgContent = '';
+  
+  // 基于哈希值生成对称图案
+  for (let y = 0; y < svgSize; y++) {
+    for (let x = 0; x < Math.ceil(svgSize / 2); x++) {
+      const index = y * svgSize + x;
+      const bit = (hash >> index) & 1;
+      
+      if (bit) {
+        // 对称填充
+        svgContent += `<rect x="${x}" y="${y}" width="1" height="1" fill="${bgColor}"/>`;
+        svgContent += `<rect x="${svgSize - 1 - x}" y="${y}" width="1" height="1" fill="${bgColor}"/>`;
+      }
+    }
+  }
+  
+  // 获取用户名首字母
+  const initial = username ? username.charAt(0).toUpperCase() : '?';
+  
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgSize} ${svgSize}" width="${size}" height="${size}">
+      <rect width="${svgSize}" height="${svgSize}" fill="#f0f0f0"/>
+      ${svgContent}
+      <text x="${svgSize / 2}" y="${svgSize / 2 + 0.35}" 
+            text-anchor="middle" 
+            font-size="${svgSize * 0.5}" 
+            font-weight="bold" 
+            fill="${textColor}"
+            font-family="system-ui, -apple-system, sans-serif">${initial}</text>
+    </svg>
+  `;
+  
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+
+// 简单哈希函数
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // 转换为 32 位整数
+  }
+  return Math.abs(hash);
+}
+
 // 创建评论元素
 function createCommentElement(comment) {
   const commentEl = document.createElement('div');
   commentEl.className = 'comment-item';
 
-  // 获取用户名的首字母作为头像
-  const avatarLetter = comment.username ? comment.username.charAt(0).toUpperCase() : '?';
+  // 生成基于用户名的 identicon 头像
+  const avatarUrl = generateIdenticon(comment.username || 'anonymous', 40);
 
   commentEl.innerHTML = `
     <div class="comment-header">
       <div class="comment-user">
-        <div class="comment-avatar">${avatarLetter}</div>
+        <div class="comment-avatar">
+          <img src="${avatarUrl}" alt="${comment.username || '匿名用户'}" style="width: 100%; height: 100%; border-radius: 50%;"/>
+        </div>
         <span class="comment-username">${comment.username}</span>
       </div>
       <span class="comment-date">${formatDate(comment.created_at)}</span>

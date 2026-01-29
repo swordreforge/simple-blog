@@ -28,6 +28,8 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/settings/appearance")
             .route(web::get().to(api_handlers::settings::get_appearance))
             .route(web::post().to(api_handlers::settings::update_appearance))
+            .route(web::put().to(api_handlers::settings::update_appearance))
+            .route(web::patch().to(api_handlers::settings::update_appearance))
     ).service(
         web::resource("/api/settings/music")
             .route(web::get().to(api_handlers::settings::get_music))
@@ -59,6 +61,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/music/{id}")
             .route(web::put().to(api_handlers::music::update))
             .route(web::delete().to(api_handlers::music::delete))
+    ).service(
+        web::resource("/api/music/{id}/cover")
+            .route(web::post().to(api_handlers::music::upload_cover))
     );
 
     // 附件相关 API

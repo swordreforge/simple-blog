@@ -47,3 +47,8 @@ regex = "1.11"
 
 # 异步 trait
 async-trait = "0.1"
+
+# 音频元数据提取
+id3 = "0.6"
+mp3-metadata = "0.3"
+metaflac = "0.2"
