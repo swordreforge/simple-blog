@@ -271,6 +271,19 @@ pub async fn create(
     // 转换 Markdown 为 HTML
     let html_content = convert_markdown_to_html(&req.content);
     
+    // 处理标签
+    let tags_json = if let Some(ref tags) = req.tags {
+        // 解析标签 JSON 并确保标签存在于 tags 表中
+        if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
+            ensure_tags_exist(&tag_list).await;
+            tags.clone()
+        } else {
+            "[]".to_string()
+        }
+    } else {
+        "[]".to_string()
+    };
+    
     let now = Utc::now();
     let passage = Passage {
         id: None,
@@ -279,7 +292,7 @@ pub async fn create(
         original_content: Some(req.content.clone()),
         summary: req.summary.clone(),
         author: req.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
-        tags: req.tags.clone().unwrap_or_else(|| "[]".to_string()),
+        tags: tags_json,
         category: req.category.clone().unwrap_or_else(|| "未分类".to_string()),
         status: req.status.clone().unwrap_or_else(|| "draft".to_string()),
         file_path: req.file_path.clone(),
@@ -348,6 +361,10 @@ pub async fn update(
         passage.author = author.clone();
     }
     if let Some(ref tags) = req.tags {
+        // 解析标签 JSON 并确保标签存在于 tags 表中
+        if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
+            ensure_tags_exist(&tag_list).await;
+        }
         passage.tags = tags.clone();
     }
     if let Some(ref category) = req.category {
@@ -423,4 +440,37 @@ fn convert_markdown_to_html(markdown: &str) -> String {
     html::push_html(&mut html_output, parser);
     
     html_output
+}
+
+/// 确保标签存在于 tags 表中
+async fn ensure_tags_exist(tag_names: &[String]) -> Result<(), String> {
+    use crate::db::get_db_pool_sync;
+    use crate::db::repositories::TagRepository;
+    use std::sync::Arc;
+    
+    let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
+    let tag_repo = TagRepository::new(Arc::new(pool.clone()));
+    
+    for tag_name in tag_names {
+        // 查找标签，如果不存在则创建
+        if tag_repo.get_by_name(tag_name).await.is_err() {
+            let now = chrono::Utc::now();
+            let new_tag = crate::db::models::Tag {
+                id: None,
+                name: tag_name.clone(),
+                description: format!("用户创建的标签: {}", tag_name),
+                color: "#007bff".to_string(),
+                category_id: 0,
+                sort_order: 0,
+                is_enabled: true,
+                created_at: now,
+                updated_at: now,
+            };
+            
+            tag_repo.create(&new_tag).await
+                .map_err(|e| format!("创建标签失败: {}", e))?;
+        }
+    }
+    
+    Ok(())
 }

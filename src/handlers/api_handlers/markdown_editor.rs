@@ -90,27 +90,68 @@ pub async fn save(
     }
     
     // 处理标签（转换为JSON格式）
-    let tags_json = if let Some(tags) = &req_data.tags {
-        if tags.is_empty() {
-            "[]".to_string()
+    
+        let tags_json = if let Some(tags) = &req_data.tags {
+    
+            if tags.is_empty() {
+    
+                "[]".to_string()
+    
+            } else {
+    
+                let tag_list: Vec<String> = tags.split(',')
+    
+                    .map(|t| t.trim().to_string())
+    
+                    .filter(|t| !t.is_empty())
+    
+                    .collect();
+    
+    
+    
+                // 确保标签存在于 tags 表中
+    
+                if let Err(e) = ensure_tags_exist(&tag_list).await {
+    
+                    return HttpResponse::Ok().json(SaveArticleResponse {
+    
+                        success: false,
+    
+                        message: format!("处理标签失败: {}", e),
+    
+                        data: None,
+    
+                    });
+    
+                }
+    
+    
+    
+                serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string())
+    
+            }
+    
         } else {
-            let tag_list: Vec<String> = tags.split(',')
-                .map(|t| t.trim().to_string())
-                .filter(|t| !t.is_empty())
-                .collect();
-            serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string())
-        }
-    } else {
-        "[]".to_string()
-    };
     
-    // 设置默认分类
-    let category = req_data.category.as_deref().unwrap_or("未分类").to_string();
+            "[]".to_string()
     
-    // 设置默认摘要
-    let summary = req_data.summary.as_deref().unwrap_or("暂无摘要").to_string();
+        };
     
-    // 创建文章记录
+        
+    
+        // 设置默认分类
+    
+        let category = req_data.category.as_deref().unwrap_or("未分类").to_string();
+    
+        
+    
+        // 设置默认摘要
+    
+        let summary = req_data.summary.as_deref().unwrap_or("暂无摘要").to_string();
+    
+        
+    
+        // 创建文章记录
     let passage = crate::db::models::Passage {
         id: None,
         title: req_data.title.clone(),
@@ -174,4 +215,37 @@ fn convert_markdown_to_html(markdown: &str) -> String {
     html::push_html(&mut html_output, parser);
     
     html_output
+}
+
+/// 确保标签存在于 tags 表中
+async fn ensure_tags_exist(tag_names: &[String]) -> Result<(), String> {
+    use crate::db::get_db_pool_sync;
+    use crate::db::repositories::TagRepository;
+    use std::sync::Arc;
+    
+    let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
+    let tag_repo = TagRepository::new(Arc::new(pool.clone()));
+    
+    for tag_name in tag_names {
+        // 查找标签，如果不存在则创建
+        if tag_repo.get_by_name(tag_name).await.is_err() {
+            let now = chrono::Utc::now();
+            let new_tag = crate::db::models::Tag {
+                id: None,
+                name: tag_name.clone(),
+                description: format!("用户创建的标签: {}", tag_name),
+                color: "#007bff".to_string(),
+                category_id: 0,
+                sort_order: 0,
+                is_enabled: true,
+                created_at: now,
+                updated_at: now,
+            };
+            
+            tag_repo.create(&new_tag).await
+                .map_err(|e| format!("创建标签失败: {}", e))?;
+        }
+    }
+    
+    Ok(())
 }
