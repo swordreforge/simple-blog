@@ -10,7 +10,8 @@ use chrono::Utc;
 pub struct PassageResponse {
     pub id: i64,
     pub title: String,
-    pub content: String,
+    pub content: String,  // 原始 Markdown 内容
+    pub html_content: Option<String>,  // 渲染后的 HTML 内容
     pub summary: Option<String>,
     pub author: String,
     pub tags: String,
@@ -83,7 +84,8 @@ pub async fn list(
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
                     title: p.title,
-                    content: String::new(), // 不返回完整内容，节省带宽
+                    content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
+                    html_content: None, // 列表不返回 HTML 内容
                     summary: p.summary,
                     author: p.author,
                     tags: p.tags,
@@ -147,7 +149,8 @@ pub async fn admin_list(
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
                     title: p.title,
-                    content: p.content,
+                    content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
+                    html_content: Some(p.content), // 返回渲染后的 HTML
                     summary: p.summary,
                     author: p.author,
                     tags: p.tags,
@@ -257,7 +260,8 @@ pub async fn get(
             let response = PassageResponse {
                 id: passage.id.unwrap_or(0),
                 title: passage.title,
-                content: passage.content,
+                content: passage.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
+                html_content: Some(passage.content), // 返回渲染后的 HTML
                 summary: passage.summary,
                 author: passage.author,
                 tags: passage.tags,
@@ -366,17 +370,44 @@ pub async fn update(
     };
     
     // 更新字段
+    let mut file_updated = false;
     if let Some(ref title) = req.title {
         passage.title = title.clone();
+        file_updated = true;
     }
     if let Some(ref content) = req.content {
         // 转换 Markdown 为 HTML
         let html_content = convert_markdown_to_html(content);
         passage.content = html_content;
         passage.original_content = Some(content.clone());
+        file_updated = true;
     }
     if let Some(ref original_content) = req.original_content {
         passage.original_content = Some(original_content.clone());
+        file_updated = true;
+    }
+    
+    // 如果内容或标题更新了，同时更新 Markdown 文件
+    if file_updated {
+        if let Some(ref file_path) = passage.file_path {
+            let content_to_save = passage.original_content.as_ref().unwrap_or_else(|| {
+                // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
+                &passage.content
+            });
+            
+            // 更新文件名（如果标题改变了）
+            if let Some(ref title) = req.title {
+                let new_file_path = update_markdown_file_name(file_path, title, content_to_save);
+                if new_file_path != *file_path {
+                    passage.file_path = Some(new_file_path);
+                }
+            } else {
+                // 标题没变，只更新内容
+                if let Err(e) = update_markdown_file(file_path, content_to_save) {
+                    eprintln!("更新Markdown文件失败: {}", e);
+                }
+            }
+        }
     }
     if let Some(ref summary) = req.summary {
         passage.summary = Some(summary.clone());
@@ -497,4 +528,276 @@ async fn ensure_tags_exist(tag_names: &[String]) -> Result<(), String> {
     }
     
     Ok(())
+}
+
+/// 更新 Markdown 文件
+fn update_markdown_file(file_path: &str, content: &str) -> Result<(), String> {
+    use std::fs;
+    use std::path::Path;
+    
+    // 创建目录
+    if let Some(parent) = Path::new(file_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("创建目录失败: {}", e))?;
+    }
+    
+    // 写入文件
+    fs::write(file_path, content)
+        .map_err(|e| format!("写入文件失败: {}", e))?;
+    
+    Ok(())
+}
+
+/// 更新 Markdown 文件名（如果标题改变）
+fn update_markdown_file_name(old_path: &str, new_title: &str, content: &str) -> String {
+    use std::fs;
+    use std::path::Path;
+    
+    // 构建新文件路径
+    if let Some(parent) = Path::new(old_path).parent() {
+        let new_path = parent.join(format!("{}.md", new_title));
+        
+        // 删除旧文件
+        let _ = fs::remove_file(old_path);
+        
+        // 创建新文件
+        if let Err(e) = update_markdown_file(new_path.to_str().unwrap(), content) {
+            eprintln!("更新文件名失败: {}", e);
+            return old_path.to_string();
+        }
+        
+        new_path.to_str().map(|s| s.to_string()).unwrap_or_else(|| old_path.to_string())
+    } else {
+        old_path.to_string()
+    }
+}
+
+/// 通过查询参数更新文章（用于管理后台）
+pub async fn update_by_query(
+    repo: web::Data<Arc<dyn Repository>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+    req: web::Json<UpdatePassageRequest>,
+) -> HttpResponse {
+    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    
+    // 从查询参数中获取文章 ID
+    let id: i64 = match query.get("id").and_then(|s| s.parse().ok()) {
+        Some(id) => id,
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "缺少文章 ID 参数"
+            }));
+        }
+    };
+    
+    // 先获取现有文章
+    let mut passage = match passage_repo.get_by_id(id).await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("获取文章失败: {}", e);
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "文章不存在"
+            }));
+        }
+    };
+    
+    // 更新字段
+    let mut file_updated = false;
+    if let Some(ref title) = req.title {
+        passage.title = title.clone();
+        file_updated = true;
+    }
+    if let Some(ref content) = req.content {
+        // 转换 Markdown 为 HTML
+        let html_content = convert_markdown_to_html(content);
+        passage.content = html_content;
+        passage.original_content = Some(content.clone());
+        file_updated = true;
+    }
+    if let Some(ref original_content) = req.original_content {
+        passage.original_content = Some(original_content.clone());
+        file_updated = true;
+    }
+    
+    // 如果内容或标题更新了，同时更新 Markdown 文件
+    if file_updated {
+        if let Some(ref file_path) = passage.file_path {
+            let content_to_save = passage.original_content.as_ref().unwrap_or_else(|| {
+                // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
+                &passage.content
+            });
+            
+            // 更新文件名（如果标题改变了）
+            if let Some(ref title) = req.title {
+                let new_file_path = update_markdown_file_name(file_path, title, content_to_save);
+                if new_file_path != *file_path {
+                    passage.file_path = Some(new_file_path);
+                }
+            } else {
+                // 标题没变，只更新内容
+                if let Err(e) = update_markdown_file(file_path, content_to_save) {
+                    eprintln!("更新Markdown文件失败: {}", e);
+                }
+            }
+        }
+    }
+    if let Some(ref summary) = req.summary {
+        passage.summary = Some(summary.clone());
+    }
+    if let Some(ref author) = req.author {
+        passage.author = author.clone();
+    }
+    if let Some(ref tags) = req.tags {
+        // 解析标签 JSON 并确保标签存在于 tags 表中
+        if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
+            ensure_tags_exist(&tag_list).await;
+        }
+        passage.tags = tags.clone();
+    }
+    if let Some(ref category) = req.category {
+        passage.category = category.clone();
+    }
+    if let Some(ref status) = req.status {
+        passage.status = status.clone();
+    }
+    if let Some(ref file_path) = req.file_path {
+        passage.file_path = Some(file_path.clone());
+    }
+    if let Some(ref visibility) = req.visibility {
+        passage.visibility = visibility.clone();
+    }
+    if let Some(is_scheduled) = req.is_scheduled {
+        passage.is_scheduled = is_scheduled;
+    }
+    if let Some(ref published_at) = req.published_at {
+        passage.published_at = chrono::DateTime::parse_from_rfc3339(published_at)
+            .ok()
+            .map(|dt| dt.with_timezone(&chrono::Utc));
+    }
+    passage.updated_at = chrono::Utc::now();
+    
+    match passage_repo.update(&passage).await {
+        Ok(_) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": "文章更新成功"
+            }))
+        }
+        Err(e) => {
+            eprintln!("更新文章失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "更新文章失败"
+            }))
+        }
+    }
+}
+
+/// 通过查询参数获取单篇文章或文章列表（用于管理后台）
+pub async fn get_by_query(
+    repo: web::Data<Arc<dyn Repository>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    
+    // 检查是否有 id 查询参数
+    if let Some(id_str) = query.get("id") {
+        // 如果有 id 参数，返回单篇文章
+        let id: i64 = match id_str.parse() {
+            Ok(id) => id,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "success": false,
+                    "message": "无效的文章 ID"
+                }));
+            }
+        };
+        
+        match passage_repo.get_by_id(id).await {
+            Ok(passage) => {
+                let response = PassageResponse {
+                    id: passage.id.unwrap_or(0),
+                    title: passage.title,
+                    content: passage.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
+                    html_content: Some(passage.content), // 返回渲染后的 HTML
+                    summary: passage.summary,
+                    author: passage.author,
+                    tags: passage.tags,
+                    category: passage.category,
+                    status: passage.status,
+                    file_path: passage.file_path,
+                    visibility: passage.visibility,
+                    is_scheduled: passage.is_scheduled,
+                    published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                };
+                
+                HttpResponse::Ok().json(serde_json::json!({
+                    "success": true,
+                    "data": response
+                }))
+            }
+            Err(e) => {
+                eprintln!("获取文章失败: {}", e);
+                HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "文章不存在"
+                }))
+            }
+        }
+    } else {
+        // 如果没有 id 参数，返回文章列表（调用 admin_list 的逻辑）
+        let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
+        let _offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+        let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
+        let calculated_offset = (page - 1) * limit;
+        
+        match passage_repo.get_all(limit, calculated_offset).await {
+            Ok(passages) => {
+                let total = match passage_repo.count().await {
+                    Ok(c) => c,
+                    Err(_) => passages.len() as i64,
+                };
+                
+                let data: Vec<PassageResponse> = passages.into_iter()
+                    .map(|p| PassageResponse {
+                        id: p.id.unwrap_or(0),
+                        title: p.title,
+                        content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
+                        html_content: Some(p.content), // 返回渲染后的 HTML
+                        summary: p.summary,
+                        author: p.author,
+                        tags: p.tags,
+                        category: p.category,
+                        status: p.status,
+                        file_path: p.file_path,
+                        visibility: p.visibility,
+                        is_scheduled: p.is_scheduled,
+                        published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    })
+                    .collect();
+                
+                HttpResponse::Ok().json(serde_json::json!({
+                    "success": true,
+                    "data": data,
+                    "total": total,
+                    "page": page,
+                    "limit": limit
+                }))
+            }
+            Err(e) => {
+                eprintln!("获取文章列表失败: {}", e);
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": "获取文章列表失败"
+                }))
+            }
+        }
+    }
 }

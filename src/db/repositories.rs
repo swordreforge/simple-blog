@@ -37,7 +37,7 @@ impl PassageRepository {
     /// 创建文章
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        conn.execute(
+        let _ = conn.execute(
             "INSERT INTO passages (title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
@@ -596,9 +596,10 @@ impl SettingRepository {
 
     /// 设置值
     pub fn set(conn: &rusqlite::Connection, setting: &Setting) -> Result<(), Box<dyn std::error::Error>> {
-        conn.execute(
+        // 使用 query_row 执行 INSERT OR REPLACE，因为它可能返回结果
+        let _ = conn.query_row(
             "INSERT OR REPLACE INTO settings (key, value, type, description, category, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING 1",
             params![
                 &setting.key,
                 &setting.value,
@@ -608,6 +609,7 @@ impl SettingRepository {
                 &setting.created_at,
                 &setting.updated_at,
             ],
+            |_| Ok(()),
         )?;
         Ok(())
     }
@@ -1132,7 +1134,7 @@ impl MusicTrackRepository {
 
     pub async fn create(&self, track: &MusicTrack) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        conn.execute(
+        let _ = conn.execute(
             "INSERT INTO music_tracks (title, artist, file_path, file_name, duration, cover_image, created_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?)",
             params![

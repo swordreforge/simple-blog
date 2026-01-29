@@ -16,3 +16,4 @@ pub mod markdown_editor;
 pub mod analytics;
 pub mod filemanager;
 pub mod stats;
+pub mod db_stats;

@@ -6730,7 +6730,8 @@ function bindActionButtons() {
                   // 填充编辑表单
                   document.getElementById('editTitle').value = result.data.title || '';
                   document.getElementById('editAuthor').value = result.data.author || '管理员';
-                  document.getElementById('editContent').value = result.data.content || '';
+                  // 优先使用原始 Markdown 内容，如果没有则使用 HTML 内容
+                  document.getElementById('editContent').value = result.data.original_content || result.data.content || '';
                   document.getElementById('editShowTitle').checked = result.data.show_title !== false;
 
                   // 填充状态和可见性

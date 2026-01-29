@@ -4,6 +4,13 @@ use r2d2_sqlite::SqliteConnectionManager;
 /// 全局数据库连接池
 static DB_POOL: tokio::sync::OnceCell<Pool<SqliteConnectionManager>> = tokio::sync::OnceCell::const_new();
 
+// 数据库连接池配置常量
+const DB_MAX_CONNECTIONS: u32 = 50;  // 最大连接数
+const DB_MIN_IDLE: u32 = 10;         // 最小空闲连接数
+const DB_CONNECTION_TIMEOUT: u64 = 30;  // 连接超时（秒）
+const DB_IDLE_TIMEOUT: u64 = 600;   // 空闲连接超时（秒，10分钟）
+const DB_MAX_LIFETIME: u64 = 1800;  // 连接最大生命周期（秒，30分钟）
+
 /// 初始化数据库
 pub fn init_db(db_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 创建数据库目录
@@ -11,16 +18,80 @@ pub fn init_db(db_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         std::fs::create_dir_all(parent)?;
     }
 
-    // 创建连接池
+    // 创建连接池并优化配置
     let manager = SqliteConnectionManager::file(db_path);
     let pool = Pool::builder()
-        .max_size(15)
-        .min_idle(Some(5))
+        .max_size(DB_MAX_CONNECTIONS)
+        .min_idle(Some(DB_MIN_IDLE))
+        .connection_timeout(std::time::Duration::from_secs(DB_CONNECTION_TIMEOUT))
+        .idle_timeout(Some(std::time::Duration::from_secs(DB_IDLE_TIMEOUT)))
+        .max_lifetime(Some(std::time::Duration::from_secs(DB_MAX_LIFETIME)))
+        .test_on_check_out(true)  // 获取连接时测试连接是否有效
         .build(manager)?;
 
-    // 获取连接并初始化表结构
+    // 获取连接并初始化表结构和优化设置
     {
         let conn = pool.get()?;
+        
+        // 启用 WAL 模式以支持更好的并发读写
+        conn.query_row("PRAGMA journal_mode = WAL;", [], |row| {
+            let mode: String = row.get(0)?;
+            Ok(mode)
+        })?;
+        
+        // 增加 WAL 文件大小限制（默认为 -1，无限制）
+        {
+            let mut stmt = conn.prepare("PRAGMA wal_autocheckpoint = 1000;")?;
+            stmt.query_row([], |_| Ok(())).or_else(|e| {
+                if e.to_string().contains("Query returned no rows") {
+                    Ok(())
+                } else {
+                    Err(e)
+                }
+            })?;
+        }
+        // 优化 SQLite 性能参数
+        {
+            let mut stmt = conn.prepare("PRAGMA synchronous = NORMAL;")?;
+            stmt.query_row([], |_| Ok(())).or_else(|e| {
+                if e.to_string().contains("Query returned no rows") {
+                    Ok(())
+                } else {
+                    Err(e)
+                }
+            })?;
+        }
+        {
+            let mut stmt = conn.prepare("PRAGMA cache_size = -64000;")?;
+            stmt.query_row([], |_| Ok(())).or_else(|e| {
+                if e.to_string().contains("Query returned no rows") {
+                    Ok(())
+                } else {
+                    Err(e)
+                }
+            })?;
+        }  // 64MB 缓存
+        {
+            let mut stmt = conn.prepare("PRAGMA temp_store = MEMORY;")?;
+            stmt.query_row([], |_| Ok(())).or_else(|e| {
+                if e.to_string().contains("Query returned no rows") {
+                    Ok(())
+                } else {
+                    Err(e)
+                }
+            })?;
+        }  // 临时表使用内存
+        {
+            let mut stmt = conn.prepare("PRAGMA mmap_size = 268435456;")?;
+            stmt.query_row([], |_| Ok(())).or_else(|e| {
+                if e.to_string().contains("Query returned no rows") {
+                    Ok(())
+                } else {
+                    Err(e)
+                }
+            })?;
+        }  // 256MB 内存映射
+        
         create_tables(&conn)?;
         seed_default_data(&conn)?;
     }
@@ -29,6 +100,13 @@ pub fn init_db(db_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     DB_POOL.set(pool).map_err(|_| "数据库已初始化")?;
 
     println!("✅ 数据库初始化成功: {}", db_path);
+    println!("📊 连接池配置:");
+    println!("   - 最大连接数: {}", DB_MAX_CONNECTIONS);
+    println!("   - 最小空闲连接: {}", DB_MIN_IDLE);
+    println!("   - 连接超时: {}秒", DB_CONNECTION_TIMEOUT);
+    println!("   - 空闲超时: {}秒", DB_IDLE_TIMEOUT);
+    println!("   - 最大生命周期: {}秒", DB_MAX_LIFETIME);
+    println!("   - WAL 模式: 已启用");
     Ok(())
 }
 
@@ -44,6 +122,38 @@ pub fn get_db_pool_sync() -> Result<Pool<SqliteConnectionManager>, String> {
     DB_POOL.get()
         .cloned()
         .ok_or_else(|| "数据库未初始化".to_string())
+}
+
+/// 获取连接池状态信息
+pub fn get_pool_status() -> Result<PoolStatus, String> {
+    let pool = DB_POOL.get()
+        .ok_or_else(|| "数据库未初始化".to_string())?;
+    
+    let state = pool.state();
+    
+    Ok(PoolStatus {
+        max_connections: DB_MAX_CONNECTIONS,
+        min_idle: DB_MIN_IDLE,
+        current_connections: state.connections,
+        idle_connections: state.idle_connections,
+        active_connections: state.connections - state.idle_connections,
+        connection_utilization: if DB_MAX_CONNECTIONS > 0 {
+            ((state.connections - state.idle_connections) as f64 / DB_MAX_CONNECTIONS as f64) * 100.0
+        } else {
+            0.0
+        },
+    })
+}
+
+/// 连接池状态信息
+#[derive(Debug, serde::Serialize)]
+pub struct PoolStatus {
+    pub max_connections: u32,
+    pub min_idle: u32,
+    pub current_connections: u32,
+    pub idle_connections: u32,
+    pub active_connections: u32,
+    pub connection_utilization: f64,  // 连接利用率（百分比）
 }
 
 /// 创建所有数据库表
@@ -304,7 +414,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             .map_err(|e| format!("密码哈希失败: {}", e))?
             .to_string();
 
-        conn.execute(
+        let _ = conn.execute(
             "INSERT INTO users (username, password, email, role, status) VALUES (?, ?, ?, ?, ?)",
             ["admin", &password_hash, "admin@example.com", "admin", "active"],
         )?;
@@ -387,7 +497,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
         ];
 
         for (key, value, setting_type, description, category) in default_settings {
-            conn.execute(
+            let _ = conn.execute(
                 "INSERT INTO settings (key, value, type, description, category) VALUES (?, ?, ?, ?, ?)",
                 [key, value, setting_type, description, category],
             )?;
@@ -479,7 +589,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
         let mut inserted_count = 0;
         for (key, value, setting_type, description, category) in default_settings {
             if !existing_keys.contains(key) {
-                conn.execute(
+                let _ = conn.execute(
                     "INSERT INTO settings (key, value, type, description, category) VALUES (?, ?, ?, ?, ?)",
                     [key, value, setting_type, description, category],
                 )?;
@@ -537,7 +647,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             // 将 Markdown 转换为 HTML
             let html_content = convert_markdown_to_html(content);
             
-            conn.execute(
+            let _ = conn.execute(
                 "INSERT INTO passages (title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 rusqlite::params![

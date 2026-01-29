@@ -4155,16 +4155,17 @@ async function loadArticleContent(articleId) {
     const result = await response.json();
     
     if (result.success && result.data) {
-      // 缓存文章内容
+      // 缓存文章内容 - 使用 html_content（已渲染的HTML）而不是 content（原始Markdown）
+      const renderedContent = result.data.html_content || result.data.content;
       articleContentCache.set(articleId, {
-        content: result.data.content,
+        content: renderedContent,
         timestamp: Date.now()
       });
       
       // 更新文章数据
       const articleData = findArticleById(articleId);
       if (articleData) {
-        articleData.content = result.data.content;
+        articleData.content = renderedContent;
         renderArticle(articleData);
       }
     } else {

@@ -258,8 +258,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     // 管理员 API - 文章
     cfg.service(
         web::resource("/api/admin/passages")
-            .route(web::get().to(api_handlers::passage::admin_list))
+            .route(web::get().to(api_handlers::passage::get_by_query))
             .route(web::post().to(api_handlers::passage::create))
+            .route(web::put().to(api_handlers::passage::update_by_query))
     ).service(
         web::resource("/api/admin/passages/{id}")
             .route(web::get().to(api_handlers::passage::get))
@@ -314,5 +315,14 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::tags::get))
             .route(web::put().to(api_handlers::tags::update))
             .route(web::delete().to(api_handlers::tags::delete))
+    );
+
+    // 数据库统计和健康检查 API
+    cfg.service(
+        web::resource("/api/db/pool-status")
+            .route(web::get().to(api_handlers::db_stats::get_pool_status))
+    ).service(
+        web::resource("/api/db/health")
+            .route(web::get().to(api_handlers::db_stats::health_check))
     );
 }
