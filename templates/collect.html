@@ -1171,15 +1171,26 @@ let archiveData = {
   categories: []
 };
 
-// 从 API 获取数据
+// 分页状态
+let collectCurrentPage = 1;
+const collectPageSize = 20;
+let collectHasMore = true;
+let collectIsLoading = false;
+
+// 从 API 获取数据（支持分页）
 async function fetchArchiveData() {
   try {
-    // 获取文章列表
-    const passagesResponse = await fetch('/api/passages?limit=1000&offset=0');
+    // 获取文章列表（第一页）
+    const passagesResponse = await fetch(`/api/passages?page=1&limit=${collectPageSize}`);
     const passagesResult = await passagesResponse.json();
 
     if (passagesResult.success) {
       archiveData.passages = passagesResult.data || [];
+      // 更新分页状态
+      if (passagesResult.pagination) {
+        collectHasMore = passagesResult.pagination.has_more;
+        collectCurrentPage = 2;
+      }
     }
 
     // 获取归档数据
@@ -1213,12 +1224,63 @@ async function fetchArchiveData() {
     renderTagsCloud();
     updateTotalCount();
 
+    // 设置无限滚动
+    setupCollectInfiniteScroll();
+
   } catch (error) {
     console.error('获取数据失败:', error);
     document.querySelector('.archive-left #archiveLeft').innerHTML = '<div class="error">加载失败，请刷新页面重试</div>';
     document.getElementById('timeline').innerHTML = '<div class="error">加载失败</div>';
     document.getElementById('tagsCloud').innerHTML = '<div class="error">加载失败</div>';
   }
+}
+
+// 加载更多文章
+async function loadMoreArticles() {
+  if (collectIsLoading || !collectHasMore) {
+    return;
+  }
+
+  try {
+    collectIsLoading = true;
+    
+    const passagesResponse = await fetch(`/api/passages?page=${collectCurrentPage}&limit=${collectPageSize}`);
+    const passagesResult = await passagesResponse.json();
+
+    if (passagesResult.success && passagesResult.data) {
+      archiveData.passages = [...archiveData.passages, ...passagesResult.data];
+      
+      // 重新渲染
+      renderArchive();
+      
+      // 更新分页状态
+      if (passagesResult.pagination) {
+        collectHasMore = passagesResult.pagination.has_more;
+        collectCurrentPage++;
+      }
+    }
+  } catch (error) {
+    console.error('加载更多文章失败:', error);
+  } finally {
+    collectIsLoading = false;
+  }
+}
+
+// 设置归档页无限滚动
+function setupCollectInfiniteScroll() {
+  const archiveLeft = document.querySelector('.archive-left');
+  if (!archiveLeft) return;
+  
+  archiveLeft.addEventListener('scroll', () => {
+    const scrollTop = archiveLeft.scrollTop;
+    const scrollHeight = archiveLeft.scrollHeight;
+    const clientHeight = archiveLeft.clientHeight;
+    
+    // 当滚动到距离底部 100px 时加载更多
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      loadMoreArticles();
+    }
+  });
 }
 
 // 渲染分类筛选按钮

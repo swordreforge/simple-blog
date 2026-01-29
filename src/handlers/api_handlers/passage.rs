@@ -59,11 +59,26 @@ pub struct UpdatePassageRequest {
 }
 
 /// 获取文章列表（公开）
-pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+pub async fn list(
+    repo: web::Data<Arc<dyn Repository>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
-    match passage_repo.get_published(100, 0).await {
+    // 解析分页参数
+    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(10);
+    let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
+    let offset = (page - 1) * limit;
+    
+    // 获取已发布的文章
+    match passage_repo.get_published(limit, offset).await {
         Ok(passages) => {
+            // 获取总数
+            let total = match passage_repo.count_published().await {
+                Ok(c) => c,
+                Err(_) => passages.len() as i64,
+            };
+            
             let data: Vec<PassageResponse> = passages.into_iter()
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
@@ -83,9 +98,18 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
                 })
                 .collect();
             
+            let total_pages = (total + limit - 1) / limit;
+            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
-                "data": data
+                "data": data,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": total,
+                    "total_pages": total_pages,
+                    "has_more": page < total_pages
+                }
             }))
         }
         Err(e) => {

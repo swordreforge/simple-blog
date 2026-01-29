@@ -225,6 +225,13 @@ impl PassageRepository {
         Ok(count)
     }
 
+    /// 获取已发布文章总数
+    pub async fn count_published(&self) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages WHERE status = 'published'", [], |row| row.get(0))?;
+        Ok(count)
+    }
+
     /// 获取所有分类
     pub async fn get_all_categories(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;

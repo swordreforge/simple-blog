@@ -2999,23 +2999,105 @@ async function loadCurrentArticleFromPath() {
   }
 }
 
-// 从后端API获取文章数据
+// 分页状态
+let currentPage = 1;
+const pageSize = 10;
+let hasMoreArticles = true;
+let isLoadingArticles = false;
+
+// 从后端API获取文章数据（支持分页）
 async function fetchArticlesData() {
+  if (isLoadingArticles || !hasMoreArticles) {
+    return;
+  }
+
   try {
-    // 获取文章列表
-    const response = await fetch('/api/passages');
+    isLoadingArticles = true;
+    
+    // 获取文章列表（带分页）
+    const response = await fetch(`/api/passages?page=${currentPage}&limit=${pageSize}`);
     const result = await response.json();
     
     if (result.success && result.data) {
-      articlesData = organizeArticlesByFolder(result.data);
-      renderFileTree();
+      // 如果是第一页，重新组织数据
+      if (currentPage === 1) {
+        articlesData = organizeArticlesByFolder(result.data);
+        renderFileTree();
+      } else {
+        // 否则追加数据
+        const newArticles = organizeArticlesByFolder(result.data);
+        articlesData = mergeArticlesData(articlesData, newArticles);
+        renderFileTree();
+      }
+      
+      // 更新分页状态
+      if (result.pagination) {
+        hasMoreArticles = result.pagination.has_more;
+      }
+      
+      currentPage++;
     }
   } catch (error) {
     console.error('获取文章数据失败:', error);
     // 使用默认数据作为fallback
-    articlesData = getDefaultArticlesData();
-    renderFileTree();
+    if (currentPage === 1) {
+      articlesData = getDefaultArticlesData();
+      renderFileTree();
+    }
+  } finally {
+    isLoadingArticles = false;
   }
+}
+
+// 合并文章数据
+function mergeArticlesData(existingData, newData) {
+  // 简单实现：重新组织所有数据
+  // 在实际应用中，可以优化为增量更新
+  const allArticles = [...getAllArticlesFromData(existingData), ...getAllArticlesFromData(newData)];
+  return organizeArticlesByFolder(allArticles);
+}
+
+// 从数据结构中提取所有文章
+function getAllArticlesFromData(data) {
+  const articles = [];
+  
+  Object.values(data).forEach(year => {
+    Object.values(year.subfolders).forEach(month => {
+      Object.values(month.subfolders).forEach(day => {
+        if (day.files) {
+          articles.push(...day.files);
+        }
+      });
+    });
+  });
+  
+  return articles;
+}
+
+// 滚动到底部加载更多
+function setupInfiniteScroll() {
+  const fileTree = document.querySelector('.file-tree');
+  if (!fileTree) return;
+  
+  fileTree.addEventListener('scroll', () => {
+    const scrollTop = fileTree.scrollTop;
+    const scrollHeight = fileTree.scrollHeight;
+    const clientHeight = fileTree.clientHeight;
+    
+    // 当滚动到距离底部 100px 时加载更多
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      fetchArticlesData();
+    }
+  });
+}
+
+// 初始化分页和无限滚动
+function initPagination() {
+  currentPage = 1;
+  hasMoreArticles = true;
+  isLoadingArticles = false;
+  fetchArticlesData();
+  setupInfiniteScroll();
 }
 
 // 将文章按文件夹组织（年-月-日-文章名）
