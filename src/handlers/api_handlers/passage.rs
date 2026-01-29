@@ -70,7 +70,7 @@ pub async fn list(
     let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
     let offset = (page - 1) * limit;
     
-    // 获取已发布的文章
+    // 获取已发布的文章（不包含完整内容，只返回摘要）
     match passage_repo.get_published(limit, offset).await {
         Ok(passages) => {
             // 获取总数
@@ -83,7 +83,7 @@ pub async fn list(
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
                     title: p.title,
-                    content: p.content,
+                    content: String::new(), // 不返回完整内容，节省带宽
                     summary: p.summary,
                     author: p.author,
                     tags: p.tags,

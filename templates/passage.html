@@ -3147,21 +3147,22 @@ function organizeArticlesByFolder(articles) {
     // 生成 markdown 路径
     const markdownPath = `${year}/${month}/${day}/${sanitizeTitle(article.title)}`;
     
-    // 计算阅读时长
-    const content = article.content || `<p>${sanitizeUTF8(article.summary) || '暂无内容'}</p>`;
-    const readTime = calculateReadTime(content);
+    // 估算阅读时长（基于摘要长度）
+    const summary = article.summary || '';
+    const readTime = Math.ceil(summary.length / 400) || 1;
     
-    // 添加文章到日期文件夹
+    // 添加文章到日期文件夹（不包含完整内容）
     years[year].subfolders[monthKey].subfolders[dayKey].files.push({
       id: `article-${article.id}`,
       title: article.title,
       date: article.created_at || '2024-01-01',
       readtime: `${readTime}分钟`,
       tags: article.tags || [],
-      content: content,
-      show_title: article.show_title !== false,
+      content: '', // 不加载完整内容，点击时再加载
+      summary: summary,
+      show_title: true,
       markdownPath: markdownPath,
-      status: article.status || 'draft',
+      status: article.status || 'published',
       isScheduled: article.is_scheduled || false,
       publishedAt: article.published_at || null
     });
@@ -4150,7 +4151,7 @@ function findFolderById(folder, id) {
 }
 
 // 打开文章
-function openArticle(articleId) {
+async function openArticle(articleId) {
   // 查找文章数据
   const articleData = findArticleById(articleId);
   
@@ -4167,8 +4168,13 @@ function openArticle(articleId) {
   // 更新UI
   updateUI();
   
-  // 渲染文章内容
-  renderArticle(articleData);
+  // 如果文章内容为空，则加载完整内容
+  if (!articleData.content) {
+    await loadArticleContent(articleId);
+  } else {
+    // 渲染文章内容
+    renderArticle(articleData);
+  }
   
   // 隐藏空状态
   emptyState.style.display = 'none';
@@ -4177,6 +4183,42 @@ function openArticle(articleId) {
   if (window.innerWidth < 992) {
     appState.sidebarOpen = false;
     sidebar.classList.add('hidden');
+  }
+}
+
+// 加载文章完整内容
+async function loadArticleContent(articleId) {
+  try {
+    // 提取文章 ID
+    const numericId = articleId.replace('article-', '');
+    
+    // 从 API 获取文章详情
+    const response = await fetch(`/api/passages/${numericId}`);
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      // 更新文章数据
+      const articleData = findArticleById(articleId);
+      if (articleData) {
+        articleData.content = result.data.content;
+        // 渲染文章内容
+        renderArticle(articleData);
+      }
+    } else {
+      console.error('加载文章内容失败:', result.message);
+      renderLoadingError();
+    }
+  } catch (error) {
+    console.error('加载文章内容失败:', error);
+    renderLoadingError();
+  }
+}
+
+// 渲染加载错误
+function renderLoadingError() {
+  const articleContent = document.getElementById('articleContent');
+  if (articleContent) {
+    articleContent.innerHTML = '<div class="error">加载文章内容失败，请刷新页面重试</div>';
   }
 }
 
