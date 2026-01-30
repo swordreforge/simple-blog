@@ -1141,21 +1141,6 @@ main {
   position: relative;
 }
 
-.modal-content::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #007bff, #00b894);
-  width: 0%;
-  transition: width 3s linear;
-}
-
-.modal.active .modal-content::after {
-  width: 100%;
-}
-
 @keyframes slideIn {
   from { transform: translateY(-50px) scale(0.9); opacity: 0; }
   to { transform: translateY(0) scale(1); opacity: 1; }
@@ -8167,21 +8152,6 @@ document.addEventListener('keydown', function(e) {
   position: relative;
 }
 
-.modal-content::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #007bff, #00b894);
-  width: 0%;
-  transition: width 3s linear;
-}
-
-.modal.active .modal-content::after {
-  width: 100%;
-}
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -8749,14 +8719,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (pickerEl && inputEl) {
       pickerEl.addEventListener('input', function() {
-        // 获取当前 rgba 值
-        const currentRgba = inputEl.value;
-        const rgba = parseRgba(currentRgba);
+        const currentValue = inputEl.value;
 
-        if (rgba) {
-          // 保持透明度，只更新颜色
-          const newRgba = `rgba(${this.value.match(/\w\w/g).map(x => parseInt(x, 16)).join(', ')}, ${rgba.a})`;
-          inputEl.value = newRgba;
+        // 判断当前值是 rgba 格式还是 hex 格式
+        if (currentValue.startsWith('rgba')) {
+          // rgba 格式：保持透明度，只更新颜色
+          const rgba = parseRgba(currentValue);
+          if (rgba) {
+            const newRgba = `rgba(${this.value.match(/\w\w/g).map(x => parseInt(x, 16)).join(', ')}, ${rgba.a})`;
+            inputEl.value = newRgba;
+          }
+        } else {
+          // hex 格式或普通文本：直接更新为 hex 值
+          inputEl.value = this.value;
         }
       });
 

@@ -402,37 +402,51 @@ pub fn create_index_context() -> TeraContext {
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
     
-    // 尝试从数据库加载模板设置
+    // 从数据库加载切换界面提示设置
+    let mut switch_notice = false;
+    let mut switch_notice_text = "🎉 新文章发布！".to_string();
+
+    // 从数据库加载模板设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
             // 加载 name
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_name") {
                 name = setting.value;
             }
-            
+
             // 加载 greting
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_greting") {
                 greting = setting.value;
             }
-            
+
             // 加载 foodes
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
                 foodes = setting.value;
             }
-            
+
             // 加载 external_link_warning
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
                 external_link_warning = setting.value == "true";
             }
-            
+
             // 加载 external_link_whitelist
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
                 external_link_whitelist = setting.value;
             }
-            
+
             // 加载 external_link_warning_text
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
                 external_link_warning_text = setting.value;
+            }
+
+            // 加载 switch_notice
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+                switch_notice = setting.value == "true";
+            }
+
+            // 加载 switch_notice_text
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+                switch_notice_text = setting.value;
             }
         }
     }
@@ -446,11 +460,11 @@ pub fn create_index_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
-    context.insert("switch_notice", &true);
-    context.insert("switch_notice_text", "🎉 新文章发布！");
-    context.insert("external_link_warning", &true);
-    context.insert("external_link_warning_text", "您即将离开本站");
-    context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    context.insert("switch_notice", &switch_notice);
+    context.insert("switch_notice_text", &switch_notice_text);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_warning_text", &external_link_warning_text);
+    context.insert("external_link_whitelist", &external_link_whitelist);
     
     // Live2D
     context.insert("live2d_enabled", &false);
@@ -627,7 +641,11 @@ pub fn create_collect_context() -> TeraContext {
     let mut external_link_warning = true;
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
-    
+
+    // 从数据库加载切换界面提示设置
+    let mut switch_notice = false;
+    let mut switch_notice_text = "🎉 新文章发布！".to_string();
+
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
@@ -643,6 +661,14 @@ pub fn create_collect_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
                 external_link_warning_text = setting.value;
             }
+            // 加载 switch_notice
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+                switch_notice = setting.value == "true";
+            }
+            // 加载 switch_notice_text
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+                switch_notice_text = setting.value;
+            }
         }
     }
     
@@ -654,11 +680,11 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
-    context.insert("switch_notice", &true);
-    context.insert("switch_notice_text", "🎉 新文章发布！");
-    context.insert("external_link_warning", &true);
-    context.insert("external_link_warning_text", "您即将离开本站");
-    context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    context.insert("switch_notice", &switch_notice);
+    context.insert("switch_notice_text", &switch_notice_text);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_warning_text", &external_link_warning_text);
+    context.insert("external_link_whitelist", &external_link_whitelist);
     
     // Live2D
     context.insert("live2d_enabled", &false);
@@ -681,7 +707,11 @@ pub fn create_about_context() -> TeraContext {
     let mut external_link_warning = true;
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
-    
+
+    // 从数据库加载切换界面提示设置
+    let mut switch_notice = false;
+    let mut switch_notice_text = "🎉 新文章发布！".to_string();
+
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
@@ -697,9 +727,17 @@ pub fn create_about_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
                 external_link_warning_text = setting.value;
             }
+            // 加载 switch_notice
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+                switch_notice = setting.value == "true";
+            }
+            // 加载 switch_notice_text
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+                switch_notice_text = setting.value;
+            }
         }
     }
-    
+
     context.insert("title", "关于 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
@@ -708,11 +746,11 @@ pub fn create_about_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
-    context.insert("switch_notice", &true);
-    context.insert("switch_notice_text", "🎉 新文章发布！");
-    context.insert("external_link_warning", &true);
-    context.insert("external_link_warning_text", "您即将离开本站");
-    context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    context.insert("switch_notice", &switch_notice);
+    context.insert("switch_notice_text", &switch_notice_text);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_warning_text", &external_link_warning_text);
+    context.insert("external_link_whitelist", &external_link_whitelist);
     
     // Live2D
     context.insert("live2d_enabled", &false);
@@ -735,7 +773,11 @@ pub fn create_markdown_editor_context() -> TeraContext {
     let mut external_link_warning = true;
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
-    
+
+    // 从数据库加载切换界面提示设置
+    let mut switch_notice = false;
+    let mut switch_notice_text = "🎉 新文章发布！".to_string();
+
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
@@ -751,9 +793,17 @@ pub fn create_markdown_editor_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
                 external_link_warning_text = setting.value;
             }
+            // 加载 switch_notice
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+                switch_notice = setting.value == "true";
+            }
+            // 加载 switch_notice_text
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+                switch_notice_text = setting.value;
+            }
         }
     }
-    
+
     context.insert("title", "编辑器 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
@@ -762,11 +812,11 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
-    context.insert("switch_notice", &true);
-    context.insert("switch_notice_text", "🎉 新文章发布！");
-    context.insert("external_link_warning", &true);
-    context.insert("external_link_warning_text", "您即将离开本站");
-    context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    context.insert("switch_notice", &switch_notice);
+    context.insert("switch_notice_text", &switch_notice_text);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_warning_text", &external_link_warning_text);
+    context.insert("external_link_whitelist", &external_link_whitelist);
     
     context
 }
@@ -779,7 +829,11 @@ pub fn create_admin_context() -> TeraContext {
     let mut external_link_warning = true;
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
-    
+
+    // 从数据库加载切换界面提示设置
+    let mut switch_notice = false;
+    let mut switch_notice_text = "🎉 新文章发布！".to_string();
+
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
@@ -795,9 +849,17 @@ pub fn create_admin_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
                 external_link_warning_text = setting.value;
             }
+            // 加载 switch_notice
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+                switch_notice = setting.value == "true";
+            }
+            // 加载 switch_notice_text
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+                switch_notice_text = setting.value;
+            }
         }
     }
-    
+
     context.insert("title", "管理后台 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
@@ -806,11 +868,11 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
-    context.insert("switch_notice", &true);
-    context.insert("switch_notice_text", "🎉 新文章发布！");
-    context.insert("external_link_warning", &true);
-    context.insert("external_link_warning_text", "您即将离开本站");
-    context.insert("external_link_whitelist", "github.com,rust-lang.org");
+    context.insert("switch_notice", &switch_notice);
+    context.insert("switch_notice_text", &switch_notice_text);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_warning_text", &external_link_warning_text);
+    context.insert("external_link_whitelist", &external_link_whitelist);
     
     // Live2D
     context.insert("live2d_enabled", &false);
