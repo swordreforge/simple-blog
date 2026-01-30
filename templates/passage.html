@@ -4504,6 +4504,15 @@ function renderArticle(articleData) {
       const sponsorBtn = sponsorSection.querySelector('#sponsorBtn');
       if (sponsorBtn && window.sponsorButtonText) {
         sponsorBtn.textContent = window.sponsorButtonText;
+        
+        // 为动态生成的赞助按钮绑定点击事件
+        const sponsorModal = document.getElementById('sponsorModal');
+        if (sponsorModal) {
+          sponsorBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sponsorModal.classList.add('active');
+          });
+        }
       }
     } else {
       sponsorSection.style.display = 'none';
