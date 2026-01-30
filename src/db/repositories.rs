@@ -6,6 +6,25 @@ use std::sync::Arc;
 
 use super::models::*;
 
+/// 生成唯一的 machine ID（基于主机名或随机数）
+pub fn get_machine_id() -> [u8; 6] {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    
+    // 尝试获取主机名并哈希
+    let hostname = std::env::var("HOSTNAME")
+        .or_else(|_| std::env::var("COMPUTERNAME"))
+        .unwrap_or_else(|_| "default-host".to_string());
+    
+    let mut hasher = DefaultHasher::new();
+    hostname.hash(&mut hasher);
+    let hash = hasher.finish();
+    
+    // 取哈希值的低6个字节作为 machine ID
+    let bytes = hash.to_be_bytes();
+    [bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]]
+}
+
 /// 仓库 Trait
 #[async_trait::async_trait]
 pub trait Repository: Send + Sync {
@@ -38,8 +57,9 @@ impl PassageRepository {
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         
-        // 生成 Flake UUID
-        let mut flaker = flaker::Flaker::new([0, 0, 0, 0, 0, 0], flaker::Endianness::LittleEndian);
+        // 生成 Flake UUID（使用基于主机名的唯一 machine ID）
+        let machine_id = get_machine_id();
+        let mut flaker = flaker::Flaker::new(machine_id, flaker::Endianness::LittleEndian);
         let uuid = flaker.get_id().map_err(|e| format!("Failed to generate UUID: {:?}", e))?.to_string();
         
         let _ = conn.execute(

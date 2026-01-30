@@ -187,7 +187,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             conn.execute("ALTER TABLE passages ADD COLUMN uuid TEXT", [])?;
             
             // 为现有文章生成 UUID
-            let mut flaker = flaker::Flaker::new([0, 0, 0, 0, 0, 0], flaker::Endianness::LittleEndian);
+            let machine_id = crate::db::repositories::get_machine_id();
+            let mut flaker = flaker::Flaker::new(machine_id, flaker::Endianness::LittleEndian);
             let mut stmt = conn.prepare("SELECT id FROM passages WHERE uuid IS NULL")?;
             let mut rows = stmt.query([])?;
             
@@ -733,7 +734,8 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             let html_content = convert_markdown_to_html(content);
             
             // 生成 UUID
-            let mut flaker = flaker::Flaker::new([0, 0, 0, 0, 0, 0], flaker::Endianness::LittleEndian);
+            let machine_id = crate::db::repositories::get_machine_id();
+            let mut flaker = flaker::Flaker::new(machine_id, flaker::Endianness::LittleEndian);
             let uuid = match flaker.get_id() {
                 Ok(id) => id.to_string(),
                 Err(e) => {
