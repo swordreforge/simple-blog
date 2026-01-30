@@ -148,12 +148,27 @@ class ECCEncryptor {
    * @returns {Promise<CryptoKey>}
    */
   async deriveSharedKey() {
-    return await window.crypto.subtle.deriveKey(
+    // 使用 deriveBits 获取原始共享密钥字节（与Go版本保持一致）
+    // Web Crypto API的deriveBits当指定256位时，返回压缩格式（只有X坐标，32字节）
+    // 这与Go版本的 sharedX.Bytes() 完全一致
+    const sharedSecretBits = await window.crypto.subtle.deriveBits(
       {
         name: 'ECDH',
         public: this.serverPublicKey
       },
       this.clientKeyPair.privateKey,
+      256  // 派生256位（32字节）- 直接返回X坐标
+    );
+
+    const sharedSecretBytes = new Uint8Array(sharedSecretBits);
+
+    // 直接使用全部32字节作为AES密钥（与Go版本的 sharedX.Bytes() 一致）
+    const keyBytes = sharedSecretBytes;
+
+    // 从原始字节导入为AES-GCM密钥
+    return await window.crypto.subtle.importKey(
+      'raw',
+      keyBytes,
       {
         name: 'AES-GCM',
         length: 256

@@ -26,12 +26,14 @@ argon2 = "0.5"
 rand = "0.8"
 
 # ECC 加密
-p256 = { version = "0.13", features = ["ecdh"] }
+p256 = { version = "0.13", features = ["ecdh", "pkcs8"] }
 elliptic-curve = { version = "0.13", features = ["ecdh"] }
 ecdsa = "0.16"
 sha2 = "0.10"
 base64 = "0.22"
 hex = "0.4"
+aes-gcm = "0.10"
+spki = "0.7"
 
 # Markdown 解析
 pulldown-cmark = "0.12"

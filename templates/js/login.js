@@ -318,8 +318,6 @@ const AuthManager = {
             client_public_key: encryptedData.clientPublicKey,
             algorithm: encryptedData.algorithm
           };
-          
-          console.log('Password encrypted using ECC');
         } catch (encryptError) {
           console.warn('ECC encryption failed, falling back to plain text:', encryptError);
           // 加密失败时使用明文（不推荐）
@@ -431,8 +429,6 @@ const AuthManager = {
             client_public_key: encryptedData.clientPublicKey,
             algorithm: encryptedData.algorithm
           };
-          
-          console.log('Password encrypted using ECC');
         } catch (encryptError) {
           console.warn('ECC encryption failed, falling back to plain text:', encryptError);
           // 加密失败时使用明文（不推荐）

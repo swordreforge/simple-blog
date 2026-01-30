@@ -6,7 +6,25 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use sha2::{Sha256, Digest};
 use rand::RngCore;
-use p256::{ecdsa::{SigningKey, VerifyingKey, signature::Signer}, PublicKey, SecretKey};
+use p256::{ecdsa::{SigningKey, VerifyingKey}, PublicKey};
+use p256::elliptic_curve::sec1::ToEncodedPoint;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+
+/// 解析PEM格式的公钥
+fn parse_pem_public_key(pem_data: &str) -> Result<Vec<u8>, String> {
+    // 移除PEM头尾和换行符
+    let clean_pem = pem_data
+        .replace("-----BEGIN PUBLIC KEY-----", "")
+        .replace("-----END PUBLIC KEY-----", "")
+        .replace("\n", "")
+        .replace("\r", "")
+        .trim()
+        .to_string();
+    
+    // 解码base64
+    general_purpose::STANDARD.decode(clean_pem)
+        .map_err(|e| format!("Failed to decode PEM: {}", e))
+}
 
 /// ECC 会话管理器
 #[derive(Clone)]
@@ -60,6 +78,103 @@ impl ECCSession {
     
     pub fn get_expiry(&self) -> chrono::DateTime<Utc> {
         self.created_at + Duration::hours(1)
+    }
+    
+    /// 派生共享密钥（ECDH）
+    pub fn derive_shared_secret(&self, client_public_key_bytes: &[u8]) -> Result<[u8; 32], String> {
+        use p256::PublicKey;
+        use p256::elliptic_curve::group::GroupEncoding;
+        use p256::NonZeroScalar;
+        use spki::DecodePublicKey;
+
+        // 解析客户端公钥（支持PKIX/DER格式和SEC1格式）
+        let client_public_key = match PublicKey::from_public_key_der(client_public_key_bytes) {
+            Ok(key) => key,
+            Err(_) => {
+                // 如果DER格式失败，尝试SEC1格式
+                PublicKey::from_sec1_bytes(client_public_key_bytes)
+                    .map_err(|e| format!("Failed to parse client public key: {}", e))?
+            }
+        };
+
+        // 使用服务器的私钥和客户端的公钥进行 ECDH 计算
+        // 从 SigningKey 获取私钥的 scalar 值
+        let server_private_bytes = self.signing_key.to_bytes();
+        let server_scalar = NonZeroScalar::from_repr(server_private_bytes);
+        let server_scalar: Option<NonZeroScalar> = server_scalar.into();
+        let server_scalar = server_scalar.ok_or_else(|| "Invalid private key".to_string())?;
+
+        // 获取客户端公钥的坐标
+        let client_point = client_public_key.as_affine();
+
+        // 计算共享密钥：server_private * client_public
+        let shared_point = *client_point * *server_scalar.as_ref();
+
+        // 获取共享密钥的 X 坐标（32字节）
+        // 使用 to_encoded_point 获取未压缩格式，然后提取X坐标
+        let encoded_point = shared_point.to_encoded_point(false);
+        let point_bytes = encoded_point.as_bytes();
+
+        // 未压缩格式: 0x04 + X (32字节) + Y (32字节)
+        // 提取X坐标（跳过第一个字节0x04）
+        let x_coordinate = &point_bytes[1..33];
+
+        // 直接使用X坐标作为AES密钥（与Go版本和Web Crypto API保持一致）
+        let mut key = [0u8; 32];
+        key.copy_from_slice(x_coordinate);
+
+        Ok(key)
+    }
+    
+    /// 混合解密（ECDH + AES-GCM）
+    pub fn hybrid_decrypt(&self, encrypted_data_b64: &str, client_public_key_input: &str) -> Result<String, String> {
+        use aes_gcm::aead::Aead;
+
+        // 解析客户端公钥（支持PEM格式）
+        let client_public_key_bytes = if client_public_key_input.contains("-----BEGIN PUBLIC KEY-----") {
+            parse_pem_public_key(client_public_key_input)?
+        } else if client_public_key_input.contains('-') {
+            match base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(client_public_key_input) {
+                Ok(data) => data,
+                Err(_) => {
+                    general_purpose::STANDARD.decode(client_public_key_input)
+                        .map_err(|e| format!("Failed to decode client public key: {}", e))?
+                }
+            }
+        } else {
+            general_purpose::STANDARD.decode(client_public_key_input)
+                .map_err(|e| format!("Failed to decode client public key: {}", e))?
+        };
+
+        // 派生共享密钥
+        let shared_key = self.derive_shared_secret(&client_public_key_bytes)?;
+
+        // 解码加密数据（尝试base64和base64url）
+        let encrypted_data = match general_purpose::STANDARD.decode(encrypted_data_b64) {
+            Ok(data) => data,
+            Err(_) => {
+                base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(encrypted_data_b64)
+                    .map_err(|e| format!("Failed to decode encrypted data: {}", e))?
+            }
+        };
+
+        // 创建AES-GCM解密器
+        let cipher = Aes256Gcm::new(&shared_key.into());
+
+        // 提取nonce（前12字节）
+        if encrypted_data.len() < 12 {
+            return Err("Encrypted data too short".to_string());
+        }
+
+        let nonce = Nonce::from_slice(&encrypted_data[..12]);
+        let ciphertext = &encrypted_data[12..];
+
+        // 解密
+        let plaintext = cipher.decrypt(nonce, ciphertext)
+            .map_err(|e| format!("Decryption failed: {}", e))?;
+
+        String::from_utf8(plaintext)
+            .map_err(|e| format!("Invalid UTF-8: {}", e))
     }
 }
 
