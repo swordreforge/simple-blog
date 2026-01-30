@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse, HttpRequest, Responder};
 use actix_files::NamedFile;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs;
 
 /// 文件信息
@@ -46,6 +46,7 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     let safe_path = match validate_path(&path_str) {
         Ok(p) => p,
         Err(e) => {
+            eprintln!("路径验证失败: {} - 原始路径: {}", e, path_str);
             return HttpResponse::BadRequest().json(FileListResponse {
                 success: false,
                 data: vec![],
@@ -57,6 +58,7 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     let path = Path::new(&safe_path);
     
     if !path.exists() || !path.is_dir() {
+        eprintln!("路径不存在或不是目录: {}", safe_path);
         return HttpResponse::BadRequest().json(FileListResponse {
             success: false,
             data: vec![],
@@ -67,7 +69,8 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     // 读取目录内容
     let entries = match fs::read_dir(path) {
         Ok(entries) => entries,
-        Err(_) => {
+        Err(e) => {
+            eprintln!("读取目录失败: {}", e);
             return HttpResponse::InternalServerError().json(FileListResponse {
                 success: false,
                 data: vec![],
@@ -126,14 +129,25 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
 
 /// 验证路径安全，防止路径穿越
 fn validate_path(user_path: &str) -> Result<String, String> {
-    // 规范化路径
-    let clean_path = Path::new(user_path)
-        .canonicalize()
-        .map_err(|_| "路径解析失败".to_string())?;
-    
     // 获取工作目录的绝对路径
     let cwd = std::env::current_dir()
         .map_err(|_| "无法获取当前目录".to_string())?;
+    
+    // 规范化用户路径（去除 . 和 ..）
+    let normalized_path = Path::new(user_path);
+    let normalized_path: PathBuf = normalized_path
+        .components()
+        .filter(|comp| !matches!(comp, std::path::Component::ParentDir | std::path::Component::CurDir))
+        .collect();
+    
+    // 构建完整路径
+    let full_path = cwd.join(&normalized_path);
+    
+    // 尝试规范化路径（如果路径不存在，使用构建的路径）
+    let clean_path = match full_path.canonicalize() {
+        Ok(p) => p,
+        Err(_) => full_path.clone(),
+    };
     
     // 检查路径是否在工作目录或允许的子目录中
     // 允许的根目录: ./img, ./markdown, ./attachments 和 ./music
@@ -149,13 +163,16 @@ fn validate_path(user_path: &str) -> Result<String, String> {
     });
     
     if !is_allowed {
-        return Err("访问被拒绝：路径超出允许范围".to_string());
+        return Err(format!("访问被拒绝：路径超出允许范围 ({})", user_path));
     }
     
-    // 返回相对路径
-    clean_path.strip_prefix(&cwd)
-        .map(|p| p.to_string_lossy().to_string())
-        .map_err(|_| "路径转换失败".to_string())
+    // 返回相对路径（使用正则化后的路径）
+    if let Ok(relative) = clean_path.strip_prefix(&cwd) {
+        Ok(relative.to_string_lossy().to_string())
+    } else {
+        // 如果无法去除前缀，尝试使用原始路径
+        Ok(normalized_path.to_string_lossy().to_string())
+    }
 }
 
 /// 获取父目录路径
@@ -181,22 +198,47 @@ pub async fn download(query: web::Query<std::collections::HashMap<String, String
         .cloned()
         .unwrap_or_default();
     
-    let path = Path::new(&path_str);
+    // 验证路径安全性
+    let safe_path = match validate_path(&path_str) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("下载文件路径验证失败: {} - 原始路径: {}", e, path_str);
+            return HttpResponse::BadRequest().json(CommonResponse {
+                success: false,
+                message: format!("无效的文件路径: {}", e),
+            });
+        }
+    };
     
-    // 安全检查
-    if path_str.contains("..") || !path.exists() || path.is_dir() {
+    let path = Path::new(&safe_path);
+    
+    // 检查文件是否存在
+    if !path.exists() {
+        eprintln!("文件不存在: {}", safe_path);
+        return HttpResponse::NotFound().json(CommonResponse {
+            success: false,
+            message: "文件不存在".to_string(),
+        });
+    }
+    
+    // 检查是否是目录
+    if path.is_dir() {
+        eprintln!("路径是目录，不是文件: {}", safe_path);
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
-            message: "无效的文件路径".to_string(),
+            message: "不能下载目录".to_string(),
         });
     }
     
     match NamedFile::open(path) {
         Ok(file) => file.into_response(&req),
-        Err(_) => HttpResponse::NotFound().json(CommonResponse {
-            success: false,
-            message: "文件不存在".to_string(),
-        }),
+        Err(e) => {
+            eprintln!("打开文件失败: {}", e);
+            HttpResponse::InternalServerError().json(CommonResponse {
+                success: false,
+                message: "打开文件失败".to_string(),
+            })
+        }
     }
 }
 
