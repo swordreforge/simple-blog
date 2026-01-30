@@ -6856,37 +6856,15 @@ async function batchDeleteArticles() {
   const ids = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
 
   if (ids.length === 0) {
-    alert('请选择要删除的文章');
+    showToast('请选择要删除的文章', 'warning');
     return;
   }
 
-  if (!confirm(`确定要删除选中的 ${ids.length} 篇文章吗？此操作不可恢复！`)) {
-    return;
-  }
-
-  try {
-    const response = await fetch('/api/admin/passages/batch-delete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
-      body: JSON.stringify({ ids })
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      alert(result.message || '批量删除成功');
-      clearSelection();
-      fetchAdminData(currentPage, 10); // 重新加载当前页
-    } else {
-      alert(result.message || '批量删除失败');
-    }
-  } catch (error) {
-    console.error('批量删除文章失败:', error);
-    alert('批量删除失败，请重试');
-  }
+  // 使用统一的确认模态框
+  currentAction = 'batch-delete-articles';
+  currentItemId = ids.join(',');
+  document.getElementById('confirmMessage').textContent = `确定要删除选中的 ${ids.length} 篇文章吗？此操作不可恢复！`;
+  openModal('confirmModal');
 }
 
 // 清除选择
@@ -8846,6 +8824,14 @@ async function handleBatchDelete(action, idsString) {
       refreshFunction = () => {
         clearUserSelection();
         fetchAdminData(currentPage, 10, currentUserPage, 10);
+      };
+      break;
+    case 'batch-delete-articles':
+      apiUrl = '/api/admin/passages/batch-delete';
+      successMessage = '批量删除文章成功';
+      refreshFunction = () => {
+        clearSelection();
+        fetchAdminData(currentPage, 10);
       };
       break;
     default:
