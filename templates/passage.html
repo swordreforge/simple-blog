@@ -2655,7 +2655,7 @@ body.focus-mode-right .sidebar {
         </div>
 
         <!-- 附件列表区域 -->
-        <div class="attachments-section" id="attachmentsSection" style="display: none;">
+        <div class="attachments-section attachments-section-template" style="display: none;">
           <div class="attachments-header">
             <h3>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3558,18 +3558,28 @@ const fileTreeControls = document.getElementById('fileTreeControls');
 // 页面加载时初始化 - 已在文件末尾注册
 
 // 加载附件列表
-async function loadAttachments(articleDate) {
-  const attachmentsSection = document.getElementById('attachmentsSection');
-  const attachmentsList = document.getElementById('attachmentsList');
-  const attachmentsLoading = document.getElementById('attachmentsLoading');
-  const emptyAttachments = document.getElementById('emptyAttachments');
-  const attachmentsCount = document.getElementById('attachmentsCount');
+async function loadAttachments(articleDate, articleElement) {
+  // 如果未提供 articleElement，尝试查找当前激活的文章
+  if (!articleElement) {
+    articleElement = document.querySelector('.article.active');
+  }
+
+  if (!articleElement) {
+    console.warn('loadAttachments: 未找到文章元素');
+    return;
+  }
+
+  const attachmentsSection = articleElement.querySelector('.attachments-section');
+  const attachmentsList = articleElement.querySelector('.attachments-list');
+  const attachmentsLoading = articleElement.querySelector('.loading-state');
+  const emptyAttachments = articleElement.querySelector('.empty-attachments');
+  const attachmentsCount = articleElement.querySelector('.attachments-count');
 
   if (!attachmentsSection || !attachmentsList) return;
 
   // 显示加载状态
-  attachmentsLoading.style.display = 'flex';
-  emptyAttachments.style.display = 'none';
+  if (attachmentsLoading) attachmentsLoading.style.display = 'flex';
+  if (emptyAttachments) emptyAttachments.style.display = 'none';
 
   try {
     // 如果有 passage_id,使用 passage_id 获取附件,否则使用日期
@@ -3595,31 +3605,36 @@ async function loadAttachments(articleDate) {
     if (result.success && result.data && result.data.length > 0) {
       // 显示附件列表
       attachmentsSection.style.display = 'block';
-      attachmentsCount.textContent = `${result.data.length} 个附件`;
+      if (attachmentsCount) attachmentsCount.textContent = `${result.data.length} 个附件`;
 
       result.data.forEach(attachment => {
         const attachmentEl = createAttachmentElement(attachment);
         attachmentsList.appendChild(attachmentEl);
       });
     } else {
-      // 显示空状态
-      attachmentsSection.style.display = 'block';
-      attachmentsCount.textContent = '0 个附件';
-      emptyAttachments.style.display = 'flex';
-      attachmentsList.appendChild(emptyAttachments);
+          // 显示空状态
+          attachmentsSection.style.display = 'block';
+          if (attachmentsCount) attachmentsCount.textContent = '0 个附件';
+          if (emptyAttachments) {
+            emptyAttachments.style.display = 'flex';
+            attachmentsList.appendChild(emptyAttachments);
+          }
+        }
+    
+      } catch (error) {
+        console.error('加载附件失败:', error);
+        // 显示空状态
+        attachmentsSection.style.display = 'block';
+        if (attachmentsCount) attachmentsCount.textContent = '0 个附件';
+        if (emptyAttachments) {
+          emptyAttachments.style.display = 'flex';
+          attachmentsList.appendChild(emptyAttachments);
+        }
+      } finally {
+        // 隐藏加载状态
+        if (attachmentsLoading) attachmentsLoading.style.display = 'none';
+      }
     }
-  } catch (error) {
-    console.error('加载附件失败:', error);
-    // 显示空状态
-    attachmentsSection.style.display = 'block';
-    attachmentsCount.textContent = '0 个附件';
-    emptyAttachments.style.display = 'flex';
-    attachmentsList.appendChild(emptyAttachments);
-  } finally {
-    // 隐藏加载状态
-    attachmentsLoading.style.display = 'none';
-  }
-}
 
 // 创建附件元素
 function createAttachmentElement(attachment) {
@@ -4451,7 +4466,7 @@ function renderArticle(articleData) {
   renderMathAndDiagrams(articleContent);
 
   // 加载附件列表
-  loadAttachments(articleData.date);
+  loadAttachments(articleData.date, articleEl);
 
   // 初始化并加载文章评论系统
   initArticleComments(articleEl, articleData.id, articleData);
@@ -5319,7 +5334,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   // 加载附件列表（从服务器端渲染的文章日期中获取）
   const articleDateEl = document.querySelector('.article.active .article-date');
   if (articleDateEl && articleDateEl.textContent) {
-    loadAttachments(articleDateEl.textContent.trim());
+    const activeArticle = document.querySelector('.article.active');
+    loadAttachments(articleDateEl.textContent.trim(), activeArticle);
   }
 
   // 加载外观设置并应用暗色模式

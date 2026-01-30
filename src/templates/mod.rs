@@ -492,6 +492,20 @@ pub fn create_passage_context() -> TeraContext {
         }
     }
     
+    // 从数据库加载切换界面提示设置
+    let mut switch_notice = false;
+    let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+                switch_notice = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+                switch_notice_text = setting.value;
+            }
+        }
+    }
+
     context.insert("title", "文章 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
@@ -500,8 +514,8 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("settings", &TemplateSettings::default());
-    context.insert("switch_notice", &true);
-    context.insert("switch_notice_text", "🎉 新文章发布！");
+    context.insert("switch_notice", &switch_notice);
+    context.insert("switch_notice_text", &switch_notice_text);
     
     // 文章内容
     context.insert("content", "");
