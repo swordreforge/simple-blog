@@ -2693,6 +2693,41 @@ body.focus-mode-right .sidebar {
           </div>
         </div>
 
+        <!-- 赞助区域 - Bing 风格 -->
+        <div class="sponsor-section sponsor-section-template" style="display: none;">
+          <div class="sponsor-card">
+            <div class="sponsor-header">
+              <div class="sponsor-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </div>
+              <div class="sponsor-title">
+                <h3>感谢您的支持</h3>
+                <p id="sponsorDescription">如果您觉得这个博客对您有帮助，欢迎赞助支持！</p>
+              </div>
+            </div>
+            <div class="sponsor-options">
+              <button class="sponsor-option-btn" data-amount="5">
+                <span class="amount">¥5</span>
+                <span class="label">咖啡</span>
+              </button>
+              <button class="sponsor-option-btn" data-amount="10">
+                <span class="amount">¥10</span>
+                <span class="label">奶茶</span>
+              </button>
+              <button class="sponsor-option-btn" data-amount="20">
+                <span class="amount">¥20</span>
+                <span class="label">午餐</span>
+              </button>
+              <button class="sponsor-option-btn custom-amount">
+                <span class="amount">自定义</span>
+              </button>
+            </div>
+            <button class="sponsor-submit-btn" id="sponsorSubmitBtn">支持作者</button>
+          </div>
+        </div>
+
         <!-- 文章评论系统 - 每篇文章都有独立的评论区域 -->
         <div class="article-comments" data-article-id="">
           <div class="comments-section">
@@ -2967,11 +3002,24 @@ async function initApp() {
     // 格式: /passage/{id}
     currentPassageID = parseInt(pathParts[2]);
   }
-  
+
   await fetchArticlesData();
   setupEventListeners();
+
+  // 如果 URL 中指定了文章 ID，自动打开并显示该文章
+  if (currentPassageID) {
+    const articleId = `article-${currentPassageID}`;
+    const articleData = findArticleById(articleId);
+    if (articleData) {
+      // 打开文章
+      openArticle(articleId);
+    } else {
+      console.warn('未找到文章:', currentPassageID);
+    }
+  }
+
   updateUI();
-  
+
   // 初始化评论功能（确保在 currentPassageID 设置完成后）
   initComments();
 }
@@ -4476,6 +4524,21 @@ function renderArticle(articleData) {
 
   // 加载附件列表
   loadAttachments(articleData.date, articleEl);
+
+  // 显示赞助区域（如果启用）
+  const sponsorSection = articleEl.querySelector('.sponsor-section-template');
+  if (sponsorSection) {
+    if (window.sponsorEnabled) {
+      sponsorSection.style.display = 'block';
+      // 更新赞助描述
+      const sponsorDescription = sponsorSection.querySelector('#sponsorDescription');
+      if (sponsorDescription && window.sponsorDescription) {
+        sponsorDescription.textContent = window.sponsorDescription;
+      }
+    } else {
+      sponsorSection.style.display = 'none';
+    }
+  }
 
   // 初始化并加载文章评论系统
   initArticleComments(articleEl, articleData.id, articleData);
@@ -6412,8 +6475,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .sponsor-submit-btn {
   width: 100%;
-  background: white;
-  color: #667eea;
+  background: #007bff;
+  color: white;
   border: none;
   border-radius: 12px;
   padding: 16px;
@@ -6421,12 +6484,13 @@ document.addEventListener('DOMContentLoaded', function() {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
 .sponsor-submit-btn:hover {
+  background: #0056b3;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
 }
 
 html.dark-mode .sponsor-card {
@@ -6442,6 +6506,10 @@ html.dark-mode .sponsor-card {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // 从模板变量设置赞助配置
+  window.sponsorEnabled = {{ sponsor_enabled|default:false }};
+  window.sponsorDescription = "{{ sponsor_description|default:'' }}";
+
   // 赞助选项按钮交互
   const sponsorOptionBtns = document.querySelectorAll('.sponsor-option-btn');
   const sponsorSubmitBtn = document.getElementById('sponsorSubmitBtn');

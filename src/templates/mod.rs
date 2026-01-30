@@ -538,6 +538,14 @@ pub fn create_passage_context() -> TeraContext {
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
     let mut global_avatar = "/img/avatar.webp".to_string();
+
+    // 赞助设置
+    let mut sponsor_enabled = false;
+    let mut sponsor_title = "感谢您的支持".to_string();
+    let mut sponsor_image = "/img/avatar.webp".to_string();
+    let mut sponsor_description = "如果您觉得这个博客对您有帮助，欢迎赞助支持！".to_string();
+    let mut sponsor_button_text = "❤️ 赞助支持".to_string();
+
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
@@ -550,6 +558,23 @@ pub fn create_passage_context() -> TeraContext {
             // 加载 global_avatar
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
                 global_avatar = setting.value;
+            }
+
+            // 加载赞助设置
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_enabled") {
+                sponsor_enabled = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_title") {
+                sponsor_title = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_image") {
+                sponsor_image = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_description") {
+                sponsor_description = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_button_text") {
+                sponsor_button_text = setting.value;
             }
         }
     }
@@ -627,11 +652,11 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("is_unpublished", &false);
     
     // 赞助
-    context.insert("sponsor_enabled", &false);
-    context.insert("sponsor_title", "");
-    context.insert("sponsor_description", "");
-    context.insert("sponsor_image", "");
-    context.insert("sponsor_button_text", "");
+    context.insert("sponsor_enabled", &sponsor_enabled);
+    context.insert("sponsor_title", &sponsor_title);
+    context.insert("sponsor_description", &sponsor_description);
+    context.insert("sponsor_image", &sponsor_image);
+    context.insert("sponsor_button_text", &sponsor_button_text);
     context.insert("global_avatar", &global_avatar);
 
     // Live2D
