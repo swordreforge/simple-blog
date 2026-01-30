@@ -143,12 +143,6 @@ fn validate_path(user_path: &str) -> Result<String, String> {
     // 构建完整路径
     let full_path = cwd.join(&normalized_path);
     
-    // 尝试规范化路径（如果路径不存在，使用构建的路径）
-    let clean_path = match full_path.canonicalize() {
-        Ok(p) => p,
-        Err(_) => full_path.clone(),
-    };
-    
     // 检查路径是否在工作目录或允许的子目录中
     // 允许的根目录: ./img, ./markdown, ./attachments 和 ./music
     let allowed_dirs = vec![
@@ -159,20 +153,23 @@ fn validate_path(user_path: &str) -> Result<String, String> {
     ];
     
     let is_allowed = allowed_dirs.iter().any(|allowed_dir| {
-        clean_path.starts_with(allowed_dir) || clean_path == *allowed_dir
+        full_path.starts_with(allowed_dir) || full_path == *allowed_dir
     });
     
     if !is_allowed {
         return Err(format!("访问被拒绝：路径超出允许范围 ({})", user_path));
     }
     
-    // 返回相对路径（使用正则化后的路径）
-    if let Ok(relative) = clean_path.strip_prefix(&cwd) {
-        Ok(relative.to_string_lossy().to_string())
-    } else {
-        // 如果无法去除前缀，尝试使用原始路径
-        Ok(normalized_path.to_string_lossy().to_string())
+    // 始终返回相对路径（使用正则化后的路径）
+    // 对于 markdown 目录，确保返回正确的相对路径
+    let relative_path = normalized_path.to_string_lossy().to_string();
+    
+    // 处理空路径的情况
+    if relative_path.is_empty() || relative_path == "." {
+        return Ok(".".to_string());
     }
+    
+    Ok(relative_path)
 }
 
 /// 获取父目录路径
@@ -267,5 +264,81 @@ pub async fn create_dir(
             success: false,
             message: format!("创建目录失败: {}", _e),
         }),
+    }
+}
+/// 预览文件内容
+pub async fn preview(query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
+    let path_str = query.get("path")
+        .cloned()
+        .unwrap_or_default();
+    
+    // 验证路径安全性
+    let safe_path = match validate_path(&path_str) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("预览文件路径验证失败: {} - 原始路径: {}", e, path_str);
+            return HttpResponse::BadRequest().json(CommonResponse {
+                success: false,
+                message: format!("无效的文件路径: {}", e),
+            });
+        }
+    };
+    
+    let path = Path::new(&safe_path);
+    
+    // 检查文件是否存在
+    if !path.exists() {
+        eprintln!("文件不存在: {}", safe_path);
+        return HttpResponse::NotFound().json(CommonResponse {
+            success: false,
+            message: "文件不存在".to_string(),
+        });
+    }
+    
+    // 检查是否是目录
+    if path.is_dir() {
+        eprintln!("路径是目录，不是文件: {}", safe_path);
+        return HttpResponse::BadRequest().json(CommonResponse {
+            success: false,
+            message: "不能预览目录".to_string(),
+        });
+    }
+    
+    // 读取文件内容
+    match fs::read_to_string(path) {
+        Ok(content) => {
+            // 获取文件扩展名
+            let extension = path.extension()
+                .and_then(|ext| ext.to_str())
+                .unwrap_or("");
+            
+            // 判断文件类型
+            let content_type = match extension.to_lowercase().as_str() {
+                "md" | "markdown" => "markdown",
+                "txt" | "log" => "text",
+                "html" | "htm" => "html",
+                "json" => "json",
+                "xml" => "xml",
+                _ => "text",
+            };
+            
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": {
+                    "content": content,
+                    "content_type": content_type,
+                    "file_name": path.file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("unknown"),
+                }
+            }))
+        }
+        Err(e) => {
+            eprintln!("读取文件失败: {}", e);
+            HttpResponse::InternalServerError().json(CommonResponse {
+                success: false,
+                message: format!("读取文件失败: {}", e),
+            })
+        }
     }
 }

@@ -166,7 +166,7 @@ async fn sync_markdown_file_async(
     
     // 检查是否已存在
     if let Ok(existing) = passage_repo.get_by_file_path(&file_path).await {
-        // 更新现有文章
+        // 更新现有文章 - 保留原有的标签和分类等元数据
         let updated_passage = crate::db::models::Passage {
             id: existing.id,
             uuid: existing.uuid,
@@ -175,13 +175,13 @@ async fn sync_markdown_file_async(
             original_content: Some(content.clone()),
             summary,
             author: existing.author,
-            tags: tags_json.clone(),
-            category: existing.category,
-            status: existing.status,
+            tags: existing.tags, // 保留原有标签
+            category: existing.category, // 保留原有分类
+            status: existing.status, // 保留原有状态
             file_path: Some(file_path.clone()),
-            visibility: existing.visibility,
-            is_scheduled: existing.is_scheduled,
-            published_at: existing.published_at,
+            visibility: existing.visibility, // 保留原有可见性
+            is_scheduled: existing.is_scheduled, // 保留原有定时发布设置
+            published_at: existing.published_at, // 保留原有发布时间
             created_at: existing.created_at,
             updated_at: now,
         };

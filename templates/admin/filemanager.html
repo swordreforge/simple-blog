@@ -82,7 +82,10 @@
       <div class="fm-modal-body">
         <div id="uploadArea" class="upload-area">
           <div class="upload-icon">📤</div>
-          <p>拖拽文件到此处或点击选择文件</p>
+          <div class="upload-text">
+            <h4>拖拽文件到这里或点击上传</h4>
+            <p>支持图片、文档、视频、音频、压缩包</p>
+          </div>
           <input type="file" id="fileInput" multiple style="display: none;">
         </div>
         <div id="uploadList" class="upload-list"></div>
@@ -180,6 +183,6 @@
   <!-- Toast 通知 -->
   <div id="toast" class="toast"></div>
 
-  <script src="/js/filemanager.js"></script>
+  <script src="/js/filemanager.js?v=4"></script>
 </body>
 </html>

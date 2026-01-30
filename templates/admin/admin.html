@@ -5321,8 +5321,11 @@ async function populateTagSelector(selectedTags = []) {
     selector.appendChild(tagOption);
   });
 
-  // 初始化选中的标签
-  updateSelectedTags();
+  // 初始化选中的标签 - 确保使用传入的 selectedTags
+  const tagsInput = document.getElementById('editTags');
+  if (tagsInput) {
+    tagsInput.value = JSON.stringify(selectedTags);
+  }
 }
 
 // 更新选中的标签
@@ -10364,8 +10367,8 @@ const FileManager = {
 
       if (result.success) {
         this.renderFiles(result.data.files);
-        this.updateBreadcrumb(result.data.currentPath);
-        this.updateBackButton(result.data.parentPath);
+        this.updateBreadcrumb(result.data.current_path);
+        this.updateBackButton(result.data.parent_path);
         this.updateFileCount(result.data.files.length);
       } else {
         showToast(result.message, 'error');
@@ -10506,11 +10509,42 @@ const FileManager = {
       return;
     }
 
-    // Markdown 文件：跳转到文章页面
+    // Markdown 文件：使用模态框预览
     if (extension === 'md') {
-      // 移除 markdown/ 前缀和 .md 后缀
-      const passagePath = path.replace(/^markdown\//, '').replace(/\.md$/, '');
-      window.location.href = `/passage/${passagePath}`;
+      let markdownPath = path;
+
+      // 处理绝对路径（如：/home/user/project/markdown/2026/02/19/test.md）
+      if (markdownPath.startsWith('/')) {
+        const markdownIndex = markdownPath.indexOf('/markdown/');
+        if (markdownIndex !== -1) {
+          markdownPath = markdownPath.substring(markdownIndex + 10); // 去掉 '/markdown/' 前缀
+        } else {
+          console.error('无效的 Markdown 路径:', path);
+          this.showToast('无效的 Markdown 路径', 'error');
+          return;
+        }
+      }
+      // 处理相对路径（如：markdown/2026/02/19/test.md）
+      else if (markdownPath.startsWith('markdown/')) {
+        markdownPath = markdownPath.substring(9); // 去掉 'markdown/' 前缀
+      } else {
+        console.error('无效的 Markdown 路径:', path);
+        this.showToast('无效的 Markdown 路径', 'error');
+        return;
+      }
+
+      // 验证提取后的路径不为空且不是根路径
+      if (!markdownPath || markdownPath === '/' || markdownPath.trim() === '') {
+        console.error('提取后的 Markdown 路径无效:', markdownPath);
+        this.showToast('无效的 Markdown 路径', 'error');
+        return;
+      }
+
+      if (window.MarkdownPreviewModal) {
+        window.MarkdownPreviewModal.open(markdownPath);
+      } else {
+        console.error('MarkdownPreviewModal not available');
+      }
       return;
     }
 
@@ -10970,6 +11004,8 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="/js/modal-animations.js"></script>
 <!-- 键盘快捷键脚本 -->
 <script src="/js/keyboard-shortcuts.js"></script>
+<!-- Markdown 预览模态框 -->
+<script src="/js/markdown-preview-modal.js?v=3"></script>
 
 <!-- Live2D 看板娘配置 -->
 <script>

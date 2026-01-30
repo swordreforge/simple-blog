@@ -57,24 +57,45 @@ const FileManager = {
     // 上传区域
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
-    
-    uploadArea.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-    
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.classList.add('dragover');
-    });
-    
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.classList.remove('dragover');
-    });
-    
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.classList.remove('dragover');
-      this.handleFileDrop(e);
-    });
+
+    if (uploadArea && fileInput) {
+      // 点击上传区域触发文件选择
+      uploadArea.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        fileInput.click();
+      });
+
+      // 文件选择变化事件
+      fileInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        this.handleFileSelect(e);
+      });
+
+      // 拖拽悬停效果
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.add('dragover');
+      });
+
+      // 拖拽离开效果
+      uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('dragover');
+      });
+
+      // 拖拽放下事件
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('dragover');
+        this.handleFileDrop(e);
+      });
+    } else {
+      console.error('上传区域或文件输入框未找到');
+    }
     
     // 确认上传
     document.getElementById('confirmUploadBtn').addEventListener('click', () => this.uploadFiles());
@@ -124,8 +145,8 @@ const FileManager = {
 
       if (result.success) {
         this.renderFiles(result.data.files);
-        this.updateBreadcrumb(result.data.currentPath);
-        this.updateBackButton(result.data.parentPath);
+        this.updateBreadcrumb(result.data.current_path);
+        this.updateBackButton(result.data.parent_path);
         this.updateFileCount(result.data.files.length);
       } else {
         this.showToast(result.message, 'error');
@@ -425,7 +446,14 @@ const FileManager = {
         if (isDir) {
           this.navigateTo(path);
         } else {
-          this.openFile(path);
+          // 检查是否是 markdown 文件
+          if (path.toLowerCase().endsWith('.md')) {
+            // Markdown 文件使用模态框预览
+            this.previewMarkdownFile(path);
+          } else {
+            // 其他文件使用原有的打开逻辑
+            this.openFile(path);
+          }
         }
       });
       
@@ -541,6 +569,12 @@ const FileManager = {
   async openFile(path) {
     const extension = path.split('.').pop().toLowerCase();
     const fileName = path.split('/').pop();
+
+    // Markdown 文件 - 使用模态框预览
+    if (extension === 'md') {
+      this.previewMarkdownFile(path);
+      return;
+    }
 
     // 图片文件 - 在线预览
     if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes('.' + extension)) {
@@ -851,11 +885,26 @@ const FileManager = {
       const markdownIndex = markdownPath.indexOf('/markdown/');
       if (markdownIndex !== -1) {
         markdownPath = markdownPath.substring(markdownIndex + 10); // 去掉 '/markdown/' 前缀
+      } else {
+        console.error('无效的 Markdown 路径:', path);
+        this.showToast('无效的 Markdown 路径', 'error');
+        return;
       }
     }
     // 处理相对路径（如：markdown/2026/02/19/test.md）
     else if (markdownPath.startsWith('markdown/')) {
       markdownPath = markdownPath.substring(9); // 去掉 'markdown/' 前缀
+    } else {
+      console.error('无效的 Markdown 路径:', path);
+      this.showToast('无效的 Markdown 路径', 'error');
+      return;
+    }
+
+    // 验证提取后的路径不为空且不是根路径
+    if (!markdownPath || markdownPath === '/' || markdownPath.trim() === '') {
+      console.error('提取后的 Markdown 路径无效:', markdownPath);
+      this.showToast('无效的 Markdown 路径', 'error');
+      return;
     }
 
     console.log('Markdown 预览路径:', markdownPath);

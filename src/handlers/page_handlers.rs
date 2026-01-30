@@ -60,46 +60,6 @@ pub async fn passage_detail(path: web::Path<String>) -> HttpResponse {
 }
 
 /// 文章详情页（通过日期路径：/passage/{year}/{month}/{day}/{title}）
-pub async fn passage_detail_by_date(
-    path: web::Path<(String, String, String, String)>,
-    repo: web::Data<Arc<dyn crate::db::repositories::Repository>>,
-) -> HttpResponse {
-    let (_year, _month, _day, title) = path.into_inner();
-
-    // 使用 urlencoding 正确解码标题
-    let decoded_title = match urlencoding::decode(&title) {
-        Ok(decoded) => decoded.to_string(),
-        Err(_) => title.clone(),
-    };
-
-    // 从数据库获取所有文章
-    let passage_repo = crate::db::repositories::PassageRepository::new(repo.get_pool().clone());
-    
-    match passage_repo.get_all(1000, 0).await {
-        Ok(passages) => {
-            // 查找匹配标题的文章
-            let passage = passages.into_iter().find(|p| {
-                p.title == decoded_title
-            });
-            
-            if let Some(passage) = passage {
-                // 渲染文章内容到模板
-                let context = create_passage_context_with_article(&passage);
-                render_template("passage.html", &context).await
-            } else {
-                // 文章未找到，渲染空页面
-                let context = create_passage_context();
-                render_template("passage.html", &context).await
-            }
-        }
-        Err(_) => {
-            let context = create_passage_context();
-            render_template("passage.html", &context).await
-        }
-    }
-}
-
-/// 归档页面
 pub async fn collect() -> HttpResponse {
     let context = create_collect_context();
     render_template("collect.html", &context).await

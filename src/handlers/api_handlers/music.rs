@@ -280,7 +280,61 @@ pub async fn delete(
 ) -> HttpResponse {
     let id = path.into_inner();
     let music_repo = MusicTrackRepository::new(repo.get_pool().clone());
-    
+
+    // 先获取音乐信息，以便删除相关文件
+    let track_info = match music_repo.get_by_id(id).await {
+        Ok(track) => track,
+        Err(e) => {
+            eprintln!("获取音乐信息失败: {}", e);
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "音乐不存在"
+            }));
+        }
+    };
+
+    // 删除音频文件
+    if !track_info.file_path.is_empty() {
+        let file_path = format!(".{}", track_info.file_path);
+        if let Err(e) = fs::remove_file(&file_path).await {
+            eprintln!("删除音频文件失败 {}: {}", file_path, e);
+            // 不中断流程，继续删除数据库记录
+        }
+    }
+
+    // 检查封面图片是否被其他音乐使用
+    if !track_info.cover_image.is_empty() {
+        let cover_image = track_info.cover_image.clone();
+
+        // 获取所有音乐，检查是否有其他音乐使用相同的封面
+        match music_repo.get_all_without_pagination().await {
+            Ok(all_tracks) => {
+                // 统计使用此封面的音乐数量（排除当前要删除的音乐）
+                let cover_usage_count = all_tracks.iter()
+                    .filter(|track| {
+                        track.id != track_info.id && track.cover_image == cover_image
+                    })
+                    .count();
+
+                // 只有当没有其他音乐使用此封面时，才删除封面图片
+                if cover_usage_count == 0 {
+                    let cover_path = format!(".{}", cover_image);
+                    if let Err(e) = fs::remove_file(&cover_path).await {
+                        eprintln!("删除封面图片失败 {}: {}", cover_path, e);
+                        // 不中断流程，继续删除数据库记录
+                    }
+                } else {
+                    println!("封面图片 {} 被 {} 个其他音乐使用，跳过删除", cover_image, cover_usage_count);
+                }
+            }
+            Err(e) => {
+                eprintln!("获取音乐列表失败: {}", e);
+                // 不中断流程，继续删除数据库记录
+            }
+        }
+    }
+
+    // 删除数据库记录
     match music_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,

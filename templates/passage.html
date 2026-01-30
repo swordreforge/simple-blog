@@ -3021,6 +3021,7 @@ async function loadCurrentArticleFromPath() {
             date: article.created_at || '2024-01-01',
             readtime: '5分钟',
             tags: article.tags || '[]',
+            category: article.category || '未分类',
             content: renderedContent || '',
             show_title: true,
             status: article.status || 'published',
@@ -3220,12 +3221,15 @@ function organizeArticlesByFolder(articles) {
     const readTime = Math.ceil(summary.length / 400) || 1;
     
     // 添加文章到日期文件夹（不包含完整内容）
+    // 简化日期格式：只显示日期部分（YYYY-MM-DD）
+    const dateOnly = (article.created_at || '2024-01-01').split(' ')[0];
     years[year].subfolders[monthKey].subfolders[dayKey].files.push({
       id: `article-${article.id}`,
       title: article.title,
-      date: article.created_at || '2024-01-01',
+      date: dateOnly,
       readtime: `${readTime}分钟`,
       tags: article.tags || [],
+      category: article.category || '未分类',
       content: '', // 不加载完整内容，点击时再加载
       summary: summary,
       show_title: true,
@@ -3338,6 +3342,7 @@ function getDefaultArticlesData() {
             author: "前端设计师",
             readtime: "12分钟",
             tags: ["前端开发", "CSS", "响应式设计", "用户体验"],
+            category: "技术",
             content: `
               <h2>响应式设计的重要性</h2>
               <p>随着移动设备的普及，响应式设计已成为现代Web开发的核心。本文将探讨最新的响应式设计模式、CSS Grid与Flexbox的高级用法，以及如何在复杂布局中保持用户体验的一致性。</p>
@@ -3378,6 +3383,7 @@ function getDefaultArticlesData() {
             author: "JavaScript开发者",
             readtime: "15分钟",
             tags: ["JavaScript", "ES2024", "前端", "编程"],
+            category: "技术",
             content: `
               <h2>ES2024概览</h2>
               <p>ECMAScript 2024即将带来一系列令人兴奋的新特性，包括Record和Tuple数据类型、管道运算符等。本文深入解析这些新特性的用法、适用场景以及它们如何改变我们的编程方式。</p>
@@ -3431,6 +3437,7 @@ const result = [1, 2, 3, 4, 5]
             author: "UI设计师",
             readtime: "10分钟",
             tags: ["设计", "暗色模式", "CSS", "用户体验"],
+            category: "设计",
             content: `
               <h2>暗色模式的兴起</h2>
               <p>暗色模式不仅是时尚潮流，更是对用户视力保护和电池寿命的关怀。本文从心理学角度分析暗色模式的益处，并提供实用的CSS和JavaScript实现方案。</p>
@@ -3501,6 +3508,7 @@ themeToggle.addEventListener('click', () => {
             author: "远程工作者",
             readtime: "8分钟",
             tags: ["远程工作", "团队协作", "工具比较"],
+            category: "生活",
             content: `
               <h2>远程工作的新常态</h2>
               <p>远程工作已成为新常态，选择合适的协作工具至关重要。本文比较了Slack、Teams、Notion、Figma等主流工具的优缺点，帮助团队做出明智选择。</p>
@@ -4414,7 +4422,9 @@ function renderArticle(articleData) {
 
   // 填充文章数据
   articleEl.querySelector('.article-title').textContent = articleData.title;
-  articleEl.querySelector('.article-date').textContent = articleData.date;
+  // 简化日期格式：只显示日期部分（YYYY-MM-DD）
+  const dateOnly = articleData.date.split(' ')[0];
+  articleEl.querySelector('.article-date').textContent = dateOnly;
   articleEl.querySelector('.article-readtime').textContent = `预计 ${articleData.readtime} 分钟读完`;
 
   // 填充分类
@@ -4447,20 +4457,9 @@ function renderArticle(articleData) {
     articleEl.querySelector('.article-title').style.display = 'block';
   }
 
-  // 渲染标签
+  // 隐藏文章底部的标签区域（已通过行内标签显示）
   const tagsContainer = articleEl.querySelector('.article-tags');
-  tagsContainer.innerHTML = '';
-  
-  // 解析 tags - 从 JSON 字符串转换为数组
-  const tags = typeof articleData.tags === 'string' ? JSON.parse(articleData.tags) : articleData.tags;
-  articleData.tags = tags; // 更新 articleData 的 tags 为数组
-  
-  tags.forEach(tag => {
-    const tagEl = document.createElement('span');
-    tagEl.className = 'tag';
-    tagEl.textContent = tag;
-    tagsContainer.appendChild(tagEl);
-  });
+  tagsContainer.style.display = 'none';
   
   // 渲染内容，移除第一个 H1 标签（避免标题重复显示）
   let content = articleData.content;
@@ -6050,7 +6049,7 @@ function escapeHtml(text) {
 <!-- 模态框动画控制脚本 -->
 <script src="/js/modal-animations.js"></script>
 <!-- Markdown 预览模态框 -->
-<script src="/js/markdown-preview-modal.js"></script>
+<script src="/js/markdown-preview-modal.js?v=2"></script>
 
 <script>
 // 浏览器标签页标题提示功能
