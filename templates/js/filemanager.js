@@ -447,7 +447,7 @@ const FileManager = {
       icon = '📁';
       typeClass = 'directory';
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes(file.extension)) {
-      icon = `<img src="/${file.path}/${file.name}" alt="${file.name}" onerror="this.parentElement.innerHTML='🖼️'">`;
+      icon = `<img src="/${file.path}" alt="${file.name}" onerror="this.parentElement.innerHTML='🖼️'">`;
       typeClass = 'image';
     } else if (['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus', '.ape'].includes(file.extension)) {
       icon = '🎵';
@@ -464,10 +464,9 @@ const FileManager = {
     }
     
     const size = this.formatFileSize(file.size);
-    const fullPath = `${file.path}/${file.name}`;
     
     return `
-      <div class="file-item ${typeClass}" data-path="${fullPath}" data-is-dir="${file.is_dir}">
+      <div class="file-item ${typeClass}" data-path="${file.path}" data-is-dir="${file.is_dir}">
         <div class="file-icon">${icon}</div>
         <div class="file-name">${file.name}</div>
         <div class="file-meta">${file.is_dir ? '文件夹' : size}</div>

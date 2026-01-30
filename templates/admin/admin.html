@@ -10426,16 +10426,15 @@ const FileManager = {
     if (file.is_dir) {
       icon = '📁';
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(file.extension)) {
-      icon = `<img src="/${file.path}/${file.name}" alt="${file.name}" onerror="this.parentElement.innerHTML='🖼️'">`;
+      icon = `<img src="/${file.path}" alt="${file.name}" onerror="this.parentElement.innerHTML='🖼️'">`;
     } else if (file.extension === '.md') {
       icon = '📝';
     }
 
     const size = this.formatFileSize(file.size);
-    const fullPath = `${file.path}/${file.name}`;
 
     return `
-      <div class="fm-file-item" data-path="${fullPath}" data-is-dir="${file.is_dir}">
+      <div class="fm-file-item" data-path="${file.path}" data-is-dir="${file.is_dir}">
         <div class="fm-file-icon">${icon}</div>
         <div class="fm-file-name">${file.name}</div>
         <div class="fm-file-meta">${file.is_dir ? '文件夹' : size}</div>
