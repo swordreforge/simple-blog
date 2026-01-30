@@ -6507,8 +6507,8 @@ html.dark-mode .sponsor-card {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // 从模板变量设置赞助配置
-  window.sponsorEnabled = {{ sponsor_enabled|default:false }};
-  window.sponsorDescription = "{{ sponsor_description|default:'' }}";
+  window.sponsorEnabled = {{ sponsor_enabled }};
+  window.sponsorDescription = "{{ sponsor_description }}";
 
   // 赞助选项按钮交互
   const sponsorOptionBtns = document.querySelectorAll('.sponsor-option-btn');
