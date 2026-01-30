@@ -2693,39 +2693,9 @@ body.focus-mode-right .sidebar {
           </div>
         </div>
 
-        <!-- 赞助区域 - Bing 风格 -->
+        <!-- 赞助区域 -->
         <div class="sponsor-section sponsor-section-template" style="display: none;">
-          <div class="sponsor-card">
-            <div class="sponsor-header">
-              <div class="sponsor-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-              </div>
-              <div class="sponsor-title">
-                <h3>感谢您的支持</h3>
-                <p id="sponsorDescription">如果您觉得这个博客对您有帮助，欢迎赞助支持！</p>
-              </div>
-            </div>
-            <div class="sponsor-options">
-              <button class="sponsor-option-btn" data-amount="5">
-                <span class="amount">¥5</span>
-                <span class="label">咖啡</span>
-              </button>
-              <button class="sponsor-option-btn" data-amount="10">
-                <span class="amount">¥10</span>
-                <span class="label">奶茶</span>
-              </button>
-              <button class="sponsor-option-btn" data-amount="20">
-                <span class="amount">¥20</span>
-                <span class="label">午餐</span>
-              </button>
-              <button class="sponsor-option-btn custom-amount">
-                <span class="amount">自定义</span>
-              </button>
-            </div>
-            <button class="sponsor-submit-btn" id="sponsorSubmitBtn">支持作者</button>
-          </div>
+          <button class="sponsor-btn" id="sponsorBtn">{{ sponsor_button_text }}</button>
         </div>
 
         <!-- 文章评论系统 - 每篇文章都有独立的评论区域 -->
@@ -4530,10 +4500,10 @@ function renderArticle(articleData) {
   if (sponsorSection) {
     if (window.sponsorEnabled) {
       sponsorSection.style.display = 'block';
-      // 更新赞助描述
-      const sponsorDescription = sponsorSection.querySelector('#sponsorDescription');
-      if (sponsorDescription && window.sponsorDescription) {
-        sponsorDescription.textContent = window.sponsorDescription;
+      // 更新赞助按钮文字
+      const sponsorBtn = sponsorSection.querySelector('#sponsorBtn');
+      if (sponsorBtn && window.sponsorButtonText) {
+        sponsorBtn.textContent = window.sponsorButtonText;
       }
     } else {
       sponsorSection.style.display = 'none';
@@ -6376,131 +6346,43 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <style>
-/* 赞助区域 - Bing 风格 */
+/* 赞助区域 */
 .sponsor-section {
-  margin: 40px 0;
+  text-align: right;
+  margin: 30px 0;
+  padding: 20px;
 }
 
-.sponsor-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 30px;
-  color: white;
-  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-  transition: transform 0.3s ease;
-}
-
-.sponsor-card:hover {
-  transform: translateY(-5px);
-}
-
-.sponsor-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.sponsor-icon {
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-}
-
-.sponsor-icon svg {
-  width: 28px;
-  height: 28px;
-}
-
-.sponsor-title h3 {
-  font-size: 1.5em;
-  font-weight: 700;
-  margin: 0 0 6px 0;
-}
-
-.sponsor-title p {
-  font-size: 0.95em;
-  margin: 0;
-  opacity: 0.9;
-}
-
-.sponsor-options {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.sponsor-option-btn {
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  padding: 16px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.sponsor-option-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.05);
-}
-
-.sponsor-option-btn.selected {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: white;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-}
-
-.sponsor-option-btn .amount {
-  font-size: 1.3em;
-  font-weight: 700;
-}
-
-.sponsor-option-btn .label {
-  font-size: 0.85em;
-  opacity: 0.9;
-}
-
-.sponsor-submit-btn {
-  width: 100%;
+.sponsor-btn {
   background: #007bff;
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 16px;
-  font-size: 1.1em;
-  font-weight: 700;
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
-.sponsor-submit-btn:hover {
+.sponsor-btn:hover {
   background: #0056b3;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
 }
 
-html.dark-mode .sponsor-card {
-  background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+.sponsor-btn:active {
+  transform: translateY(0);
 }
 
-@media (max-width: 768px) {
-  .sponsor-options {
-    grid-template-columns: repeat(2, 1fr);
-  }
+html.dark-mode .sponsor-btn {
+  background: #4a9eff;
+  color: white;
+}
+
+html.dark-mode .sponsor-btn:hover {
+  background: #3395ff;
 }
 </style>
 
@@ -6508,51 +6390,30 @@ html.dark-mode .sponsor-card {
 document.addEventListener('DOMContentLoaded', function() {
   // 从模板变量设置赞助配置
   window.sponsorEnabled = {{ sponsor_enabled }};
-  window.sponsorDescription = "{{ sponsor_description }}";
+  window.sponsorButtonText = "{{ sponsor_button_text }}";
 
-  // 赞助选项按钮交互
-  const sponsorOptionBtns = document.querySelectorAll('.sponsor-option-btn');
-  const sponsorSubmitBtn = document.getElementById('sponsorSubmitBtn');
-  let selectedAmount = null;
+  // 赞助按钮点击事件 - 打开模态框
+  const sponsorBtn = document.getElementById('sponsorBtn');
+  const sponsorModal = document.getElementById('sponsorModal');
+  const modalClose = sponsorModal ? sponsorModal.querySelector('.modal-close') : null;
 
-  sponsorOptionBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      // 移除其他按钮的选中状态
-      sponsorOptionBtns.forEach(b => b.classList.remove('selected'));
-      
-      // 如果点击的是自定义金额
-      if (this.classList.contains('custom-amount')) {
-        const customAmount = prompt('请输入赞助金额：');
-        if (customAmount && !isNaN(customAmount) && parseFloat(customAmount) > 0) {
-          selectedAmount = parseFloat(customAmount);
-          this.querySelector('.amount').textContent = '¥' + selectedAmount;
-          this.classList.add('selected');
-        } else {
-          selectedAmount = null;
-          this.querySelector('.amount').textContent = '自定义';
-        }
-      } else {
-        // 获取预设金额
-        selectedAmount = parseInt(this.dataset.amount);
-        this.classList.add('selected');
-      }
+  if (sponsorBtn && sponsorModal) {
+    sponsorBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      sponsorModal.classList.add('active');
     });
-  });
 
-  // 提交赞助
-  if (sponsorSubmitBtn) {
-    sponsorSubmitBtn.addEventListener('click', function() {
-      if (!selectedAmount) {
-        showToast('请选择或输入赞助金额', 'warning');
-        return;
+    if (modalClose) {
+      modalClose.addEventListener('click', function(e) {
+        e.stopPropagation();
+        sponsorModal.classList.remove('active');
+      });
+    }
+
+    sponsorModal.addEventListener('click', function(e) {
+      if (e.target === sponsorModal) {
+        sponsorModal.classList.remove('active');
       }
-      
-      // 这里可以添加实际的赞助逻辑，比如跳转到支付页面或调用 API
-      showToast(`感谢您 ¥${selectedAmount} 的支持！`, 'success');
-      
-      // 重置选中状态
-      sponsorOptionBtns.forEach(b => b.classList.remove('selected'));
-      selectedAmount = null;
     });
   }
 });
