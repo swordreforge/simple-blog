@@ -49,14 +49,30 @@ pub async fn list(
     let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
     let offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
     
-    match attachment_repo.get_all(limit, offset).await {
+    // 检查是否有 passage_id 参数
+    let passage_id = query.get("passage_id");
+    
+    match attachment_repo.get_all(1000, 0).await {
         Ok(attachments) => {
-            let total = match attachment_repo.count().await {
-                Ok(c) => c,
-                Err(_) => attachments.len() as i64,
+            let filtered: Vec<Attachment> = if let Some(pid) = passage_id {
+                // 按 passage_id 过滤
+                attachments.into_iter()
+                    .filter(|a| a.passage_uuid.as_ref().map_or(false, |uuid| uuid == pid))
+                    .collect()
+            } else {
+                // 不分页，返回所有附件
+                attachments
             };
             
-            let data: Vec<AttachmentResponse> = attachments.into_iter()
+            let total = filtered.len() as i64;
+            
+            // 应用分页
+            let paginated: Vec<Attachment> = filtered.into_iter()
+                .skip(offset as usize)
+                .take(limit as usize)
+                .collect();
+            
+            let data: Vec<AttachmentResponse> = paginated.into_iter()
                 .map(|a| AttachmentResponse {
                     id: a.id.unwrap_or(0),
                     file_name: a.file_name,
@@ -323,6 +339,98 @@ fn determine_file_type(filename: &str, content_type: &str) -> String {
             } else {
                 "unknown".to_string()
             }
+        }
+    }
+}
+
+/// 按日期获取附件列表
+pub async fn list_by_date(
+    repo: web::Data<Arc<dyn Repository>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
+    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    
+    let year = query.get("year");
+    let month = query.get("month");
+    let day = query.get("day");
+    
+    match attachment_repo.get_all(1000, 0).await {
+        Ok(attachments) => {
+            let filtered: Vec<Attachment> = attachments.into_iter()
+                .filter(|a| {
+                    let uploaded_date = a.uploaded_at.format("%Y-%m-%d").to_string();
+                    let date_str = if let (Some(y), Some(m), Some(d)) = (year, month, day) {
+                        format!("{}-{}-{}", y, m, d)
+                    } else {
+                        uploaded_date.clone()
+                    };
+                    uploaded_date == date_str
+                })
+                .collect();
+            
+            let data: Vec<AttachmentResponse> = filtered.into_iter()
+                .map(|a| AttachmentResponse {
+                    id: a.id.unwrap_or(0),
+                    file_name: a.file_name,
+                    stored_name: a.stored_name,
+                    file_path: a.file_path,
+                    file_type: a.file_type,
+                    file_size: a.file_size,
+                    passage_id: a.passage_uuid,
+                    visibility: a.visibility,
+                    show_in_passage: a.show_in_passage,
+                    uploaded_at: a.uploaded_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                })
+                .collect();
+            
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": data
+            }))
+        }
+        Err(e) => {
+            eprintln!("获取附件列表失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取附件列表失败"
+            }))
+        }
+    }
+}
+
+/// 下载附件
+pub async fn download(
+    repo: web::Data<Arc<dyn Repository>>,
+    path: web::Path<i64>,
+) -> HttpResponse {
+    let id = path.into_inner();
+    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    
+    match attachment_repo.get_by_id(id).await {
+        Ok(attachment) => {
+            // 读取文件内容
+            match std::fs::read(&attachment.file_path) {
+                Ok(content) => {
+                    HttpResponse::Ok()
+                        .insert_header(("Content-Type", attachment.content_type.clone()))
+                        .insert_header(("Content-Disposition", format!("attachment; filename=\"{}\"", attachment.file_name)))
+                        .body(content)
+                }
+                Err(e) => {
+                    eprintln!("读取文件失败: {}", e);
+                    HttpResponse::NotFound().json(serde_json::json!({
+                        "success": false,
+                        "message": "文件不存在"
+                    }))
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("获取附件失败: {}", e);
+            HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "附件不存在"
+            }))
         }
     }
 }

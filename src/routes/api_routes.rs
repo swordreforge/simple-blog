@@ -71,14 +71,20 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
 
     // 附件相关 API
     cfg.service(
+        web::resource("/api/attachments")
+            .route(web::get().to(api_handlers::attachments::list))
+    ).service(
         web::resource("/api/attachments/upload")
             .route(web::post().to(api_handlers::attachments::upload))
     ).service(
-        web::resource("/api/attachments/list")
-            .route(web::get().to(api_handlers::attachments::list))
+        web::resource("/api/attachments/by-date")
+            .route(web::get().to(api_handlers::attachments::list_by_date))
     ).service(
         web::resource("/api/attachments/{id}")
             .route(web::delete().to(api_handlers::attachments::delete))
+    ).service(
+        web::resource("/api/attachments/{id}/download")
+            .route(web::get().to(api_handlers::attachments::download))
     );
 
     // 管理员 API - 附件
