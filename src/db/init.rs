@@ -745,7 +745,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             };
             
             match conn.execute(
-                "INSERT INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 
+                "INSERT OR IGNORE INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 rusqlite::params![
                     &uuid,
@@ -763,7 +763,11 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                     chrono::Utc::now(),
                 ],
             ) {
-                Ok(_) => {},
+                Ok(rows_affected) => {
+                    if rows_affected == 0 {
+                        eprintln!("⏭️  跳过已存在的文章: {}", title);
+                    }
+                },
                 Err(e) => {
                     eprintln!("❌ 插入文章 '{}' 失败: {}", title, e);
                     return Err(e.into());

@@ -56,26 +56,53 @@ pub struct CliArgs {
 impl CliArgs {
     /// 将相对路径转换为绝对路径
     pub fn resolve_paths(&mut self) {
-        if let Ok(cwd) = std::env::current_dir() {
-            // 数据库路径
-            self.db_path = Self::make_absolute(&cwd, &self.db_path);
+        // 尝试找到项目根目录
+        // 策略：从可执行文件目录开始，向上查找包含 Cargo.toml 的目录
+        let base_dir = if let Ok(exe_path) = std::env::current_exe() {
+            let exe_dir = exe_path.parent().unwrap_or_else(|| Path::new("."));
+            let mut current = exe_dir.to_path_buf();
             
-            // 模板目录
-            self.templates_dir = Self::make_absolute(&cwd, &self.templates_dir);
+            // 向上查找项目根目录（包含 Cargo.toml）
+            let mut found = false;
+            for _ in 0..10 { // 最多向上查找 10 层
+                if current.join("Cargo.toml").exists() {
+                    found = true;
+                    break;
+                }
+                if current.parent().is_none() {
+                    break;
+                }
+                current = current.parent().unwrap().to_path_buf();
+            }
             
-            // 静态文件目录
-            self.static_dir = Self::make_absolute(&cwd, &self.static_dir);
-            
-            // GeoIP 数据库路径
-            self.geoip_db_path = Self::make_absolute(&cwd, &self.geoip_db_path);
+            if found {
+                current
+            } else {
+                // 如果找不到，使用可执行文件目录
+                exe_dir.to_path_buf()
+            }
+        } else {
+            std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"))
+        };
 
-            // TLS 证书和密钥
-            if let Some(ref mut cert) = self.tls_cert {
-                *cert = Self::make_absolute(&cwd, cert.as_str());
-            }
-            if let Some(ref mut key) = self.tls_key {
-                *key = Self::make_absolute(&cwd, key.as_str());
-            }
+        // 数据库路径
+        self.db_path = Self::make_absolute(&base_dir, &self.db_path);
+        
+        // 模板目录
+        self.templates_dir = Self::make_absolute(&base_dir, &self.templates_dir);
+        
+        // 静态文件目录
+        self.static_dir = Self::make_absolute(&base_dir, &self.static_dir);
+        
+        // GeoIP 数据库路径
+        self.geoip_db_path = Self::make_absolute(&base_dir, &self.geoip_db_path);
+
+        // TLS 证书和密钥
+        if let Some(ref mut cert) = self.tls_cert {
+            *cert = Self::make_absolute(&base_dir, cert.as_str());
+        }
+        if let Some(ref mut key) = self.tls_key {
+            *key = Self::make_absolute(&base_dir, key.as_str());
         }
     }
 
