@@ -6049,6 +6049,8 @@ function escapeHtml(text) {
 <script src="/js/login.js"></script>
 <!-- 模态框动画控制脚本 -->
 <script src="/js/modal-animations.js"></script>
+<!-- Markdown 预览模态框 -->
+<script src="/js/markdown-preview-modal.js"></script>
 
 <script>
 // 浏览器标签页标题提示功能
@@ -6699,9 +6701,12 @@ document.addEventListener('DOMContentLoaded', function() {
     item.appendChild(info);
 
     item.addEventListener('click', function() {
-      // 使用 markdownPath 构建跳转链接
+      // 使用 markdownPath 构建预览链接
       if (article.markdownPath) {
-        window.location.href = `/passage/${article.markdownPath}`;
+        const markdownPath = article.markdownPath.endsWith('.md') ? article.markdownPath : article.markdownPath + '.md';
+        if (window.MarkdownPreviewModal) {
+          window.MarkdownPreviewModal.open(markdownPath);
+        }
       } else {
         // 如果没有 markdownPath，尝试从日期和标题构建
         const date = new Date(article.date);
@@ -6712,7 +6717,10 @@ document.addEventListener('DOMContentLoaded', function() {
           .replace(/\s+/g, '-')
           .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '')
           .replace(/-+/g, '-');
-        window.location.href = `/passage/${year}/${month}/${day}/${sanitizedTitle}`;
+        const markdownPath = `${year}/${month}/${day}/${sanitizedTitle}.md`;
+        if (window.MarkdownPreviewModal) {
+          window.MarkdownPreviewModal.open(markdownPath);
+        }
       }
       closeModal();
     });

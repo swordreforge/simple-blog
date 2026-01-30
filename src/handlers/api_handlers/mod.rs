@@ -17,3 +17,4 @@ pub mod analytics;
 pub mod filemanager;
 pub mod stats;
 pub mod db_stats;
+pub mod markdown_preview;

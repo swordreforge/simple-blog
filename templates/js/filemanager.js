@@ -822,6 +822,51 @@ const FileManager = {
     modal.classList.add('active');
   },
 
+  // 预览 Markdown 文件
+  async previewMarkdownFile(path) {
+    // 确保 markdown-preview-modal 已加载
+    if (!window.MarkdownPreviewModal) {
+      // 动态加载 markdown-preview-modal.js
+      const script = document.createElement('script');
+      script.src = '/js/markdown-preview-modal.js';
+      script.onload = () => {
+        this.openMarkdownPreview(path);
+      };
+      script.onerror = () => {
+        this.showToast('预览组件加载失败', 'error');
+      };
+      document.head.appendChild(script);
+    } else {
+      this.openMarkdownPreview(path);
+    }
+  },
+
+  // 打开 Markdown 预览
+  openMarkdownPreview(path) {
+    // 从路径中提取 markdown 文件的相对路径
+    let markdownPath = path;
+
+    // 处理绝对路径（如：/home/user/project/markdown/2026/02/19/test.md）
+    if (markdownPath.startsWith('/')) {
+      const markdownIndex = markdownPath.indexOf('/markdown/');
+      if (markdownIndex !== -1) {
+        markdownPath = markdownPath.substring(markdownIndex + 10); // 去掉 '/markdown/' 前缀
+      }
+    }
+    // 处理相对路径（如：markdown/2026/02/19/test.md）
+    else if (markdownPath.startsWith('markdown/')) {
+      markdownPath = markdownPath.substring(9); // 去掉 'markdown/' 前缀
+    }
+
+    console.log('Markdown 预览路径:', markdownPath);
+
+    if (window.MarkdownPreviewModal) {
+      window.MarkdownPreviewModal.open(markdownPath);
+    } else {
+      this.showToast('预览功能不可用', 'error');
+    }
+  },
+
   // 下载文件
   async downloadFile(path) {
     try {
@@ -859,23 +904,29 @@ const FileManager = {
   // 显示上下文菜单
   showContextMenu(event, path, isDir) {
     this.selectedFile = { path, isDir };
-    
+
     const menu = document.getElementById('contextMenu');
     menu.style.left = event.pageX + 'px';
     menu.style.top = event.pageY + 'px';
     menu.classList.add('active');
-    
+
+    // 检查是否是 markdown 文件
+    const isMarkdown = path.toLowerCase().endsWith('.md');
+
     // 根据文件类型显示不同的菜单项
     const items = menu.querySelectorAll('.context-menu-item');
     items.forEach(item => {
       const action = item.dataset.action;
       if (action === 'download' && isDir) {
         item.style.display = 'none';
+      } else if (action === 'preview') {
+        // 预览选项只在 markdown 文件时显示
+        item.style.display = (isMarkdown && !isDir) ? 'flex' : 'none';
       } else {
         item.style.display = 'flex';
       }
     });
-    
+
     // 绑定菜单项点击事件
     items.forEach(item => {
       item.onclick = () => {
@@ -893,7 +944,7 @@ const FileManager = {
   // 处理上下文菜单操作
   handleContextAction(action) {
     if (!this.selectedFile) return;
-    
+
     switch (action) {
       case 'open':
         if (this.selectedFile.isDir) {
@@ -901,6 +952,9 @@ const FileManager = {
         } else {
           this.openFile(this.selectedFile.path);
         }
+        break;
+      case 'preview':
+        this.previewMarkdownFile(this.selectedFile.path);
         break;
       case 'download':
         this.downloadFile(this.selectedFile.path);

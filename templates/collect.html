@@ -1374,14 +1374,13 @@ function renderArchive() {
       // 生成 markdown 路径
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      const titleSlug = sanitizeTitle(passage.title);
-      const passagePath = `/passage/${year}/${month}/${day}/${titleSlug}`;
+      const markdownPath = `${year}/${month}/${day}/${sanitizeTitle(passage.title)}.md`;
       
       html += `
-        <div class="document-card" data-tags="${tagsStr}" data-id="${passage.id}">
+        <div class="document-card" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}" data-markdown-path="${markdownPath}">
           <div class="document-header">
             <h3 class="document-title">
-              <a href="${passagePath}" class="document-link">${passage.title}</a>
+              <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
             </h3>
             <div class="document-date">${formattedDate}</div>
           </div>
@@ -1397,17 +1396,17 @@ function renderArchive() {
   
   archiveLeft.innerHTML = html;
   
-  // 添加点击事件
+  // 添加点击事件（用于整个卡片）
   document.querySelectorAll('.document-card').forEach(card => {
     card.addEventListener('click', function(e) {
-      // 如果点击的是标签链接，不跳转
+      // 如果点击的是标签链接，不打开模态框
       if (e.target.classList.contains('tag')) {
         return;
       }
       
-      const link = this.querySelector('.document-link');
-      if (link) {
-        window.location.href = link.href;
+      const markdownPath = this.getAttribute('data-markdown-path');
+      if (markdownPath && window.MarkdownPreviewModal) {
+        window.MarkdownPreviewModal.open(markdownPath);
       }
     });
   });
@@ -1763,14 +1762,13 @@ function bindFilterEvents() {
             // 生成 markdown 路径
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
-            const titleSlug = sanitizeTitle(passage.title);
-            const passagePath = `/passage/${year}/${month}/${day}/${titleSlug}`;
+            const markdownPath = `${year}/${month}/${day}/${sanitizeTitle(passage.title)}.md`;
 
             html += `
-              <div class="document-card" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}">
+              <div class="document-card" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}" data-markdown-path="${markdownPath}">
                 <div class="document-header">
                   <h3 class="document-title">
-                    <a href="${passagePath}" class="document-link">${passage.title}</a>
+                    <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
                   </h3>
                   <div class="document-date">${formattedDate}</div>
                 </div>
@@ -2194,6 +2192,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/js/login.js"></script>
 <!-- 模态框动画控制脚本 -->
 <script src="/js/modal-animations.js"></script>
+<!-- Markdown 预览模态框 -->
+<script src="/js/markdown-preview-modal.js"></script>
 
 <script>
 // 浏览器标签页标题提示功能

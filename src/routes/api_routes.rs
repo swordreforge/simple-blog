@@ -214,6 +214,12 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::post().to(api_handlers::markdown_editor::save))
     );
 
+    // Markdown 预览 API
+    cfg.service(
+        web::resource("/api/markdown/preview")
+            .route(web::get().to(api_handlers::markdown_preview::preview))
+    );
+
     // 分析 API
     cfg.service(
         web::resource("/api/analytics/most-viewed")
@@ -245,6 +251,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     ).service(
         web::resource("/api/files/create-dir")
             .route(web::post().to(api_handlers::filemanager::create_dir))
+    ).service(
+        web::resource("/api/files/preview")
+            .route(web::get().to(api_handlers::filemanager::preview))
     );
 
     // 文章相关 API
