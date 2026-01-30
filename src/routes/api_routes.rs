@@ -117,11 +117,11 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::comment::list))
             .route(web::post().to(api_handlers::comment::create))
     ).service(
-        web::resource("/api/admin/comments/{id}")
-            .route(web::delete().to(api_handlers::comment::delete))
-    ).service(
         web::resource("/api/admin/comments/batch-delete")
             .route(web::post().to(api_handlers::comment::delete_batch))
+    ).service(
+        web::resource("/api/admin/comments/{id}")
+            .route(web::delete().to(api_handlers::comment::delete))
     );
 
     // 管理员 API - 统计
@@ -326,13 +326,13 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::categories::admin_list))
             .route(web::post().to(api_handlers::categories::create))
     ).service(
+        web::resource("/api/admin/categories/batch-delete")
+            .route(web::post().to(api_handlers::categories::delete_batch))
+    ).service(
         web::resource("/api/admin/categories/{id}")
             .route(web::get().to(api_handlers::categories::get))
             .route(web::put().to(api_handlers::categories::update))
             .route(web::delete().to(api_handlers::categories::delete))
-    ).service(
-        web::resource("/api/admin/categories/batch-delete")
-            .route(web::post().to(api_handlers::categories::delete_batch))
     );
 
     // 管理员 API - 标签
@@ -341,13 +341,13 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::tags::admin_list))
             .route(web::post().to(api_handlers::tags::create))
     ).service(
+        web::resource("/api/admin/tags/batch-delete")
+            .route(web::post().to(api_handlers::tags::delete_batch))
+    ).service(
         web::resource("/api/admin/tags/{id}")
             .route(web::get().to(api_handlers::tags::get))
             .route(web::put().to(api_handlers::tags::update))
             .route(web::delete().to(api_handlers::tags::delete))
-    ).service(
-        web::resource("/api/admin/tags/batch-delete")
-            .route(web::post().to(api_handlers::tags::delete_batch))
     );
 
     // 数据库统计和健康检查 API
