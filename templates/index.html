@@ -58,7 +58,7 @@ nav {
 }
 
 nav a {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9));
   text-decoration: none;
   margin: 0 15px;
   font-weight: 500;
@@ -72,12 +72,28 @@ nav a {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* 导航栏按钮样式 */
+nav button {
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9));
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
 /* 登录按钮样式 */
 #loginBtn {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9));
   text-decoration: none;
   margin: 0 15px;
   font-weight: 500;
@@ -103,7 +119,7 @@ nav a {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9));
   text-decoration: none;
   margin: 0 15px;
   
@@ -1346,8 +1362,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // 应用毛玻璃颜色
-      if (settings.navbar_glass_color || settings.card_glass_color || settings.footer_glass_color) {
+      if (settings.navbar_glass_color || settings.card_glass_color || settings.footer_glass_color || settings.navbar_text_color) {
         document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
+        document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color || 'rgba(255, 255, 255, 0.9)');
         document.documentElement.style.setProperty('--card-glass-color', settings.card_glass_color || 'rgba(255, 255, 255, 0.75)');
         document.documentElement.style.setProperty('--footer-glass-color', settings.footer_glass_color || 'rgba(255, 255, 255, 0.9)');
       }

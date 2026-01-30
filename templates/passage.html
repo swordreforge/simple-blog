@@ -102,11 +102,8 @@ nav {
 }
 
 nav a {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9));
   text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  position: relative;
   padding: 4px 8px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(30px) saturate(200%);
@@ -114,6 +111,19 @@ nav a {
   border-radius: 25px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 导航栏按钮样式 */
+nav button {
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9));
+  text-decoration: none;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
 }
 
 nav a:hover {
@@ -5354,8 +5364,9 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
 
       // 应用毛玻璃颜色
-      if (settings.navbar_glass_color || settings.card_glass_color || settings.footer_glass_color) {
+      if (settings.navbar_glass_color || settings.card_glass_color || settings.footer_glass_color || settings.navbar_text_color) {
         document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
+        document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color || 'rgba(255, 255, 255, 0.9)');
         document.documentElement.style.setProperty('--card-glass-color', settings.card_glass_color || 'rgba(255, 255, 255, 0.75)');
         document.documentElement.style.setProperty('--footer-glass-color', settings.footer_glass_color || 'rgba(255, 255, 255, 0.9)');
       }

@@ -41,6 +41,7 @@ pub struct TemplateSettings {
     
     // Admin 相关
     pub navbar_glass_color: String,
+    pub navbar_text_color: String,
     pub card_glass_color: String,
     pub footer_glass_color: String,
     
@@ -110,6 +111,7 @@ impl Default for TemplateSettings {
             
             // Admin 相关
             navbar_glass_color: "rgba(220, 138, 221, 0.15)".to_string(),
+            navbar_text_color: "#333333".to_string(),
             card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
             footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
             
@@ -473,7 +475,13 @@ pub fn create_passage_context() -> TeraContext {
     let mut external_link_warning = true;
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
-    
+
+    // 外观设置
+    let mut navbar_glass_color = "rgba(220, 138, 221, 0.15)".to_string();
+    let mut navbar_text_color = "#333333".to_string();
+    let mut card_glass_color = "rgba(220, 138, 221, 0.2)".to_string();
+    let mut footer_glass_color = "rgba(220, 138, 221, 0.25)".to_string();
+
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
@@ -488,6 +496,19 @@ pub fn create_passage_context() -> TeraContext {
             }
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
                 external_link_warning_text = setting.value;
+            }
+            // 外观设置
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "navbar_glass_color") {
+                navbar_glass_color = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "navbar_text_color") {
+                navbar_text_color = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "card_glass_color") {
+                card_glass_color = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "footer_glass_color") {
+                footer_glass_color = setting.value;
             }
         }
     }
@@ -513,7 +534,58 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("settings", &TemplateSettings::default());
+
+    // 使用从数据库读取的值创建 TemplateSettings
+    let settings = TemplateSettings {
+        name: "欢迎来到我的博客".to_string(),
+        greting: "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。".to_string(),
+        year: now.format("%Y").to_string(),
+        foodes: foodes.clone(),
+        background_image: "/img/test.webp".to_string(),
+        background_color: "#ffffff".to_string(),
+        background_size: "cover".to_string(),
+        background_position: "center".to_string(),
+        background_repeat: "no-repeat".to_string(),
+        background_attachment: "fixed".to_string(),
+        global_opacity: 0.15,
+        blur_amount: 20,
+        saturate_amount: 180,
+        floating_text_enabled: false,
+        navbar_glass_color: navbar_glass_color,
+        navbar_text_color: navbar_text_color,
+        card_glass_color: card_glass_color,
+        footer_glass_color: footer_glass_color,
+        article_title: true,
+        article_title_prefix: "文章".to_string(),
+        switch_notice: switch_notice,
+        switch_notice_text: switch_notice_text.clone(),
+        external_link_warning: external_link_warning,
+        external_link_whitelist: external_link_whitelist,
+        external_link_warning_text: external_link_warning_text,
+        live2d_enabled: false,
+        live2d_show_on_index: true,
+        live2d_show_on_passage: true,
+        live2d_show_on_collect: true,
+        live2d_show_on_about: true,
+        live2d_show_on_admin: false,
+        live2d_model_id: "1".to_string(),
+        live2d_model_path: "".to_string(),
+        live2d_cdn_path: "https://unpkg.com/live2d-widget-model@1.0.5/".to_string(),
+        live2d_position: "right".to_string(),
+        live2d_width: "280px".to_string(),
+        live2d_height: "260px".to_string(),
+        sponsor_enabled: false,
+        sponsor_title: "".to_string(),
+        sponsor_image: "".to_string(),
+        sponsor_description: "".to_string(),
+        sponsor_button_text: "".to_string(),
+        global_avatar: "".to_string(),
+        attachment_default_visibility: "public".to_string(),
+        attachment_max_size: 10485760,
+        attachment_allowed_types: "jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,zip,rar,mp3,mp4".to_string(),
+    };
+
+    context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
     
