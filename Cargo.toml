@@ -55,3 +55,9 @@ metaflac = "0.2"
 
 # Flake ID 生成
 flaker = "0.1.3"
+
+# GeoIP 数据库查询
+maxminddb = "0.24"
+
+# 静态变量
+once_cell = "1.19"

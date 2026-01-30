@@ -8,6 +8,7 @@ use std::sync::Arc;
 pub struct PopularArticle {
     pub id: i64,
     pub title: String,
+    pub author: String,
     pub view_count: i64,
 }
 
@@ -49,7 +50,12 @@ pub struct IPStats {
     pub ip: String,
     pub country: String,
     pub city: String,
+    pub region: String,
     pub count: i64,
+    #[serde(rename = "firstVisit")]
+    pub first_visit: String,
+    #[serde(rename = "lastVisit")]
+    pub last_visit: String,
 }
 
 /// 通用响应
@@ -65,6 +71,27 @@ pub async fn most_viewed(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
 ) -> HttpResponse {
+    // 检查是否有 action 参数
+    if let Some(action) = query.get("action") {
+        match action.as_str() {
+            "most-viewed" => return most_viewed_impl(query, repo).await,
+            "view-sources" => return view_sources(query, repo).await,
+            "view-trend" => return view_trend(query, repo).await,
+            "view-by-city" => return view_by_city(query, repo).await,
+            "view-by-ip" => return view_by_ip(query, repo).await,
+            _ => {}
+        }
+    }
+    
+    // 默认行为：获取热门文章
+    most_viewed_impl(query, repo).await
+}
+
+/// 获取最多阅读文章的实现
+async fn most_viewed_impl(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
     let limit: i64 = query.get("limit")
         .and_then(|l| l.parse().ok())
         .unwrap_or(10);
@@ -76,6 +103,7 @@ pub async fn most_viewed(
             let data: Vec<PopularArticle> = articles.into_iter().map(|a| PopularArticle {
                 id: a.id.unwrap_or(0),
                 title: a.title,
+                author: a.author.unwrap_or_else(|| "未知".to_string()),
                 view_count: a.view_count,
             }).collect();
             
@@ -286,7 +314,10 @@ pub async fn view_by_ip(
                 ip: i.ip,
                 country: i.country,
                 city: i.city,
+                region: i.region,
                 count: i.count,
+                first_visit: i.first_visit,
+                last_visit: i.last_visit,
             }).collect();
             
             HttpResponse::Ok().json(AnalyticsResponse {

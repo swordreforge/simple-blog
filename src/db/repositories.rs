@@ -428,7 +428,7 @@ impl ArticleViewRepository {
     pub async fn get_most_viewed_articles(&self, limit: i64) -> Result<Vec<PopularArticleStats>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT p.id, p.title, COUNT(av.id) as view_count FROM passages p 
+            "SELECT p.id, p.title, p.author, COUNT(av.id) as view_count FROM passages p 
              LEFT JOIN article_views av ON p.uuid = av.passage_uuid 
              GROUP BY p.id ORDER BY view_count DESC LIMIT ?"
         )?;
@@ -437,7 +437,8 @@ impl ArticleViewRepository {
             Ok(PopularArticleStats {
                 id: Some(row.get(0)?),
                 title: row.get(1)?,
-                view_count: row.get(2)?,
+                author: row.get(2)?,
+                view_count: row.get(3)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -547,9 +548,11 @@ impl ArticleViewRepository {
     pub async fn get_view_by_ip(&self, days: i64) -> Result<Vec<IPStatsData>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT ip, country, city, COUNT(*) as count FROM article_views 
+            "SELECT ip, country, city, region, COUNT(*) as count, 
+                    MIN(view_time) as first_visit, MAX(view_time) as last_visit 
+             FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
-             GROUP BY ip, country, city ORDER BY count DESC LIMIT 100"
+             GROUP BY ip, country, city, region ORDER BY count DESC LIMIT 100"
         )?;
         
         let ips = stmt.query_map(params![-days], |row| {
@@ -557,7 +560,10 @@ impl ArticleViewRepository {
                 ip: row.get(0)?,
                 country: row.get(1)?,
                 city: row.get(2)?,
-                count: row.get(3)?,
+                region: row.get(3)?,
+                count: row.get(4)?,
+                first_visit: row.get(5)?,
+                last_visit: row.get(6)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -570,6 +576,7 @@ impl ArticleViewRepository {
 pub struct PopularArticleStats {
     pub id: Option<i64>,
     pub title: String,
+    pub author: Option<String>,
     pub view_count: i64,
 }
 
@@ -606,7 +613,10 @@ pub struct IPStatsData {
     pub ip: String,
     pub country: String,
     pub city: String,
+    pub region: String,
     pub count: i64,
+    pub first_visit: String,
+    pub last_visit: String,
 }
 
 /// 设置仓库

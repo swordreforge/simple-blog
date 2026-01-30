@@ -6609,22 +6609,24 @@ function drawViewTrendChart(data) {
   data.forEach((point, index) => {
     const x = padding + index * stepX;
     const y = canvas.height - padding - (point.count / maxCount) * chartHeight;
-    
+
     ctx.beginPath();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.arc(x, y, 4, 0, Math.PI * 2);
     ctx.fill();
-    
+
     // 显示数值
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(point.count, x, y - 10);
-    
-    // 显示日期
+
+    // 显示日期（添加安全检查）
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '10px Arial';
-    ctx.fillText(point.date.substring(5), x, canvas.height - padding + 15);
+    if (point.date && typeof point.date === 'string') {
+      ctx.fillText(point.date.substring(5), x, canvas.height - padding + 15);
+    }
   });
 }
 

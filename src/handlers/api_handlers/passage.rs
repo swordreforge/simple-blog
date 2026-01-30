@@ -276,12 +276,13 @@ pub async fn get(
     tokio::spawn(async move {
         // 获取客户端IP（简化版）
         let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
-        
-        // 获取地理位置信息（简化版）
-        let country = "unknown".to_string();
-        let city = "unknown".to_string();
-        let region = "unknown".to_string();
-        
+
+        // 使用 GeoIP 获取地理位置信息
+        let geo_location = crate::geoip::lookup_ip(&ip);
+        let country = geo_location.country;
+        let city = geo_location.city;
+        let region = geo_location.region;
+
         // 记录阅读
         let view_repo = crate::db::repositories::ArticleViewRepository::new(repo_clone);
         if let Err(e) = view_repo.record_view(&passage_uuid, &ip, Some(&user_agent), &country, &city, &region).await {
@@ -379,12 +380,13 @@ pub async fn get_by_id(
             tokio::spawn(async move {
                 // 获取客户端IP（简化版）
                 let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
-                
-                // 获取地理位置信息（简化版）
-                let country = "unknown".to_string();
-                let city = "unknown".to_string();
-                let region = "unknown".to_string();
-                
+
+                // 使用 GeoIP 获取地理位置信息
+                let geo_location = crate::geoip::lookup_ip(&ip);
+                let country = geo_location.country;
+                let city = geo_location.city;
+                let region = geo_location.region;
+
                 // 记录阅读
                 let view_repo = crate::db::repositories::ArticleViewRepository::new(repo_clone);
                 if let Err(e) = view_repo.record_view(&passage_uuid, &ip, Some(&user_agent), &country, &city, &region).await {

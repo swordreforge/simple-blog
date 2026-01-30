@@ -7,6 +7,7 @@ mod db;
 mod middleware;
 mod audio_metadata;
 mod music_sync;
+mod geoip;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use config::AppConfig;
