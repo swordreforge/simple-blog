@@ -73,7 +73,7 @@ html.dark-mode a:hover {
 /* 导航栏链接 - 暗色模式下保持白色 */
 html.dark-mode nav a,
 html.dark-mode .navbar a {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--navbar-text-color, rgba(255, 255, 255, 0.9)) !important;
 }
 
 html.dark-mode nav a:hover,
