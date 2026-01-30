@@ -405,6 +405,7 @@ pub fn create_index_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载模板设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -448,6 +449,11 @@ pub fn create_index_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
                 switch_notice_text = setting.value;
             }
+
+            // 加载 global_avatar
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+                global_avatar = setting.value;
+            }
         }
     }
     
@@ -477,6 +483,7 @@ pub fn create_index_context() -> TeraContext {
     context.insert("live2d_position", "right");
     context.insert("live2d_width", &280);
     context.insert("live2d_height", &260);
+    context.insert("global_avatar", &global_avatar);
     
     context
 }
@@ -530,6 +537,7 @@ pub fn create_passage_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    let mut global_avatar = "/img/avatar.webp".to_string();
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
@@ -537,6 +545,11 @@ pub fn create_passage_context() -> TeraContext {
             }
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
                 switch_notice_text = setting.value;
+            }
+
+            // 加载 global_avatar
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+                global_avatar = setting.value;
             }
         }
     }
@@ -619,7 +632,8 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("sponsor_description", "");
     context.insert("sponsor_image", "");
     context.insert("sponsor_button_text", "");
-    
+    context.insert("global_avatar", &global_avatar);
+
     // Live2D
     context.insert("live2d_enabled", &false);
     context.insert("live2d_show_on_passage", &false);
@@ -645,6 +659,7 @@ pub fn create_collect_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -669,9 +684,14 @@ pub fn create_collect_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
                 switch_notice_text = setting.value;
             }
+
+            // 加载 global_avatar
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+                global_avatar = setting.value;
+            }
         }
     }
-    
+
     context.insert("title", "归档 - RustBlog");
     context.insert("name", "Dango");
     context.insert("year", &now.format("%Y").to_string());
@@ -685,7 +705,8 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("external_link_whitelist", &external_link_whitelist);
-    
+    context.insert("global_avatar", &global_avatar);
+
     // Live2D
     context.insert("live2d_enabled", &false);
     context.insert("live2d_show_on_collect", &false);
@@ -711,6 +732,7 @@ pub fn create_about_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -751,6 +773,7 @@ pub fn create_about_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("global_avatar", &global_avatar);
     
     // Live2D
     context.insert("live2d_enabled", &false);
@@ -777,6 +800,7 @@ pub fn create_markdown_editor_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -800,6 +824,11 @@ pub fn create_markdown_editor_context() -> TeraContext {
             // 加载 switch_notice_text
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
                 switch_notice_text = setting.value;
+            }
+
+            // 加载 global_avatar
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+                global_avatar = setting.value;
             }
         }
     }
@@ -817,7 +846,8 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("external_link_whitelist", &external_link_whitelist);
-    
+    context.insert("global_avatar", &global_avatar);
+
     context
 }
 
@@ -833,6 +863,7 @@ pub fn create_admin_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
+    let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -857,6 +888,11 @@ pub fn create_admin_context() -> TeraContext {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
                 switch_notice_text = setting.value;
             }
+
+            // 加载 global_avatar
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+                global_avatar = setting.value;
+            }
         }
     }
 
@@ -873,7 +909,8 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("external_link_whitelist", &external_link_whitelist);
-    
+    context.insert("global_avatar", &global_avatar);
+
     // Live2D
     context.insert("live2d_enabled", &false);
     context.insert("live2d_show_on_admin", &false);
