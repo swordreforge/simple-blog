@@ -10,29 +10,44 @@ mod music_sync;
 mod geoip;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
-use config::AppConfig;
+use clap::Parser;
+use config::{AppConfig, CliArgs};
 use routes::configure_routes;
 use middleware::logging::LoggingMiddleware;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // 加载配置
-    let config = AppConfig::default();
-    
+    // 解析命令行参数
+    let mut args = CliArgs::parse();
+    args.resolve_paths();
+
+    // 从命令行参数创建配置
+    let config = AppConfig::from_cli(args.clone());
+
     println!("🚀 启动 RustBlog 服务器...");
     println!("📡 访问地址: http://{}:{}", config.server.host, config.server.port);
     println!("📁 模板目录: {}", config.templates.dir);
     println!("📁 静态文件目录: {}", config.static_files.dir);
+    println!("📁 数据库路径: {}", args.db_path);
+    println!("📁 GeoIP 数据库: {}", args.geoip_db_path);
     println!("💾 模板缓存: {}", if config.templates.cache_enabled { "启用" } else { "禁用" });
-    
+    println!("🔒 TLS: {}", if args.enable_tls { "启用" } else { "禁用" });
+    println!("📊 日志级别: {}", args.log_level);
+
     // 创建必要的目录
     create_directories();
-    
+
     // 初始化数据库
     println!("🗄️  初始化数据库...");
-    if let Err(e) = db::init_db("data/blog.db") {
+    if let Err(e) = db::init_db(&args.db_path) {
         eprintln!("❌ 数据库初始化失败: {}", e);
         return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
+    }
+
+    // 初始化 GeoIP 数据库
+    println!("🌍 加载 GeoIP 数据库...");
+    if !geoip::is_database_loaded() {
+        eprintln!("⚠️  警告: GeoIP 数据库未找到，地理位置查询将返回 'unknown'");
     }
     
     // 获取数据库连接池
@@ -91,11 +106,12 @@ fn create_directories() {
         "templates/js",
         "img",
         "music",
+        "music/covers",
         "attachments",
         "markdown",
         "data",
     ];
-    
+
     for dir in dirs {
         std::fs::create_dir_all(dir).unwrap_or_else(|e| {
             eprintln!("创建目录 {} 失败: {}", dir, e);
