@@ -5,6 +5,25 @@ use crate::db::models::Passage;
 use std::sync::Arc;
 use chrono::Utc;
 
+/// 检查是否为本地IP
+fn is_local_ip(ip: &str) -> bool {
+    // 常见的本地IP和私有网络IP
+    ip == "127.0.0.1" || 
+    ip == "::1" || 
+    ip == "localhost" || 
+    ip == "0.0.0.0" || 
+    ip.is_empty() ||
+    ip.starts_with("127.") ||
+    ip.starts_with("192.168.") ||
+    ip.starts_with("10.") ||
+    ip.starts_with("172.16.") || ip.starts_with("172.17.") || ip.starts_with("172.18.") ||
+    ip.starts_with("172.19.") || ip.starts_with("172.20.") || ip.starts_with("172.21.") ||
+    ip.starts_with("172.22.") || ip.starts_with("172.23.") || ip.starts_with("172.24.") ||
+    ip.starts_with("172.25.") || ip.starts_with("172.26.") || ip.starts_with("172.27.") ||
+    ip.starts_with("172.28.") || ip.starts_with("172.29.") || ip.starts_with("172.30.") ||
+    ip.starts_with("172.31.")
+}
+
 /// 文章响应
 #[derive(Debug, Serialize)]
 pub struct PassageResponse {
@@ -277,6 +296,11 @@ pub async fn get(
         // 获取客户端IP（简化版）
         let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
 
+        // 过滤本地IP，不记录
+        if is_local_ip(&ip) {
+            return;
+        }
+
         // 使用 GeoIP 获取地理位置信息
         let geo_location = crate::geoip::lookup_ip(&ip);
         let country = geo_location.country;
@@ -380,6 +404,11 @@ pub async fn get_by_id(
             tokio::spawn(async move {
                 // 获取客户端IP（简化版）
                 let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
+
+                // 过滤本地IP，不记录
+                if is_local_ip(&ip) {
+                    return;
+                }
 
                 // 使用 GeoIP 获取地理位置信息
                 let geo_location = crate::geoip::lookup_ip(&ip);
