@@ -3618,10 +3618,10 @@ async function loadAttachments(articleDate, articleElement) {
   if (emptyAttachments) emptyAttachments.style.display = 'none';
 
   try {
-    // 如果有 passage_id,使用 passage_id 获取附件,否则使用日期
+    // 如果有 passage_uuid,使用 passage_uuid 获取附件,否则使用日期
     let url;
-    if (currentPassageID) {
-      url = `/api/attachments?passage_id=${currentPassageID}`;
+    if (currentPassageUUID) {
+      url = `/api/attachments?passage_id=${currentPassageUUID}`;
     } else {
       // 解析日期（使用字符串分割避免时区问题）
       const dateParts = articleDate.split('-');
@@ -4252,17 +4252,23 @@ async function loadArticleContent(articleId) {
     const result = await response.json();
     
     if (result.success && result.data) {
+      // 保存文章UUID用于评论功能
+      currentPassageUUID = result.data.uuid;
+      currentPassageID = result.data.id;
+
       // 缓存文章内容 - 使用 html_content（已渲染的HTML）而不是 content（原始Markdown）
       const renderedContent = result.data.html_content || result.data.content;
       articleContentCache.set(articleId, {
         content: renderedContent,
         timestamp: Date.now()
       });
-      
-      // 更新文章数据
+
+      // 更新文章数据，保存UUID和其他信息
       const articleData = findArticleById(articleId);
       if (articleData) {
         articleData.content = renderedContent;
+        articleData.uuid = result.data.uuid;
+        articleData.status = result.data.status;
         renderArticle(articleData);
       }
     } else {
@@ -4564,37 +4570,45 @@ function initArticleComments(articleEl, articleId, articleData) {
   const emptyState = commentsSection.querySelector('.empty-comments');
   const commentsCount = commentsSection.querySelector('.comments-count');
 
-  // 加载评论（使用纯数字ID）
-  loadArticleComments(numericArticleId, commentsList, loadingState, emptyState, commentsCount);
+  // 获取文章UUID（优先从articleData获取，否则使用numericArticleId）
+  const articleUUID = articleData && articleData.uuid ? articleData.uuid : numericArticleId.toString();
 
-  // 绑定提交按钮事件（先移除旧的事件监听器以避免重复绑定）
-  if (submitBtn) {
-    // 克隆节点以移除所有旧的事件监听器
-    const newSubmitBtn = submitBtn.cloneNode(true);
-    submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+  // 加载评论（使用UUID）
+    loadArticleComments(articleUUID, commentsList, loadingState, emptyState, commentsCount);
+  
+    // 绑定提交按钮事件（先移除旧的事件监听器以避免重复绑定）
+    if (submitBtn) {
+      // 克隆节点以移除所有旧的事件监听器
+      const newSubmitBtn = submitBtn.cloneNode(true);
+      submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+  
+      // 为新按钮添加事件监听器 - 重新获取元素引用
+      newSubmitBtn.addEventListener('click', function() {
+        // 重新获取当前评论区域的输入框
+        const currentUsernameInput = commentsSection.querySelector('.comment-username-input');
+        const currentContentTextarea = commentsSection.querySelector('.comment-textarea');
+        submitArticleComment(articleUUID, currentUsernameInput, currentContentTextarea, commentsList, commentsCount);
+      });
+    }
+  
+    // 绑定 Ctrl+Enter 提交（先移除旧的事件监听器以避免重复绑定）
+      if (contentTextarea) {
+        // 克隆节点以移除所有旧的事件监听器
+        const newTextarea = contentTextarea.cloneNode(true);
+        contentTextarea.parentNode.replaceChild(newTextarea, contentTextarea);
     
-    // 为新按钮添加事件监听器
-    newSubmitBtn.addEventListener('click', function() {
-      submitArticleComment(numericArticleId, usernameInput, contentTextarea, commentsList, commentsCount);
-    });
-  }
-
-  // 绑定 Ctrl+Enter 提交（先移除旧的事件监听器以避免重复绑定）
-  if (contentTextarea) {
-    // 克隆节点以移除所有旧的事件监听器
-    const newTextarea = contentTextarea.cloneNode(true);
-    contentTextarea.parentNode.replaceChild(newTextarea, contentTextarea);
-    
-    // 为新 textarea 添加事件监听器
-    newTextarea.addEventListener('keydown', function(e) {
-      if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        submitArticleComment(numericArticleId, usernameInput, contentTextarea, commentsList, commentsCount);
+        // 为新 textarea 添加事件监听器 - 重新获取元素引用
+        newTextarea.addEventListener('keydown', function(e) {
+          if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            // 重新获取当前评论区域的输入框
+            const currentUsernameInput = commentsSection.querySelector('.comment-username-input');
+            const currentContentTextarea = commentsSection.querySelector('.comment-textarea');
+            submitArticleComment(articleUUID, currentUsernameInput, currentContentTextarea, commentsList, commentsCount);
+          }
+        });
       }
-    });
-  }
-}
-
+    }
 // 加载文章评论
 async function loadArticleComments(articleId, commentsList, loadingState, emptyState, commentsCount) {
   // 检查是否已经加载过该文章的评论
@@ -4609,7 +4623,7 @@ async function loadArticleComments(articleId, commentsList, loadingState, emptyS
   if (emptyState) emptyState.style.display = 'none';
 
   try {
-    const response = await fetch(`/api/comments?passage_id=${articleId}`);
+    const response = await fetch(`/api/comments?passage_uuid=${articleId}`);
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -4695,7 +4709,7 @@ async function submitArticleComment(articleId, usernameInput, contentTextarea, c
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        passage_id: articleId,
+        passage_uuid: articleId,
         username: username,
         content: content
       })
@@ -5518,6 +5532,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // 评论相关变量
 let currentPassageID = null; // 将从 URL 路径中提取
+let currentPassageUUID = null; // 文章的UUID
 
 // 初始化图片放大功能
 function initImageViewer() {
@@ -5860,7 +5875,7 @@ async function loadComments() {
   if (emptyComments) emptyComments.style.display = 'none';
 
   try {
-    const response = await fetch(`/api/comments?passage_id=${currentPassageID}`);
+    const response = await fetch(`/api/comments?passage_uuid=${currentPassageUUID}`);
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -6025,7 +6040,7 @@ async function submitComment() {
       body: JSON.stringify({
         username: username,
         content: content,
-        passage_id: currentPassageID
+        passage_uuid: currentPassageUUID
       })
     });
 

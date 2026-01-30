@@ -199,13 +199,13 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::user::admin_list))
             .route(web::post().to(api_handlers::user::create))
     ).service(
+        web::resource("/api/admin/users/batch-delete")
+            .route(web::post().to(api_handlers::user::delete_batch))
+    ).service(
         web::resource("/api/admin/users/{id}")
             .route(web::get().to(api_handlers::user::get))
             .route(web::put().to(api_handlers::user::update))
             .route(web::delete().to(api_handlers::user::delete))
-    ).service(
-        web::resource("/api/admin/users/batch-delete")
-            .route(web::post().to(api_handlers::user::delete_batch))
     );
 
     // ECC 加密 API
@@ -286,13 +286,13 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::post().to(api_handlers::passage::create))
             .route(web::put().to(api_handlers::passage::update_by_query))
     ).service(
+        web::resource("/api/admin/passages/batch-delete")
+            .route(web::post().to(api_handlers::passage::delete_batch))
+    ).service(
         web::resource("/api/admin/passages/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
             .route(web::put().to(api_handlers::passage::update))
             .route(web::delete().to(api_handlers::passage::delete))
-    ).service(
-        web::resource("/api/admin/passages/batch-delete")
-            .route(web::post().to(api_handlers::passage::delete_batch))
     );
 
     // 兼容 Go 版本的路由

@@ -775,6 +775,66 @@ main {
   background: rgba(255, 255, 255, 0.2);
 }
 
+.data-table tr.selected {
+  background: rgba(0, 123, 255, 0.15);
+}
+
+/* 批量操作按钮栏 */
+.batch-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  animation: slideDown 0.3s ease;
+}
+
+.batch-actions-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.batch-actions-info svg {
+  width: 20px;
+  height: 20px;
+  color: #007bff;
+}
+
+.batch-actions-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* 复选框样式 */
+.select-all-checkbox,
+.article-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #007bff;
+  transition: all 0.3s ease;
+}
+
+.select-all-checkbox:hover,
+.article-checkbox:hover {
+  transform: scale(1.1);
+}
+
+.data-table th:first-child,
+.data-table td:first-child {
+  width: 50px;
+  text-align: center;
+  padding: 15px 10px;
+}
+
 .data-table .status {
   padding: 5px 12px;
   border-radius: 20px;
@@ -3184,10 +3244,29 @@ body.admin-focus-mode .modal-header {
           <h3>文章管理</h3>
           <p>管理已发布的文章，可以编辑、删除或更改状态。</p>
 
+          <!-- 批量操作按钮栏 -->
+          <div class="batch-actions-bar" id="batchActionsBar" style="display: none;">
+            <div class="batch-actions-info">
+              <span id="selectedCount">已选择 0 篇文章</span>
+            </div>
+            <div class="batch-actions-buttons">
+              <button class="btn btn-danger btn-sm" id="batchDeleteBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                批量删除
+              </button>
+              <button class="btn btn-secondary btn-sm" id="clearSelectionBtn">取消选择</button>
+            </div>
+          </div>
+
           <table class="data-table" id="articles">
             <thead>
               <tr>
-                <th>ID</th>
+                <th style="width: 50px;">
+                  <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox">
+                </th>
                 <th>标题</th>
                 <th>作者</th>
                 <th>日期</th>
@@ -3236,10 +3315,29 @@ body.admin-focus-mode .modal-header {
           <h3>用户管理</h3>
           <p>管理注册用户，可以查看用户信息、调整权限或删除用户。</p>
 
+          <!-- 批量操作按钮栏 -->
+          <div class="batch-actions-bar" id="userBatchActionsBar" style="display: none;">
+            <div class="batch-actions-info">
+              <span id="userSelectedCount">已选择 0 个用户</span>
+            </div>
+            <div class="batch-actions-buttons">
+              <button class="btn btn-danger btn-sm" id="batchDeleteUsersBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                批量删除
+              </button>
+              <button class="btn btn-secondary btn-sm" id="clearUserSelectionBtn">取消选择</button>
+            </div>
+          </div>
+
           <table class="data-table" id="users">
             <thead>
               <tr>
-                <th>ID</th>
+                <th style="width: 50px;">
+                  <input type="checkbox" id="selectAllUsersCheckbox" class="select-all-checkbox">
+                </th>
                 <th>用户名</th>
                 <th>邮箱</th>
                 <th>注册时间</th>
@@ -6266,6 +6364,7 @@ function updateArticlesTable(articles) {
 
   articles.forEach(article => {
     const row = document.createElement('tr');
+    row.dataset.articleId = article.id;
 
     // 构建状态标签
     let statusBadge = `<span class="status ${article.status || 'published'}">${getStatusText(article.status || 'published')}</span>`;
@@ -6281,7 +6380,9 @@ function updateArticlesTable(articles) {
     const visibilityClass = visibility === 'public' ? 'visibility-public' : 'visibility-private';
 
     row.innerHTML = `
-      <td>#${article.id}</td>
+      <td>
+        <input type="checkbox" class="article-checkbox" data-id="${article.id}">
+      </td>
       <td>${article.title}</td>
       <td>管理员</td>
       <td>${article.created_at || '2024-01-01'}</td>
@@ -6294,11 +6395,278 @@ function updateArticlesTable(articles) {
         <button class="btn btn-sm btn-delete" data-action="delete" data-id="${article.id}">删除</button>
       </td>
     `;
+
+    // 行点击选中功能
+    row.addEventListener('click', (e) => {
+      // 如果点击的是操作按钮或复选框，不触发行选中
+      if (e.target.closest('.action-buttons') || e.target.classList.contains('article-checkbox')) {
+        return;
+      }
+      const checkbox = row.querySelector('.article-checkbox');
+      checkbox.checked = !checkbox.checked;
+      row.classList.toggle('selected', checkbox.checked);
+      updateBatchActionsBar();
+    });
+
+    // 复选框变化事件
+    const checkbox = row.querySelector('.article-checkbox');
+    checkbox.addEventListener('change', (e) => {
+      row.classList.toggle('selected', e.target.checked);
+      updateBatchActionsBar();
+    });
+
     tbody.appendChild(row);
   });
 
   // 重新绑定事件
   bindActionButtons();
+  
+  // 绑定批量操作事件
+  bindBatchActionEvents();
+}
+
+// 批量操作相关函数
+
+// 绑定批量操作事件
+function bindBatchActionEvents() {
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+  const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', (e) => {
+      const checkboxes = document.querySelectorAll('.article-checkbox');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = e.target.checked;
+        const row = checkbox.closest('tr');
+        if (row) {
+          row.classList.toggle('selected', e.target.checked);
+        }
+      });
+      updateBatchActionsBar();
+    });
+  }
+
+  if (batchDeleteBtn) {
+    batchDeleteBtn.addEventListener('click', batchDeleteArticles);
+  }
+
+  if (clearSelectionBtn) {
+    clearSelectionBtn.addEventListener('click', clearSelection);
+  }
+}
+
+// 更新批量操作按钮栏
+function updateBatchActionsBar() {
+  const selectedCheckboxes = document.querySelectorAll('.article-checkbox:checked');
+  const batchActionsBar = document.getElementById('batchActionsBar');
+  const selectedCount = document.getElementById('selectedCount');
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+  const count = selectedCheckboxes.length;
+
+  if (count > 0) {
+    batchActionsBar.style.display = 'flex';
+    selectedCount.textContent = `已选择 ${count} 篇文章`;
+  } else {
+    batchActionsBar.style.display = 'none';
+  }
+
+  // 更新全选复选框状态
+  if (selectAllCheckbox) {
+    const allCheckboxes = document.querySelectorAll('.article-checkbox');
+    if (allCheckboxes.length > 0 && count === allCheckboxes.length) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else if (count > 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = true;
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    }
+  }
+}
+
+// 批量删除文章
+async function batchDeleteArticles() {
+  const selectedCheckboxes = document.querySelectorAll('.article-checkbox:checked');
+  const ids = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
+
+  if (ids.length === 0) {
+    alert('请选择要删除的文章');
+    return;
+  }
+
+  if (!confirm(`确定要删除选中的 ${ids.length} 篇文章吗？此操作不可恢复！`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/passages/batch-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ ids })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(result.message || '批量删除成功');
+      clearSelection();
+      fetchAdminData(currentPage, 10); // 重新加载当前页
+    } else {
+      alert(result.message || '批量删除失败');
+    }
+  } catch (error) {
+    console.error('批量删除文章失败:', error);
+    alert('批量删除失败，请重试');
+  }
+}
+
+// 清除选择
+function clearSelection() {
+  const checkboxes = document.querySelectorAll('.article-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false;
+    const row = checkbox.closest('tr');
+    if (row) {
+      row.classList.remove('selected');
+    }
+  });
+
+  const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  }
+
+  updateBatchActionsBar();
+}
+
+// 用户批量操作相关函数
+
+// 绑定用户批量操作事件
+function bindUserBatchActionEvents() {
+  const selectAllCheckbox = document.getElementById('selectAllUsersCheckbox');
+  const batchDeleteBtn = document.getElementById('batchDeleteUsersBtn');
+  const clearSelectionBtn = document.getElementById('clearUserSelectionBtn');
+
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', (e) => {
+      const checkboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = e.target.checked;
+        const row = checkbox.closest('tr');
+        if (row) {
+          row.classList.toggle('selected', e.target.checked);
+        }
+      });
+      updateUserBatchActionsBar();
+    });
+  }
+
+  if (batchDeleteBtn) {
+    batchDeleteBtn.addEventListener('click', batchDeleteUsers);
+  }
+
+  if (clearSelectionBtn) {
+    clearSelectionBtn.addEventListener('click', clearUserSelection);
+  }
+}
+
+// 更新用户批量操作按钮栏
+function updateUserBatchActionsBar() {
+  const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+  const batchActionsBar = document.getElementById('userBatchActionsBar');
+  const selectedCount = document.getElementById('userSelectedCount');
+  const selectAllCheckbox = document.getElementById('selectAllUsersCheckbox');
+
+  const count = selectedCheckboxes.length;
+
+  if (count > 0) {
+    batchActionsBar.style.display = 'flex';
+    selectedCount.textContent = `已选择 ${count} 个用户`;
+  } else {
+    batchActionsBar.style.display = 'none';
+  }
+
+  // 更新全选复选框状态
+  if (selectAllCheckbox) {
+    const allCheckboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+    if (allCheckboxes.length > 0 && count === allCheckboxes.length) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else if (count > 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = true;
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    }
+  }
+}
+
+// 批量删除用户
+async function batchDeleteUsers() {
+  const selectedCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+  const ids = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.id));
+
+  if (ids.length === 0) {
+    alert('请选择要删除的用户');
+    return;
+  }
+
+  if (!confirm(`确定要删除选中的 ${ids.length} 个用户吗？此操作不可恢复！`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/users/batch-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({ ids })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      alert(result.message || '批量删除成功');
+      clearUserSelection();
+      fetchAdminData(currentPage, 10, currentUserPage, 10); // 重新加载数据
+    } else {
+      alert(result.message || '批量删除失败');
+    }
+  } catch (error) {
+    console.error('批量删除用户失败:', error);
+    alert('批量删除失败，请重试');
+  }
+}
+
+// 清除用户选择
+function clearUserSelection() {
+  const checkboxes = document.querySelectorAll('.user-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false;
+    const row = checkbox.closest('tr');
+    if (row) {
+      row.classList.remove('selected');
+    }
+  });
+
+  const selectAllCheckbox = document.getElementById('selectAllUsersCheckbox');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  }
+
+  updateUserBatchActionsBar();
 }
 
 // 格式化日期
@@ -6323,12 +6691,16 @@ function updateUsersTable(users) {
 
   users.forEach(user => {
     const row = document.createElement('tr');
+    row.dataset.userId = user.id;
+
     const roleText = user.role === 'admin' ? '管理员' : (user.role === 'editor' ? '编辑' : '普通用户');
     const statusText = user.status === 'active' ? '正常' : (user.status === 'restricted' ? '受限' : '禁用');
     const statusColor = user.status === 'active' ? '#00b894' : (user.status === 'restricted' ? '#fdcb6e' : '#e74c3c');
 
     row.innerHTML = `
-      <td>#${user.id}</td>
+      <td>
+        <input type="checkbox" class="user-checkbox" data-id="${user.id}" ${user.role === 'admin' ? 'disabled' : ''}>
+      </td>
       <td>${user.username}</td>
       <td>${user.email}</td>
       <td>${user.created_at || '2024-01-01'}</td>
@@ -6340,11 +6712,36 @@ function updateUsersTable(users) {
         ${user.role !== 'admin' ? `<button class="btn btn-sm btn-delete" data-action="delete-user" data-id="${user.id}">删除</button>` : ''}
       </td>
     `;
+
+    // 行点击选中功能
+    row.addEventListener('click', (e) => {
+      // 如果点击的是操作按钮或复选框，不触发行选中
+      if (e.target.closest('.action-buttons') || e.target.classList.contains('user-checkbox')) {
+        return;
+      }
+      const checkbox = row.querySelector('.user-checkbox');
+      if (!checkbox.disabled) {
+        checkbox.checked = !checkbox.checked;
+        row.classList.toggle('selected', checkbox.checked);
+        updateUserBatchActionsBar();
+      }
+    });
+
+    // 复选框变化事件
+    const checkbox = row.querySelector('.user-checkbox');
+    checkbox.addEventListener('change', (e) => {
+      row.classList.toggle('selected', e.target.checked);
+      updateUserBatchActionsBar();
+    });
+
     tbody.appendChild(row);
   });
 
   // 重新绑定事件
   bindActionButtons();
+  
+  // 绑定用户批量操作事件
+  bindUserBatchActionEvents();
 }
 
 // 更新统计卡片
@@ -7688,7 +8085,7 @@ document.getElementById('editIsScheduled').addEventListener('change', function(e
   }
 });
 
-document.getElementById('userForm').addEventListener('submit', function(e) {
+document.getElementById('userForm').addEventListener('submit', async function(e) {
   e.preventDefault();
 
   const submitBtn = this.querySelector('button[type="submit"]');
@@ -7696,19 +8093,44 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
   submitBtn.textContent = '创建中...';
   submitBtn.disabled = true;
 
-  setTimeout(() => {
-    submitBtn.textContent = '创建成功!';
-    submitBtn.style.background = 'rgba(255, 183, 122, 0.8)';
+  const username = document.getElementById('userName').value.trim();
+  const email = document.getElementById('userEmail').value.trim();
+  const password = document.getElementById('userPassword').value;
+  const role = document.getElementById('userRole').value;
 
-    setTimeout(() => {
-      closeModal('userModal');
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
-      submitBtn.style.background = 'rgba(255, 183, 122, 0.8)';
-      this.reset();
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify({
+        username: username,
+        email: email,
+        password: password,
+        role: role
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
       showToast('用户创建成功！', 'success');
-    }, 2000);
-  }, 1500);
+      closeModal('userModal');
+      this.reset();
+      // 重新加载用户列表
+      fetchAdminData(currentPage, 10, currentUserPage, 10);
+    } else {
+      showToast(result.message || '用户创建失败', 'error');
+    }
+  } catch (error) {
+    console.error('创建用户失败:', error);
+    showToast('创建用户失败，请重试', 'error');
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
 });
 
 // 编辑用户表单提交

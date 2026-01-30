@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse, HttpRequest, HttpMessage};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{PassageRepository, Repository};
-use crate::db::models::Passage;
+use crate::db::repositories::{PassageRepository, AttachmentRepository, Repository};
+use crate::db::models::{Passage, Attachment};
 use std::sync::Arc;
 use chrono::Utc;
 
@@ -636,16 +636,37 @@ pub async fn update(
 /// 删除文章
 pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
-    path: web::Path<i64>,
+    path: web::Path<String>,
 ) -> HttpResponse {
-    let id = path.into_inner();
+    let uuid = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
-    match passage_repo.delete(id).await {
+    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+
+    // 1. 查询关联的附件
+    let attachments = match attachment_repo.get_by_passage_uuids(vec![uuid.clone()]).await {
+        Ok(attachments) => attachments,
+        Err(e) => {
+            eprintln!("查询附件失败: {}", e);
+            Vec::new()
+        }
+    };
+
+    // 2. 删除附件物理文件
+    let mut deleted_files = 0;
+    for attachment in &attachments {
+        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+            eprintln!("删除附件文件失败 {}: {}", attachment.file_path, e);
+        } else {
+            deleted_files += 1;
+        }
+    }
+
+    // 3. 删除文章记录
+    match passage_repo.delete_by_uuid(&uuid).await {
         Ok(_) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
-                "message": "文章删除成功"
+                "message": format!("文章删除成功，删除了 {} 个附件文件", deleted_files)
             }))
         }
         Err(e) => {
@@ -675,15 +696,50 @@ pub async fn delete_batch(
             "message": "文章ID列表不能为空"
         }));
     }
-    
+
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+
+    // 1. 获取文章 UUID 列表
+    let uuids = match passage_repo.get_uuids_by_ids(req.ids.clone()).await {
+        Ok(uuids) => uuids,
+        Err(e) => {
+            eprintln!("获取文章 UUID 失败: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "批量删除文章失败"
+            }));
+        }
+    };
+
+    // 2. 查询关联的附件
+    let attachments = match attachment_repo.get_by_passage_uuids(uuids).await {
+        Ok(attachments) => attachments,
+        Err(e) => {
+            eprintln!("查询附件失败: {}", e);
+            // 即使查询附件失败，也继续删除文章
+            Vec::new()
+        }
+    };
+
+    // 3. 删除附件物理文件
+    let mut deleted_files = 0;
+    for attachment in &attachments {
+        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+            eprintln!("删除附件文件失败 {}: {}", attachment.file_path, e);
+        } else {
+            deleted_files += 1;
+        }
+    }
+
+    // 4. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
     match passage_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
-                "message": format!("成功删除 {} 篇文章", count),
-                "deleted_count": count
+                "message": format!("成功删除 {} 篇文章，{} 个附件文件", count, deleted_files),
+                "deleted_count": count,
+                "deleted_files": deleted_files
             }))
         }
         Err(e) => {

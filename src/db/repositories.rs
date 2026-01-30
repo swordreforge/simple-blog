@@ -280,6 +280,13 @@ impl PassageRepository {
         Ok(())
     }
 
+    /// 根据 UUID 删除文章
+    pub async fn delete_by_uuid(&self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("DELETE FROM passages WHERE uuid = ?", params![uuid])?;
+        Ok(())
+    }
+
     /// 批量删除文章
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
         if ids.is_empty() {
@@ -291,6 +298,22 @@ impl PassageRepository {
         let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
+    }
+
+    /// 根据文章 ID 列表获取 UUID 列表
+    pub async fn get_uuids_by_ids(&self, ids: Vec<i64>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("SELECT uuid FROM passages WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+
+        let mut stmt = conn.prepare(&sql)?;
+        let uuids = stmt.query_map(params.as_slice(), |row| row.get(0))?
+            .collect::<Result<Vec<String>, _>>()?;
+        Ok(uuids)
     }
 
     /// 获取文章总数
@@ -1405,6 +1428,39 @@ impl AttachmentRepository {
         let conn = self.pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM attachments", [], |row| row.get(0))?;
         Ok(count)
+    }
+
+    /// 根据文章 UUID 列表查询附件
+    pub async fn get_by_passage_uuids(&self, uuids: Vec<String>) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+        if uuids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.pool.get()?;
+        let placeholders = uuids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
+             FROM attachments WHERE passage_uuid IN ({})", placeholders
+        );
+        let params: Vec<&dyn rusqlite::ToSql> = uuids.iter().map(|uuid| uuid as &dyn rusqlite::ToSql).collect();
+
+        let mut stmt = conn.prepare(&sql)?;
+        let attachments = stmt.query_map(params.as_slice(), |row| {
+            Ok(Attachment {
+                id: Some(row.get(0)?),
+                file_name: row.get(1)?,
+                stored_name: row.get(2)?,
+                file_path: row.get(3)?,
+                file_type: row.get(4)?,
+                content_type: row.get(5)?,
+                file_size: row.get(6)?,
+                passage_uuid: row.get(7)?,
+                visibility: row.get(8)?,
+                show_in_passage: row.get(9)?,
+                uploaded_at: row.get(10)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+
+        Ok(attachments)
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<Attachment, Box<dyn std::error::Error>> {

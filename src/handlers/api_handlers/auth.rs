@@ -21,6 +21,7 @@ pub struct LoginRequest {
 pub struct RegisterRequest {
     pub username: String,
     pub email: String,
+    #[serde(default)]
     pub password: String,
     #[serde(default)]
     pub role: Option<String>,
