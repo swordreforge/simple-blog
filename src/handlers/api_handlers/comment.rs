@@ -170,3 +170,36 @@ pub async fn delete(
         })
     }
 }
+
+/// 批量删除评论请求
+#[derive(Debug, Deserialize)]
+pub struct BatchDeleteRequest {
+    pub ids: Vec<i64>,
+}
+
+/// 批量删除评论
+pub async fn delete_batch(
+    req: web::Json<BatchDeleteRequest>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    if req.ids.is_empty() {
+        return HttpResponse::BadRequest().json(CommonResponse {
+            success: false,
+            message: "评论ID列表不能为空".to_string(),
+        });
+    }
+    
+    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    
+    match comment_repo.delete_batch(req.ids.clone()).await {
+        Ok(count) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": format!("成功删除 {} 条评论", count),
+            "deleted_count": count
+        })),
+        Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
+            success: false,
+            message: "批量删除评论失败".to_string(),
+        })
+    }
+}

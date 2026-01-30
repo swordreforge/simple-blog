@@ -280,6 +280,19 @@ impl PassageRepository {
         Ok(())
     }
 
+    /// 批量删除文章
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("DELETE FROM passages WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let affected = conn.execute(&sql, params.as_slice())?;
+        Ok(affected as i64)
+    }
+
     /// 获取文章总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
@@ -393,6 +406,19 @@ impl CommentRepository {
         let conn = self.pool.get()?;
         conn.execute("DELETE FROM comments WHERE id = ?", params![id])?;
         Ok(())
+    }
+
+    /// 批量删除评论
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("DELETE FROM comments WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let affected = conn.execute(&sql, params.as_slice())?;
+        Ok(affected as i64)
     }
 
     /// 获取评论总数
@@ -861,6 +887,19 @@ impl CategoryRepository {
         Ok(())
     }
 
+    /// 批量删除分类
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("DELETE FROM categories WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let affected = conn.execute(&sql, params.as_slice())?;
+        Ok(affected as i64)
+    }
+
     /// 获取分类总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
@@ -1027,6 +1066,19 @@ impl TagRepository {
         Ok(())
     }
 
+    /// 批量删除标签
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("DELETE FROM tags WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let affected = conn.execute(&sql, params.as_slice())?;
+        Ok(affected as i64)
+    }
+
     /// 获取标签总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
@@ -1161,6 +1213,19 @@ impl UserRepository {
         let conn = self.pool.get()?;
         conn.execute("DELETE FROM users WHERE id = ?", params![id])?;
         Ok(())
+    }
+
+    /// 批量删除用户
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("DELETE FROM users WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let affected = conn.execute(&sql, params.as_slice())?;
+        Ok(affected as i64)
     }
 
     /// 获取用户总数

@@ -284,3 +284,41 @@ pub async fn delete(
         }
     }
 }
+
+/// 批量删除用户请求
+#[derive(Debug, Deserialize)]
+pub struct BatchDeleteRequest {
+    pub ids: Vec<i64>,
+}
+
+/// 批量删除用户
+pub async fn delete_batch(
+    repo: web::Data<Arc<dyn Repository>>,
+    req: web::Json<BatchDeleteRequest>,
+) -> HttpResponse {
+    if req.ids.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "success": false,
+            "message": "用户ID列表不能为空"
+        }));
+    }
+    
+    let user_repo = UserRepository::new(repo.get_pool().clone());
+    
+    match user_repo.delete_batch(req.ids.clone()).await {
+        Ok(count) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": format!("成功删除 {} 个用户", count),
+                "deleted_count": count
+            }))
+        }
+        Err(e) => {
+            eprintln!("批量删除用户失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "批量删除用户失败"
+            }))
+        }
+    }
+}

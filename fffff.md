@@ -1,29 +1,24 @@
-当前进度总结
+### 项目修改计划
 
-  ✅ 已完成：
-   1. ✅ 添加了 flake 依赖到 Cargo.toml
-   2. ✅ 修改了 passages 表结构，添加 uuid 字段（保留原有 id 字段）
-   3. ✅ 修改了其他表的外键，改用 passage_uuid
-   4. ✅ 修改了 Passage、ArticleView、Comment、Attachment 模型，添加 uuid
-      字段
-   5. ✅ 修改了 PassageRepository 的 create 方法，生成 flake UUID
-   6. ✅ 添加了 get_by_uuid 方法
+#### 1.支持批量增删改查
 
-  ❌ 还需要完成：
-   1. ❌ 修改 PassageRepository 的所有方法，适配 uuid 字段
-   2. ❌ 修改其他 Repository（CommentRepository、ArticleViewRepository
-      等）
-   3. ❌ 修改 API handler，使用 uuid 作为主键
-   4. ❌ 修改前端 JavaScript，使用 uuid 路由
-   5. ❌ 测试 flake UUID 功能
+#### 2.边界情况保证
 
-  建议
+#### 2.1关于界面预先配置模板
 
-  由于这是一个大规模的重构，而且当前代码还有一些语法错误需要修复，我建议
-  ：
+#### 3.添加文章封面用户可选择是否开启，在归档中展示
 
-   1. 先存档当前的进度，避免丢失已完成的工作
-   2. 分阶段完成，先修复编译错误，再逐步完成其他功能
-   3. 或者暂停，让你先看看当前的修改是否符合预期
+#### 4.前端性能优化
 
-✦ 你希望我继续完成剩余的修改，还是先暂停让你检查一下当前的进度？
+#### 5.总体性能优化
+
+#### 6.限流中间件实现
+
+#### 7.类似embed的实现
+
+
+
+
+
+
+

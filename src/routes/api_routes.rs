@@ -106,6 +106,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::comment::list))
             .route(web::post().to(api_handlers::comment::create))
             .route(web::delete().to(api_handlers::comment::delete))
+    ).service(
+        web::resource("/api/comments/batch-delete")
+            .route(web::post().to(api_handlers::comment::delete_batch))
     );
 
     // 管理员 API - 评论
@@ -116,6 +119,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     ).service(
         web::resource("/api/admin/comments/{id}")
             .route(web::delete().to(api_handlers::comment::delete))
+    ).service(
+        web::resource("/api/admin/comments/batch-delete")
+            .route(web::post().to(api_handlers::comment::delete_batch))
     );
 
     // 管理员 API - 统计
@@ -197,6 +203,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::user::get))
             .route(web::put().to(api_handlers::user::update))
             .route(web::delete().to(api_handlers::user::delete))
+    ).service(
+        web::resource("/api/admin/users/batch-delete")
+            .route(web::post().to(api_handlers::user::delete_batch))
     );
 
     // ECC 加密 API
@@ -281,6 +290,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::passage::get))
             .route(web::put().to(api_handlers::passage::update))
             .route(web::delete().to(api_handlers::passage::delete))
+    ).service(
+        web::resource("/api/admin/passages/batch-delete")
+            .route(web::post().to(api_handlers::passage::delete_batch))
     );
 
     // 兼容 Go 版本的路由
@@ -318,6 +330,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::categories::get))
             .route(web::put().to(api_handlers::categories::update))
             .route(web::delete().to(api_handlers::categories::delete))
+    ).service(
+        web::resource("/api/admin/categories/batch-delete")
+            .route(web::post().to(api_handlers::categories::delete_batch))
     );
 
     // 管理员 API - 标签
@@ -330,6 +345,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::tags::get))
             .route(web::put().to(api_handlers::tags::update))
             .route(web::delete().to(api_handlers::tags::delete))
+    ).service(
+        web::resource("/api/admin/tags/batch-delete")
+            .route(web::post().to(api_handlers::tags::delete_batch))
     );
 
     // 数据库统计和健康检查 API
