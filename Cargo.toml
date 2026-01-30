@@ -54,4 +54,4 @@ mp3-metadata = "0.3"
 metaflac = "0.2"
 
 # Flake ID 生成
-flake = "0.0.1"
+flaker = "0.1.3"

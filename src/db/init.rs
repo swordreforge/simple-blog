@@ -158,7 +158,90 @@ pub struct PoolStatus {
 
 /// 创建所有数据库表
 fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::Error>> {
-    // 创建文章表
+    // 检查 passages 表是否存在
+    let table_exists = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='passages'",
+        [],
+        |row| {
+            let count: i64 = row.get(0)?;
+            Ok(count > 0)
+        }
+    ).unwrap_or(false);
+
+    // 如果表已存在，检查是否有 uuid 列
+    if table_exists {
+        let has_uuid_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('passages') WHERE name = 'uuid'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
+        // 如果表已存在但没有 uuid 列，则添加该列
+        if !has_uuid_column {
+            println!("⚠️  检测到旧版数据库结构，正在迁移 passages 表...");
+            
+            // 先添加 uuid 列（可为空，用于迁移现有数据）
+            conn.execute("ALTER TABLE passages ADD COLUMN uuid TEXT", [])?;
+            
+            // 为现有文章生成 UUID
+            let mut flaker = flaker::Flaker::new([0, 0, 0, 0, 0, 0], flaker::Endianness::LittleEndian);
+            let mut stmt = conn.prepare("SELECT id FROM passages WHERE uuid IS NULL")?;
+            let mut rows = stmt.query([])?;
+            
+            let mut updated_count = 0;
+            while let Some(row) = rows.next()? {
+                let id: i64 = row.get(0)?;
+                let uuid = flaker.get_id().map_err(|e| format!("Failed to generate UUID: {:?}", e))?.to_string();
+                conn.execute("UPDATE passages SET uuid = ? WHERE id = ?", rusqlite::params![&uuid, &id])?;
+                updated_count += 1;
+            }
+            
+            // 将 uuid 列改为 NOT NULL 和 UNIQUE
+            conn.execute("UPDATE passages SET uuid = CASE WHEN uuid IS NULL THEN (SELECT hex(randomblob(16))) ELSE uuid END WHERE uuid IS NULL", [])?;
+            
+            // SQLite 不支持直接添加 NOT NULL 约束到已有列，需要重建表
+            conn.execute(
+                "CREATE TABLE passages_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    uuid TEXT UNIQUE NOT NULL,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    original_content TEXT,
+                    summary TEXT,
+                    author TEXT DEFAULT '管理员',
+                    tags TEXT DEFAULT '[]',
+                    category TEXT DEFAULT '未分类',
+                    status TEXT DEFAULT 'published',
+                    file_path TEXT,
+                    visibility TEXT DEFAULT 'public',
+                    is_scheduled INTEGER DEFAULT 0,
+                    published_at DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )",
+                [],
+            )?;
+            
+            // 复制数据
+            conn.execute(
+                "INSERT INTO passages_new (id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at) 
+                 SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+                 FROM passages",
+                [],
+            )?;
+            
+            // 删除旧表并重命名新表
+            conn.execute("DROP TABLE passages", [])?;
+            conn.execute("ALTER TABLE passages_new RENAME TO passages", [])?;
+            
+            println!("✅ 已为 {} 篇现有文章生成 UUID", updated_count);
+        }
+    }
+
+    // 创建文章表（如果不存在）
     conn.execute(
         "CREATE TABLE IF NOT EXISTS passages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -379,7 +462,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_type ON attachments(file_type)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_visibility ON attachments(visibility)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_uploaded_at ON attachments(uploaded_at)", [])?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_passage_visibility ON attachments(passage_id, visibility)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_passage_visibility ON attachments(passage_uuid, visibility)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_attachments_show_in_passage ON attachments(show_in_passage)", [])?;
 
     // 创建音乐表
@@ -649,10 +732,21 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             // 将 Markdown 转换为 HTML
             let html_content = convert_markdown_to_html(content);
             
-            let _ = conn.execute(
-                "INSERT INTO passages (title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            // 生成 UUID
+            let mut flaker = flaker::Flaker::new([0, 0, 0, 0, 0, 0], flaker::Endianness::LittleEndian);
+            let uuid = match flaker.get_id() {
+                Ok(id) => id.to_string(),
+                Err(e) => {
+                    eprintln!("❌ 生成 UUID 失败: {:?}", e);
+                    return Err(format!("Failed to generate UUID: {:?}", e).into());
+                }
+            };
+            
+            match conn.execute(
+                "INSERT INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 rusqlite::params![
+                    &uuid,
                     title,
                     html_content,
                     content,
@@ -666,7 +760,13 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                     chrono::Utc::now(),
                     chrono::Utc::now(),
                 ],
-            )?;
+            ) {
+                Ok(_) => {},
+                Err(e) => {
+                    eprintln!("❌ 插入文章 '{}' 失败: {}", title, e);
+                    return Err(e.into());
+                }
+            }
         }
         
         println!("✅ 已插入 3 篇示例文章");

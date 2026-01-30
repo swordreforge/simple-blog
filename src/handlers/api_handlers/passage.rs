@@ -9,6 +9,7 @@ use chrono::Utc;
 #[derive(Debug, Serialize)]
 pub struct PassageResponse {
     pub id: i64,
+    pub uuid: String,  // Flake UUID
     pub title: String,
     pub content: String,  // 原始 Markdown 内容
     pub html_content: Option<String>,  // 渲染后的 HTML 内容
@@ -83,6 +84,7 @@ pub async fn list(
             let data: Vec<PassageResponse> = passages.into_iter()
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
+                    uuid: p.uuid.unwrap_or_default(),
                     title: p.title,
                     content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
                     html_content: None, // 列表不返回 HTML 内容
@@ -152,6 +154,7 @@ pub async fn admin_list(
             let data: Vec<PassageResponse> = passages.into_iter()
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
+                    uuid: p.uuid.unwrap_or_default(),
                     title: p.title,
                     content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
                     html_content: Some(p.content), // 返回渲染后的 HTML
@@ -189,6 +192,133 @@ pub async fn admin_list(
 
 /// 获取单篇文章
 pub async fn get(
+    repo: web::Data<Arc<dyn Repository>>,
+    path: web::Path<String>,
+    req: HttpRequest,
+) -> HttpResponse {
+    let param = path.into_inner();
+    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    
+    // 获取用户角色
+    let role: String = req.extensions().get::<crate::middleware::auth::RoleKey>()
+        .map(|r| r.0.clone())
+        .unwrap_or_else(|| String::new());
+    
+    // 智能识别：如果是纯数字，则按 ID 查询；否则按 UUID 查询
+    let passage = if let Ok(id) = param.parse::<i64>() {
+        // 数字 ID 查询
+        match passage_repo.get_by_id(id).await {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("获取文章失败: {}", e);
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "文章不存在"
+                }));
+            }
+        }
+    } else {
+        // UUID 查询
+        match passage_repo.get_by_uuid(&param).await {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("获取文章失败: {}", e);
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "文章不存在"
+                }));
+            }
+        }
+    };
+    
+    // 检查文章状态和可见性
+    if passage.status != "published" {
+        if role != "admin" {
+            return HttpResponse::Ok().json(serde_json::json!({
+                "success": false,
+                "message": "文章未发布",
+                "status": passage.status
+            }));
+        }
+    }
+    
+    if passage.visibility != "public" {
+        if role != "admin" {
+            return HttpResponse::Ok().json(serde_json::json!({
+                "success": false,
+                "message": "文章不可见",
+                "visibility": passage.visibility
+            }));
+        }
+    }
+    
+    if passage.is_scheduled {
+        if let Some(published_at) = passage.published_at {
+            if published_at > Utc::now() && role != "admin" {
+                return HttpResponse::Ok().json(serde_json::json!({
+                    "success": false,
+                    "message": "文章尚未发布",
+                    "is_scheduled": true,
+                    "published_at": published_at.format("%Y-%m-%d %H:%M:%S").to_string()
+                }));
+            }
+        }
+    }
+    
+    // 异步记录文章阅读（不阻塞响应）
+    let repo_clone = repo.get_pool().clone();
+    let passage_uuid = passage.uuid.clone().unwrap_or_default();
+    let user_agent = req.headers().get("user-agent")
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("unknown")
+        .to_string();
+    
+    tokio::spawn(async move {
+        // 获取客户端IP（简化版）
+        let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
+        
+        // 获取地理位置信息（简化版）
+        let country = "unknown".to_string();
+        let city = "unknown".to_string();
+        let region = "unknown".to_string();
+        
+        // 记录阅读
+        let view_repo = crate::db::repositories::ArticleViewRepository::new(repo_clone);
+        if let Err(e) = view_repo.record_view(&passage_uuid, &ip, Some(&user_agent), &country, &city, &region).await {
+            eprintln!("记录阅读失败: {}", e);
+        }
+    });
+    
+    let response = PassageResponse {
+        id: passage.id.unwrap_or(0),
+        uuid: passage.uuid.unwrap_or_default(),
+        title: passage.title,
+        content: passage.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
+        html_content: Some(passage.content), // 返回渲染后的 HTML
+        summary: passage.summary,
+        author: passage.author,
+        tags: passage.tags,
+        category: passage.category,
+        status: passage.status,
+        file_path: passage.file_path,
+        visibility: passage.visibility,
+        is_scheduled: passage.is_scheduled,
+        published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+        created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+        updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+    };
+    HttpResponse::Ok()
+        .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
+        .insert_header(("Pragma", "no-cache"))
+        .insert_header(("Expires", "0"))
+        .json(serde_json::json!({
+            "success": true,
+            "data": response
+        }))
+}
+
+/// 根据数字 ID 获取文章
+pub async fn get_by_id(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
     req: HttpRequest,
@@ -240,6 +370,7 @@ pub async fn get(
             
             // 异步记录文章阅读（不阻塞响应）
             let repo_clone = repo.get_pool().clone();
+            let passage_uuid = passage.uuid.clone().unwrap_or_default();
             let user_agent = req.headers().get("user-agent")
                 .and_then(|h| h.to_str().ok())
                 .unwrap_or("unknown")
@@ -256,13 +387,14 @@ pub async fn get(
                 
                 // 记录阅读
                 let view_repo = crate::db::repositories::ArticleViewRepository::new(repo_clone);
-                if let Err(e) = view_repo.record_view(id, &ip, Some(&user_agent), &country, &city, &region).await {
+                if let Err(e) = view_repo.record_view(&passage_uuid, &ip, Some(&user_agent), &country, &city, &region).await {
                     eprintln!("记录阅读失败: {}", e);
                 }
             });
             
             let response = PassageResponse {
                 id: passage.id.unwrap_or(0),
+                uuid: passage.uuid.unwrap_or_default(),
                 title: passage.title,
                 content: passage.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
                 html_content: Some(passage.content), // 返回渲染后的 HTML
@@ -323,6 +455,7 @@ pub async fn create(
     let now = Utc::now();
     let passage = Passage {
         id: None,
+        uuid: None,  // UUID 将在 Repository 中生成
         title: req.title.clone(),
         content: html_content,
         original_content: Some(req.content.clone()),
@@ -728,6 +861,7 @@ pub async fn get_by_query(
             Ok(passage) => {
                 let response = PassageResponse {
                     id: passage.id.unwrap_or(0),
+                    uuid: passage.uuid.unwrap_or_default(),
                     title: passage.title,
                     content: passage.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
                     html_content: Some(passage.content), // 返回渲染后的 HTML
@@ -774,6 +908,7 @@ pub async fn get_by_query(
                 let data: Vec<PassageResponse> = passages.into_iter()
                     .map(|p| PassageResponse {
                         id: p.id.unwrap_or(0),
+                        uuid: p.uuid.unwrap_or_default(),
                         title: p.title,
                         content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
                         html_content: Some(p.content), // 返回渲染后的 HTML

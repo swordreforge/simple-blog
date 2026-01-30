@@ -10,11 +10,12 @@
    6. ✅ 添加了 get_by_uuid 方法
 
   ❌ 还需要完成：
-   1. 修复当前代码中的语法错误（括号不匹配）
-   2. 更新所有 Repository 的查询语句，包含 uuid 字段
-   3. 修改 API handler，使用 uuid 作为主键
-   4. 修改前端 JavaScript，使用 uuid 路由
-   5. 测试 flake UUID 功能
+   1. ❌ 修改 PassageRepository 的所有方法，适配 uuid 字段
+   2. ❌ 修改其他 Repository（CommentRepository、ArticleViewRepository
+      等）
+   3. ❌ 修改 API handler，使用 uuid 作为主键
+   4. ❌ 修改前端 JavaScript，使用 uuid 路由
+   5. ❌ 测试 flake UUID 功能
 
   建议
 

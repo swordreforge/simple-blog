@@ -37,10 +37,16 @@ impl PassageRepository {
     /// 创建文章
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
+        
+        // 生成 Flake UUID
+        let mut flaker = flaker::Flaker::new([0, 0, 0, 0, 0, 0], flaker::Endianness::LittleEndian);
+        let uuid = flaker.get_id().map_err(|e| format!("Failed to generate UUID: {:?}", e))?.to_string();
+        
         let _ = conn.execute(
-            "INSERT INTO passages (title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
+                &uuid,
                 &passage.title,
                 &passage.content,
                 &passage.original_content,
@@ -64,27 +70,60 @@ impl PassageRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Passage, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
              FROM passages WHERE id = ?"
         )?;
         
         let passage = stmt.query_row(params![id], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
-                title: row.get(1)?,
-                content: row.get(2)?,
-                original_content: row.get(3)?,
-                summary: row.get(4)?,
-                author: row.get(5)?,
-                tags: row.get(6)?,
-                category: row.get(7)?,
-                status: row.get(8)?,
-                file_path: row.get(9)?,
-                visibility: row.get(10)?,
-                is_scheduled: row.get(11)?,
-                published_at: row.get(12)?,
-                created_at: row.get(13)?,
-                updated_at: row.get(14)?,
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                created_at: row.get(14)?,
+                updated_at: row.get(15)?,
+            })
+        })?;
+        
+        Ok(passage)
+    }
+
+    /// 根据 UUID 获取文章
+    pub async fn get_by_uuid(&self, uuid: &str) -> Result<Passage, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+             FROM passages WHERE uuid = ?"
+        )?;
+        
+        let passage = stmt.query_row(params![uuid], |row| {
+            Ok(Passage {
+                id: Some(row.get(0)?),
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                created_at: row.get(14)?,
+                updated_at: row.get(15)?,
             })
         })?;
         
@@ -95,27 +134,28 @@ impl PassageRepository {
     pub async fn get_by_file_path(&self, file_path: &str) -> Result<Passage, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
              FROM passages WHERE file_path = ?"
         )?;
         
         let passage = stmt.query_row(params![file_path], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
-                title: row.get(1)?,
-                content: row.get(2)?,
-                original_content: row.get(3)?,
-                summary: row.get(4)?,
-                author: row.get(5)?,
-                tags: row.get(6)?,
-                category: row.get(7)?,
-                status: row.get(8)?,
-                file_path: row.get(9)?,
-                visibility: row.get(10)?,
-                is_scheduled: row.get(11)?,
-                published_at: row.get(12)?,
-                created_at: row.get(13)?,
-                updated_at: row.get(14)?,
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                created_at: row.get(14)?,
+                updated_at: row.get(15)?,
             })
         })?;
         
@@ -126,27 +166,28 @@ impl PassageRepository {
     pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
              FROM passages ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
         
         let passages = stmt.query_map(params![limit, offset], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
-                title: row.get(1)?,
-                content: row.get(2)?,
-                original_content: row.get(3)?,
-                summary: row.get(4)?,
-                author: row.get(5)?,
-                tags: row.get(6)?,
-                category: row.get(7)?,
-                status: row.get(8)?,
-                file_path: row.get(9)?,
-                visibility: row.get(10)?,
-                is_scheduled: row.get(11)?,
-                published_at: row.get(12)?,
-                created_at: row.get(13)?,
-                updated_at: row.get(14)?,
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                created_at: row.get(14)?,
+                updated_at: row.get(15)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -157,27 +198,28 @@ impl PassageRepository {
     pub async fn get_published(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
              FROM passages WHERE status = 'published' ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
         
         let passages = stmt.query_map(params![limit, offset], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
-                title: row.get(1)?,
-                content: row.get(2)?,
-                original_content: row.get(3)?,
-                summary: row.get(4)?,
-                author: row.get(5)?,
-                tags: row.get(6)?,
-                category: row.get(7)?,
-                status: row.get(8)?,
-                file_path: row.get(9)?,
-                visibility: row.get(10)?,
-                is_scheduled: row.get(11)?,
-                published_at: row.get(12)?,
-                created_at: row.get(13)?,
-                updated_at: row.get(14)?,
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                created_at: row.get(14)?,
+                updated_at: row.get(15)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -255,11 +297,11 @@ impl CommentRepository {
     pub async fn create(&self, comment: &Comment) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "INSERT INTO comments (username, content, passage_id, created_at) VALUES (?, ?, ?, ?)",
+            "INSERT INTO comments (username, content, passage_uuid, created_at) VALUES (?, ?, ?, ?)",
             params![
                 &comment.username,
                 &comment.content,
-                &comment.passage_id,
+                &comment.passage_uuid,
                 &comment.created_at,
             ],
         )?;
@@ -270,7 +312,7 @@ impl CommentRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Comment, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, username, content, passage_id, created_at FROM comments WHERE id = ?"
+            "SELECT id, username, content, passage_uuid, created_at FROM comments WHERE id = ?"
         )?;
         
         let comment = stmt.query_row(params![id], |row| {
@@ -278,7 +320,7 @@ impl CommentRepository {
                 id: Some(row.get(0)?),
                 username: row.get(1)?,
                 content: row.get(2)?,
-                passage_id: row.get(3)?,
+                passage_uuid: row.get(3)?,
                 created_at: row.get(4)?,
             })
         })?;
@@ -286,19 +328,19 @@ impl CommentRepository {
         Ok(comment)
     }
 
-    /// 根据文章 ID 获取评论
-    pub async fn get_by_passage_id(&self, passage_id: i64, limit: i64, offset: i64) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+    /// 根据文章 UUID 获取评论
+    pub async fn get_by_passage_uuid(&self, passage_uuid: &str, limit: i64, offset: i64) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, username, content, passage_id, created_at FROM comments WHERE passage_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            "SELECT id, username, content, passage_uuid, created_at FROM comments WHERE passage_uuid = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
         
-        let comments = stmt.query_map(params![passage_id, limit, offset], |row| {
+        let comments = stmt.query_map(params![passage_uuid, limit, offset], |row| {
             Ok(Comment {
                 id: Some(row.get(0)?),
                 username: row.get(1)?,
                 content: row.get(2)?,
-                passage_id: row.get(3)?,
+                passage_uuid: row.get(3)?,
                 created_at: row.get(4)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
@@ -310,7 +352,7 @@ impl CommentRepository {
     pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, username, content, passage_id, created_at FROM comments ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            "SELECT id, username, content, passage_uuid, created_at FROM comments ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
         
         let comments = stmt.query_map(params![limit, offset], |row| {
@@ -318,7 +360,7 @@ impl CommentRepository {
                 id: Some(row.get(0)?),
                 username: row.get(1)?,
                 content: row.get(2)?,
-                passage_id: row.get(3)?,
+                passage_uuid: row.get(3)?,
                 created_at: row.get(4)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
@@ -340,10 +382,10 @@ impl CommentRepository {
         Ok(count)
     }
 
-    /// 根据文章 ID 获取评论数
-    pub async fn count_by_passage_id(&self, passage_id: i64) -> Result<i64, Box<dyn std::error::Error>> {
+    /// 根据文章 UUID 获取评论数
+    pub async fn count_by_passage_uuid(&self, passage_uuid: &str) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM comments WHERE passage_id = ?", params![passage_id], |row| row.get(0))?;
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM comments WHERE passage_uuid = ?", params![passage_uuid], |row| row.get(0))?;
         Ok(count)
     }
 }
@@ -359,16 +401,16 @@ impl ArticleViewRepository {
     }
 
     /// 记录文章阅读
-    pub async fn record_view(&self, passage_id: i64, ip: &str, user_agent: Option<&str>, country: &str, city: &str, region: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn record_view(&self, passage_uuid: &str, ip: &str, user_agent: Option<&str>, country: &str, city: &str, region: &str) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let now = Utc::now();
         let view_date = now.format("%Y-%m-%d").to_string();
         
         conn.execute(
-            "INSERT INTO article_views (passage_id, ip, user_agent, country, city, region, view_date, view_time, created_at) 
+            "INSERT INTO article_views (passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
-                passage_id,
+                passage_uuid,
                 ip,
                 user_agent,
                 country,
@@ -387,7 +429,7 @@ impl ArticleViewRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT p.id, p.title, COUNT(av.id) as view_count FROM passages p 
-             LEFT JOIN article_views av ON p.id = av.passage_id 
+             LEFT JOIN article_views av ON p.uuid = av.passage_uuid 
              GROUP BY p.id ORDER BY view_count DESC LIMIT ?"
         )?;
         
@@ -441,39 +483,39 @@ impl ArticleViewRepository {
     }
 
     /// 获取单篇文章的统计信息
-    pub async fn get_article_stats(&self, article_id: i64, days: i64) -> Result<ArticleStatsData, Box<dyn std::error::Error>> {
+    pub async fn get_article_stats(&self, passage_uuid: &str, days: i64) -> Result<ArticleStatsData, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         
         // 获取文章信息
         let passage = self.pool.get()?.query_row(
-            "SELECT id, title FROM passages WHERE id = ?",
-            params![article_id],
+            "SELECT id, title FROM passages WHERE uuid = ?",
+            params![passage_uuid],
             |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
         )?;
         
         // 获取总浏览量
         let total_views: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM article_views WHERE passage_id = ? AND view_date >= date('now', ? || ' days')",
-            params![article_id, -days],
+            "SELECT COUNT(*) FROM article_views WHERE passage_uuid = ? AND view_date >= date('now', ? || ' days')",
+            params![passage_uuid, -days],
             |row| row.get(0)
         )?;
         
         // 获取独立访客数
         let unique_visitors: i64 = conn.query_row(
-            "SELECT COUNT(DISTINCT ip) FROM article_views WHERE passage_id = ? AND view_date >= date('now', ? || ' days')",
-            params![article_id, -days],
+            "SELECT COUNT(DISTINCT ip) FROM article_views WHERE passage_uuid = ? AND view_date >= date('now', ? || ' days')",
+            params![passage_uuid, -days],
             |row| row.get(0)
         )?;
         
         // 获取平均停留时间
         let avg_duration: f64 = conn.query_row(
-            "SELECT AVG(duration) FROM article_views WHERE passage_id = ? AND view_date >= date('now', ? || ' days')",
-            params![article_id, -days],
+            "SELECT AVG(duration) FROM article_views WHERE passage_uuid = ? AND view_date >= date('now', ? || ' days')",
+            params![passage_uuid, -days],
             |row| row.get(0)
         ).unwrap_or(0.0);
         
         Ok(ArticleStatsData {
-            article_id,
+            article_id: passage.0,
             title: passage.1,
             total_views,
             unique_visitors,
@@ -1220,7 +1262,7 @@ impl AttachmentRepository {
     pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_id, visibility, show_in_passage, uploaded_at 
+            "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments ORDER BY uploaded_at DESC LIMIT ? OFFSET ?"
         )?;
         
@@ -1233,7 +1275,7 @@ impl AttachmentRepository {
                 file_type: row.get(4)?,
                 content_type: row.get(5)?,
                 file_size: row.get(6)?,
-                passage_id: row.get(7)?,
+                passage_uuid: row.get(7)?,
                 visibility: row.get(8)?,
                 show_in_passage: row.get(9)?,
                 uploaded_at: row.get(10)?,
@@ -1246,7 +1288,7 @@ impl AttachmentRepository {
     pub async fn create(&self, attachment: &Attachment) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "INSERT INTO attachments (file_name, stored_name, file_path, file_type, content_type, file_size, passage_id, visibility, show_in_passage, uploaded_at) 
+            "INSERT INTO attachments (file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 &attachment.file_name,
@@ -1255,7 +1297,7 @@ impl AttachmentRepository {
                 &attachment.file_type,
                 &attachment.content_type,
                 &attachment.file_size,
-                &attachment.passage_id,
+                &attachment.passage_uuid,
                 &attachment.visibility,
                 &attachment.show_in_passage,
                 &attachment.uploaded_at,
@@ -1273,7 +1315,7 @@ impl AttachmentRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Attachment, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_id, visibility, show_in_passage, uploaded_at 
+            "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE id = ?"
         )?;
         
@@ -1286,7 +1328,7 @@ impl AttachmentRepository {
                 file_type: row.get(4)?,
                 content_type: row.get(5)?,
                 file_size: row.get(6)?,
-                passage_id: row.get(7)?,
+                passage_uuid: row.get(7)?,
                 visibility: row.get(8)?,
                 show_in_passage: row.get(9)?,
                 uploaded_at: row.get(10)?,

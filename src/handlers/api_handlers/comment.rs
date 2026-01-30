@@ -6,7 +6,7 @@ use std::sync::Arc;
 /// 评论列表请求参数
 #[derive(Debug, Deserialize)]
 pub struct CommentListQuery {
-    pub passage_id: Option<i64>,
+    pub passage_uuid: Option<String>,
     pub page: Option<u32>,
     pub limit: Option<u32>,
 }
@@ -16,7 +16,7 @@ pub struct CommentListQuery {
 pub struct CreateCommentRequest {
     pub username: String,
     pub content: String,
-    pub passage_id: i64,
+    pub passage_uuid: String,
 }
 
 /// 评论响应
@@ -25,7 +25,7 @@ pub struct CommentResponse {
     pub id: i64,
     pub username: String,
     pub content: String,
-    pub passage_id: i64,
+    pub passage_uuid: String,
     pub created_at: String,
 }
 
@@ -62,14 +62,14 @@ pub async fn list(
     let limit = query.limit.unwrap_or(10);
     let offset = (page - 1) * limit;
     
-    let comments = if let Some(passage_id) = query.passage_id {
-        comment_repo.get_by_passage_id(passage_id, limit as i64, offset as i64).await
+    let comments = if let Some(ref passage_uuid) = query.passage_uuid {
+        comment_repo.get_by_passage_uuid(passage_uuid, limit as i64, offset as i64).await
     } else {
         comment_repo.get_all(limit as i64, offset as i64).await
     };
     
-    let total = if let Some(passage_id) = query.passage_id {
-        comment_repo.count_by_passage_id(passage_id).await
+    let total = if let Some(ref passage_uuid) = query.passage_uuid {
+        comment_repo.count_by_passage_uuid(passage_uuid).await
     } else {
         comment_repo.count().await
     };
@@ -80,7 +80,7 @@ pub async fn list(
                 id: c.id.unwrap_or(0),
                 username: c.username,
                 content: c.content,
-                passage_id: c.passage_id,
+                passage_uuid: c.passage_uuid,
                 created_at: c.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
             }).collect();
             
@@ -107,10 +107,10 @@ pub async fn create(
     repo: web::Data<Arc<dyn Repository>>,
 ) -> HttpResponse {
     // 验证必填字段
-    if req.username.is_empty() || req.content.is_empty() || req.passage_id == 0 {
+    if req.username.is_empty() || req.content.is_empty() || req.passage_uuid.is_empty() {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
-            message: "用户名、内容和文章ID不能为空".to_string(),
+            message: "用户名、内容和文章UUID不能为空".to_string(),
         });
     }
     
@@ -120,7 +120,7 @@ pub async fn create(
         id: None,
         username: req.username.clone(),
         content: req.content.clone(),
-        passage_id: req.passage_id,
+        passage_uuid: req.passage_uuid.clone(),
         created_at: chrono::Utc::now(),
     };
     
@@ -132,7 +132,7 @@ pub async fn create(
                 id: comment.id.unwrap_or(0),
                 username: comment.username,
                 content: comment.content,
-                passage_id: comment.passage_id,
+                passage_uuid: comment.passage_uuid,
                 created_at: comment.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
             }
         })),

@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
-use crate::db::repositories::{ArticleViewRepository, Repository};
+use crate::db::repositories::{ArticleViewRepository, PassageRepository, Repository};
 use std::sync::Arc;
 
 /// 热门文章响应
@@ -188,7 +188,31 @@ pub async fn article_stats(
     
     let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
     
-    match view_repo.get_article_stats(id, days).await {
+    // 先通过 ID 获取文章的 UUID
+    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage = match passage_repo.get_by_id(id).await {
+        Ok(p) => p,
+        Err(_) => {
+            return HttpResponse::NotFound().json(AnalyticsResponse::<()> {
+                success: false,
+                data: None,
+                message: Some("文章不存在".to_string()),
+            });
+        }
+    };
+    
+    let uuid = match &passage.uuid {
+        Some(u) => u.as_str(),
+        None => {
+            return HttpResponse::InternalServerError().json(AnalyticsResponse::<()> {
+                success: false,
+                data: None,
+                message: Some("文章 UUID 为空".to_string()),
+            });
+        }
+    };
+    
+    match view_repo.get_article_stats(uuid, days).await {
         Ok(stats) => {
             let data = ArticleStats {
                 article_id: stats.article_id,

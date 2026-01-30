@@ -169,6 +169,7 @@ async fn sync_markdown_file_async(
         // 更新现有文章
         let updated_passage = crate::db::models::Passage {
             id: existing.id,
+            uuid: existing.uuid,
             title,
             content: html_content,
             original_content: Some(content.clone()),
@@ -195,6 +196,7 @@ async fn sync_markdown_file_async(
         // 创建新文章
         let passage = crate::db::models::Passage {
             id: None,
+            uuid: None,
             title: title.clone(),
             content: html_content,
             original_content: Some(content.clone()),

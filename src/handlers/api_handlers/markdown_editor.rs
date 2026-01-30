@@ -154,6 +154,7 @@ pub async fn save(
         // 创建文章记录
     let passage = crate::db::models::Passage {
         id: None,
+        uuid: None,
         title: req_data.title.clone(),
         content: html_content,
         original_content: Some(req_data.content),

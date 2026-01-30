@@ -246,7 +246,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/passage/list")
             .route(web::get().to(api_handlers::passage::list))
     ).service(
-        web::resource("/api/passage/{id}")
+        web::resource("/api/passage/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
             .route(web::put().to(api_handlers::passage::update))
             .route(web::delete().to(api_handlers::passage::delete))
@@ -262,7 +262,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::post().to(api_handlers::passage::create))
             .route(web::put().to(api_handlers::passage::update_by_query))
     ).service(
-        web::resource("/api/admin/passages/{id}")
+        web::resource("/api/admin/passages/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
             .route(web::put().to(api_handlers::passage::update))
             .route(web::delete().to(api_handlers::passage::delete))
@@ -274,7 +274,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::passage::list))
             .route(web::post().to(api_handlers::passage::create))
     ).service(
-        web::resource("/api/passages/{id}")
+        web::resource("/api/passages/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
     ).service(
         web::resource("/api/tags")
