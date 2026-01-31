@@ -535,11 +535,27 @@ pub async fn create(
     };
     
     match passage_repo.create(&passage).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "文章创建成功"
-            }))
+        Ok(id) => {
+            // 获取刚创建的文章信息
+            match passage_repo.get_by_id(id).await {
+                Ok(created_passage) => {
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "success": true,
+                        "message": "文章创建成功",
+                        "data": {
+                            "id": id,
+                            "uuid": created_passage.uuid.unwrap_or_else(|| String::new())
+                        }
+                    }))
+                }
+                Err(e) => {
+                    eprintln!("获取创建的文章失败: {}", e);
+                    HttpResponse::InternalServerError().json(serde_json::json!({
+                        "success": false,
+                        "message": "文章创建成功但无法获取详情"
+                    }))
+                }
+            }
         }
         Err(e) => {
             eprintln!("创建文章失败: {}", e);
