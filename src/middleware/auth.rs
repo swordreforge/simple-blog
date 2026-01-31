@@ -82,14 +82,6 @@ pub fn forbidden_response() -> HttpResponse {
     }))
 }
 
-/// 返回未授权的响应
-pub fn unauthorized_response() -> HttpResponse {
-    HttpResponse::Unauthorized().json(serde_json::json!({
-        "success": false,
-        "message": "Invalid or expired token"
-    }))
-}
-
 /// 返回缺少token的响应
 pub fn missing_token_response() -> HttpResponse {
     HttpResponse::Unauthorized().json(serde_json::json!({

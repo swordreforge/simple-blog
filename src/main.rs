@@ -12,7 +12,6 @@ mod embedded;
 mod cache;
 mod view_batch;
 mod jwt;
-mod auth_utils;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use clap::Parser;

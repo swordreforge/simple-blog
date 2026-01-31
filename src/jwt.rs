@@ -17,21 +17,17 @@ pub struct Claims {
 /// JWT 错误类型
 #[derive(Debug)]
 pub enum JwtError {
-    InvalidToken(String),
-    ExpiredToken,
-    MissingToken,
     EncodingError(String),
     DecodingError(String),
+    ExpiredToken,
 }
 
 impl std::fmt::Display for JwtError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            JwtError::InvalidToken(msg) => write!(f, "Invalid token: {}", msg),
-            JwtError::ExpiredToken => write!(f, "Token has expired"),
-            JwtError::MissingToken => write!(f, "Missing authorization token"),
             JwtError::EncodingError(msg) => write!(f, "Encoding error: {}", msg),
             JwtError::DecodingError(msg) => write!(f, "Decoding error: {}", msg),
+            JwtError::ExpiredToken => write!(f, "Token has expired"),
         }
     }
 }
@@ -52,12 +48,6 @@ impl JwtService {
             secret: secret.to_string(),
             token_expiration: Duration::hours(24),
         }
-    }
-
-    /// 设置 token 过期时间
-    pub fn with_expiration(mut self, duration: Duration) -> Self {
-        self.token_expiration = duration;
-        self
     }
 
     /// 生成 JWT token
@@ -101,12 +91,6 @@ impl JwtService {
 
         Ok(claims)
     }
-
-    /// 刷新 token
-    pub fn refresh_token(&self, token: &str) -> Result<String, JwtError> {
-        let claims = self.validate_token(token)?;
-        self.generate_token(claims.user_id, &claims.username, &claims.role)
-    }
 }
 
 /// 全局 JWT 服务实例（使用 once_cell 延迟初始化）
@@ -133,9 +117,4 @@ pub fn generate_token(user_id: i64, username: &str, role: &str) -> Result<String
 /// 验证 token（使用全局服务）
 pub fn validate_token(token: &str) -> Result<Claims, JwtError> {
     get_jwt_service().validate_token(token)
-}
-
-/// 刷新 token（使用全局服务）
-pub fn refresh_token(token: &str) -> Result<String, JwtError> {
-    get_jwt_service().refresh_token(token)
 }
