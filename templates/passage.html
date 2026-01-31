@@ -821,6 +821,8 @@ nav a.current {
   background-color: #FFF8E7;
   border: none;
   padding: 16px;
+  display: flex;
+  align-items: flex-start;
 }
 
 .code-block-wrapper pre code {
@@ -831,6 +833,24 @@ nav a.current {
   line-height: 1.6;
   color: #2D2D2D;
   font-weight: 500;
+  flex: 1;
+  margin-left: 16px;
+}
+
+.code-line-numbers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-right: 12px;
+  user-select: none;
+  color: #999;
+  font-size: 0.85em;
+  line-height: 1.6;
+  min-width: 30px;
+}
+
+.code-line-numbers span {
+  display: block;
 }
 
 /* 复制成功提示 - 苹果风格 */
@@ -5578,6 +5598,18 @@ document.addEventListener('DOMContentLoaded', async function() {
               `;
               wrapper.insertBefore(toolbar, pre);
 
+              // 添加行号
+              const lines = codeBlock.textContent.split('\n');
+              const lineNumbers = document.createElement('div');
+              lineNumbers.className = 'code-line-numbers';
+              lines.forEach((_, index) => {
+                const lineNum = document.createElement('span');
+                lineNum.textContent = index + 1;
+                lineNumbers.appendChild(lineNum);
+              });
+              pre.style.position = 'relative';
+              pre.insertBefore(lineNumbers, codeBlock);
+
               // 复制按钮事件
               const copyBtn = toolbar.querySelector('.copy-code-btn');
               copyBtn.addEventListener('click', () => copyCode(codeBlock, wrapper));
@@ -5707,6 +5739,18 @@ function initCodeBlocks() {
       </button>
     `;
     wrapper.insertBefore(toolbar, pre);
+
+    // 添加行号
+    const lines = codeBlock.textContent.split('\n');
+    const lineNumbers = document.createElement('div');
+    lineNumbers.className = 'code-line-numbers';
+    lines.forEach((_, index) => {
+      const lineNum = document.createElement('span');
+      lineNum.textContent = index + 1;
+      lineNumbers.appendChild(lineNum);
+    });
+    pre.style.position = 'relative';
+    pre.insertBefore(lineNumbers, codeBlock);
 
     // 复制按钮事件
     const copyBtn = toolbar.querySelector('.copy-code-btn');
