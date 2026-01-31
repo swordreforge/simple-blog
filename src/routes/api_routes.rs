@@ -73,6 +73,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource("/api/attachments")
             .route(web::get().to(api_handlers::attachments::list))
+            .route(web::post().to(api_handlers::attachments::upload))
     ).service(
         web::resource("/api/attachments/upload")
             .route(web::post().to(api_handlers::attachments::upload))
@@ -94,7 +95,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::post().to(api_handlers::attachments::upload))
     ).service(
         web::resource("/api/admin/attachments/{id}")
-            .route(web::get().to(api_handlers::attachments::list))
+            .route(web::get().to(api_handlers::attachments::get))
             .route(web::put().to(api_handlers::attachments::update))
             .route(web::delete().to(api_handlers::attachments::delete))
             .route(web::patch().to(api_handlers::attachments::update))
@@ -254,6 +255,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource("/api/files")
             .route(web::get().to(api_handlers::filemanager::list))
+            .route(web::post().to(api_handlers::filemanager::upload))
+            .route(web::put().to(api_handlers::filemanager::rename))
+            .route(web::delete().to(api_handlers::filemanager::delete))
     ).service(
         web::resource("/api/files/download")
             .route(web::get().to(api_handlers::filemanager::download))

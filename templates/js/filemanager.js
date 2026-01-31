@@ -312,7 +312,7 @@ const FileManager = {
     const newVisibility = attachment.visibility === 'public' ? 'private' : 'public';
 
     try {
-      const response = await fetch(`/api/admin/attachments?id=${id}`, {
+      const response = await fetch(`/api/admin/attachments/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': this.getAuthHeader(),
@@ -373,7 +373,7 @@ const FileManager = {
     }
 
     try {
-      const response = await fetch(`/api/admin/attachments?id=${id}`, {
+      const response = await fetch(`/api/admin/attachments/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': this.getAuthHeader()

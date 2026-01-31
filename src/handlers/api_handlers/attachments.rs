@@ -103,6 +103,44 @@ pub async fn list(
     }
 }
 
+/// 获取单个附件
+pub async fn get(
+    repo: web::Data<Arc<dyn Repository>>,
+    path: web::Path<i64>,
+) -> HttpResponse {
+    let id = path.into_inner();
+    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    
+    match attachment_repo.get_by_id(id).await {
+        Ok(attachment) => {
+            let data = AttachmentResponse {
+                id: attachment.id.unwrap_or(0),
+                file_name: attachment.file_name,
+                stored_name: attachment.stored_name,
+                file_path: attachment.file_path,
+                file_type: attachment.file_type,
+                file_size: attachment.file_size,
+                passage_id: attachment.passage_uuid,
+                visibility: attachment.visibility,
+                show_in_passage: attachment.show_in_passage,
+                uploaded_at: attachment.uploaded_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+            };
+            
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": data
+            }))
+        }
+        Err(e) => {
+            eprintln!("获取附件失败: {}", e);
+            HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "附件不存在"
+            }))
+        }
+    }
+}
+
 /// 上传附件
 pub async fn upload(
     repo: web::Data<Arc<dyn Repository>>,
@@ -257,6 +295,7 @@ pub async fn update(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
     query: web::Query<std::collections::HashMap<String, String>>,
+    body: Option<web::Json<serde_json::Value>>,
 ) -> HttpResponse {
     let id = path.into_inner();
     let action = query.get("action").map(|s| s.as_str());
@@ -290,10 +329,20 @@ pub async fn update(
             }
         }
         _ => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "success": false,
-                "message": "无效的操作"
-            }));
+            // 如果没有 action 参数，尝试从 JSON 请求体获取
+            if let Some(json_body) = body {
+                if let Some(visibility) = json_body.get("visibility").and_then(|v| v.as_str()) {
+                    attachment.visibility = visibility.to_string();
+                }
+                if let Some(show_in_passage) = json_body.get("show_in_passage").and_then(|v| v.as_bool()) {
+                    attachment.show_in_passage = show_in_passage;
+                }
+            } else {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "success": false,
+                    "message": "无效的操作"
+                }));
+            }
         }
     }
     

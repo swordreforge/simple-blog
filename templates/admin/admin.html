@@ -8166,7 +8166,7 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
         formData.append('file', file);
         formData.append('passage_id', passageId);
 
-        const uploadResponse = await fetch('/api/attachments', {
+        const uploadResponse = await fetch('/api/admin/attachments', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -8691,6 +8691,7 @@ document.getElementById('tagForm').addEventListener('submit', async function(e) 
 // 操作按钮功能
 let currentAction = null;
 let currentItemId = null;
+let selectedAttachments = new Set();
 
 // 按钮事件绑定在 bindActionButtons 函数中处理
 
@@ -8728,7 +8729,7 @@ document.getElementById('confirmAction').addEventListener('click', async functio
       } else if (currentAction === 'delete-sub-card') {
         apiUrl = `/api/about/sub-cards/delete?id=${currentItemId}`;
       } else if (currentAction === 'delete-attachment') {
-        apiUrl = `/api/attachments?id=${currentItemId}`;
+        apiUrl = `/api/admin/attachments/${currentItemId}`;
       } else if (currentAction === 'batch-delete-attachment') {
         // 批量删除附件不使用 API，直接在客户端处理
         const ids = currentItemId.split(',');
@@ -8737,7 +8738,7 @@ document.getElementById('confirmAction').addEventListener('click', async functio
 
         for (const id of ids) {
           try {
-            const response = await fetch(`/api/attachments?id=${id}`, {
+            const response = await fetch(`/api/admin/attachments/${id}`, {
               method: 'DELETE'
             });
             const result = await response.json();
@@ -11744,7 +11745,7 @@ const AttachmentUploader = {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/attachments', {
+      const response = await fetch('/api/admin/attachments', {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData
@@ -11891,7 +11892,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentPage = 1;
   const pageSize = 20;
   let totalAttachments = 0;
-  let selectedAttachments = new Set();
 
   // DOM 元素
   const elements = {
@@ -12161,7 +12161,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 更新批量操作栏
-  function updateBatchActions() {
+  window.updateBatchActions = function updateBatchActions() {
     const count = selectedAttachments.size;
     elements.selectedCount.textContent = count;
     elements.batchActions.style.display = count > 0 ? 'flex' : 'none';
@@ -12358,7 +12358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 从API获取最新的附件数据
     try {
-      const response = await fetch(`/api/admin/attachments?id=${id}`);
+      const response = await fetch(`/api/admin/attachments/${id}`);
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -12419,7 +12419,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('保存附件设置:', { id, visibility, showInPassage });
 
     try {
-      const response = await fetch(`/api/admin/attachments?id=${id}`, {
+      const response = await fetch(`/api/admin/attachments/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -12490,7 +12490,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     for (const id of selectedAttachments) {
       try {
-        const response = await fetch(`/api/admin/attachments?id=${id}`, {
+        const response = await fetch(`/api/admin/attachments/${id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
