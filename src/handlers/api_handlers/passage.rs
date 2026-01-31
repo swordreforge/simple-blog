@@ -514,13 +514,16 @@ pub async fn create(
         }));
     }
     
+    // 如果没有提供摘要，则自动生成
+    let summary = req.summary.clone().or_else(|| Some(extract_summary(&html_content)));
+    
     let passage = Passage {
         id: None,
         uuid: None,  // UUID 将在 Repository 中生成
         title: req.title.clone(),
         content: html_content,
         original_content: Some(req.content.clone()),
-        summary: req.summary.clone(),
+        summary: summary,
         author: req.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
         tags: tags_json,
         category: req.category.clone().unwrap_or_else(|| "未分类".to_string()),
@@ -841,6 +844,24 @@ pub async fn delete_batch(
                 "message": "批量删除文章失败"
             }))
         }
+    }
+}
+
+/// 从 HTML 内容中提取摘要
+fn extract_summary(html_content: &str) -> String {
+    // 移除 HTML 标签
+    let re = regex::Regex::new(r"<[^>]*>").unwrap();
+    let text = re.replace_all(html_content, "");
+    
+    // 移除多余的空白字符
+    let text: String = text.split_whitespace().collect::<Vec<&str>>().join(" ");
+    
+    // 按字符截取前 200 个字符（支持中文）
+    let chars: Vec<char> = text.chars().collect();
+    if chars.len() > 200 {
+        format!("{}...", chars[..200].iter().collect::<String>())
+    } else {
+        text
     }
 }
 
