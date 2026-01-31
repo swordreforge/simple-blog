@@ -86,7 +86,16 @@ pub async fn info(req: HttpRequest) -> HttpResponse {
 pub async fn admin_list(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let user_repo = UserRepository::new(repo.get_pool().clone());
     
     // 解析分页参数
@@ -137,7 +146,16 @@ pub async fn admin_list(
 pub async fn get(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
+    req: HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let id = path.into_inner();
     let user_repo = UserRepository::new(repo.get_pool().clone());
     

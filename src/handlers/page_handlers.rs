@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, HttpRequest};
 use actix_files::NamedFile;
 use crate::templates::{
     render_template,
@@ -58,9 +58,39 @@ pub async fn keyboard_test() -> HttpResponse {
 }
 
 /// 管理后台
-pub async fn admin() -> HttpResponse {
+pub async fn admin(req: HttpRequest) -> HttpResponse {
+    // 从 cookie 中获取 token
+    let token = req.cookie("auth_token")
+        .map(|c| c.value().to_string());
+
+    if let Some(token_str) = token {
+        // 验证 token
+        match crate::jwt::validate_token(&token_str) {
+            Ok(claims) => {
+                // 检查是否为管理员
+                if claims.role != "admin" {
+                    // 非管理员，重定向到首页
+                    return HttpResponse::Found()
+                        .insert_header(("Location", "/"))
+                        .finish();
+                }
+            }
+            Err(_) => {
+                // token 无效，重定向到首页
+                return HttpResponse::Found()
+                    .insert_header(("Location", "/"))
+                    .finish();
+            }
+        }
+    } else {
+        // 没有 token，重定向到首页
+        return HttpResponse::Found()
+            .insert_header(("Location", "/"))
+            .finish();
+    }
+
     let mut context = crate::templates::create_admin_context();
-    
+
     // 尝试从数据库加载外观设置
     match crate::templates::load_appearance_settings() {
         Ok(appearance_settings) => {
@@ -74,7 +104,7 @@ pub async fn admin() -> HttpResponse {
             context.insert("settings", &crate::templates::TemplateSettings::default());
         }
     }
-    
+
     render_template("admin/admin.html", &context).await
 }
 

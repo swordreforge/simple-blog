@@ -1,5 +1,4 @@
-use actix_web::{dev::Payload, Error, FromRequest, HttpRequest};
-use actix_web::HttpMessage;
+use actix_web::{dev::Payload, Error, FromRequest, HttpRequest, HttpResponse, HttpMessage};
 use std::future::{ready, Ready};
 
 /// 用户 ID 键
@@ -52,4 +51,49 @@ impl FromRequest for RoleKey {
             ready(Ok(RoleKey(String::new())))
         }
     }
+}
+
+/// 检查请求是否有有效的admin权限
+/// 返回Some(())表示有权限，None表示无权限或无效token
+pub fn check_admin_auth(req: &actix_web::HttpRequest) -> Option<(i64, String, String)> {
+    let token = req.cookie("auth_token").map(|c| c.value().to_string());
+    match token {
+        Some(token_str) => {
+            match crate::jwt::validate_token(&token_str) {
+                Ok(claims) => {
+                    if claims.role == "admin" {
+                        Some((claims.user_id, claims.username, claims.role))
+                    } else {
+                        None
+                    }
+                }
+                Err(_) => None,
+            }
+        }
+        None => None,
+    }
+}
+
+/// 返回权限被拒绝的响应
+pub fn forbidden_response() -> HttpResponse {
+    HttpResponse::Forbidden().json(serde_json::json!({
+        "success": false,
+        "message": "Permission denied: admin role required"
+    }))
+}
+
+/// 返回未授权的响应
+pub fn unauthorized_response() -> HttpResponse {
+    HttpResponse::Unauthorized().json(serde_json::json!({
+        "success": false,
+        "message": "Invalid or expired token"
+    }))
+}
+
+/// 返回缺少token的响应
+pub fn missing_token_response() -> HttpResponse {
+    HttpResponse::Unauthorized().json(serde_json::json!({
+        "success": false,
+        "message": "Missing authorization token"
+    }))
 }

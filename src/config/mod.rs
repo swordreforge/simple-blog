@@ -1,6 +1,96 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::fs;
 use clap::Parser;
+
+/// 配置文件结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigFile {
+    #[serde(default)]
+    pub server: Option<ServerConfigFile>,
+    #[serde(default)]
+    pub database: Option<DatabaseConfigFile>,
+    #[serde(default)]
+    pub templates: Option<TemplateConfigFile>,
+    #[serde(default)]
+    pub static_files: Option<StaticConfigFile>,
+    #[serde(default)]
+    pub geoip: Option<GeoIpConfigFile>,
+    #[serde(default)]
+    pub tls: Option<TlsConfigFile>,
+    #[serde(default)]
+    pub logging: Option<LoggingConfigFile>,
+    #[serde(default)]
+    pub jwt: Option<JwtConfigFile>,
+}
+
+impl Default for ConfigFile {
+    fn default() -> Self {
+        Self {
+            server: None,
+            database: None,
+            templates: None,
+            static_files: None,
+            geoip: None,
+            tls: None,
+            logging: None,
+            jwt: None,
+        }
+    }
+}
+
+/// 服务器配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerConfigFile {
+    pub host: Option<String>,
+    pub port: Option<u16>,
+}
+
+/// 数据库配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseConfigFile {
+    pub path: Option<String>,
+}
+
+/// 模板配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemplateConfigFile {
+    pub dir: Option<String>,
+    pub cache_enabled: Option<bool>,
+}
+
+/// 静态文件配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StaticConfigFile {
+    pub dir: Option<String>,
+    pub cache_max_age: Option<u32>,
+}
+
+/// GeoIP 配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeoIpConfigFile {
+    pub database_path: Option<String>,
+}
+
+/// TLS 配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TlsConfigFile {
+    pub enabled: Option<bool>,
+    pub cert: Option<String>,
+    pub key: Option<String>,
+}
+
+/// 日志配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoggingConfigFile {
+    pub level: Option<String>,
+}
+
+/// JWT配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JwtConfigFile {
+    pub secret: Option<String>,
+}
 
 /// 命令行参数配置
 #[derive(Parser, Debug, Clone)]
@@ -8,6 +98,10 @@ use clap::Parser;
 #[command(about = "A simple blog system written in Rust", long_about = None)]
 #[command(version)]
 pub struct CliArgs {
+    /// 配置文件路径 (TOML 格式)
+    #[arg(short = 'c', long)]
+    pub config: Option<String>,
+
     /// Port to listen on
     #[arg(short, long, default_value = "8080")]
     pub port: u16,
@@ -51,75 +145,163 @@ pub struct CliArgs {
     /// Disable template caching
     #[arg(long)]
     pub disable_template_cache: bool,
+
+    /// JWT secret key
+    #[arg(long, default_value = "rustblog-jwt-secret-key-change-in-production")]
+    pub jwt_secret: String,
+
+    /// 基础目录（可执行文件所在目录，自动计算）
+    #[clap(skip)]
+    pub base_dir: PathBuf,
 }
 
 impl CliArgs {
+    /// 从配置文件加载配置
+    pub fn load_from_config_file(path: &str) -> Result<ConfigFile, Box<dyn std::error::Error>> {
+        let content = fs::read_to_string(path)?;
+        let config: ConfigFile = toml::from_str(&content)?;
+        Ok(config)
+    }
+
+    /// 合并配置文件和命令行参数（命令行参数优先）
+    pub fn merge_with_config(&mut self, config: ConfigFile) {
+        // 服务器配置
+        if let Some(server) = config.server {
+            if let Some(host) = server.host {
+                self.host = host;
+            }
+            if let Some(port) = server.port {
+                self.port = port;
+            }
+        }
+
+        // 数据库配置
+        if let Some(database) = config.database {
+            if let Some(path) = database.path {
+                self.db_path = path;
+            }
+        }
+
+        // 模板配置
+        if let Some(templates) = config.templates {
+            if let Some(dir) = templates.dir {
+                self.templates_dir = dir;
+            }
+            if let Some(cache_enabled) = templates.cache_enabled {
+                self.disable_template_cache = !cache_enabled;
+            }
+        }
+
+        // 静态文件配置
+        if let Some(static_files) = config.static_files {
+            if let Some(dir) = static_files.dir {
+                self.static_dir = dir;
+            }
+        }
+
+        // GeoIP 配置
+        if let Some(geoip) = config.geoip {
+            if let Some(database_path) = geoip.database_path {
+                self.geoip_db_path = database_path;
+            }
+        }
+
+        // TLS 配置
+        if let Some(tls) = config.tls {
+            if let Some(enabled) = tls.enabled {
+                self.enable_tls = enabled;
+            }
+            if let Some(cert) = tls.cert {
+                self.tls_cert = Some(cert);
+            }
+            if let Some(key) = tls.key {
+                self.tls_key = Some(key);
+            }
+        }
+
+        // 日志配置
+        if let Some(logging) = config.logging {
+            if let Some(level) = logging.level {
+                self.log_level = level;
+            }
+        }
+
+        // JWT 配置
+        if let Some(jwt) = config.jwt {
+            if let Some(secret) = jwt.secret {
+                self.jwt_secret = secret;
+            }
+        }
+    }
+
     /// 将相对路径转换为绝对路径
     pub fn resolve_paths(&mut self) {
-        // 尝试找到项目根目录
-        // 策略：从可执行文件目录开始，向上查找包含 Cargo.toml 的目录
-        let base_dir = if let Ok(exe_path) = std::env::current_exe() {
+        // 获取基础目录
+        self.base_dir = if let Ok(exe_path) = std::env::current_exe() {
             let exe_dir = exe_path.parent().unwrap_or_else(|| Path::new("."));
-            let mut current = exe_dir.to_path_buf();
-            
-            // 向上查找项目根目录（包含 Cargo.toml）
-            let mut found = false;
-            for _ in 0..10 { // 最多向上查找 10 层
-                if current.join("Cargo.toml").exists() {
-                    found = true;
-                    break;
-                }
-                if current.parent().is_none() {
-                    break;
-                }
-                current = current.parent().unwrap().to_path_buf();
-            }
-            
-            if found {
-                current
+            let exe_dir = exe_dir.to_path_buf();
+
+            // 检查可执行文件所在目录是否包含 Cargo.toml
+            let has_cargo_toml = exe_dir.join("Cargo.toml").exists();
+
+            if has_cargo_toml {
+                // 如果可执行文件所在目录有 Cargo.toml，说明是开发环境
+                println!("🔍 检测到开发环境 (Cargo.toml 存在)");
+                exe_dir
             } else {
-                // 如果找不到，使用可执行文件目录
-                exe_dir.to_path_buf()
+                // 如果没有 Cargo.toml，说明是生产环境（静态编译的部署）
+                println!("🔍 检测到生产环境，使用可执行文件所在目录作为基准");
+                exe_dir
             }
         } else {
+            // 无法获取可执行文件路径，使用当前工作目录
+            println!("⚠️  无法获取可执行文件路径，使用当前工作目录");
             std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"))
         };
 
+        println!("📁 基础目录: {}", self.base_dir.display());
+
         // 数据库路径
-        self.db_path = Self::make_absolute(&base_dir, &self.db_path);
-        
+        self.db_path = Self::make_absolute(&self.base_dir, &self.db_path);
+
         // 模板目录
-        self.templates_dir = Self::make_absolute(&base_dir, &self.templates_dir);
-        
+        self.templates_dir = Self::make_absolute(&self.base_dir, &self.templates_dir);
+
         // 静态文件目录
-        self.static_dir = Self::make_absolute(&base_dir, &self.static_dir);
-        
+        self.static_dir = Self::make_absolute(&self.base_dir, &self.static_dir);
+
         // GeoIP 数据库路径
-        self.geoip_db_path = Self::make_absolute(&base_dir, &self.geoip_db_path);
+        self.geoip_db_path = Self::make_absolute(&self.base_dir, &self.geoip_db_path);
 
         // TLS 证书和密钥
         if let Some(ref mut cert) = self.tls_cert {
-            *cert = Self::make_absolute(&base_dir, cert.as_str());
+            *cert = Self::make_absolute(&self.base_dir, cert.as_str());
         }
         if let Some(ref mut key) = self.tls_key {
-            *key = Self::make_absolute(&base_dir, key.as_str());
+            *key = Self::make_absolute(&self.base_dir, key.as_str());
         }
+    }
+
+    /// 获取基础目录
+    pub fn get_base_dir(&self) -> &PathBuf {
+        &self.base_dir
     }
 
     /// 将路径转换为绝对路径
     fn make_absolute(base: &PathBuf, path: &str) -> String {
         let path_buf = PathBuf::from(path);
         let is_relative = path.starts_with('.') || !path_buf.is_absolute();
-        
+
         if is_relative {
             let abs_path = base.join(path);
-            let path_str = abs_path.to_string_lossy().to_string();
-            // 移除开头的 ./
-            if path_str.starts_with("./") {
-                path_str[2..].to_string()
+            // 规范化路径，移除 ./ 和 ..
+            let canonical = if abs_path.exists() {
+                abs_path.canonicalize().unwrap_or(abs_path)
             } else {
-                path_str
-            }
+                // 对于不存在的路径，手动规范化
+                std::path::absolute(&abs_path).unwrap_or(abs_path)
+            };
+            canonical.to_string_lossy().to_string()
         } else {
             path.to_string()
         }

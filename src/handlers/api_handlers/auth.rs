@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use crate::jwt::generate_token;
 
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
@@ -100,13 +101,36 @@ pub async fn login(
     // 验证密码
     match verify_password(&password, &user.password) {
         Ok(true) => {
-            // 密码验证成功
-            HttpResponse::Ok().json(AuthResponse {
+            // 密码验证成功，生成 JWT token
+            let user_id = user.id.unwrap_or(0);
+            let token = match generate_token(user_id, &user.username, &user.role) {
+                Ok(t) => t,
+                Err(e) => {
+                    return HttpResponse::InternalServerError().json(AuthResponse {
+                        success: false,
+                        message: format!("生成 token 失败: {}", e),
+                        token: None,
+                        user: None,
+                    });
+                }
+            };
+
+            // 设置 cookie
+            let mut response = HttpResponse::Ok();
+            response.cookie(
+                actix_web::cookie::Cookie::build("auth_token", token.clone())
+                    .path("/")
+                    .http_only(true)
+                    .max_age(actix_web::cookie::time::Duration::hours(24))
+                    .finish()
+            );
+
+            response.json(AuthResponse {
                 success: true,
                 message: "登录成功".to_string(),
-                token: Some(format!("token_{}", user.id.unwrap_or(0))),
+                token: Some(token),
                 user: Some(UserDTO {
-                    id: user.id.unwrap_or(0),
+                    id: user_id,
                     username: user.username,
                     email: user.email,
                     role: user.role,
@@ -222,12 +246,36 @@ pub async fn register(
             let user = user_repo.get_by_username(username).await;
             match user {
                 Ok(u) => {
-                    HttpResponse::Ok().json(AuthResponse {
+                    // 生成 JWT token
+                    let user_id = u.id.unwrap_or(0);
+                    let token = match generate_token(user_id, &u.username, &u.role) {
+                        Ok(t) => t,
+                        Err(e) => {
+                            return HttpResponse::InternalServerError().json(AuthResponse {
+                                success: false,
+                                message: format!("生成 token 失败: {}", e),
+                                token: None,
+                                user: None,
+                            });
+                        }
+                    };
+
+                    // 设置 cookie
+                    let mut response = HttpResponse::Ok();
+                    response.cookie(
+                        actix_web::cookie::Cookie::build("auth_token", token.clone())
+                            .path("/")
+                            .http_only(true)
+                            .max_age(actix_web::cookie::time::Duration::hours(24))
+                            .finish()
+                    );
+
+                    response.json(AuthResponse {
                         success: true,
                         message: "注册成功".to_string(),
-                        token: Some(format!("token_{}", u.id.unwrap_or(0))),
+                        token: Some(token),
                         user: Some(UserDTO {
-                            id: u.id.unwrap_or(0),
+                            id: user_id,
                             username: u.username,
                             email: u.email,
                             role: u.role,
@@ -258,9 +306,17 @@ pub async fn register(
 
 /// 用户登出
 pub async fn logout() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
+    let mut response = HttpResponse::Ok();
+    response.cookie(
+        actix_web::cookie::Cookie::build("auth_token", "")
+            .path("/")
+            .http_only(true)
+            .max_age(actix_web::cookie::time::Duration::ZERO)
+            .finish()
+    );
+    response.json(serde_json::json!({
         "success": true,
-        "message": "Logout successful"
+        "message": "登出成功"
     }))
 }
 
