@@ -206,7 +206,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             // SQLite 不支持直接添加 NOT NULL 约束到已有列，需要重建表
             conn.execute(
                 "CREATE TABLE passages_new (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id INTEGER PRIMARY KEY,
                     uuid TEXT UNIQUE NOT NULL,
                     title TEXT NOT NULL,
                     content TEXT NOT NULL,
@@ -245,7 +245,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建文章表（如果不存在）
     conn.execute(
         "CREATE TABLE IF NOT EXISTS passages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             uuid TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
             content TEXT NOT NULL,
@@ -280,7 +280,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建用户表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
@@ -297,7 +297,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建访客表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS visitors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             ip TEXT NOT NULL,
             user_agent TEXT,
             visit_date TEXT NOT NULL,
@@ -311,7 +311,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建文章阅读记录表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS article_views (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             passage_uuid TEXT NOT NULL,
             ip TEXT NOT NULL,
             user_agent TEXT,
@@ -336,7 +336,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建评论表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS comments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             username TEXT NOT NULL,
             content TEXT NOT NULL,
             passage_uuid TEXT NOT NULL,
@@ -352,7 +352,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建设置表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS settings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             key TEXT UNIQUE NOT NULL,
             value TEXT NOT NULL,
             type TEXT DEFAULT 'string',
@@ -369,7 +369,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建关于页面主卡片表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS about_main_cards (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             title TEXT NOT NULL,
             icon TEXT DEFAULT '',
             layout_type TEXT DEFAULT 'default',
@@ -386,7 +386,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建关于页面次卡片表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS about_sub_cards (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             main_card_id INTEGER NOT NULL,
             title TEXT NOT NULL,
             description TEXT DEFAULT '',
@@ -408,7 +408,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建分类表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             name TEXT UNIQUE NOT NULL,
             description TEXT DEFAULT '',
             icon TEXT DEFAULT '',
@@ -425,7 +425,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建标签表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS tags (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             name TEXT UNIQUE NOT NULL,
             description TEXT DEFAULT '',
             color TEXT DEFAULT '#007bff',
@@ -444,7 +444,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建附件表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS attachments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             file_name TEXT NOT NULL,
             stored_name TEXT NOT NULL,
             file_path TEXT NOT NULL,
@@ -469,7 +469,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     // 创建音乐表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS music_tracks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             title TEXT NOT NULL,
             artist TEXT NOT NULL,
             file_path TEXT NOT NULL,
