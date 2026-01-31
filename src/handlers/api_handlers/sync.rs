@@ -182,6 +182,7 @@ async fn sync_markdown_file_async(
             visibility: existing.visibility, // 保留原有可见性
             is_scheduled: existing.is_scheduled, // 保留原有定时发布设置
             published_at: existing.published_at, // 保留原有发布时间
+            cover_image: existing.cover_image, // 保留原有封面
             created_at: existing.created_at,
             updated_at: now,
         };
@@ -209,6 +210,7 @@ async fn sync_markdown_file_async(
             visibility: "public".to_string(),
             is_scheduled: false,
             published_at: None,
+            cover_image: Some("/img/passage-cover2.webp".to_string()),
             created_at,
             updated_at: now,
         };

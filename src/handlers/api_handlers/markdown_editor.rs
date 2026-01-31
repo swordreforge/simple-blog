@@ -167,6 +167,7 @@ pub async fn save(
         visibility: "public".to_string(),
         is_scheduled: false,
         published_at: None,
+        cover_image: Some("/img/passage-cover2.webp".to_string()),
         created_at: now,
         updated_at: now,
     };

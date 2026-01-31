@@ -489,14 +489,43 @@ main {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
-  padding: 25px;
+  padding: 0;
   margin-bottom: 20px;
   transition: all 0.3s ease;
   position: relative;
+  overflow: hidden;
 }
 
 .document-card:hover {
   transform: translateY(-5px);
+}
+
+/* 封面图片 */
+.document-cover {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.document-cover.default-cover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 2em;
+}
+
+.document-card.has-cover .document-header,
+.document-card.has-cover .document-excerpt,
+.document-card.has-cover .document-tags {
+  padding: 0 25px;
+}
+
+.document-card-content {
+  padding: 25px;
 }
 
 .document-header {
@@ -1376,17 +1405,28 @@ function renderArchive() {
       const day = String(date.getDate()).padStart(2, '0');
       const markdownPath = `${year}/${month}/${day}/${sanitizeTitle(passage.title)}.md`;
       
+      // 生成封面图片
+      let coverHtml = '';
+      const hasCover = passage.cover_image && passage.cover_image.trim() !== '';
+      const coverSrc = hasCover ? passage.cover_image : '/img/passage-cover.webp';
+      coverHtml = `<img src="${coverSrc}" alt="${passage.title}" class="document-cover" loading="lazy">`;
+      
+      const cardClass = 'document-card has-cover';
+      
       html += `
-        <div class="document-card" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}" data-markdown-path="${markdownPath}">
-          <div class="document-header">
-            <h3 class="document-title">
-              <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
-            </h3>
-            <div class="document-date">${formattedDate}</div>
-          </div>
-          <p class="document-excerpt">${sanitizeUTF8(passage.summary) || '暂无摘要'}</p>
-          <div class="document-tags">
-            ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+        <div class="${cardClass}" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}" data-markdown-path="${markdownPath}">
+          ${coverHtml}
+          <div class="document-card-content">
+            <div class="document-header">
+              <h3 class="document-title">
+                <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
+              </h3>
+              <div class="document-date">${formattedDate}</div>
+            </div>
+            <p class="document-excerpt">${sanitizeUTF8(passage.summary) || '暂无摘要'}</p>
+            <div class="document-tags">
+              ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>
           </div>
         </div>`;
     });
@@ -1764,17 +1804,28 @@ function bindFilterEvents() {
             const day = String(date.getDate()).padStart(2, '0');
             const markdownPath = `${year}/${month}/${day}/${sanitizeTitle(passage.title)}.md`;
 
+            // 生成封面图片
+            let coverHtml = '';
+            const hasCover = passage.cover_image && passage.cover_image.trim() !== '';
+            const coverSrc = hasCover ? passage.cover_image : '/img/passage-cover.webp';
+            coverHtml = `<img src="${coverSrc}" alt="${passage.title}" class="document-cover" loading="lazy">`;
+            
+            const cardClass = 'document-card has-cover';
+
             html += `
-              <div class="document-card" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}" data-markdown-path="${markdownPath}">
-                <div class="document-header">
-                  <h3 class="document-title">
-                    <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
-                  </h3>
-                  <div class="document-date">${formattedDate}</div>
-                </div>
-                <p class="document-excerpt">${sanitizeUTF8(passage.summary) || '暂无摘要'}</p>
-                <div class="document-tags">
-                  ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+              <div class="${cardClass}" data-tags="${tagsStr}" data-category="${passage.category || ''}" data-id="${passage.id}" data-markdown-path="${markdownPath}">
+                ${coverHtml}
+                <div class="document-card-content">
+                  <div class="document-header">
+                    <h3 class="document-title">
+                      <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
+                    </h3>
+                    <div class="document-date">${formattedDate}</div>
+                  </div>
+                  <p class="document-excerpt">${sanitizeUTF8(passage.summary) || '暂无摘要'}</p>
+                  <div class="document-tags">
+                    ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                  </div>
                 </div>
               </div>`;
           });

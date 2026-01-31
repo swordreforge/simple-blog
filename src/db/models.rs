@@ -18,6 +18,7 @@ pub struct Passage {
     pub visibility: String,
     pub is_scheduled: bool,
     pub published_at: Option<DateTime<Utc>>,
+    pub cover_image: Option<String>,  // 封面图片路径
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

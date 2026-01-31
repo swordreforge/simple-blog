@@ -41,6 +41,7 @@ pub struct PassageResponse {
     pub visibility: String,
     pub is_scheduled: bool,
     pub published_at: Option<String>,
+    pub cover_image: Option<String>,  // 封面图片路径
     pub created_at: String,
     pub updated_at: String,
 }
@@ -60,6 +61,7 @@ pub struct CreatePassageRequest {
     pub visibility: Option<String>,
     pub is_scheduled: Option<bool>,
     pub published_at: Option<String>,
+    pub cover_image: Option<String>,  // 封面图片路径
 }
 
 /// 更新文章请求
@@ -77,6 +79,7 @@ pub struct UpdatePassageRequest {
     pub visibility: Option<String>,
     pub is_scheduled: Option<bool>,
     pub published_at: Option<String>,
+    pub cover_image: Option<String>,  // 封面图片路径
 }
 
 /// 获取文章列表（公开）
@@ -116,6 +119,7 @@ pub async fn list(
                     visibility: p.visibility,
                     is_scheduled: p.is_scheduled,
                     published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    cover_image: p.cover_image,
                     created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                     updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 })
@@ -186,6 +190,7 @@ pub async fn admin_list(
                     visibility: p.visibility,
                     is_scheduled: p.is_scheduled,
                     published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    cover_image: p.cover_image,
                     created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                     updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 })
@@ -329,6 +334,7 @@ pub async fn get(
         visibility: passage.visibility,
         is_scheduled: passage.is_scheduled,
         published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+        cover_image: passage.cover_image,
         created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
         updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
     };
@@ -438,6 +444,7 @@ pub async fn get_by_id(
                 visibility: passage.visibility,
                 is_scheduled: passage.is_scheduled,
                 published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                cover_image: passage.cover_image,
                 created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
             };
@@ -499,6 +506,7 @@ pub async fn create(
         visibility: req.visibility.clone().unwrap_or_else(|| "public".to_string()),
         is_scheduled: req.is_scheduled.unwrap_or(false),
         published_at: req.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
+        cover_image: req.cover_image.clone().or_else(|| Some("/img/passage-cover2.webp".to_string())),
         created_at: now,
         updated_at: now,
     };
@@ -613,6 +621,9 @@ pub async fn update(
         passage.published_at = chrono::DateTime::parse_from_rfc3339(published_at)
             .ok()
             .map(|dt| dt.with_timezone(&chrono::Utc));
+    }
+    if let Some(ref cover_image) = req.cover_image {
+        passage.cover_image = Some(cover_image.clone());
     }
     passage.updated_at = chrono::Utc::now();
     
@@ -942,6 +953,9 @@ pub async fn update_by_query(
             .ok()
             .map(|dt| dt.with_timezone(&chrono::Utc));
     }
+    if let Some(ref cover_image) = req.cover_image {
+        passage.cover_image = Some(cover_image.clone());
+    }
     passage.updated_at = chrono::Utc::now();
     
     match passage_repo.update(&passage).await {
@@ -999,6 +1013,7 @@ pub async fn get_by_query(
                     visibility: passage.visibility,
                     is_scheduled: passage.is_scheduled,
                     published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    cover_image: passage.cover_image,
                     created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                     updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 };
@@ -1046,6 +1061,7 @@ pub async fn get_by_query(
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
                         published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                        cover_image: p.cover_image,
                         created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                         updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                     })
