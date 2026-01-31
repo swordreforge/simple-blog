@@ -4517,6 +4517,12 @@ body.admin-focus-mode .modal-header {
         </div>
 
         <div class="form-group">
+          <label for="articleCoverImage">封面图片路径</label>
+          <input type="text" id="articleCoverImage" class="form-control" placeholder="/img/xxx.webp（需要预先上传图片文件）" value="/img/passage-cover2.webp">
+          <p style="font-size: 0.85em; color: #666; margin-top: 5px;">请输入图片的相对路径，默认使用 /img/passage-cover2.webp</p>
+        </div>
+
+        <div class="form-group">
           <label for="articleContent">文章内容 <span style="color: #e74c3c;">*</span></label>
           <textarea id="articleContent" class="form-control" placeholder="请输入文章内容（支持Markdown格式）" rows="15"></textarea>
         </div>
@@ -4613,6 +4619,12 @@ body.admin-focus-mode .modal-header {
           <p style="font-size: 0.85em; color: #666; margin-top: 5px;">
             设置文章的定时发布时间
           </p>
+        </div>
+
+        <div class="form-group">
+          <label for="editCoverImage">封面图片路径</label>
+          <input type="text" id="editCoverImage" class="form-control" placeholder="/img/xxx.webp（需要预先上传图片文件）">
+          <p style="font-size: 0.85em; color: #666; margin-top: 5px;">留空则不修改原有封面路径</p>
         </div>
 
         <div class="form-group">
@@ -7438,6 +7450,8 @@ function bindActionButtons() {
                   // 优先使用原始 Markdown 内容，如果没有则使用 HTML 内容
                   document.getElementById('editContent').value = result.data.original_content || result.data.content || '';
                   document.getElementById('editShowTitle').checked = result.data.show_title !== false;
+                  // 填充封面路径
+                  document.getElementById('editCoverImage').value = result.data.cover_image || '';
 
                   // 填充状态和可见性
                   document.getElementById('editStatus').value = result.data.status || 'published';
@@ -8263,6 +8277,7 @@ document.getElementById('articleForm').addEventListener('submit', async function
         author: document.getElementById('articleAuthor').value,
         category: document.getElementById('articleCategory').value,
         tags: document.getElementById('articleTags').value,
+        cover_image: document.getElementById('articleCoverImage').value,
       })
     });
 
@@ -8344,7 +8359,8 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
         status: document.getElementById('editStatus').value,
         visibility: document.getElementById('editVisibility').value,
         is_scheduled: isScheduled,
-        published_at: publishedAt
+        published_at: publishedAt,
+        cover_image: document.getElementById('editCoverImage').value || undefined
       })
     });
 

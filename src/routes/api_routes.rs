@@ -285,6 +285,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::passage::get_by_query))
             .route(web::post().to(api_handlers::passage::create))
             .route(web::put().to(api_handlers::passage::update_by_query))
+            .route(web::delete().to(api_handlers::passage::delete_by_query))
     ).service(
         web::resource("/api/admin/passages/batch-delete")
             .route(web::post().to(api_handlers::passage::delete_batch))

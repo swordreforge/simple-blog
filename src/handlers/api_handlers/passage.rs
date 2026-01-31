@@ -491,6 +491,29 @@ pub async fn create(
     };
     
     let now = Utc::now();
+    
+    // 如果没有提供 file_path，则自动生成
+    let file_path = if let Some(ref path) = req.file_path {
+        path.clone()
+    } else {
+        // 自动生成文件路径：markdown/YYYY/MM/DD/title.md
+        let date = now.format("%Y/%m/%d").to_string();
+        let safe_title = req.title.chars()
+            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '_' })
+            .collect::<String>()
+            .replace(' ', "-");
+        format!("markdown/{}/{}.md", date, safe_title)
+    };
+    
+    // 创建 Markdown 文件
+    if let Err(e) = update_markdown_file(&file_path, &req.content) {
+        eprintln!("创建 Markdown 文件失败: {}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "success": false,
+            "message": format!("创建 Markdown 文件失败: {}", e)
+        }));
+    }
+    
     let passage = Passage {
         id: None,
         uuid: None,  // UUID 将在 Repository 中生成
@@ -502,7 +525,7 @@ pub async fn create(
         tags: tags_json,
         category: req.category.clone().unwrap_or_else(|| "未分类".to_string()),
         status: req.status.clone().unwrap_or_else(|| "draft".to_string()),
-        file_path: req.file_path.clone(),
+        file_path: Some(file_path),
         visibility: req.visibility.clone().unwrap_or_else(|| "public".to_string()),
         is_scheduled: req.is_scheduled.unwrap_or(false),
         published_at: req.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
@@ -970,6 +993,81 @@ pub async fn update_by_query(
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": "更新文章失败"
+            }))
+        }
+    }
+}
+
+/// 通过查询参数删除文章（用于管理后台）
+pub async fn delete_by_query(
+    repo: web::Data<Arc<dyn Repository>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
+    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    
+    // 从查询参数中获取文章 ID
+    let id: i64 = match query.get("id").and_then(|s| s.parse().ok()) {
+        Some(id) => id,
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "缺少文章 ID 参数"
+            }));
+        }
+    };
+    
+    // 获取文章 UUID
+    let uuid = match passage_repo.get_by_id(id).await {
+        Ok(passage) => match passage.uuid {
+            Some(u) => Ok(u),
+            None => Err("文章 UUID 不存在".to_string()),
+        },
+        Err(e) => Err(format!("获取文章失败: {}", e)),
+    };
+    
+    let uuid = match uuid {
+        Ok(u) => u,
+        Err(e) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": e
+            }));
+        }
+    };
+    
+    // 查询关联的附件
+    let attachments = match attachment_repo.get_by_passage_uuids(vec![uuid.clone()]).await {
+        Ok(attachments) => attachments,
+        Err(e) => {
+            eprintln!("查询附件失败: {}", e);
+            Vec::new()
+        }
+    };
+    
+    // 删除附件物理文件
+    let mut deleted_files = 0;
+    for attachment in &attachments {
+        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+            eprintln!("删除附件文件失败 {}: {}", attachment.file_path, e);
+        } else {
+            deleted_files += 1;
+        }
+    }
+    
+    // 删除文章记录
+    match passage_repo.delete_by_uuid(&uuid).await {
+        Ok(_) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": format!("文章删除成功，删除了 {} 个附件文件", deleted_files)
+            }))
+        }
+        Err(e) => {
+            eprintln!("删除文章失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "删除文章失败"
             }))
         }
     }
