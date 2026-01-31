@@ -210,7 +210,7 @@ async fn sync_markdown_file_async(
             visibility: "public".to_string(),
             is_scheduled: false,
             published_at: None,
-            cover_image: Some("/img/passage-cover2.webp".to_string()),
+            cover_image: Some("/img/passage-cover.webp".to_string()),
             created_at,
             updated_at: now,
         };

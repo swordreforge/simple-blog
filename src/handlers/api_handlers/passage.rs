@@ -529,7 +529,7 @@ pub async fn create(
         visibility: req.visibility.clone().unwrap_or_else(|| "public".to_string()),
         is_scheduled: req.is_scheduled.unwrap_or(false),
         published_at: req.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
-        cover_image: req.cover_image.clone().or_else(|| Some("/img/passage-cover2.webp".to_string())),
+        cover_image: req.cover_image.clone().or_else(|| Some("/img/passage-cover.webp".to_string())),
         created_at: now,
         updated_at: now,
     };
