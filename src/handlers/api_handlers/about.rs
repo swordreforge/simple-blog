@@ -104,7 +104,17 @@ pub async fn get_main_cards(repo: web::Data<Arc<dyn Repository>>) -> HttpRespons
 }
 
 /// 获取所有主卡片（管理员）
-pub async fn get_main_cards_admin(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+pub async fn get_main_cards_admin(
+    repo: web::Data<Arc<dyn Repository>>,
+    http_req: actix_web::HttpRequest,
+) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
     
     match main_card_repo.get_all().await {
@@ -180,7 +190,17 @@ pub async fn get_sub_cards(
 }
 
 /// 获取所有次卡片（管理员）
-pub async fn get_sub_cards_admin(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+pub async fn get_sub_cards_admin(
+    repo: web::Data<Arc<dyn Repository>>,
+    http_req: actix_web::HttpRequest,
+) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
     
     match sub_card_repo.get_all().await {

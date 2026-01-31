@@ -94,7 +94,15 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
 pub async fn admin_list(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let tag_repo = TagRepository::new(repo.get_pool().clone());
     
     // 解析分页参数
@@ -145,7 +153,15 @@ pub async fn admin_list(
 pub async fn get(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let id = path.into_inner();
     let tag_repo = TagRepository::new(repo.get_pool().clone());
     
@@ -180,7 +196,15 @@ pub async fn get(
 pub async fn create(
     repo: web::Data<Arc<dyn Repository>>,
     req: web::Json<CreateTagRequest>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let tag_repo = TagRepository::new(repo.get_pool().clone());
     
     let now = Utc::now();
@@ -219,7 +243,15 @@ pub async fn update(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
     req: web::Json<UpdateTagRequest>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let id = path.into_inner();
     let tag_repo = TagRepository::new(repo.get_pool().clone());
     
@@ -276,7 +308,15 @@ pub async fn update(
 pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let id = path.into_inner();
     let tag_repo = TagRepository::new(repo.get_pool().clone());
     
@@ -307,7 +347,15 @@ pub struct BatchDeleteRequest {
 pub async fn delete_batch(
     repo: web::Data<Arc<dyn Repository>>,
     req: web::Json<BatchDeleteRequest>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     if req.ids.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "success": false,
