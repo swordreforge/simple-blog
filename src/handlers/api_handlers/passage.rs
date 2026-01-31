@@ -62,6 +62,7 @@ pub struct CreatePassageRequest {
     pub is_scheduled: Option<bool>,
     pub published_at: Option<String>,
     pub cover_image: Option<String>,  // 封面图片路径
+    pub created_at: Option<String>,  // 创建时间（可选，用于上传老文件时指定）
 }
 
 /// 更新文章请求
@@ -517,6 +518,12 @@ pub async fn create(
     // 如果没有提供摘要，则自动生成
     let summary = req.summary.clone().or_else(|| Some(extract_summary(&html_content)));
     
+    // 如果提供了创建时间，使用指定的；否则使用当前时间
+    let created_at = req.created_at.as_ref()
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or(now);
+    
     let passage = Passage {
         id: None,
         uuid: None,  // UUID 将在 Repository 中生成
@@ -533,7 +540,7 @@ pub async fn create(
         is_scheduled: req.is_scheduled.unwrap_or(false),
         published_at: req.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
         cover_image: req.cover_image.clone().or_else(|| Some("/img/passage-cover.webp".to_string())),
-        created_at: now,
+        created_at,
         updated_at: now,
     };
     
