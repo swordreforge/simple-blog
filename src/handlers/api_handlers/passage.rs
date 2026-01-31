@@ -111,9 +111,7 @@ pub async fn list(
             let total_pages = (total + limit - 1) / limit;
 
             HttpResponse::Ok()
-                .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
-                .insert_header(("Pragma", "no-cache"))
-                .insert_header(("Expires", "0"))
+                .insert_header(("Cache-Control", "public, max-age=60")) // 公开列表缓存 1 分钟
                 .json(serde_json::json!({
                     "success": true,
                     "data": data,
@@ -179,13 +177,15 @@ pub async fn admin_list(
                 })
                 .collect();
             
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "data": data,
-                "total": total,
-                "page": page,
-                "limit": limit
-            }))
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "private, max-age=30")) // 管理员数据缓存 30 秒
+                .json(serde_json::json!({
+                    "success": true,
+                    "data": data,
+                    "total": total,
+                    "page": page,
+                    "limit": limit
+                }))
         }
         Err(e) => {
             eprintln!("获取文章列表失败: {}", e);
@@ -326,10 +326,26 @@ pub async fn get(
         created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
         updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
     };
+    
+    // 生成 ETag
+    use md5::{Md5, Digest};
+    let etag_data = format!("{}:{}", response.id, response.updated_at);
+    let etag = format!("\"{:x}\"", Md5::digest(etag_data.as_bytes()));
+    
+    // 检查 If-None-Match
+    if let Some(if_none_match) = req.headers().get("if-none-match") {
+        if let Ok(if_none_match_str) = if_none_match.to_str() {
+            if if_none_match_str == etag {
+                return HttpResponse::NotModified()
+                    .insert_header(("ETag", etag))
+                    .finish();
+            }
+        }
+    }
+    
     HttpResponse::Ok()
-        .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
-        .insert_header(("Pragma", "no-cache"))
-        .insert_header(("Expires", "0"))
+        .insert_header(("ETag", etag))
+        .insert_header(("Cache-Control", "public, max-age=300")) // 文章缓存 5 分钟
         .json(serde_json::json!({
             "success": true,
             "data": response
@@ -441,10 +457,26 @@ pub async fn get_by_id(
                 created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
             };
+            
+            // 生成 ETag
+            use md5::{Md5, Digest};
+            let etag_data = format!("{}:{}", response.id, response.updated_at);
+            let etag = format!("\"{:x}\"", Md5::digest(etag_data.as_bytes()));
+            
+            // 检查 If-None-Match
+            if let Some(if_none_match) = req.headers().get("if-none-match") {
+                if let Ok(if_none_match_str) = if_none_match.to_str() {
+                    if if_none_match_str == etag {
+                        return HttpResponse::NotModified()
+                            .insert_header(("ETag", etag))
+                            .finish();
+                    }
+                }
+            }
+            
             HttpResponse::Ok()
-                .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
-                .insert_header(("Pragma", "no-cache"))
-                .insert_header(("Expires", "0"))
+                .insert_header(("ETag", etag))
+                .insert_header(("Cache-Control", "public, max-age=300")) // 文章缓存 5 分钟
                 .json(serde_json::json!({
                     "success": true,
                     "data": response
@@ -864,11 +896,32 @@ fn extract_summary(html_content: &str) -> String {
     }
 }
 
-/// 将 Markdown 转换为 HTML
+/// 将 Markdown 转换为 HTML（带缓存）
 fn convert_markdown_to_html(markdown: &str) -> String {
     use pulldown_cmark::{Parser, html, Options};
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+    use once_cell::sync::Lazy;
 
-    // 配置选项，启用表格和其他扩展
+    // 使用内容哈希作为缓存键
+    let mut hasher = md5::Md5::default();
+    md5::Digest::update(&mut hasher, markdown.as_bytes());
+    let content_hash = format!("{:x}", md5::Digest::finalize(hasher));
+
+    // 静态缓存：内容哈希 -> HTML
+    static RENDER_CACHE: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
+        Mutex::new(HashMap::new())
+    });
+
+    // 检查缓存
+    {
+        let cache = RENDER_CACHE.lock().unwrap();
+        if let Some(cached_html) = cache.get(&content_hash) {
+            return cached_html.clone();
+        }
+    }
+
+    // 缓存未命中，执行渲染
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
@@ -877,6 +930,20 @@ fn convert_markdown_to_html(markdown: &str) -> String {
     let parser = Parser::new_ext(markdown, options);
     let mut html_output = String::new();
     html::push_html(&mut html_output, parser);
+
+    // 存入缓存
+    {
+        let mut cache = RENDER_CACHE.lock().unwrap();
+        // 限制缓存大小为 1000 条
+        if cache.len() >= 1000 {
+            // 简单策略：清空一半缓存
+            let keys_to_remove: Vec<_> = cache.keys().take(500).cloned().collect();
+            for key in keys_to_remove {
+                cache.remove(&key);
+            }
+        }
+        cache.insert(content_hash, html_output.clone());
+    }
 
     html_output
 }

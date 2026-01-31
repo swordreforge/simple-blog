@@ -5,8 +5,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 static DB_POOL: tokio::sync::OnceCell<Pool<SqliteConnectionManager>> = tokio::sync::OnceCell::const_new();
 
 // 数据库连接池配置常量
-const DB_MAX_CONNECTIONS: u32 = 50;  // 最大连接数
-const DB_MIN_IDLE: u32 = 10;         // 最小空闲连接数
+const DB_MAX_CONNECTIONS: u32 = 20;  // 最大连接数（个人博客场景优化）
+const DB_MIN_IDLE: u32 = 5;         // 最小空闲连接数
 const DB_CONNECTION_TIMEOUT: u64 = 30;  // 连接超时（秒）
 const DB_IDLE_TIMEOUT: u64 = 600;   // 空闲连接超时（秒，10分钟）
 const DB_MAX_LIFETIME: u64 = 1800;  // 连接最大生命周期（秒，30分钟）
@@ -295,6 +295,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_visibility ON passages(visibility)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_published_at ON passages(published_at)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_scheduled ON passages(is_scheduled, published_at)", [])?;
+    // 添加复合索引优化统计查询
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status_visibility ON passages(status, visibility)", [])?;
 
     // 创建用户表
     conn.execute(
@@ -351,6 +353,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_date ON article_views(view_date)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_country ON article_views(country)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_city_region ON article_views(city, region)", [])?;
+    // 添加复合索引优化统计查询
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_date_country ON article_views(view_date, country)", [])?;
 
     // 创建评论表
     conn.execute(

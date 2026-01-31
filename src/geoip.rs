@@ -13,8 +13,8 @@ pub struct GeoLocation {
     pub region: String,
 }
 
-/// GeoIP 数据库读取器（使用 Lazy 实现单例）
-static GEOIP_READER: Lazy<Option<Arc<Reader<Vec<u8>>>>> = Lazy::new(|| {
+/// GeoIP 数据库读取器（使用 Lazy 实现单例，使用 Mmap 减少内存占用）
+static GEOIP_READER: Lazy<Option<Arc<Reader<memmap2::Mmap>>>> = Lazy::new(|| {
     // 尝试从多个位置查找 GeoIP 数据库文件
     let db_paths = vec![
         "data/GeoLite2-City.mmdb",
@@ -25,9 +25,26 @@ static GEOIP_READER: Lazy<Option<Arc<Reader<Vec<u8>>>>> = Lazy::new(|| {
 
     for db_path in &db_paths {
         if Path::new(db_path).exists() {
-            match Reader::open_readfile(db_path) {
+            // 使用 Mmap 打开数据库文件，减少内存占用
+            let file = match std::fs::File::open(db_path) {
+                Ok(f) => f,
+                Err(e) => {
+                    eprintln!("无法打开 GeoIP 数据库文件 {}: {}", db_path, e);
+                    continue;
+                }
+            };
+            
+            let mmap = match unsafe { memmap2::Mmap::map(&file) } {
+                Ok(m) => m,
+                Err(e) => {
+                    eprintln!("无法创建 Mmap: {}", e);
+                    continue;
+                }
+            };
+            
+            match Reader::from_source(mmap) {
                 Ok(reader) => {
-                    println!("GeoIP 数据库加载成功: {}", db_path);
+                    println!("GeoIP 数据库加载成功（使用 Mmap）: {}", db_path);
                     return Some(Arc::new(reader));
                 }
                 Err(e) => {
@@ -44,7 +61,7 @@ static GEOIP_READER: Lazy<Option<Arc<Reader<Vec<u8>>>>> = Lazy::new(|| {
 /// 根据 IP 地址查询地理位置信息
 pub fn lookup_ip(ip: &str) -> GeoLocation {
     // 如果没有加载 GeoIP 数据库，返回默认值
-    let reader: &Reader<Vec<u8>> = match GEOIP_READER.as_ref() {
+    let reader: &Reader<memmap2::Mmap> = match GEOIP_READER.as_ref() {
         Some(r) => r,
         None => return GeoLocation::default(),
     };

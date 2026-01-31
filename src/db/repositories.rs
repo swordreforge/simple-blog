@@ -252,6 +252,44 @@ impl PassageRepository {
         Ok(passages)
     }
 
+    /// 获取已发布的文章和总数（使用窗口函数一次查询）
+    pub async fn get_published_with_count(&self, limit: i64, offset: i64) -> Result<(Vec<Passage>, i64), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at, COUNT(*) OVER() as total_count
+             FROM passages WHERE status = 'published' ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        )?;
+        
+        let mut total_count = 0;
+        let passages = stmt.query_map(params![limit, offset], |row| {
+            // 只需要从第一条记录获取总数
+            if total_count == 0 {
+                total_count = row.get(17)?;
+            }
+            Ok(Passage {
+                id: Some(row.get(0)?),
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                cover_image: row.get(14)?,
+                created_at: row.get(15)?,
+                updated_at: row.get(16)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+        
+        Ok((passages, total_count))
+    }
+
     /// 更新文章
     pub async fn update(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
         let id = passage.id.ok_or("文章 ID 不能为空")?;

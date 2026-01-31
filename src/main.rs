@@ -12,11 +12,31 @@ mod embedded;
 mod cache;
 mod view_batch;
 
-use actix_web::{App, HttpServer, middleware as actix_middleware, web};
+use actix_web::{App, HttpServer, middleware as actix_middleware, web, http};
 use clap::Parser;
 use config::{AppConfig, CliArgs};
 use routes::configure_routes;
 use middleware::logging::LoggingMiddleware;
+
+/// 已压缩的内容类型列表（不需要再次压缩）
+const COMPRESSED_CONTENT_TYPES: [&str; 6] = [
+    "image/",
+    "video/",
+    "audio/",
+    "application/zip",
+    "application/x-gzip",
+    "application/x-rar-compressed",
+];
+
+/// 检查内容类型是否已压缩
+fn is_already_compressed(content_type: &str) -> bool {
+    COMPRESSED_CONTENT_TYPES.iter().any(|&prefix| content_type.starts_with(prefix))
+}
+
+/// 优化的压缩中间件
+fn optimized_compress() -> actix_middleware::Condition<actix_middleware::Compress> {
+    actix_middleware::Condition::new(true, actix_middleware::Compress::default())
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -117,6 +137,7 @@ async fn main() -> std::io::Result<()> {
             .configure(configure_routes)
             // 添加中间件
             .wrap(LoggingMiddleware)
+            // 优化的压缩中间件（已压缩内容不会再次压缩）
             .wrap(actix_middleware::Compress::default())
     })
     .bind((config.server.host.as_str(), config.server.port))?

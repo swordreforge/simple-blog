@@ -23,7 +23,7 @@ pub struct UploadData {
     pub content_type: String,
 }
 
-/// 文件上传处理器
+/// 文件上传处理器（流式写入）
 pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
     use futures_util::stream::StreamExt;
     
@@ -108,8 +108,8 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
         let file_dir = format!("{}/{}", base_dir, date_dir);
         let file_path = format!("{}/{}", file_dir, filename);
         
-        // 创建目录
-        if let Err(e) = std::fs::create_dir_all(&file_dir) {
+        // 创建目录（异步）
+        if let Err(e) = tokio::fs::create_dir_all(&file_dir).await {
             return HttpResponse::InternalServerError().json(UploadResponse {
                 success: false,
                 message: format!("创建目录失败: {}", e),
@@ -118,8 +118,8 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
             });
         }
         
-        // 保存文件
-        let mut file = match std::fs::File::create(&file_path) {
+        // 使用 tokio 异步文件写入（流式写入，降低内存使用）
+        let mut file = match tokio::fs::File::create(&file_path).await {
             Ok(f) => f,
             Err(e) => {
                 return HttpResponse::InternalServerError().json(UploadResponse {
@@ -131,7 +131,8 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
             }
         };
         
-        // 读取并写入文件内容
+        // 使用 tokio io 异步写入
+        use tokio::io::AsyncWriteExt;
         let mut bytes_written = 0u64;
         use futures_util::stream::StreamExt;
         while let Some(chunk) = field.next().await {
@@ -139,7 +140,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 Ok(c) => c,
                 Err(_) => break,
             };
-            if let Err(e) = file.write_all(&chunk) {
+            if let Err(e) = file.write_all(&chunk).await {
                 return HttpResponse::InternalServerError().json(UploadResponse {
                     success: false,
                     message: format!("写入文件失败: {}", e),
@@ -148,6 +149,16 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 });
             }
             bytes_written += chunk.len() as u64;
+        }
+        
+        // 确保所有数据刷新到磁盘
+        if let Err(e) = file.flush().await {
+            return HttpResponse::InternalServerError().json(UploadResponse {
+                success: false,
+                message: format!("刷新文件失败: {}", e),
+                data: None,
+                code: "FLUSH_FILE_FAILED".to_string(),
+            });
         }
         
         return HttpResponse::Ok().json(UploadResponse {
