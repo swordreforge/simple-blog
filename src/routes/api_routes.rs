@@ -213,9 +213,6 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource("/api/crypto/public-key")
             .route(web::get().to(api_handlers::crypto::get_public_key))
-    ).service(
-        web::resource("/api/crypto/decrypt")
-            .route(web::post().to(api_handlers::crypto::decrypt_data))
     );
 
     // Markdown 编辑器 API

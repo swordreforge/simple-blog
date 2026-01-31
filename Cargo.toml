@@ -79,3 +79,8 @@ lru = "0.12"
 
 # JWT 认证
 jsonwebtoken = "9.3"
+
+# HTTP/3 (QUIC) 支持（简化版本）
+quinn = { version = "0.11", features = ["rustls"] }
+rustls = "0.23"
+rustls-pemfile = "2.1"

@@ -4,7 +4,6 @@ use chrono::{Utc, Duration};
 use base64::{Engine as _, engine::general_purpose};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use sha2::{Sha256, Digest};
 use rand::RngCore;
 use p256::ecdsa::{SigningKey, VerifyingKey};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
@@ -222,22 +221,6 @@ pub struct GetPublicKeyResponse {
     pub expires_in: i64,
 }
 
-/// 解密数据请求
-#[derive(Debug, Deserialize)]
-pub struct DecryptDataRequest {
-    pub session_id: String,
-    pub client_public_key: String,
-    pub encrypted_data: String,
-}
-
-/// 解密数据响应
-#[derive(Debug, Serialize)]
-pub struct DecryptDataResponse {
-    pub success: bool,
-    pub decrypted: Option<String>,
-    pub error: Option<String>,
-}
-
 /// 生成会话ID
 fn generate_session_id() -> String {
     let mut bytes = [0u8; 16];
@@ -270,71 +253,4 @@ pub async fn get_public_key(
         expires_at: expires_at.timestamp(),
         expires_in,
     })
-}
-
-/// 解密数据（简化版）
-pub async fn decrypt_data(
-    req: web::Json<DecryptDataRequest>,
-) -> HttpResponse {
-    // 验证请求参数
-    if req.session_id.is_empty() || req.client_public_key.is_empty() || req.encrypted_data.is_empty() {
-        return HttpResponse::BadRequest().json(DecryptDataResponse {
-            success: false,
-            decrypted: None,
-            error: Some("missing required fields".to_string()),
-        });
-    }
-    
-    // 获取会话
-    let session = match GLOBAL_SESSION_MANAGER.get_session(&req.session_id) {
-        Some(s) => s,
-        None => {
-            return HttpResponse::NotFound().json(DecryptDataResponse {
-                success: false,
-                decrypted: None,
-                error: Some("session not found".to_string()),
-            });
-        }
-    };
-    
-    // 检查会话是否过期
-    if session.is_expired() {
-        return HttpResponse::Gone().json(DecryptDataResponse {
-            success: false,
-            decrypted: None,
-            error: Some("session expired".to_string()),
-        });
-    }
-    
-    // 解析加密数据
-    let encrypted_data = match general_purpose::STANDARD.decode(&req.encrypted_data) {
-        Ok(data) => data,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(DecryptDataResponse {
-                success: false,
-                decrypted: None,
-                error: Some("invalid encrypted data".to_string()),
-            });
-        }
-    };
-    
-    // 简化解密（仅用于演示）
-    let key_bytes = session.signing_key.to_bytes();
-    let key_b64 = general_purpose::STANDARD.encode(&key_bytes);
-    let decrypted = simple_decrypt(&encrypted_data, &key_b64);
-    
-    HttpResponse::Ok().json(DecryptDataResponse {
-        success: true,
-        decrypted: Some(String::from_utf8_lossy(&decrypted).to_string()),
-        error: None,
-    })
-}
-
-/// 简单解密（仅用于演示，实际应使用 AES-GCM）
-fn simple_decrypt(data: &[u8], key: &str) -> Vec<u8> {
-    let key_hash = Sha256::digest(key.as_bytes());
-    data.iter()
-        .enumerate()
-        .map(|(i, &b)| b ^ key_hash[i % key_hash.len()])
-        .collect()
 }

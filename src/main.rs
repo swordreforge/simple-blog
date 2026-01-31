@@ -12,6 +12,7 @@ mod embedded;
 mod cache;
 mod view_batch;
 mod jwt;
+mod http3_server;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use clap::Parser;
@@ -206,7 +207,8 @@ async fn main() -> std::io::Result<()> {
         }
     }
     
-    HttpServer::new(move || {
+    // 启动 HTTP/1.1/HTTP/2 服务器
+    let http_server = HttpServer::new(move || {
         App::new()
             // 注入数据库连接池
             .app_data(web::Data::new(repository.clone()))
@@ -222,8 +224,37 @@ async fn main() -> std::io::Result<()> {
             .wrap(actix_middleware::Compress::default())
     })
     .bind((config.server.host.as_str(), config.server.port))?
-    .run()
-    .await
+    .run();
+
+    // 如果启用了 TLS，同时启动 HTTP/3 服务器
+    let http3_task = if args.enable_tls {
+        if let (Some(cert), Some(key)) = (args.tls_cert, args.tls_key) {
+            let http3_config = http3_server::Http3ServerConfig {
+                cert_path: cert,
+                key_path: key,
+                bind_addr: format!("{}:443", config.server.host),
+            };
+            Some(tokio::spawn(async move {
+                if let Err(e) = http3_server::start_http3_server(http3_config).await {
+                    eprintln!("❌ HTTP/3 服务器启动失败: {}", e);
+                }
+            }))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    // 等待 HTTP/1.1/HTTP/2 服务器完成
+    let http_result = http_server.await;
+
+    // 如果 HTTP/3 服务器正在运行，等待它完成
+    if let Some(task) = http3_task {
+        task.abort();
+    }
+
+    http_result
 }
 
 /// 创建必要的目录
