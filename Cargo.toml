@@ -80,7 +80,9 @@ lru = "0.12"
 # JWT 认证
 jsonwebtoken = "9.3"
 
-# HTTP/3 (QUIC) 支持 - 基础连接管理
-quinn = { version = "0.11", features = ["rustls"] }
+# HTTP/3 (QUIC) 支持 - gm-quic
+gm-quic = "0.2"
+qconnection = "0.2"
+qudp = { version = "0.2", optional = true }
 rustls = "0.23"
 rustls-pemfile = "2.1"
