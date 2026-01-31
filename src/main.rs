@@ -9,6 +9,8 @@ mod audio_metadata;
 mod music_sync;
 mod geoip;
 mod embedded;
+mod cache;
+mod view_batch;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use clap::Parser;
@@ -66,6 +68,19 @@ async fn main() -> std::io::Result<()> {
     // 创建 Repository 实例
     let repository = db::repositories::create_repository(db_pool.clone());
     
+    // 初始化应用缓存
+    println!("💾 初始化应用缓存...");
+    let cache_config = cache::CacheConfig::default();
+    let app_cache = std::sync::Arc::new(cache::AppCache::new(cache_config));
+    
+    // 初始化阅读记录批量处理器
+    println!("📊 初始化阅读记录批量处理器...");
+    let view_batch_config = view_batch::BatchConfig::default();
+    let view_batch_processor = std::sync::Arc::new(view_batch::ViewBatchProcessor::new(
+        repository.get_pool().clone(),
+        view_batch_config,
+    ));
+    
     // 同步音乐文件到数据库
     println!("🎵 同步音乐文件...");
     let music_sync_service = music_sync::MusicSyncService::new(repository.clone());
@@ -94,6 +109,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // 注入数据库连接池
             .app_data(web::Data::new(repository.clone()))
+            // 注入应用缓存
+            .app_data(web::Data::new(app_cache.clone()))
+            // 注入阅读记录批量处理器
+            .app_data(web::Data::new(view_batch_processor.clone()))
             // 配置所有路由
             .configure(configure_routes)
             // 添加中间件

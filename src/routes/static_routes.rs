@@ -1,5 +1,5 @@
-use actix_web::{web, HttpResponse, Result};
-use actix_files::Files;
+use actix_web::{web, HttpResponse, Result, middleware};
+use actix_files::{Files, NamedFile};
 use std::path::Path;
 
 /// 配置静态文件路由
@@ -8,46 +8,58 @@ pub fn configure_static_routes(cfg: &mut web::ServiceConfig) {
     // Favicon 处理（优先级最高，避免返回 404）
     cfg.route("/favicon.ico", web::get().to(handle_favicon));
 
-    // CSS 文件 - 从内嵌文件系统提供
+    // CSS 文件 - 从内嵌文件系统提供，添加长期缓存
     cfg.route("/css/{file:.*}", web::get().to(serve_embedded_css));
 
-    // JavaScript 文件 - 从内嵌文件系统提供
+    // JavaScript 文件 - 从内嵌文件系统提供，添加长期缓存
     cfg.route("/js/{file:.*}", web::get().to(serve_embedded_js));
 
-    // 图片文件
+    // 图片文件 - 添加长期缓存
     cfg.service(
-        Files::new("/img", "img")
-            .show_files_listing()
-            .use_etag(true)
-            .use_last_modified(true)
-            .prefer_utf8(true)
+        web::scope("/img")
+            .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "public, max-age=31536000, immutable")))
+            .service(Files::new("", "img")
+                .show_files_listing()
+                .use_etag(true)
+                .use_last_modified(true)
+                .prefer_utf8(true)
+            )
     );
 
-    // 音乐文件
+    // 音乐文件 - 添加长期缓存
     cfg.service(
-        Files::new("/music", "music")
-            .show_files_listing()
-            .use_etag(true)
-            .use_last_modified(true)
-            .prefer_utf8(true)
+        web::scope("/music")
+            .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "public, max-age=31536000")))
+            .service(Files::new("", "music")
+                .show_files_listing()
+                .use_etag(true)
+                .use_last_modified(true)
+                .prefer_utf8(true)
+            )
     );
 
-    // 附件文件
+    // 附件文件 - 添加长期缓存
     cfg.service(
-        Files::new("/attachments", "attachments")
-            .show_files_listing()
-            .use_etag(true)
-            .use_last_modified(true)
-            .prefer_utf8(true)
+        web::scope("/attachments")
+            .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "public, max-age=31536000")))
+            .service(Files::new("", "attachments")
+                .show_files_listing()
+                .use_etag(true)
+                .use_last_modified(true)
+                .prefer_utf8(true)
+            )
     );
 
-    // Markdown 文件
+    // Markdown 文件 - 添加中等缓存
     cfg.service(
-        Files::new("/markdown", "markdown")
-            .show_files_listing()
-            .use_etag(true)
-            .use_last_modified(true)
-            .prefer_utf8(true)
+        web::scope("/markdown")
+            .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "public, max-age=86400")))
+            .service(Files::new("", "markdown")
+                .show_files_listing()
+                .use_etag(true)
+                .use_last_modified(true)
+                .prefer_utf8(true)
+            )
     );
 }
 
@@ -60,6 +72,7 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
     if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
+            .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(content));
     }
     
@@ -68,6 +81,7 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
+            .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(std::fs::read(file_path)?));
     }
     
@@ -83,6 +97,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
     if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
+            .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(content));
     }
     
@@ -91,6 +106,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
+            .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(std::fs::read(file_path)?));
     }
     
@@ -99,6 +115,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
+            .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(std::fs::read(file_path)?));
     }
     

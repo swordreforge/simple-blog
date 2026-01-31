@@ -2,27 +2,9 @@ use actix_web::{web, HttpResponse, HttpRequest, HttpMessage};
 use serde::{Deserialize, Serialize};
 use crate::db::repositories::{PassageRepository, AttachmentRepository, Repository};
 use crate::db::models::{Passage, Attachment};
+use crate::view_batch::{ViewBatchProcessor, ViewRecord, is_local_ip};
 use std::sync::Arc;
 use chrono::Utc;
-
-/// 检查是否为本地IP
-fn is_local_ip(ip: &str) -> bool {
-    // 常见的本地IP和私有网络IP
-    ip == "127.0.0.1" || 
-    ip == "::1" || 
-    ip == "localhost" || 
-    ip == "0.0.0.0" || 
-    ip.is_empty() ||
-    ip.starts_with("127.") ||
-    ip.starts_with("192.168.") ||
-    ip.starts_with("10.") ||
-    ip.starts_with("172.16.") || ip.starts_with("172.17.") || ip.starts_with("172.18.") ||
-    ip.starts_with("172.19.") || ip.starts_with("172.20.") || ip.starts_with("172.21.") ||
-    ip.starts_with("172.22.") || ip.starts_with("172.23.") || ip.starts_with("172.24.") ||
-    ip.starts_with("172.25.") || ip.starts_with("172.26.") || ip.starts_with("172.27.") ||
-    ip.starts_with("172.28.") || ip.starts_with("172.29.") || ip.starts_with("172.30.") ||
-    ip.starts_with("172.31.")
-}
 
 /// 文章响应
 #[derive(Debug, Serialize)]
@@ -220,6 +202,7 @@ pub async fn get(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<String>,
     req: HttpRequest,
+    view_batch_processor: web::Data<Arc<ViewBatchProcessor>>,
 ) -> HttpResponse {
     let param = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
@@ -290,35 +273,39 @@ pub async fn get(
         }
     }
     
-    // 异步记录文章阅读（不阻塞响应）
-    let repo_clone = repo.get_pool().clone();
+    // 使用批量处理器记录文章阅读（不阻塞响应）
     let passage_uuid = passage.uuid.clone().unwrap_or_default();
     let user_agent = req.headers().get("user-agent")
         .and_then(|h| h.to_str().ok())
         .unwrap_or("unknown")
         .to_string();
     
-    tokio::spawn(async move {
-        // 获取客户端IP（简化版）
-        let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
+    // 获取客户端IP（简化版）
+    let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
 
-        // 过滤本地IP，不记录
-        if is_local_ip(&ip) {
-            return;
-        }
-
+    // 过滤本地IP，不记录
+    if !is_local_ip(&ip) {
         // 使用 GeoIP 获取地理位置信息
         let geo_location = crate::geoip::lookup_ip(&ip);
         let country = geo_location.country;
         let city = geo_location.city;
         let region = geo_location.region;
 
-        // 记录阅读
-        let view_repo = crate::db::repositories::ArticleViewRepository::new(repo_clone);
-        if let Err(e) = view_repo.record_view(&passage_uuid, &ip, Some(&user_agent), &country, &city, &region).await {
-            eprintln!("记录阅读失败: {}", e);
+        // 使用批量处理器发送阅读记录
+        let view_record = ViewRecord {
+            passage_uuid: passage_uuid.clone(),
+            ip: ip.clone(),
+            user_agent: Some(user_agent.clone()),
+            country,
+            city,
+            region,
+            view_time: Utc::now(),
+        };
+
+        if let Err(e) = view_batch_processor.record_view(view_record) {
+            eprintln!("发送阅读记录到批量处理器失败: {}", e);
         }
-    });
+    }
     
     let response = PassageResponse {
         id: passage.id.unwrap_or(0),
@@ -354,6 +341,7 @@ pub async fn get_by_id(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
     req: HttpRequest,
+    view_batch_processor: web::Data<Arc<ViewBatchProcessor>>,
 ) -> HttpResponse {
     let id = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
@@ -400,35 +388,39 @@ pub async fn get_by_id(
                 }
             }
             
-            // 异步记录文章阅读（不阻塞响应）
-            let repo_clone = repo.get_pool().clone();
+            // 使用批量处理器记录文章阅读（不阻塞响应）
             let passage_uuid = passage.uuid.clone().unwrap_or_default();
             let user_agent = req.headers().get("user-agent")
                 .and_then(|h| h.to_str().ok())
                 .unwrap_or("unknown")
                 .to_string();
             
-            tokio::spawn(async move {
-                // 获取客户端IP（简化版）
-                let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
+            // 获取客户端IP（简化版）
+            let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
 
-                // 过滤本地IP，不记录
-                if is_local_ip(&ip) {
-                    return;
-                }
-
+            // 过滤本地IP，不记录
+            if !is_local_ip(&ip) {
                 // 使用 GeoIP 获取地理位置信息
                 let geo_location = crate::geoip::lookup_ip(&ip);
                 let country = geo_location.country;
                 let city = geo_location.city;
                 let region = geo_location.region;
 
-                // 记录阅读
-                let view_repo = crate::db::repositories::ArticleViewRepository::new(repo_clone);
-                if let Err(e) = view_repo.record_view(&passage_uuid, &ip, Some(&user_agent), &country, &city, &region).await {
-                    eprintln!("记录阅读失败: {}", e);
+                // 使用批量处理器发送阅读记录
+                let view_record = ViewRecord {
+                    passage_uuid: passage_uuid.clone(),
+                    ip: ip.clone(),
+                    user_agent: Some(user_agent.clone()),
+                    country,
+                    city,
+                    region,
+                    view_time: Utc::now(),
+                };
+
+                if let Err(e) = view_batch_processor.record_view(view_record) {
+                    eprintln!("发送阅读记录到批量处理器失败: {}", e);
                 }
-            });
+            }
             
             let response = PassageResponse {
                 id: passage.id.unwrap_or(0),
