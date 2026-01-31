@@ -179,6 +179,16 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             }
         ).unwrap_or(false);
 
+        // 检查是否有 cover_image 列
+        let has_cover_image_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('passages') WHERE name = 'cover_image'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
         // 如果表已存在但没有 uuid 列，则添加该列
         if !has_uuid_column {
             println!("⚠️  检测到旧版数据库结构，正在迁移 passages 表...");
@@ -220,6 +230,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
                     visibility TEXT DEFAULT 'public',
                     is_scheduled INTEGER DEFAULT 0,
                     published_at DATETIME,
+                    cover_image TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )",
@@ -228,8 +239,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             
             // 复制数据
             conn.execute(
-                "INSERT INTO passages_new (id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at) 
-                 SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, created_at, updated_at 
+                "INSERT INTO passages_new (id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 
+                 SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
                  FROM passages",
                 [],
             )?;
@@ -239,6 +250,11 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             conn.execute("ALTER TABLE passages_new RENAME TO passages", [])?;
             
             println!("✅ 已为 {} 篇现有文章生成 UUID", updated_count);
+        } else if !has_cover_image_column {
+            // 如果有 uuid 列但没有 cover_image 列，直接添加 cover_image 列
+            println!("⚠️  检测到缺少 cover_image 列，正在添加...");
+            conn.execute("ALTER TABLE passages ADD COLUMN cover_image TEXT", [])?;
+            println!("✅ 已添加 cover_image 列");
         }
     }
 
