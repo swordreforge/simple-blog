@@ -8123,6 +8123,25 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     // 获取表单数据
     const status = document.getElementById('uploadStatus').value;
 
+    // 获取发布日期
+    const year = document.getElementById('uploadYear').value;
+    const month = document.getElementById('uploadMonth').value;
+    const day = document.getElementById('uploadDay').value;
+
+    // 如果提供了完整的年月日，则创建 created_at
+    let created_at = null;
+    if (year && month && day) {
+      // 格式化为 ISO 8601/RFC3339
+      const y = parseInt(year);
+      const m = parseInt(month);
+      const d = parseInt(day);
+      
+      // 验证日期有效性
+      if (y >= 2020 && y <= 2030 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+        created_at = new Date(y, m - 1, d).toISOString();
+      }
+    }
+
     // 创建文章
     const token = localStorage.getItem('auth_token');
     const headers = {
@@ -8132,17 +8151,24 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const requestBody = {
+      title: title,
+      content: articleContent,
+      author: author,
+      category: category,
+      tags: selectedTags.join(','),
+      status: status
+    };
+
+    // 如果有 created_at，添加到请求体
+    if (created_at) {
+      requestBody.created_at = created_at;
+    }
+
     const response = await fetch('/api/admin/passages', {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({
-        title: title,
-        content: articleContent,
-        author: author,
-        category: category,
-        tags: selectedTags.join(','),
-        status: status
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const result = await response.json();
