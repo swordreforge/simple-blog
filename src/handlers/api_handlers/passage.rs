@@ -823,8 +823,17 @@ fn update_markdown_file_name(old_path: &str, new_title: &str, content: &str) -> 
 pub async fn update_by_query(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
-    req: web::Json<UpdatePassageRequest>,
+    req_json: web::Json<UpdatePassageRequest>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
     // 从查询参数中获取文章 ID
@@ -852,18 +861,18 @@ pub async fn update_by_query(
     
     // 更新字段
     let mut file_updated = false;
-    if let Some(ref title) = req.title {
+    if let Some(ref title) = req_json.title {
         passage.title = title.clone();
         file_updated = true;
     }
-    if let Some(ref content) = req.content {
+    if let Some(ref content) = req_json.content {
         // 转换 Markdown 为 HTML
         let html_content = convert_markdown_to_html(content);
         passage.content = html_content;
         passage.original_content = Some(content.clone());
         file_updated = true;
     }
-    if let Some(ref original_content) = req.original_content {
+    if let Some(ref original_content) = req_json.original_content {
         passage.original_content = Some(original_content.clone());
         file_updated = true;
     }
@@ -877,7 +886,7 @@ pub async fn update_by_query(
             });
             
             // 更新文件名（如果标题改变了）
-            if let Some(ref title) = req.title {
+            if let Some(ref title) = req_json.title {
                 let new_file_path = update_markdown_file_name(file_path, title, content_to_save);
                 if new_file_path != *file_path {
                     passage.file_path = Some(new_file_path);
@@ -890,40 +899,40 @@ pub async fn update_by_query(
             }
         }
     }
-    if let Some(ref summary) = req.summary {
+    if let Some(ref summary) = req_json.summary {
         passage.summary = Some(summary.clone());
     }
-    if let Some(ref author) = req.author {
+    if let Some(ref author) = req_json.author {
         passage.author = author.clone();
     }
-    if let Some(ref tags) = req.tags {
+    if let Some(ref tags) = req_json.tags {
         // 解析标签 JSON 并确保标签存在于 tags 表中
         if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
             let _ = ensure_tags_exist(&tag_list).await;
         }
         passage.tags = tags.clone();
     }
-    if let Some(ref category) = req.category {
+    if let Some(ref category) = req_json.category {
         passage.category = category.clone();
     }
-    if let Some(ref status) = req.status {
+    if let Some(ref status) = req_json.status {
         passage.status = status.clone();
     }
-    if let Some(ref file_path) = req.file_path {
+    if let Some(ref file_path) = req_json.file_path {
         passage.file_path = Some(file_path.clone());
     }
-    if let Some(ref visibility) = req.visibility {
+    if let Some(ref visibility) = req_json.visibility {
         passage.visibility = visibility.clone();
     }
-    if let Some(is_scheduled) = req.is_scheduled {
+    if let Some(is_scheduled) = req_json.is_scheduled {
         passage.is_scheduled = is_scheduled;
     }
-    if let Some(ref published_at) = req.published_at {
+    if let Some(ref published_at) = req_json.published_at {
         passage.published_at = chrono::DateTime::parse_from_rfc3339(published_at)
             .ok()
             .map(|dt| dt.with_timezone(&chrono::Utc));
     }
-    if let Some(ref cover_image) = req.cover_image {
+    if let Some(ref cover_image) = req_json.cover_image {
         passage.cover_image = Some(cover_image.clone());
     }
     passage.updated_at = chrono::Utc::now();
@@ -949,7 +958,15 @@ pub async fn update_by_query(
 pub async fn delete_by_query(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
     
@@ -1033,8 +1050,15 @@ pub async fn delete_by_query(
 pub async fn get_by_query(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
-    _req: HttpRequest,
+    http_req: HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
     // 检查是否有 id 查询参数

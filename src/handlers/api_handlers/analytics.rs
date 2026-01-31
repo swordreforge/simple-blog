@@ -70,27 +70,39 @@ pub struct AnalyticsResponse<T> {
 pub async fn most_viewed(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     // 检查是否有 action 参数
     if let Some(action) = query.get("action") {
+        // 这些函数都需要鉴权，但鉴权已在 most_viewed 入口处完成
+        // 这些实现函数不需要再次鉴权
         match action.as_str() {
-            "most-viewed" => return most_viewed_impl(query, repo).await,
-            "view-sources" => return view_sources(query, repo).await,
-            "view-trend" => return view_trend(query, repo).await,
-            "view-by-city" => return view_by_city(query, repo).await,
-            "view-by-ip" => return view_by_ip(query, repo).await,
+            "most-viewed" => return most_viewed_impl(query, repo, req).await,
+            "view-sources" => return view_sources(query, repo, req).await,
+            "view-trend" => return view_trend(query, repo, req).await,
+            "view-by-city" => return view_by_city(query, repo, req).await,
+            "view-by-ip" => return view_by_ip(query, repo, req).await,
             _ => {}
         }
     }
     
     // 默认行为：获取热门文章
-    most_viewed_impl(query, repo).await
+    most_viewed_impl(query, repo, req).await
 }
 
 /// 获取最多阅读文章的实现
 async fn most_viewed_impl(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    _req: actix_web::HttpRequest,
 ) -> HttpResponse {
     let limit: i64 = query.get("limit")
         .and_then(|l| l.parse().ok())
@@ -125,7 +137,15 @@ async fn most_viewed_impl(
 pub async fn view_sources(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let days: i64 = query.get("days")
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
@@ -157,7 +177,15 @@ pub async fn view_sources(
 pub async fn view_trend(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let days: i64 = query.get("days")
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
@@ -189,7 +217,15 @@ pub async fn view_trend(
 pub async fn article_stats(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let id_str = query.get("id").cloned().unwrap_or_default();
     let id: i64 = match id_str.parse() {
         Ok(i) => i,
@@ -268,7 +304,15 @@ pub async fn article_stats(
 pub async fn view_by_city(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let days: i64 = query.get("days")
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
@@ -301,7 +345,15 @@ pub async fn view_by_city(
 pub async fn view_by_ip(
     query: web::Query<std::collections::HashMap<String, String>>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
     let days: i64 = query.get("days")
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);

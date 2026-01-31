@@ -13,7 +13,15 @@ pub struct StatsResponse {
 }
 
 /// 获取统计数据
-pub async fn get_stats(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
+pub async fn get_stats(repo: web::Data<Arc<dyn Repository>>, req: actix_web::HttpRequest) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     let comment_repo = CommentRepository::new(repo.get_pool().clone());
     let user_repo = UserRepository::new(repo.get_pool().clone());

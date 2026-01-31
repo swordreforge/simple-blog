@@ -132,7 +132,16 @@ pub async fn create(
 pub async fn delete(
     path: web::Path<i64>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let id = path.into_inner();
     
     if id <= 0 {
@@ -164,10 +173,19 @@ pub struct BatchDeleteRequest {
 
 /// 批量删除评论
 pub async fn delete_batch(
-    req: web::Json<BatchDeleteRequest>,
+    req_json: web::Json<BatchDeleteRequest>,
     repo: web::Data<Arc<dyn Repository>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    if req.ids.is_empty() {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
+    if req_json.ids.is_empty() {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
             message: "评论ID列表不能为空".to_string(),
@@ -175,8 +193,8 @@ pub async fn delete_batch(
     }
     
     let comment_repo = CommentRepository::new(repo.get_pool().clone());
-    
-    match comment_repo.delete_batch(req.ids.clone()).await {
+
+    match comment_repo.delete_batch(req_json.ids.clone()).await {
         Ok(count) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
             "message": format!("成功删除 {} 条评论", count),

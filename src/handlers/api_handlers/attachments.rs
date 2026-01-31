@@ -295,7 +295,16 @@ pub async fn upload(
 pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let id = path.into_inner();
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
     
@@ -339,7 +348,16 @@ pub async fn update(
     path: web::Path<i64>,
     query: web::Query<std::collections::HashMap<String, String>>,
     body: Option<web::Json<serde_json::Value>>,
+    req: actix_web::HttpRequest,
 ) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
     let id = path.into_inner();
     let action = query.get("action").map(|s| s.as_str());
     
