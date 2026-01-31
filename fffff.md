@@ -236,3 +236,58 @@ ECC加密登录功能修复总结
 
 
 
+
+
+augmented-dom-instrumentation.js:1 DOM Invader is NOT enabled.
+passage:2876 initApp - 当前路径: /passage pathParts: (2) ['', 'passage']
+passage:5691 当前页面没有文章ID，跳过分类和标签加载
+passage:1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+login.js:29 ECC encryption initialized successfully
+music-player.js:235 音乐设置已加载: {enabled: false, autoPlay: false, controlSize: 'medium', customCSS: '', playerColor: 'rgba(66, 133, 244, 0.9)', …}
+passage:5789 当前页面没有文章ID，跳过评论加载
+passage:4160 从 API 加载文章: article-8
+passage:2771 开始渲染数学公式和流程图
+passage:2775 找到 0 个代码块
+passage:2806 开始渲染数学公式
+passage:2817 数学公式渲染完成
+passage:2821 找到 0 个 Mermaid 容器
+passage:4451 initArticleComments 被调用 {articleId: 'article-8', articleEl: div#article-article-8.article.active, articleData: {…}}
+passage:4453 找到的评论区域: <div class="article-comments" data-article-id="8" style="display: block;">…</div><div class="comments-section">…</div><div class="comments-header">…</div>flex<!-- GitHub 风格的评论表单 --><div class="github-comment-form">…</div>flex<div class="comment-user-avatar">…</div>flex<div class="comment-input-wrapper">…</div>flex<input type="text" class="comment-username-input" placeholder="用户名" required><textarea class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea><div class="comment-actions">…</div>flex</div></div><!-- 评论列表 --><div class="comments-list" style="display: none;">…</div><!-- 加载状态 --><div class="loading-state" style="display: none;">…</div><!-- 空状态 --><div class="empty-comments" style="display: flex;">…</div>flex</div></div>
+passage:4461 提取的纯数字 ID: 8
+passage:4160 从 API 加载文章: article-9
+passage:2771 开始渲染数学公式和流程图
+passage:2775 找到 7 个代码块
+passage:2780 发现 Mermaid 代码块 #3
+passage:2780 发现 Mermaid 代码块 #4
+passage:2780 发现 Mermaid 代码块 #5
+passage:2780 发现 Mermaid 代码块 #6
+passage:2806 开始渲染数学公式
+passage:2817 数学公式渲染完成
+passage:2821 找到 4 个 Mermaid 容器
+passage:4451 initArticleComments 被调用 {articleId: 'article-9', articleEl: div#article-article-9.article.active, articleData: {…}}
+passage:4453 找到的评论区域: <div class="article-comments" data-article-id="9" style="display: block;">…</div><div class="comments-section">…</div><div class="comments-header">…</div>flex<!-- GitHub 风格的评论表单 --><div class="github-comment-form">…</div>flex<div class="comment-user-avatar">…</div>flex<div class="comment-input-wrapper">…</div>flex<input type="text" class="comment-username-input" placeholder="用户名" required><textarea class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea><div class="comment-actions">…</div>flex</div></div><!-- 评论列表 --><div class="comments-list" style="display: none;">…</div><!-- 加载状态 --><div class="loading-state" style="display: none;">…</div><!-- 空状态 --><div class="empty-comments" style="display: flex;">…</div>flex</div></div>
+passage:4461 提取的纯数字 ID: 9
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-python hljs" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-python hljs" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-javascript hljs" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-javascript hljs" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-rust hljs" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-rust hljs" data-highlighted="yes">…</code>
+passage:2828 Mermaid 渲染成功
+passage:2864 Mermaid文字颜色已修复
+passage:5627 openCodeViewer called with: CODE rust
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-rust hljs" style="background: transparent; padding: 0px; font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace; font-size: 0.95em; line-height: 1.6; color: rgb(169, 177, 214);" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-rust hljs" style="background: transparent; padding: 0px; font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace; font-size: 0.95em; line-height: 1.6; color: rgb(169, 177, 214);" data-highlighted="yes">…</code>
+highlight.min.js:265 Element previously highlighted. To highlight again, first unset `dataset.highlighted`. <code class="language-rust hljs" style="background: transparent; padding: 0px; font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace; font-size: 0.95em; line-height: 1.6; color: rgb(169, 177, 214);" data-highlighted="yes">…</code>
+
+
+
+def fibonacci(n):
+    """计算斐波那契数列"""
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# 打印前10个斐波那契数
+for i in range(10):
+    print(f"F({i}) = {fibonacci(i)}")

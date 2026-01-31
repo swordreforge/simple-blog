@@ -918,7 +918,8 @@ nav a.current {
   letter-spacing: 0.3px;
 }
 
-.code-viewer-close {
+.code-viewer-close,
+.code-viewer-copy {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -935,17 +936,20 @@ nav a.current {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.code-viewer-close:hover {
+.code-viewer-close:hover,
+.code-viewer-copy:hover {
   background-color: rgba(255, 255, 255, 0.3);
   border-color: rgba(255, 255, 255, 0.4);
   transform: scale(1.02);
 }
 
-.code-viewer-close:active {
+.code-viewer-close:active,
+.code-viewer-copy:active {
   transform: scale(0.98);
 }
 
-.code-viewer-close svg {
+.code-viewer-close svg,
+.code-viewer-copy svg {
   width: 14px;
   height: 14px;
 }
@@ -972,6 +976,31 @@ nav a.current {
   color: #2D2D2D;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', Monaco, 'Courier New', monospace;
   font-weight: 500;
+}
+
+.code-viewer-toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #ffffff;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 0.9em;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10001;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.code-viewer-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
 .article-content code {
@@ -5276,15 +5305,25 @@ document.addEventListener('DOMContentLoaded', () => initApp());
 <div class="code-viewer" id="codeViewer">
   <div class="code-viewer-header">
     <span class="code-viewer-title" id="codeViewerTitle">代码查看</span>
-    <button class="code-viewer-close" id="codeViewerClose">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-      关闭
-    </button>
+    <div style="display: flex; gap: 8px;">
+      <button class="code-viewer-copy" id="codeViewerCopy" title="复制代码">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        复制
+      </button>
+      <button class="code-viewer-close" id="codeViewerClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        关闭
+      </button>
+    </div>
   </div>
   <div class="code-viewer-content" id="codeViewerContent"></div>
+  <div class="code-viewer-toast" id="codeViewerToast">复制成功！</div>
 </div>
 
 <!-- 登录模态框 -->
@@ -5550,6 +5589,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     codeViewerClose.addEventListener('click', closeCodeViewer);
   }
 
+  // 代码查看器复制按钮
+  const codeViewerCopy = document.getElementById('codeViewerCopy');
+  if (codeViewerCopy) {
+    codeViewerCopy.addEventListener('click', () => {
+      const codeElement = document.querySelector('#codeViewerContent code');
+      if (codeElement) {
+        const codeText = codeElement.textContent;
+        navigator.clipboard.writeText(codeText).then(() => {
+          showCodeViewerToast('复制成功！');
+        }).catch(err => {
+          console.error('复制失败:', err);
+          showCodeViewerToast('复制失败，请手动复制');
+        });
+      }
+    });
+  }
+
   // 高亮所有代码块
   document.querySelectorAll('pre code').forEach((block) => {
     hljs.highlightElement(block);
@@ -5560,6 +5616,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     mutations.forEach(function(mutation) {
       mutation.addedNodes.forEach(function(node) {
         if (node.nodeType === 1) { // 元素节点
+          // 跳过代码查看器中的代码块，避免重复添加包装器
+          if (node.id === 'codeViewerContent' || node.closest('#codeViewerContent')) {
+            return;
+          }
+          
           node.querySelectorAll('pre code').forEach((block) => {
             hljs.highlightElement(block);
           });
@@ -5567,7 +5628,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           // 初始化新添加的代码块
           const newCodeBlocks = node.querySelectorAll('pre code');
           newCodeBlocks.forEach((codeBlock) => {
-            if (!codeBlock.closest('.code-block-wrapper')) {
+            if (!codeBlock.closest('.code-block-wrapper') && !codeBlock.closest('#codeViewerContent')) {
               const pre = codeBlock.parentElement;
               const language = detectLanguage(codeBlock.className);
 
@@ -5616,7 +5677,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 
               // 全屏按钮事件
               const fullscreenBtn = toolbar.querySelector('.fullscreen-code-btn');
-              fullscreenBtn.addEventListener('click', () => openCodeViewer(codeBlock, language));
+              fullscreenBtn.addEventListener('click', () => {
+                // 确保 codeBlock 是 code 元素，而不是 wrapper
+                const actualCodeBlock = codeBlock.tagName === 'CODE' ? codeBlock : codeBlock.querySelector('code');
+                openCodeViewer(actualCodeBlock, language);
+              });
             }
           });
         }
@@ -5758,7 +5823,11 @@ function initCodeBlocks() {
 
     // 全屏按钮事件
     const fullscreenBtn = toolbar.querySelector('.fullscreen-code-btn');
-    fullscreenBtn.addEventListener('click', () => openCodeViewer(codeBlock, language));
+    fullscreenBtn.addEventListener('click', () => {
+      // 确保 codeBlock 是 code 元素，而不是 wrapper
+      const actualCodeBlock = codeBlock.tagName === 'CODE' ? codeBlock : codeBlock.querySelector('code');
+      openCodeViewer(actualCodeBlock, language);
+    });
   });
 }
 
@@ -5808,14 +5877,43 @@ function openCodeViewer(codeBlock, language) {
   // 设置标题
   codeViewerTitle.textContent = `${language} 代码`;
 
-  // 设置内容
+  // 设置内容 - IDE 风格布局
   codeViewerContent.innerHTML = '';
+  
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display: flex; align-items: flex-start; background: #1a1b26; padding: 20px; height: 100%; overflow: auto;';
+  
+  // 获取纯文本内容（移除行号，只保留代码）
+  // 克隆节点以避免影响原始元素
+  const codeClone = codeBlock.cloneNode(true);
+  // 移除所有行号元素
+  const lineNumbers = codeClone.querySelectorAll('.code-line-numbers');
+  lineNumbers.forEach(ln => ln.remove());
+  // 获取纯代码文本
+  const codeText = codeClone.textContent;
+  
+  // 添加行号
+  const lines = codeText.split('\n');
+  const lineNumbersDiv = document.createElement('div');
+  lineNumbersDiv.style.cssText = 'display: flex; flex-direction: column; align-items: flex-end; padding-right: 16px; user-select: none; color: #565f89; font-size: 0.9em; line-height: 1.6; min-width: 40px;';
+  lines.forEach((_, index) => {
+    const lineNum = document.createElement('span');
+    lineNum.textContent = index + 1;
+    lineNumbersDiv.appendChild(lineNum);
+  });
+  wrapper.appendChild(lineNumbersDiv);
+  
+  // 添加代码
   const pre = document.createElement('pre');
+  pre.style.cssText = 'margin: 0; padding: 0; background: transparent; border: none; flex: 1;';
   const code = document.createElement('code');
   code.className = codeBlock.className;
-  code.textContent = codeBlock.textContent;
+  code.textContent = codeText;
+  code.style.cssText = 'background: transparent; padding: 0; font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace; font-size: 0.95em; line-height: 1.6; color: #a9b1d6;';
   pre.appendChild(code);
-  codeViewerContent.appendChild(pre);
+  wrapper.appendChild(pre);
+  
+  codeViewerContent.appendChild(wrapper);
 
   // 重新高亮
   if (typeof hljs !== 'undefined') {
@@ -5834,6 +5932,19 @@ function closeCodeViewer() {
 
   codeViewer.classList.remove('active');
   document.body.style.overflow = '';
+}
+
+// 显示代码查看器提示框
+function showCodeViewerToast(message) {
+  const toast = document.getElementById('codeViewerToast');
+  if (!toast) return;
+  
+  toast.textContent = message;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
 }
 
 // 加载当前文章的分类和标签
