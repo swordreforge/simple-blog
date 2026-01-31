@@ -150,9 +150,14 @@ pub async fn upload(
     
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
     
-    // 处理文件上传
-    while let Some(field) = payload.next().await {
-        let mut field = match field {
+    // 先收集所有字段，获取 passage_id
+    let mut passage_uuid: Option<String> = None;
+    let mut file_field_name: Option<String> = None;
+    let mut file_data: Option<(Vec<u8>, String, String)> = None;
+    
+    // 第一次遍历：获取 passage_id 字段和文件数据
+    while let Some(field_result) = payload.next().await {
+        let mut field = match field_result {
             Ok(f) => f,
             Err(e) => {
                 eprintln!("获取字段失败: {}", e);
@@ -160,84 +165,126 @@ pub async fn upload(
             }
         };
         
-        let content_disposition = field.content_disposition();
-        let filename = content_disposition
-            .and_then(|cd| cd.get_filename().map(|s| s.to_string()))
-            .unwrap_or_else(|| "unknown".to_string());
+        let name = field.name();
         
-        // 读取文件内容
-        let mut file_bytes = Vec::new();
-        while let Some(chunk) = field.next().await {
-            let data = match chunk {
-                Ok(data) => data,
-                Err(e) => {
-                    eprintln!("读取文件块失败: {}", e);
-                    continue;
+        // 检查是否是 passage_id 字段
+        if name == Some("passage_id") {
+            let mut passage_id_str = String::new();
+            let mut field_content = Vec::new();
+            while let Some(chunk) = field.next().await {
+                if let Ok(data) = chunk {
+                    field_content.extend_from_slice(&data);
                 }
-            };
-            file_bytes.extend_from_slice(&data);
-        }
-        
-        // 获取 content type
-        let content_type_str = field.content_type().map(|ct| ct.to_string()).unwrap_or_else(|| "application/octet-stream".to_string());
-        let file_type = determine_file_type(&filename, &content_type_str);
-        
-        // 生成存储文件名
-        let timestamp = Utc::now().timestamp();
-        let stored_name = format!("{}_{}", timestamp, filename);
-        
-        // 保存文件到磁盘
-        let file_path = format!("attachments/{}", stored_name);
-        if let Err(e) = std::fs::create_dir_all("attachments") {
-            eprintln!("创建附件目录失败: {}", e);
+            }
+            passage_id_str = String::from_utf8_lossy(&field_content).to_string();
+            
+            // 根据 passage_id 查找 passage_uuid
+            if !passage_id_str.is_empty() {
+                if let Ok(id) = passage_id_str.parse::<i64>() {
+                    if let Ok(passage) = attachment_repo.get_by_id(id).await {
+                        passage_uuid = passage.passage_uuid;
+                    }
+                }
+            }
             continue;
         }
         
-        if let Err(e) = std::fs::write(&file_path, &file_bytes) {
-            eprintln!("保存文件失败: {}", e);
-            continue;
+        // 处理文件字段
+        if let Some(filename) = field.content_disposition().and_then(|cd| cd.get_filename().map(|s| s.to_string())) {
+            file_field_name = Some(filename.clone());
+            
+            // 读取文件内容
+            let mut file_bytes = Vec::new();
+            while let Some(chunk) = field.next().await {
+                if let Ok(data) = chunk {
+                    file_bytes.extend_from_slice(&data);
+                }
+            }
+            
+            // 获取 content type
+            let content_type = field.content_type().map(|ct| ct.to_string())
+                .unwrap_or_else(|| "application/octet-stream".to_string());
+            
+            file_data = Some((file_bytes, filename, content_type));
+            break;
         }
-        
-        let file_size = file_bytes.len() as i64;
-        
-        // 创建附件记录
-        let now = Utc::now();
-        let attachment = Attachment {
-            id: None,
-            file_name: filename.to_string(),
-            stored_name,
-            file_path,
-            file_type,
-            content_type: content_type_str,
-            file_size,
-            passage_uuid: None,
-            visibility: "public".to_string(),
-            show_in_passage: false,
-            uploaded_at: now,
-        };
-        
-        match attachment_repo.create(&attachment).await {
-            Ok(_) => {
-                return HttpResponse::Ok().json(UploadResponse {
-                    success: true,
-                    message: "附件上传成功".to_string(),
-                    data: Some(AttachmentData {
-                        id: 0,
-                        file_name: attachment.file_name,
-                        file_size: attachment.file_size,
-                        file_type: attachment.file_type,
-                        url: format!("/{}", attachment.file_path),
-                    }),
-                });
-            }
-            Err(e) => {
-                eprintln!("创建附件记录失败: {}", e);
-                return HttpResponse::InternalServerError().json(UploadResponse {
-                    success: false,
-                    message: "附件上传失败".to_string(),
-                    data: None,
-                });
-            }
+    }
+    
+    // 如果没有文件数据，返回错误
+    let (file_bytes, filename, content_type) = match file_data {
+        Some(data) => data,
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "没有上传文件"
+            }));
+        }
+    };
+    
+    // 确定文件类型
+    let file_type = determine_file_type(&filename, &content_type);
+    
+    // 生成存储文件名
+    let timestamp = Utc::now().timestamp();
+    let stored_name = format!("{}_{}", timestamp, filename);
+    
+    // 保存文件到磁盘
+    let file_path = format!("attachments/{}", stored_name);
+    if let Err(e) = std::fs::create_dir_all("attachments") {
+        eprintln!("创建附件目录失败: {}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "success": false,
+            "message": "创建附件目录失败"
+        }));
+    }
+    
+    if let Err(e) = std::fs::write(&file_path, &file_bytes) {
+        eprintln!("保存文件失败: {}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "success": false,
+            "message": "保存文件失败"
+        }));
+    }
+    
+    let file_size = file_bytes.len() as i64;
+    
+    // 创建附件记录
+    let now = Utc::now();
+    let attachment = Attachment {
+        id: None,
+        file_name: filename.clone(),
+        stored_name,
+        file_path,
+        file_type,
+        content_type,
+        file_size,
+        passage_uuid,
+        visibility: "public".to_string(),
+        show_in_passage: false,
+        uploaded_at: now,
+    };
+    
+    match attachment_repo.create(&attachment).await {
+        Ok(_) => {
+            return HttpResponse::Ok().json(UploadResponse {
+                success: true,
+                message: "附件上传成功".to_string(),
+                data: Some(AttachmentData {
+                    id: 0,
+                    file_name: attachment.file_name,
+                    file_size: attachment.file_size,
+                    file_type: attachment.file_type,
+                    url: format!("/{}", attachment.file_path),
+                }),
+            });
+        }
+        Err(e) => {
+            eprintln!("创建附件记录失败: {}", e);
+            return HttpResponse::InternalServerError().json(UploadResponse {
+                success: false,
+                message: "附件上传失败".to_string(),
+                data: None,
+            });
         }
     }
     
