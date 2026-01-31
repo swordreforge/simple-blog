@@ -151,7 +151,8 @@ async fn main() -> std::io::Result<()> {
 
     // 初始化 JWT 服务
     println!("🔐 初始化 JWT 服务...");
-    jwt::init_jwt_service(&args.jwt_secret);
+    let jwt_secret = jwt::init_jwt_secret(base_dir, args.jwt_secret.as_deref());
+    jwt::init_jwt_service(&jwt_secret);
 
     // 初始化 GeoIP 数据库
     println!("🌍 加载 GeoIP 数据库...");

@@ -1,6 +1,9 @@
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use chrono::{Duration, Utc};
+use rand::Rng;
+use std::fs;
+use std::path::Path;
 
 /// JWT Claims
 #[derive(Debug, Serialize, Deserialize)]
@@ -91,6 +94,64 @@ impl JwtService {
 
         Ok(claims)
     }
+}
+
+/// 生成32位随机密钥
+fn generate_random_secret() -> String {
+    let mut rng = rand::thread_rng();
+    let bytes: [u8; 32] = rng.r#gen();
+    hex::encode(bytes)
+}
+
+/// 初始化JWT密钥，从文件读取或生成新密钥
+/// 如果文件不存在或命令行提供了空字符串，生成32位随机密钥并保存
+/// 如果文件已存在且命令行未提供密钥，读取文件中的密钥（不覆盖）
+pub fn init_jwt_secret(base_dir: &Path, jwt_secret: Option<&str>) -> String {
+    // 检查是否需要生成新密钥
+    let need_generate = match jwt_secret {
+        Some(secret) => secret.is_empty(), // 空字符串则生成
+        None => false, // None表示未提供，不生成
+    };
+
+    // 尝试从文件读取（只有在不生成新密钥时）
+    let jwt_secret_file = base_dir.join("data").join("jwt-secret");
+
+    if !need_generate && jwt_secret_file.exists() {
+        // 文件存在，读取密钥
+        match fs::read_to_string(&jwt_secret_file) {
+            Ok(secret) => {
+                let secret = secret.trim();
+                if !secret.is_empty() {
+                    eprintln!("✅ JWT密钥已从文件加载: {}", jwt_secret_file.display());
+                    return secret.to_string();
+                }
+                eprintln!("⚠️  JWT密钥文件为空，将生成新密钥");
+            }
+            Err(e) => {
+                eprintln!("⚠️  读取JWT密钥文件失败: {}, 将生成新密钥", e);
+            }
+        }
+    }
+
+    // 生成新的随机密钥并保存
+    let new_secret = generate_random_secret();
+    
+    // 确保data目录存在
+    if let Some(parent) = jwt_secret_file.parent() {
+        fs::create_dir_all(parent).ok();
+    }
+
+    // 保存密钥文件
+    match fs::write(&jwt_secret_file, &new_secret) {
+        Ok(()) => {
+            eprintln!("✅ JWT密钥已生成并保存到: {}", jwt_secret_file.display());
+        }
+        Err(e) => {
+            eprintln!("⚠️  保存JWT密钥文件失败: {}", e);
+        }
+    }
+
+    new_secret
 }
 
 /// 全局 JWT 服务实例（使用 once_cell 延迟初始化）

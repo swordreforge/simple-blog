@@ -147,8 +147,8 @@ pub struct CliArgs {
     pub disable_template_cache: bool,
 
     /// JWT secret key
-    #[arg(long, default_value = "rustblog-jwt-secret-key-change-in-production")]
-    pub jwt_secret: String,
+    #[arg(long)]
+    pub jwt_secret: Option<String>,
 
     /// 基础目录（可执行文件所在目录，自动计算）
     #[clap(skip)]
@@ -229,7 +229,7 @@ impl CliArgs {
         // JWT 配置
         if let Some(jwt) = config.jwt {
             if let Some(secret) = jwt.secret {
-                self.jwt_secret = secret;
+                self.jwt_secret = Some(secret);
             }
         }
     }
