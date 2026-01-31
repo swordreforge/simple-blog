@@ -210,12 +210,18 @@ fn save_markdown_file(file_path: &str, _title: &str, content: &str) -> Result<()
 
 /// 将 Markdown 转换为 HTML
 fn convert_markdown_to_html(markdown: &str) -> String {
-    use pulldown_cmark::{Parser, html};
-    
-    let parser = Parser::new(markdown);
+    use pulldown_cmark::{Parser, html, Options};
+
+    // 配置选项，启用表格和其他扩展
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_STRIKETHROUGH);
+    options.insert(Options::ENABLE_TASKLISTS);
+
+    let parser = Parser::new_ext(markdown, options);
     let mut html_output = String::new();
     html::push_html(&mut html_output, parser);
-    
+
     html_output
 }
 

@@ -155,7 +155,7 @@ pub async fn upload(
     let mut file_field_name: Option<String> = None;
     let mut file_data: Option<(Vec<u8>, String, String)> = None;
     
-    // 第一次遍历：获取 passage_id 字段和文件数据
+    // 遍历所有字段
     while let Some(field_result) = payload.next().await {
         let mut field = match field_result {
             Ok(f) => f,
@@ -167,7 +167,7 @@ pub async fn upload(
         
         let name = field.name();
         
-        // 检查是否是 passage_id 字段
+        // 检查是否是 passage_id 字段（普通文本字段）
         if name == Some("passage_id") {
             let mut passage_id_str = String::new();
             let mut field_content = Vec::new();
@@ -180,9 +180,12 @@ pub async fn upload(
             
             // 根据 passage_id 查找 passage_uuid
             if !passage_id_str.is_empty() {
+                use crate::db::repositories::PassageRepository;
+                let passage_repo = PassageRepository::new(repo.get_pool().clone());
+                
                 if let Ok(id) = passage_id_str.parse::<i64>() {
-                    if let Ok(passage) = attachment_repo.get_by_id(id).await {
-                        passage_uuid = passage.passage_uuid;
+                    if let Ok(passage) = passage_repo.get_by_id(id).await {
+                        passage_uuid = passage.uuid;
                     }
                 }
             }
@@ -206,7 +209,6 @@ pub async fn upload(
                 .unwrap_or_else(|| "application/octet-stream".to_string());
             
             file_data = Some((file_bytes, filename, content_type));
-            break;
         }
     }
     

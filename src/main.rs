@@ -8,6 +8,7 @@ mod middleware;
 mod audio_metadata;
 mod music_sync;
 mod geoip;
+mod embedded;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use clap::Parser;
@@ -33,6 +34,12 @@ async fn main() -> std::io::Result<()> {
     println!("💾 模板缓存: {}", if config.templates.cache_enabled { "启用" } else { "禁用" });
     println!("🔒 TLS: {}", if args.enable_tls { "启用" } else { "禁用" });
     println!("📊 日志级别: {}", args.log_level);
+
+    // 释放嵌入的资源并创建必要的目录
+    println!("📦 资源初始化...");
+    if let Err(e) = embedded::extract_embedded_resources() {
+        eprintln!("⚠️  资源释放失败: {}", e);
+    }
 
     // 创建必要的目录
     create_directories();
@@ -101,9 +108,6 @@ async fn main() -> std::io::Result<()> {
 /// 创建必要的目录
 fn create_directories() {
     let dirs = vec![
-        "templates",
-        "templates/css",
-        "templates/js",
         "img",
         "music",
         "music/covers",

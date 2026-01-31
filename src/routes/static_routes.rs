@@ -8,25 +8,11 @@ pub fn configure_static_routes(cfg: &mut web::ServiceConfig) {
     // Favicon 处理（优先级最高，避免返回 404）
     cfg.route("/favicon.ico", web::get().to(handle_favicon));
 
-    // CSS 文件
-    cfg.service(
-        Files::new("/css", "templates/css")
-            .show_files_listing()
-            .use_etag(true)
-            .use_last_modified(true)
-            .prefer_utf8(true)
-            .index_file("index.html")
-    );
+    // CSS 文件 - 从内嵌文件系统提供
+    cfg.route("/css/{file:.*}", web::get().to(serve_embedded_css));
 
-    // JavaScript 文件
-    cfg.service(
-        Files::new("/js", "templates/js")
-            .show_files_listing()
-            .use_etag(true)
-            .use_last_modified(true)
-            .prefer_utf8(true)
-            .index_file("index.html")
-    );
+    // JavaScript 文件 - 从内嵌文件系统提供
+    cfg.route("/js/{file:.*}", web::get().to(serve_embedded_js));
 
     // 图片文件
     cfg.service(
@@ -63,6 +49,52 @@ pub fn configure_static_routes(cfg: &mut web::ServiceConfig) {
             .use_last_modified(true)
             .prefer_utf8(true)
     );
+}
+
+/// 从内嵌文件系统提供 CSS 文件
+async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
+    let filename = path.into_inner();
+    let embed_path = format!("templates/css/{}", filename);
+    
+    // 优先尝试从内嵌文件系统获取
+    if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
+        return Ok(HttpResponse::Ok()
+            .content_type("text/css; charset=utf-8")
+            .body(content));
+    }
+    
+    // 如果内嵌文件不存在，尝试从文件系统读取（向后兼容）
+    let file_path = Path::new("templates/css").join(&filename);
+    if file_path.exists() {
+        return Ok(HttpResponse::Ok()
+            .content_type("text/css; charset=utf-8")
+            .body(std::fs::read(file_path)?));
+    }
+    
+    Ok(HttpResponse::NotFound().finish())
+}
+
+/// 从内嵌文件系统提供 JavaScript 文件
+async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
+    let filename = path.into_inner();
+    let embed_path = format!("templates/js/{}", filename);
+    
+    // 优先尝试从内嵌文件系统获取
+    if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
+        return Ok(HttpResponse::Ok()
+            .content_type("text/javascript; charset=utf-8")
+            .body(content));
+    }
+    
+    // 如果内嵌文件不存在，尝试从文件系统读取（向后兼容）
+    let file_path = Path::new("templates/js").join(&filename);
+    if file_path.exists() {
+        return Ok(HttpResponse::Ok()
+            .content_type("text/javascript; charset=utf-8")
+            .body(std::fs::read(file_path)?));
+    }
+    
+    Ok(HttpResponse::NotFound().finish())
 }
 
 /// 处理 favicon 请求

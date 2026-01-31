@@ -5,17 +5,53 @@ use tokio::sync::RwLock;
 
 lazy_static::lazy_static! {
     static ref TERA: Arc<RwLock<Tera>> = {
-        let tera = match Tera::new("templates/**/*.html") {
+        // 优先使用内嵌的文件系统
+        let tera = match create_embedded_tera() {
             Ok(t) => t,
             Err(e) => {
-                eprintln!("Error parsing templates: {}", e);
-                panic!("Failed to parse templates");
+                eprintln!("Failed to create embedded Tera: {}, falling back to filesystem", e);
+                // 回退到文件系统
+                match Tera::new("templates/**/*.html") {
+                    Ok(t) => t,
+                    Err(e) => {
+                        eprintln!("Error parsing templates: {}", e);
+                        panic!("Failed to parse templates");
+                    }
+                }
             }
         };
         // 不启用自动转义，避免 CSS URL 中的字符被转义
         // 如需转义，在模板中使用 | escape 过滤器
         Arc::new(RwLock::new(tera))
     };
+}
+
+/// 从内嵌文件系统创建 Tera 实例
+fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
+    use crate::embedded::EmbeddedAssets;
+    
+    let mut tera = Tera::default();
+    tera.autoescape_on(vec!["html"]);
+    
+    // 遍历内嵌的模板文件
+    for path in EmbeddedAssets::iter() {
+        let path_str = path.as_ref();
+        
+        // 只处理 templates 目录下的 HTML 文件
+        if path_str.starts_with("templates/") && path_str.ends_with(".html") {
+            if let Some(content) = EmbeddedAssets::get(&path) {
+                // 移除 "templates/" 前缀，保留子目录结构
+                // 例如: "templates/admin/admin.html" -> "admin/admin.html"
+                let name = path_str.strip_prefix("templates/").unwrap();
+                let content_str = std::str::from_utf8(&content.data)?;
+                
+                // 使用 add_raw_template 方法直接添加模板内容
+                tera.add_raw_template(name, content_str)?;
+            }
+        }
+    }
+    
+    Ok(tera)
 }
 
 /// 模板设置
@@ -366,15 +402,8 @@ pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> Templ
 
 /// 渲染模板
 pub async fn render_template(template_name: &str, context: &TeraContext) -> HttpResponse {
-    // 开发模式：每次重新加载模板
-    let tera = match Tera::new("templates/**/*.html") {
-        Ok(t) => t,
-        Err(e) => {
-            eprintln!("Template rendering error: {}", e);
-            return HttpResponse::InternalServerError()
-                .body(format!("Failed to parse templates: {}", e));
-        }
-    };
+    // 使用静态的 TERA 实例（内嵌的模板）
+    let tera = TERA.read().await;
     
     match tera.render(template_name, context) {
         Ok(html) => HttpResponse::Ok()
