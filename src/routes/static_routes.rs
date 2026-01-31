@@ -86,8 +86,16 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
             .body(content));
     }
     
-    // 如果内嵌文件不存在，尝试从文件系统读取（向后兼容）
+    // 尝试从 templates/js 目录读取
     let file_path = Path::new("templates/js").join(&filename);
+    if file_path.exists() {
+        return Ok(HttpResponse::Ok()
+            .content_type("text/javascript; charset=utf-8")
+            .body(std::fs::read(file_path)?));
+    }
+    
+    // 尝试从 static/js 目录读取
+    let file_path = Path::new("static/js").join(&filename);
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")

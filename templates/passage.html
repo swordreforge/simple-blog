@@ -2844,10 +2844,10 @@ body.focus-mode-right .sidebar {
   </button>
 </div>
 
-<!-- KaTeX JavaScript - 暂时禁用，因为 auto-render 文件不存在 -->
-<!-- <script src="/js/npm/katex@0.16.27/dist/katex.min.js"></script> -->
-<!-- KaTeX auto-render extension - 暂时禁用，因为 auto-render 文件不存在 -->
-<!-- <script src="/js/npm/katex@0.16.27/dist/contrib/auto-render.min.js"></script> -->
+<!-- KaTeX JavaScript -->
+<script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script>
+<!-- KaTeX auto-render extension -->
+<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script>
 <!-- Mermaid JavaScript -->
 <script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
 
@@ -2961,8 +2961,7 @@ async function renderMathAndDiagrams(container) {
       .replace(/&#39;/g, "'");
   });
 
-  // 渲染数学公式 - 暂时禁用，因为 KaTeX auto-render 文件不存在
-  /*
+  // 渲染数学公式
   console.log('开始渲染数学公式');
   renderMathInElement(container, {
     delimiters: [
@@ -2975,7 +2974,6 @@ async function renderMathAndDiagrams(container) {
     strict: false
   });
   console.log('数学公式渲染完成');
-  */
 
   // 渲染 Mermaid 流程图
   const mermaidBlocks = container.querySelectorAll('.mermaid');
