@@ -230,7 +230,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
                     visibility TEXT DEFAULT 'public',
                     is_scheduled INTEGER DEFAULT 0,
                     published_at DATETIME,
-                    cover_image TEXT,
+                    cover_image TEXT DEFAULT '/img/passage-cover.webp',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )",
@@ -253,7 +253,9 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
         } else if !has_cover_image_column {
             // 如果有 uuid 列但没有 cover_image 列，直接添加 cover_image 列
             println!("⚠️  检测到缺少 cover_image 列，正在添加...");
-            conn.execute("ALTER TABLE passages ADD COLUMN cover_image TEXT", [])?;
+            conn.execute("ALTER TABLE passages ADD COLUMN cover_image TEXT DEFAULT '/img/passage-cover.webp'", [])?;
+            // 为现有文章设置默认封面
+            conn.execute("UPDATE passages SET cover_image = '/img/passage-cover.webp' WHERE cover_image IS NULL", [])?;
             println!("✅ 已添加 cover_image 列");
         }
     }
@@ -275,6 +277,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             visibility TEXT DEFAULT 'public',
             is_scheduled INTEGER DEFAULT 0,
             published_at DATETIME,
+            cover_image TEXT DEFAULT '/img/passage-cover.webp',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )",
