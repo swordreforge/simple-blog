@@ -16,9 +16,6 @@ pub struct SyncResponse {
 /// 同步结果
 #[derive(Debug)]
 pub struct SyncResult {
-    pub synced_count: usize,
-    pub updated_count: usize,
-    pub deleted_count: usize,
     pub message: String,
 }
 
@@ -60,12 +57,9 @@ pub async fn sync(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
 /// 内部同步函数 - 用于启动时的自动同步
 pub async fn sync_directory_internal(passage_repo: &PassageRepository) -> Result<SyncResult, String> {
     let markdown_dir = Path::new("markdown");
-    
+
     if !markdown_dir.exists() {
         return Ok(SyncResult {
-            synced_count: 0,
-            updated_count: 0,
-            deleted_count: 0,
             message: "markdown 目录不存在，跳过同步".to_string(),
         });
     }
@@ -75,11 +69,8 @@ pub async fn sync_directory_internal(passage_repo: &PassageRepository) -> Result
     let mut deleted_count = 0;
     
     sync_directory_async(markdown_dir, passage_repo, &mut synced_count, &mut updated_count, &mut deleted_count).await?;
-    
+
     Ok(SyncResult {
-        synced_count,
-        updated_count,
-        deleted_count,
         message: format!(
             "文章同步完成: {} 篇已同步, {} 篇已更新, {} 篇已删除",
             synced_count, updated_count, deleted_count
@@ -271,7 +262,7 @@ fn extract_summary(html_content: &str) -> Option<String> {
 
 /// 更新文章
 async fn update_passage(
-    passage_repo: &PassageRepository,
+    _passage_repo: &PassageRepository,
     passage: &crate::db::models::Passage,
 ) -> Result<(), String> {
     use crate::db::get_db_pool_sync;
@@ -300,8 +291,8 @@ async fn update_passage(
 
 /// 清理数据库中不存在的文章记录
 async fn cleanup_orphaned_passages(
-    passage_repo: &PassageRepository,
-    markdown_dir: &Path,
+    _passage_repo: &PassageRepository,
+    _markdown_dir: &Path,
     deleted_count: &mut usize,
 ) -> Result<(), String> {
     use crate::db::get_db_pool_sync;

@@ -1,8 +1,8 @@
-use actix_web::{web, HttpResponse, error};
+use actix_web::{web, HttpResponse};
 use actix_multipart::Multipart;
 use serde::{Deserialize, Serialize};
 use crate::db::repositories::{MusicTrackRepository, Repository};
-use crate::audio_metadata::{extract_metadata, format_duration, fallback_metadata};
+use crate::audio_metadata::{extract_metadata, fallback_metadata};
 use std::sync::Arc;
 use futures_util::stream::StreamExt;
 use tokio::fs;

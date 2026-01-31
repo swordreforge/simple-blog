@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse, HttpRequest, HttpMessage};
 use serde::{Deserialize, Serialize};
 use crate::db::repositories::{PassageRepository, AttachmentRepository, Repository};
-use crate::db::models::{Passage, Attachment};
+use crate::db::models::Passage;
 use crate::view_batch::{ViewBatchProcessor, ViewRecord, is_local_ip};
 use std::sync::Arc;
 use chrono::Utc;
@@ -33,7 +33,6 @@ pub struct PassageResponse {
 pub struct CreatePassageRequest {
     pub title: String,
     pub content: String,
-    pub original_content: Option<String>,
     pub summary: Option<String>,
     pub author: Option<String>,
     pub tags: Option<String>,
@@ -122,69 +121,6 @@ pub async fn list(
                         "total_pages": total_pages,
                         "has_more": page < total_pages
                     }
-                }))
-        }
-        Err(e) => {
-            eprintln!("获取文章列表失败: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": "获取文章列表失败"
-            }))
-        }
-    }
-}
-
-/// 获取文章列表（管理员）
-pub async fn admin_list(
-    repo: web::Data<Arc<dyn Repository>>,
-    query: web::Query<std::collections::HashMap<String, String>>,
-) -> HttpResponse {
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
-    // 解析分页参数
-    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
-    let _offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
-    let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
-    let calculated_offset = (page - 1) * limit;
-    
-    // 获取所有文章
-    match passage_repo.get_all(limit, calculated_offset).await {
-        Ok(passages) => {
-            let total = match passage_repo.count().await {
-                Ok(c) => c,
-                Err(_) => passages.len() as i64,
-            };
-            
-            let data: Vec<PassageResponse> = passages.into_iter()
-                .map(|p| PassageResponse {
-                    id: p.id.unwrap_or(0),
-                    uuid: p.uuid.unwrap_or_default(),
-                    title: p.title,
-                    content: p.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
-                    html_content: Some(p.content), // 返回渲染后的 HTML
-                    summary: p.summary,
-                    author: p.author,
-                    tags: p.tags,
-                    category: p.category,
-                    status: p.status,
-                    file_path: p.file_path,
-                    visibility: p.visibility,
-                    is_scheduled: p.is_scheduled,
-                    published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
-                    cover_image: p.cover_image,
-                    created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                    updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                })
-                .collect();
-            
-            HttpResponse::Ok()
-                .insert_header(("Cache-Control", "private, max-age=30")) // 管理员数据缓存 30 秒
-                .json(serde_json::json!({
-                    "success": true,
-                    "data": data,
-                    "total": total,
-                    "page": page,
-                    "limit": limit
                 }))
         }
         Err(e) => {
@@ -352,146 +288,6 @@ pub async fn get(
         }))
 }
 
-/// 根据数字 ID 获取文章
-pub async fn get_by_id(
-    repo: web::Data<Arc<dyn Repository>>,
-    path: web::Path<i64>,
-    req: HttpRequest,
-    view_batch_processor: web::Data<Arc<ViewBatchProcessor>>,
-) -> HttpResponse {
-    let id = path.into_inner();
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
-    // 获取用户角色
-    let role: String = req.extensions().get::<crate::middleware::auth::RoleKey>()
-        .map(|r| r.0.clone())
-        .unwrap_or_else(|| String::new());
-    
-    // 检查访问权限
-    match passage_repo.get_by_id(id).await {
-        Ok(passage) => {
-            // 检查文章状态和可见性
-            if passage.status != "published" {
-                if role != "admin" {
-                    return HttpResponse::Ok().json(serde_json::json!({
-                        "success": false,
-                        "message": "文章未发布",
-                        "status": passage.status
-                    }));
-                }
-            }
-            
-            if passage.visibility != "public" {
-                if role != "admin" {
-                    return HttpResponse::Ok().json(serde_json::json!({
-                        "success": false,
-                        "message": "文章不可见",
-                        "visibility": passage.visibility
-                    }));
-                }
-            }
-            
-            if passage.is_scheduled {
-                if let Some(published_at) = passage.published_at {
-                    if published_at > Utc::now() && role != "admin" {
-                        return HttpResponse::Ok().json(serde_json::json!({
-                            "success": false,
-                            "message": "文章尚未发布",
-                            "is_scheduled": true,
-                            "published_at": published_at.format("%Y-%m-%d %H:%M:%S").to_string()
-                        }));
-                    }
-                }
-            }
-            
-            // 使用批量处理器记录文章阅读（不阻塞响应）
-            let passage_uuid = passage.uuid.clone().unwrap_or_default();
-            let user_agent = req.headers().get("user-agent")
-                .and_then(|h| h.to_str().ok())
-                .unwrap_or("unknown")
-                .to_string();
-            
-            // 获取客户端IP（简化版）
-            let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
-
-            // 过滤本地IP，不记录
-            if !is_local_ip(&ip) {
-                // 使用 GeoIP 获取地理位置信息
-                let geo_location = crate::geoip::lookup_ip(&ip);
-                let country = geo_location.country;
-                let city = geo_location.city;
-                let region = geo_location.region;
-
-                // 使用批量处理器发送阅读记录
-                let view_record = ViewRecord {
-                    passage_uuid: passage_uuid.clone(),
-                    ip: ip.clone(),
-                    user_agent: Some(user_agent.clone()),
-                    country,
-                    city,
-                    region,
-                    view_time: Utc::now(),
-                };
-
-                if let Err(e) = view_batch_processor.record_view(view_record) {
-                    eprintln!("发送阅读记录到批量处理器失败: {}", e);
-                }
-            }
-            
-            let response = PassageResponse {
-                id: passage.id.unwrap_or(0),
-                uuid: passage.uuid.unwrap_or_default(),
-                title: passage.title,
-                content: passage.original_content.unwrap_or_default(), // 返回原始 Markdown 内容
-                html_content: Some(passage.content), // 返回渲染后的 HTML
-                summary: passage.summary,
-                author: passage.author,
-                tags: passage.tags,
-                category: passage.category,
-                status: passage.status,
-                file_path: passage.file_path,
-                visibility: passage.visibility,
-                is_scheduled: passage.is_scheduled,
-                published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
-                cover_image: passage.cover_image,
-                created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-            };
-            
-            // 生成 ETag
-            use md5::{Md5, Digest};
-            let etag_data = format!("{}:{}", response.id, response.updated_at);
-            let etag = format!("\"{:x}\"", Md5::digest(etag_data.as_bytes()));
-            
-            // 检查 If-None-Match
-            if let Some(if_none_match) = req.headers().get("if-none-match") {
-                if let Ok(if_none_match_str) = if_none_match.to_str() {
-                    if if_none_match_str == etag {
-                        return HttpResponse::NotModified()
-                            .insert_header(("ETag", etag))
-                            .finish();
-                    }
-                }
-            }
-            
-            HttpResponse::Ok()
-                .insert_header(("ETag", etag))
-                .insert_header(("Cache-Control", "public, max-age=300")) // 文章缓存 5 分钟
-                .json(serde_json::json!({
-                    "success": true,
-                    "data": response
-                }))
-        }
-        Err(e) => {
-            eprintln!("获取文章失败: {}", e);
-            HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "文章不存在"
-            }))
-        }
-    }
-}
-
 /// 创建文章
 pub async fn create(
     repo: web::Data<Arc<dyn Repository>>,
@@ -506,7 +302,7 @@ pub async fn create(
     let tags_json = if let Some(ref tags) = req.tags {
         // 解析标签 JSON 并确保标签存在于 tags 表中
         if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
-            ensure_tags_exist(&tag_list).await;
+            let _ = ensure_tags_exist(&tag_list).await;
             tags.clone()
         } else {
             "[]".to_string()
@@ -671,7 +467,7 @@ pub async fn update(
     if let Some(ref tags) = req.tags {
         // 解析标签 JSON 并确保标签存在于 tags 表中
         if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
-            ensure_tags_exist(&tag_list).await;
+            let _ = ensure_tags_exist(&tag_list).await;
         }
         passage.tags = tags.clone();
     }
@@ -1103,7 +899,7 @@ pub async fn update_by_query(
     if let Some(ref tags) = req.tags {
         // 解析标签 JSON 并确保标签存在于 tags 表中
         if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
-            ensure_tags_exist(&tag_list).await;
+            let _ = ensure_tags_exist(&tag_list).await;
         }
         passage.tags = tags.clone();
     }
@@ -1237,7 +1033,7 @@ pub async fn delete_by_query(
 pub async fn get_by_query(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
-    req: HttpRequest,
+    _req: HttpRequest,
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     

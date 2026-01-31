@@ -1,6 +1,5 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use std::sync::Arc;
 
@@ -252,44 +251,6 @@ impl PassageRepository {
         Ok(passages)
     }
 
-    /// 获取已发布的文章和总数（使用窗口函数一次查询）
-    pub async fn get_published_with_count(&self, limit: i64, offset: i64) -> Result<(Vec<Passage>, i64), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at, COUNT(*) OVER() as total_count
-             FROM passages WHERE status = 'published' ORDER BY created_at DESC LIMIT ? OFFSET ?"
-        )?;
-        
-        let mut total_count = 0;
-        let passages = stmt.query_map(params![limit, offset], |row| {
-            // 只需要从第一条记录获取总数
-            if total_count == 0 {
-                total_count = row.get(17)?;
-            }
-            Ok(Passage {
-                id: Some(row.get(0)?),
-                uuid: Some(row.get(1)?),
-                title: row.get(2)?,
-                content: row.get(3)?,
-                original_content: row.get(4)?,
-                summary: row.get(5)?,
-                author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
-        Ok((passages, total_count))
-    }
-
     /// 更新文章
     pub async fn update(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
         let id = passage.id.ok_or("文章 ID 不能为空")?;
@@ -318,13 +279,6 @@ impl PassageRepository {
         Ok(())
     }
 
-    /// 删除文章
-    pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        conn.execute("DELETE FROM passages WHERE id = ?", params![id])?;
-        Ok(())
-    }
-
     /// 根据 UUID 删除文章
     pub async fn delete_by_uuid(&self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
@@ -343,22 +297,6 @@ impl PassageRepository {
         let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
-    }
-
-    /// 根据文章 ID 列表获取 UUID 列表
-    pub async fn get_uuids_by_ids(&self, ids: Vec<i64>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-        if ids.is_empty() {
-            return Ok(Vec::new());
-        }
-        let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-        let sql = format!("SELECT uuid FROM passages WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
-
-        let mut stmt = conn.prepare(&sql)?;
-        let uuids = stmt.query_map(params.as_slice(), |row| row.get(0))?
-            .collect::<Result<Vec<String>, _>>()?;
-        Ok(uuids)
     }
 
     /// 获取文章总数
@@ -407,26 +345,6 @@ impl CommentRepository {
             ],
         )?;
         Ok(())
-    }
-
-    /// 根据 ID 获取评论
-    pub async fn get_by_id(&self, id: i64) -> Result<Comment, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, username, content, passage_uuid, created_at FROM comments WHERE id = ?"
-        )?;
-        
-        let comment = stmt.query_row(params![id], |row| {
-            Ok(Comment {
-                id: Some(row.get(0)?),
-                username: row.get(1)?,
-                content: row.get(2)?,
-                passage_uuid: row.get(3)?,
-                created_at: row.get(4)?,
-            })
-        })?;
-        
-        Ok(comment)
     }
 
     /// 根据文章 UUID 获取评论
@@ -512,30 +430,6 @@ pub struct ArticleViewRepository {
 impl ArticleViewRepository {
     pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
         Self { pool }
-    }
-
-    /// 记录文章阅读
-    pub async fn record_view(&self, passage_uuid: &str, ip: &str, user_agent: Option<&str>, country: &str, city: &str, region: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let now = Utc::now();
-        let view_date = now.format("%Y-%m-%d").to_string();
-        
-        conn.execute(
-            "INSERT INTO article_views (passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            params![
-                passage_uuid,
-                ip,
-                user_agent,
-                country,
-                city,
-                region,
-                view_date,
-                now,
-                now,
-            ],
-        )?;
-        Ok(())
     }
 
     /// 获取最多阅读的文章
@@ -779,52 +673,6 @@ impl SettingRepository {
         )?;
         Ok(())
     }
-
-    /// 获取所有设置
-    pub fn get_all(conn: &rusqlite::Connection) -> Result<Vec<Setting>, Box<dyn std::error::Error>> {
-        let mut stmt = conn.prepare(
-            "SELECT id, key, value, type, description, category, created_at, updated_at 
-             FROM settings ORDER BY category, key"
-        )?;
-        
-        let settings = stmt.query_map([], |row| {
-            Ok(Setting {
-                id: Some(row.get(0)?),
-                key: row.get(1)?,
-                value: row.get(2)?,
-                r#type: row.get(3)?,
-                description: row.get(4)?,
-                category: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
-        Ok(settings)
-    }
-
-    /// 根据分类获取设置
-    pub fn get_by_category(conn: &rusqlite::Connection, category: &str) -> Result<Vec<Setting>, Box<dyn std::error::Error>> {
-        let mut stmt = conn.prepare(
-            "SELECT id, key, value, type, description, category, created_at, updated_at 
-             FROM settings WHERE category = ? ORDER BY key"
-        )?;
-        
-        let settings = stmt.query_map(params![category], |row| {
-            Ok(Setting {
-                id: Some(row.get(0)?),
-                key: row.get(1)?,
-                value: row.get(2)?,
-                r#type: row.get(3)?,
-                description: row.get(4)?,
-                category: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
-        Ok(settings)
-    }
 }
 
 /// 分类仓库
@@ -904,29 +752,7 @@ impl CategoryRepository {
         Ok(categories)
     }
 
-    /// 获取所有分类（不分页）
-    pub async fn get_all_without_pagination(&self) -> Result<Vec<Category>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at 
-             FROM categories ORDER BY sort_order ASC, created_at DESC"
-        )?;
-        
-        let categories = stmt.query_map([], |row| {
-            Ok(Category {
-                id: Some(row.get(0)?),
-                name: row.get(1)?,
-                description: row.get(2)?,
-                icon: row.get(3)?,
-                sort_order: row.get(4)?,
-                is_enabled: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
-        Ok(categories)
-    }
+
 
     /// 更新分类
     pub async fn update(&self, category: &Category) -> Result<(), Box<dyn std::error::Error>> {
@@ -1065,31 +891,6 @@ impl TagRepository {
         )?;
         
         let tags = stmt.query_map(params![limit, offset], |row| {
-            Ok(Tag {
-                id: Some(row.get(0)?),
-                name: row.get(1)?,
-                description: row.get(2)?,
-                color: row.get(3)?,
-                category_id: row.get(4)?,
-                sort_order: row.get(5)?,
-                is_enabled: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
-        Ok(tags)
-    }
-
-    /// 获取所有标签（不分页）
-    pub async fn get_all_without_pagination(&self) -> Result<Vec<Tag>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
-             FROM tags ORDER BY sort_order ASC, created_at DESC"
-        )?;
-        
-        let tags = stmt.query_map([], |row| {
             Ok(Tag {
                 id: Some(row.get(0)?),
                 name: row.get(1)?,
@@ -1469,11 +1270,7 @@ impl AttachmentRepository {
         Ok(())
     }
 
-    pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM attachments", [], |row| row.get(0))?;
-        Ok(count)
-    }
+
 
     /// 根据文章 UUID 列表查询附件
     pub async fn get_by_passage_uuids(&self, uuids: Vec<String>) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {

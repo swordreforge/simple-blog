@@ -36,32 +36,6 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
-/// 访客模型
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Visitor {
-    pub id: Option<i64>,
-    pub ip: String,
-    pub user_agent: Option<String>,
-    pub visit_date: String,
-    pub created_at: DateTime<Utc>,
-}
-
-/// 文章阅读记录模型
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ArticleView {
-    pub id: Option<i64>,
-    pub passage_uuid: String,  // 使用 uuid 而不是 passage_id
-    pub ip: String,
-    pub user_agent: Option<String>,
-    pub country: String,
-    pub city: String,
-    pub region: String,
-    pub view_date: String,
-    pub view_time: DateTime<Utc>,
-    pub duration: i32,
-    pub created_at: DateTime<Utc>,
-}
-
 /// 评论模型
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Comment {

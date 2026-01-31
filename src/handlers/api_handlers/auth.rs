@@ -13,8 +13,6 @@ pub struct LoginRequest {
     pub session_id: String,
     #[serde(default)]
     pub client_public_key: String,
-    #[serde(default)]
-    pub algorithm: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,8 +29,6 @@ pub struct RegisterRequest {
     pub session_id: String,
     #[serde(default)]
     pub client_public_key: String,
-    #[serde(default)]
-    pub algorithm: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -91,7 +87,7 @@ pub async fn login(
     let user_repo = UserRepository::new(repo.get_pool().clone());
     let user = match user_repo.get_by_username(username).await {
         Ok(u) => u,
-        Err(e) => {
+        Err(_e) => {
             return HttpResponse::Unauthorized().json(AuthResponse {
                 success: false,
                 message: "用户名或密码错误".to_string(),
@@ -239,7 +235,7 @@ pub async fn register(
                         }),
                     })
                 }
-                Err(e) => {
+                Err(_e) => {
                     HttpResponse::Ok().json(AuthResponse {
                         success: true,
                         message: "注册成功，但无法获取用户信息".to_string(),
@@ -288,7 +284,7 @@ pub fn verify_password(password: &str, hashed_password: &str) -> Result<bool, St
     let argon2 = Argon2::default();
     match argon2.verify_password(password.as_bytes(), &parsed_hash) {
         Ok(()) => Ok(true),
-        Err(e) => Ok(false),
+        Err(_e) => Ok(false),
     }
 }
 

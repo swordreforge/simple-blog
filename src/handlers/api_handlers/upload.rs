@@ -1,7 +1,6 @@
 use actix_web::{web, HttpResponse};
 use actix_multipart::Multipart;
 use serde::Serialize;
-use std::io::Write;
 use std::path::Path;
 use chrono::Utc;
 use mime_guess::MimeGuess;

@@ -1,9 +1,9 @@
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage,
+    Error,
 };
 use futures_util::future::LocalBoxFuture;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use std::rc::Rc;
 
 /// 自定义日志中间件

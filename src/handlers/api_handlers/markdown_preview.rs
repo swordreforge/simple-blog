@@ -1,13 +1,7 @@
 use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::fs;
-
-/// Markdown 预览请求
-#[derive(Debug, Deserialize)]
-pub struct MarkdownPreviewRequest {
-    pub path: String,
-}
 
 /// Markdown 预览响应
 #[derive(Debug, Serialize)]

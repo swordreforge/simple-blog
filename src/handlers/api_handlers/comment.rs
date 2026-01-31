@@ -29,21 +29,6 @@ pub struct CommentResponse {
     pub created_at: String,
 }
 
-/// 分页响应
-#[derive(Debug, Serialize)]
-pub struct PaginatedResponse<T> {
-    pub success: bool,
-    pub data: Vec<T>,
-    pub pagination: Pagination,
-}
-
-#[derive(Debug, Serialize)]
-pub struct Pagination {
-    pub page: u32,
-    pub limit: u32,
-    pub total: i64,
-}
-
 /// 通用响应
 #[derive(Debug, Serialize)]
 pub struct CommonResponse {

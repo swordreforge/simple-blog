@@ -8,7 +8,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use chrono::Utc;
 
 /// 阅读记录消息
 #[derive(Debug, Clone)]
@@ -29,8 +28,6 @@ pub struct BatchConfig {
     pub batch_size: usize,
     /// 批次超时时间（秒）
     pub batch_timeout: u64,
-    /// 通道缓冲区大小
-    pub channel_buffer: usize,
 }
 
 impl Default for BatchConfig {
@@ -38,7 +35,6 @@ impl Default for BatchConfig {
         Self {
             batch_size: 100,      // 每100条记录批量写入
             batch_timeout: 5,     // 5秒超时自动写入
-            channel_buffer: 1000, // 1000条缓冲区
         }
     }
 }
@@ -159,13 +155,6 @@ impl ViewBatchProcessor {
         
         println!("✅ 批量写入 {} 条阅读记录", count);
         Ok(())
-    }
-
-    /// 获取待处理记录数量（近似值）
-    pub fn pending_count(&self) -> usize {
-        // 由于 unbounded channel 不提供 len()，返回 0
-        // 实际应用中可以使用 bounded channel 来获取精确计数
-        0
     }
 }
 

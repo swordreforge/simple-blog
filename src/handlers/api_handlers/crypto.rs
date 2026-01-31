@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use sha2::{Sha256, Digest};
 use rand::RngCore;
-use p256::{ecdsa::{SigningKey, VerifyingKey}, PublicKey};
+use p256::ecdsa::{SigningKey, VerifyingKey};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 
@@ -29,20 +29,18 @@ fn parse_pem_public_key(pem_data: &str) -> Result<Vec<u8>, String> {
 /// ECC 会话管理器
 #[derive(Clone)]
 pub struct ECCSession {
-    pub session_id: String,
     pub signing_key: SigningKey,
     pub verifying_key: VerifyingKey,
     pub created_at: chrono::DateTime<Utc>,
 }
 
 impl ECCSession {
-    pub fn new(session_id: String) -> Self {
+    pub fn new() -> Self {
         // 生成新的 ECC 密钥对
         let signing_key = SigningKey::random(&mut rand::thread_rng());
         let verifying_key = signing_key.verifying_key().clone();
-        
+
         ECCSession {
-            session_id,
             signing_key,
             verifying_key,
             created_at: Utc::now(),
@@ -83,7 +81,6 @@ impl ECCSession {
     /// 派生共享密钥（ECDH）
     pub fn derive_shared_secret(&self, client_public_key_bytes: &[u8]) -> Result<[u8; 32], String> {
         use p256::PublicKey;
-        use p256::elliptic_curve::group::GroupEncoding;
         use p256::NonZeroScalar;
         use spki::DecodePublicKey;
 
@@ -189,9 +186,9 @@ impl SessionManager {
             sessions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
-    
+
     pub fn create_session(&self, session_id: String) -> ECCSession {
-        let session = ECCSession::new(session_id.clone());
+        let session = ECCSession::new();
         self.sessions.lock().unwrap().insert(session_id.clone(), session.clone());
         session
     }
@@ -257,12 +254,12 @@ pub async fn get_public_key(
     } else {
         generate_session_id()
     };
-    
+
     let session = GLOBAL_SESSION_MANAGER.create_session(session_id.clone());
     let public_key_jwk = session.get_public_key_jwk();
     let expires_at = session.get_expiry();
     let expires_in = (expires_at - Utc::now()).num_seconds();
-    
+
     HttpResponse::Ok().json(GetPublicKeyResponse {
         success: true,
         session_id,

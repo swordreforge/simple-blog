@@ -2976,16 +2976,12 @@ mermaid.initialize({
 async function renderMathAndDiagrams(container) {
   if (!container) return;
 
-  console.log('开始渲染数学公式和流程图');
-
   // 处理 Mermaid 代码块 - 将 pre code 转换为 mermaid 容器
   const codeBlocks = container.querySelectorAll('pre code');
-  console.log(`找到 ${codeBlocks.length} 个代码块`);
 
   codeBlocks.forEach((block, index) => {
     // 检查 class 属性是否包含 'language-mermaid'
     if (block.classList.contains('language-mermaid') || block.className.includes('mermaid')) {
-      console.log(`发现 Mermaid 代码块 #${index}`);
       const pre = block.parentElement;
       const mermaidDiv = document.createElement('div');
       mermaidDiv.className = 'mermaid';
@@ -3011,7 +3007,6 @@ async function renderMathAndDiagrams(container) {
   });
 
   // 渲染数学公式
-  console.log('开始渲染数学公式');
   renderMathInElement(container, {
     delimiters: [
       {left: '$$', right: '$$', display: true},
@@ -3022,19 +3017,16 @@ async function renderMathAndDiagrams(container) {
     throwOnError: false,
     strict: false
   });
-  console.log('数学公式渲染完成');
 
   // 渲染 Mermaid 流程图
   const mermaidBlocks = container.querySelectorAll('.mermaid');
-  console.log(`找到 ${mermaidBlocks.length} 个 Mermaid 容器`);
 
   if (mermaidBlocks.length > 0) {
     try {
       await mermaid.run({
         nodes: [...mermaidBlocks],
       });
-      console.log('Mermaid 渲染成功');
-      
+
       // 动态修复Mermaid文字颜色
       fixMermaidTextColor();
     } catch (err) {
@@ -3068,8 +3060,6 @@ function fixMermaidTextColor() {
       text.style.fill = '#808080';
     });
   });
-
-  console.log('Mermaid文字颜色已修复');
 }
 
 // 从后端API获取文章数据
@@ -3081,12 +3071,10 @@ let articlesData = {
 async function initApp() {
   // 从 URL 路径中提取文章 ID
   const pathParts = window.location.pathname.split('/');
-  console.log('initApp - 当前路径:', window.location.pathname, 'pathParts:', pathParts);
 
   if (pathParts.length === 6 && pathParts[1] === 'passage') {
     // 格式: /passage/{year}/{month}/{day}/{title}
     // 需要从后端 API 获取文章 ID
-    console.log('调用 loadCurrentArticleFromPath...');
     await loadCurrentArticleFromPath();
   } else if (pathParts.length === 3 && pathParts[1] === 'passage' && !isNaN(pathParts[2])) {
     // 格式: /passage/{id}
@@ -3120,12 +3108,11 @@ async function loadCurrentArticleFromPath() {
     const pathParts = window.location.pathname.split('/');
     // 格式: /passage/{year}/{month}/{day}/{title}
     const titleFromPath = decodeURIComponent(pathParts[4]);
-    console.log('从路径加载文章:', { path: window.location.pathname, titleFromPath });
 
     // 尝试根据路径查找文章
     const response = await fetch('/api/passages');
     const result = await response.json();
-    
+
     if (result.success && result.data) {
       // 标准化标题进行比较
       const normalizeTitle = (title) => title.toLowerCase()
@@ -3133,17 +3120,13 @@ async function loadCurrentArticleFromPath() {
         .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '')
         .replace(/-+/g, '-');
 
-      console.log('数据库中的文章:', result.data.map(a => ({ id: a.id, title: a.title, normalized: normalizeTitle(a.title) })));
-      console.log('路径中的标题:', titleFromPath, '标准化后:', normalizeTitle(titleFromPath));
-
       // 查找匹配路径的文章
       const article = result.data.find(a => {
         return normalizeTitle(a.title) === normalizeTitle(titleFromPath);
       });
-      
+
       if (article) {
         currentPassageID = article.id;
-        console.log('从路径加载文章成功:', article.title, 'ID:', article.id);
 
         // 调用详情接口获取完整的文章内容（包括 html_content）
         const detailResponse = await fetch(`/api/passages/${article.id}`);
@@ -3186,7 +3169,6 @@ async function loadCurrentArticleFromPath() {
         }
       } else {
         console.warn('未找到匹配的文章:', titleFromPath);
-        console.log('可用文章:', result.data.map(a => a.title));
       }
     }
   } catch (error) {
@@ -4351,7 +4333,6 @@ async function loadArticleContent(articleId) {
     // 检查缓存
     if (articleContentCache.has(articleId)) {
       const cached = articleContentCache.get(articleId);
-      console.log(`从缓存加载文章: ${articleId}`);
       
       // 更新文章数据
       const articleData = findArticleById(articleId);
@@ -4364,9 +4345,7 @@ async function loadArticleContent(articleId) {
     
     // 提取文章 ID
     const numericId = articleId.replace('article-', '');
-    
-    console.log(`从 API 加载文章: ${articleId}`);
-    
+
     // 从 API 获取文章详情
     const response = await fetch(`/api/passages/${numericId}`);
     const result = await response.json();
@@ -4407,16 +4386,13 @@ function clearExpiredCache(maxAge = 30 * 60 * 1000) { // 默认 30 分钟
   for (const [articleId, cached] of articleContentCache.entries()) {
     if (now - cached.timestamp > maxAge) {
       articleContentCache.delete(articleId);
-      console.log(`清理过期缓存: ${articleId}`);
     }
   }
 }
 
 // 清空所有缓存
 function clearAllCache() {
-  const size = articleContentCache.size;
   articleContentCache.clear();
-  console.log(`清空所有缓存，共 ${size} 条记录`);
 }
 
 // 获取缓存统计信息
@@ -4430,10 +4406,6 @@ function getCacheStats() {
 // 打印缓存状态（用于调试）
 function logCacheStats() {
   const stats = getCacheStats();
-  console.log('缓存状态:', {
-    缓存数量: stats.size,
-    已缓存文章: stats.keys
-  });
 }
 
 // 渲染加载错误
@@ -4656,9 +4628,7 @@ function renderArticle(articleData) {
 
 // 初始化文章评论系统
 function initArticleComments(articleEl, articleId, articleData) {
-  console.log('initArticleComments 被调用', { articleId, articleEl, articleData });
   const commentsSection = articleEl.querySelector('.article-comments');
-  console.log('找到的评论区域:', commentsSection);
   if (!commentsSection) {
     console.warn('未找到评论区域 .article-comments');
     return;
@@ -4666,8 +4636,6 @@ function initArticleComments(articleEl, articleId, articleData) {
 
   // 从 articleId 中提取纯数字 ID（articleId 可能是 "article-3" 格式）
   const numericArticleId = typeof articleId === 'string' ? parseInt(articleId.replace('article-', ''), 10) : articleId;
-  console.log('提取的纯数字 ID:', numericArticleId);
-
   // 设置文章ID（使用纯数字ID用于API调用）
   commentsSection.dataset.articleId = numericArticleId;
 
@@ -4676,7 +4644,6 @@ function initArticleComments(articleEl, articleId, articleData) {
 
   // 隐藏评论系统（如果文章未发布）
   if (articleData && articleData.status !== 'published') {
-    console.log('文章未发布，隐藏评论系统');
     commentsSection.style.display = 'none';
     return;
   }
@@ -4733,7 +4700,6 @@ function initArticleComments(articleEl, articleId, articleData) {
 async function loadArticleComments(articleId, commentsList, loadingState, emptyState, commentsCount) {
   // 检查是否已经加载过该文章的评论
   if (commentsLoadedCache.has(articleId)) {
-    console.log(`评论已加载，跳过重复加载: ${articleId}`);
     return;
   }
 
@@ -4782,11 +4748,9 @@ async function loadArticleComments(articleId, commentsList, loadingState, emptyS
 
 // 渲染文章评论列表
 function renderArticleComments(comments, commentsList) {
-  console.log('renderArticleComments 被调用', { commentsCount: comments.length, comments });
   commentsList.innerHTML = '';
 
   comments.forEach(comment => {
-    console.log('渲染评论:', comment);
     const commentEl = document.createElement('div');
     commentEl.className = 'comment-item';
 
@@ -4807,9 +4771,7 @@ function renderArticleComments(comments, commentsList) {
     `;
 
     commentsList.appendChild(commentEl);
-    console.log('评论元素已添加到列表');
   });
-  console.log('评论渲染完成，列表长度:', commentsList.children.length);
 }
 
 // 提交文章评论
@@ -5950,7 +5912,6 @@ function showCodeViewerToast(message) {
 // 加载当前文章的分类和标签
 async function loadCurrentArticleCategoryAndTags() {
   if (!currentPassageID) {
-    console.log('当前页面没有文章ID，跳过分类和标签加载');
     return;
   }
 
@@ -6048,7 +6009,6 @@ function showUnpublishedNotice(result) {
 // 初始化评论功能
 function initComments() {
   if (!currentPassageID) {
-    console.log('当前页面没有文章ID，跳过评论加载');
     return;
   }
 
@@ -6556,7 +6516,6 @@ document.addEventListener('DOMContentLoaded', function() {
         script.async = true;
         
         script.onload = function() {
-          console.log('Live2D 看板娘加载完成');
           // 如果有 initWidget 函数，则初始化
           if (typeof initWidget === 'function') {
             try {

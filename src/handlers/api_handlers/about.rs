@@ -3,12 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::db::repositories::{AboutMainCardRepository, AboutSubCardRepository, Repository};
 use std::sync::Arc;
 
-/// 关于页面内容响应
-#[derive(Debug, Serialize)]
-pub struct AboutContent {
-    pub content: String,
-}
-
 /// 主卡片响应
 #[derive(Debug, Serialize)]
 pub struct MainCardResponse {

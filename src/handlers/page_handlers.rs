@@ -8,10 +8,6 @@ use crate::templates::{
     create_about_context,
     create_markdown_editor_context,
 };
-use crate::db::repositories::{PassageRepository, Repository};
-use std::sync::Arc;
-use crate::db::models::Passage;
-use tera::{Context as TeraContext};
 
 /// 主页处理器
 pub async fn index() -> HttpResponse {
@@ -23,33 +19,6 @@ pub async fn index() -> HttpResponse {
 pub async fn passage_list() -> HttpResponse {
     let context = create_passage_context();
     render_template("passage.html", &context).await
-}
-
-/// 创建包含文章数据的上下文
-fn create_passage_context_with_article(passage: &Passage) -> TeraContext {
-    let mut context = create_passage_context();
-    
-    // 移除第一个 H1 标签（避免标题重复显示）
-    let content = remove_first_h1(&passage.content);
-    
-    // 根据文章状态设置 is_unpublished
-    let is_unpublished = passage.status != "published";
-    
-    // 添加文章数据到上下文
-    context.insert("passage_id", &passage.id.unwrap_or(0).to_string());
-    context.insert("passage_title", &passage.title);
-    context.insert("passage_content", &content);
-    context.insert("passage_date", &passage.created_at.format("%Y-%m-%d").to_string());
-    context.insert("is_unpublished", &is_unpublished);
-    
-    context
-}
-
-/// 移除内容中的第一个 H1 标签
-fn remove_first_h1(content: &str) -> String {
-    // 使用正则表达式移除第一个 H1 标签
-    let re = regex::Regex::new(r"^\s*<h1[^>]*>.*?</h1>\s*").unwrap();
-    re.replace(content, "").to_string()
 }
 
 /// 文章详情页（通过 ID）

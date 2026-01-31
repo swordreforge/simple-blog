@@ -1,6 +1,5 @@
 use rust_embed::RustEmbed;
 use std::fs;
-use std::io::Write;
 use std::path::Path;
 
 /// 嵌入的文件系统
@@ -100,11 +99,6 @@ fn extract_dir(src_dir: &str, dst_dir: &str) -> Result<(), Box<dyn std::error::E
     }
 
     Ok(())
-}
-
-/// 检查嵌入的文件是否存在
-pub fn has_embedded_file(path: &str) -> bool {
-    EmbeddedAssets::get(path).is_some()
 }
 
 /// 获取嵌入的文件内容

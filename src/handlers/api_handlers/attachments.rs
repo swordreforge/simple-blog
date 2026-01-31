@@ -152,9 +152,9 @@ pub async fn upload(
     
     // 先收集所有字段，获取 passage_id
     let mut passage_uuid: Option<String> = None;
-    let mut file_field_name: Option<String> = None;
+    let mut _file_field_name: Option<String> = None;
     let mut file_data: Option<(Vec<u8>, String, String)> = None;
-    
+
     // 遍历所有字段
     while let Some(field_result) = payload.next().await {
         let mut field = match field_result {
@@ -164,25 +164,25 @@ pub async fn upload(
                 continue;
             }
         };
-        
+
         let name = field.name();
-        
+
         // 检查是否是 passage_id 字段（普通文本字段）
         if name == Some("passage_id") {
-            let mut passage_id_str = String::new();
+            let mut _passage_id_str = String::new();
             let mut field_content = Vec::new();
             while let Some(chunk) = field.next().await {
                 if let Ok(data) = chunk {
                     field_content.extend_from_slice(&data);
                 }
             }
-            passage_id_str = String::from_utf8_lossy(&field_content).to_string();
-            
+            let passage_id_str = String::from_utf8_lossy(&field_content).to_string();
+
             // 根据 passage_id 查找 passage_uuid
             if !passage_id_str.is_empty() {
                 use crate::db::repositories::PassageRepository;
                 let passage_repo = PassageRepository::new(repo.get_pool().clone());
-                
+
                 if let Ok(id) = passage_id_str.parse::<i64>() {
                     if let Ok(passage) = passage_repo.get_by_id(id).await {
                         passage_uuid = passage.uuid;
@@ -191,10 +191,10 @@ pub async fn upload(
             }
             continue;
         }
-        
+
         // 处理文件字段
         if let Some(filename) = field.content_disposition().and_then(|cd| cd.get_filename().map(|s| s.to_string())) {
-            file_field_name = Some(filename.clone());
+            _file_field_name = Some(filename.clone());
             
             // 读取文件内容
             let mut file_bytes = Vec::new();
@@ -268,7 +268,7 @@ pub async fn upload(
     
     match attachment_repo.create(&attachment).await {
         Ok(_) => {
-            return HttpResponse::Ok().json(UploadResponse {
+            HttpResponse::Ok().json(UploadResponse {
                 success: true,
                 message: "附件上传成功".to_string(),
                 data: Some(AttachmentData {
@@ -278,23 +278,17 @@ pub async fn upload(
                     file_type: attachment.file_type,
                     url: format!("/{}", attachment.file_path),
                 }),
-            });
+            })
         }
         Err(e) => {
             eprintln!("创建附件记录失败: {}", e);
-            return HttpResponse::InternalServerError().json(UploadResponse {
+            HttpResponse::InternalServerError().json(UploadResponse {
                 success: false,
                 message: "附件上传失败".to_string(),
                 data: None,
-            });
+            })
         }
     }
-    
-    HttpResponse::BadRequest().json(UploadResponse {
-        success: false,
-        message: "没有上传文件".to_string(),
-        data: None,
-    })
 }
 
 /// 删除附件

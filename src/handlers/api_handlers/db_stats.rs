@@ -1,13 +1,5 @@
 use actix_web::{web, HttpResponse};
-use serde::Serialize;
 use crate::db::repositories::Repository;
-
-/// 数据库连接池状态
-#[derive(Serialize)]
-pub struct DbStatsResponse {
-    pub success: bool,
-    pub data: crate::db::PoolStatus,
-}
 
 /// 获取数据库连接池状态
 pub async fn get_pool_status() -> HttpResponse {
@@ -25,21 +17,6 @@ pub async fn get_pool_status() -> HttpResponse {
             }))
         }
     }
-}
-
-/// 数据库健康检查
-#[derive(Serialize)]
-pub struct HealthCheckResponse {
-    pub success: bool,
-    pub data: HealthCheckData,
-}
-
-#[derive(Serialize)]
-pub struct HealthCheckData {
-    pub status: String,
-    pub pool_status: crate::db::PoolStatus,
-    pub database_size: Option<u64>,  // 数据库文件大小（字节）
-    pub wal_enabled: bool,
 }
 
 /// 数据库健康检查

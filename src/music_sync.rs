@@ -23,9 +23,6 @@ impl MusicSyncService {
         // 检查目录是否存在
         if !Path::new(music_dir).exists() {
             return Ok(SyncResult {
-                synced_count: 0,
-                updated_count: 0,
-                deleted_count: 0,
                 message: "Music directory does not exist, skipping sync".to_string(),
             });
         }
@@ -141,9 +138,6 @@ impl MusicSyncService {
         let deleted_count = self.cleanup_orphaned_files(&music_repo, music_dir).await?;
 
         Ok(SyncResult {
-            synced_count,
-            updated_count,
-            deleted_count,
             message: format!(
                 "Music sync completed: {} files synced, {} covers updated, {} orphaned records removed",
                 synced_count, updated_count, deleted_count
@@ -314,8 +308,5 @@ impl MusicSyncService {
 /// 同步结果
 #[derive(Debug)]
 pub struct SyncResult {
-    pub synced_count: usize,
-    pub updated_count: usize,
-    pub deleted_count: usize,
     pub message: String,
 }

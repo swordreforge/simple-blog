@@ -786,7 +786,7 @@ pub fn create_about_context() -> TeraContext {
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
-    let mut global_avatar = "/img/avatar.webp".to_string();
+    let global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {

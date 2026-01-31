@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse, Result, middleware};
-use actix_files::{Files, NamedFile};
+use actix_files::Files;
 use std::path::Path;
 
 /// 配置静态文件路由
