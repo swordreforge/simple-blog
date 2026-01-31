@@ -11,6 +11,7 @@ pub struct Http3ServerConfig {
     pub cert_path: String,
     pub key_path: String,
     pub bind_addr: String,
+    pub forward_addr: String,
 }
 
 impl Default for Http3ServerConfig {
@@ -19,16 +20,19 @@ impl Default for Http3ServerConfig {
             cert_path: "cert.pem".to_string(),
             key_path: "key.pem".to_string(),
             bind_addr: "[::]:443".to_string(),
+            forward_addr: "http://127.0.0.1:8080".to_string(),
         }
     }
 }
 
-/// 启动 HTTP/3 服务器
+/// 启动 HTTP/3 服务器（简化版 - 仅 QUIC 连接管理）
 pub async fn start_http3_server(config: Http3ServerConfig) -> Result<(), Box<dyn std::error::Error>> {
-    println!("🚀 启动 HTTP/3 服务器...");
+    println!("🚀 启动 HTTP/3 服务器（转发模式）...");
     println!("📡 监听地址: {}", config.bind_addr);
     println!("🔒 证书文件: {}", config.cert_path);
     println!("🔑 私钥文件: {}", config.key_path);
+    println!("➡️  转发目标: {}", config.forward_addr);
+    println!("⚠️  注意: 当前实现仅支持 QUIC 连接管理，HTTP/3 协议解析需要额外集成");
 
     // 加载证书和私钥
     let cert_file = std::fs::read(&config.cert_path)?;
@@ -61,7 +65,7 @@ pub async fn start_http3_server(config: Http3ServerConfig) -> Result<(), Box<dyn
 
     // 创建 QUIC endpoint
     let endpoint = Endpoint::server(server_config, config.bind_addr.parse()?)?;
-    println!("✅ HTTP/3 服务器启动成功 (使用 QUIC 协议)");
+    println!("✅ HTTP/3 服务器启动成功 (QUIC 协议层)");
 
     // 接受连接并处理请求
     accept_connections(endpoint).await
@@ -98,6 +102,32 @@ async fn handle_connection(
     conn: quinn::Connection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("🔗 新的 QUIC 连接: {}", conn.remote_address());
+    
+    // 获取 ALPN 协议
+    let alpn = conn.handshake_data()
+        .and_then(|data| data.downcast::<quinn::crypto::rustls::HandshakeData>().ok())
+        .and_then(|data| data.protocol.map(|p| p.to_vec()));
+    
+    if let Some(protocol) = alpn {
+        let protocol_str = String::from_utf8_lossy(&protocol);
+        println!("📝 ALPN 协议: {}", protocol_str);
+        
+        if protocol_str.starts_with("h3") {
+            println!("✅ HTTP/3 协议协商成功");
+            
+            // TODO: 这里应该实现 HTTP/3 请求解析和转发
+            // 由于 h3 库版本兼容性问题，当前实现仅保持连接
+            // 完整实现需要：
+            // 1. 解析 HTTP/3 帧
+            // 2. 提取 HTTP 请求
+            // 3. 转发到 Actix Web
+            // 4. 返回响应
+        } else {
+            println!("⚠️  非 HTTP/3 协议连接: {}", protocol_str);
+        }
+    } else {
+        println!("⚠️  未协商 ALPN 协议");
+    }
 
     // 简单的连接处理：保持连接打开
     tokio::select! {

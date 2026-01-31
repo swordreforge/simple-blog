@@ -227,12 +227,13 @@ async fn main() -> std::io::Result<()> {
     .run();
 
     // 如果启用了 TLS，同时启动 HTTP/3 服务器
-    let http3_task = if args.enable_tls {
+    let http3_task = if args.enable_tls && args.enable_http3 {
         if let (Some(cert), Some(key)) = (args.tls_cert, args.tls_key) {
             let http3_config = http3_server::Http3ServerConfig {
                 cert_path: cert,
                 key_path: key,
                 bind_addr: format!("{}:443", config.server.host),
+                forward_addr: format!("http://{}:{}", config.server.host, config.server.port),
             };
             Some(tokio::spawn(async move {
                 if let Err(e) = http3_server::start_http3_server(http3_config).await {

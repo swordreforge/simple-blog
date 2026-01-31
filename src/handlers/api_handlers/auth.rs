@@ -51,6 +51,7 @@ pub struct UserDTO {
 
 /// 用户登录
 pub async fn login(
+    _rate_limit: crate::middleware::ratelimit::RateLimitCheck,
     req: web::Json<LoginRequest>,
     repo: web::Data<Arc<dyn crate::db::repositories::Repository>>,
 ) -> impl Responder {
@@ -159,6 +160,7 @@ pub async fn login(
 
 /// 用户注册
 pub async fn register(
+    _rate_limit: crate::middleware::ratelimit::RateLimitCheck,
     req: web::Json<RegisterRequest>,
     repo: web::Data<Arc<dyn crate::db::repositories::Repository>>,
 ) -> impl Responder {
