@@ -1077,7 +1077,7 @@ pub async fn update_by_query(
     }
 }
 
-/// 通过查询参数删除文章（用于管理后台）
+// 通过查询参数删除文章（用于管理后台）
 pub async fn delete_by_query(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
@@ -1096,24 +1096,33 @@ pub async fn delete_by_query(
         }
     };
     
-    // 获取文章 UUID
-    let uuid = match passage_repo.get_by_id(id).await {
-        Ok(passage) => match passage.uuid {
-            Some(u) => Ok(u),
-            None => Err("文章 UUID 不存在".to_string()),
-        },
-        Err(e) => Err(format!("获取文章失败: {}", e)),
-    };
-    
-    let uuid = match uuid {
-        Ok(u) => u,
+    // 获取文章信息（包含文件路径和 UUID）
+    let passage = match passage_repo.get_by_id(id).await {
+        Ok(p) => p,
         Err(e) => {
             return HttpResponse::NotFound().json(serde_json::json!({
                 "success": false,
-                "message": e
+                "message": format!("获取文章失败: {}", e)
             }));
         }
     };
+    
+    let uuid = match &passage.uuid {
+        Some(u) => u.clone(),
+        None => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "文章 UUID 不存在"
+            }));
+        }
+    };
+    
+    // 删除 Markdown 文件
+    if let Some(file_path) = &passage.file_path {
+        if let Err(e) = std::fs::remove_file(file_path) {
+            eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
+        }
+    }
     
     // 查询关联的附件
     let attachments = match attachment_repo.get_by_passage_uuids(vec![uuid.clone()]).await {
