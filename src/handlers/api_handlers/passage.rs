@@ -692,7 +692,29 @@ pub async fn delete(
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
 
-    // 1. 查询关联的附件
+    // 1. 获取文章信息以获取文件路径
+    let passage = match passage_repo.get_by_uuid(&uuid).await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("获取文章信息失败: {}", e);
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "文章不存在"
+            }));
+        }
+    };
+
+    // 2. 删除 Markdown 文件
+    let mut deleted_markdown = false;
+    if let Some(file_path) = &passage.file_path {
+        if let Err(e) = std::fs::remove_file(file_path) {
+            eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
+        } else {
+            deleted_markdown = true;
+        }
+    }
+
+    // 3. 查询关联的附件
     let attachments = match attachment_repo.get_by_passage_uuids(vec![uuid.clone()]).await {
         Ok(attachments) => attachments,
         Err(e) => {
@@ -701,7 +723,7 @@ pub async fn delete(
         }
     };
 
-    // 2. 删除附件物理文件
+    // 4. 删除附件物理文件
     let mut deleted_files = 0;
     for attachment in &attachments {
         if let Err(e) = std::fs::remove_file(&attachment.file_path) {
@@ -711,12 +733,13 @@ pub async fn delete(
         }
     }
 
-    // 3. 删除文章记录
+    // 5. 删除文章记录
     match passage_repo.delete_by_uuid(&uuid).await {
         Ok(_) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
-                "message": format!("文章删除成功，删除了 {} 个附件文件", deleted_files)
+                "message": format!("文章删除成功，删除了 {} 个 Markdown 文件，{} 个附件文件", 
+                    if deleted_markdown { 1 } else { 0 }, deleted_files)
             }))
         }
         Err(e) => {
@@ -750,20 +773,38 @@ pub async fn delete_batch(
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
 
-    // 1. 获取文章 UUID 列表
-    let uuids = match passage_repo.get_uuids_by_ids(req.ids.clone()).await {
-        Ok(uuids) => uuids,
-        Err(e) => {
-            eprintln!("获取文章 UUID 失败: {}", e);
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": "批量删除文章失败"
-            }));
+    // 1. 获取文章 UUID 列表和文件路径
+    let mut uuids = Vec::new();
+    let mut file_paths = Vec::new();
+    
+    for id in &req.ids {
+        match passage_repo.get_by_id(*id).await {
+            Ok(passage) => {
+                if let Some(uuid) = &passage.uuid {
+                    uuids.push(uuid.clone());
+                }
+                if let Some(file_path) = &passage.file_path {
+                    file_paths.push(file_path.clone());
+                }
+            }
+            Err(e) => {
+                eprintln!("获取文章信息失败 ID={}: {}", id, e);
+            }
         }
-    };
+    }
 
-    // 2. 查询关联的附件
-    let attachments = match attachment_repo.get_by_passage_uuids(uuids).await {
+    // 2. 删除 Markdown 文件
+    let mut deleted_markdown_files = 0;
+    for file_path in &file_paths {
+        if let Err(e) = std::fs::remove_file(file_path) {
+            eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
+        } else {
+            deleted_markdown_files += 1;
+        }
+    }
+
+    // 3. 查询关联的附件
+    let attachments = match attachment_repo.get_by_passage_uuids(uuids.clone()).await {
         Ok(attachments) => attachments,
         Err(e) => {
             eprintln!("查询附件失败: {}", e);
@@ -772,7 +813,7 @@ pub async fn delete_batch(
         }
     };
 
-    // 3. 删除附件物理文件
+    // 4. 删除附件物理文件
     let mut deleted_files = 0;
     for attachment in &attachments {
         if let Err(e) = std::fs::remove_file(&attachment.file_path) {
@@ -782,13 +823,14 @@ pub async fn delete_batch(
         }
     }
 
-    // 4. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
+    // 5. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
     match passage_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
-                "message": format!("成功删除 {} 篇文章，{} 个附件文件", count, deleted_files),
+                "message": format!("成功删除 {} 篇文章，{} 个 Markdown 文件，{} 个附件文件", count, deleted_markdown_files, deleted_files),
                 "deleted_count": count,
+                "deleted_markdown_files": deleted_markdown_files,
                 "deleted_files": deleted_files
             }))
         }
