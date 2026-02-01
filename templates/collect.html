@@ -1419,7 +1419,7 @@ function renderArchive() {
           <div class="document-card-content">
             <div class="document-header">
               <h3 class="document-title">
-                <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
+                <a href="/passage#${encodeURIComponent(passage.title)}" class="document-link">${passage.title}</a>
               </h3>
               <div class="document-date">${formattedDate}</div>
             </div>
@@ -1439,14 +1439,14 @@ function renderArchive() {
   // 添加点击事件（用于整个卡片）
   document.querySelectorAll('.document-card').forEach(card => {
     card.addEventListener('click', function(e) {
-      // 如果点击的是标签链接，不打开模态框
+      // 如果点击的是标签链接，不跳转
       if (e.target.classList.contains('tag')) {
         return;
       }
       
-      const markdownPath = this.getAttribute('data-markdown-path');
-      if (markdownPath && window.MarkdownPreviewModal) {
-        window.MarkdownPreviewModal.open(markdownPath);
+      const titleLink = this.querySelector('.document-link');
+      if (titleLink) {
+        window.location.href = titleLink.href;
       }
     });
   });
@@ -1818,7 +1818,7 @@ function bindFilterEvents() {
                 <div class="document-card-content">
                   <div class="document-header">
                     <h3 class="document-title">
-                      <a href="javascript:void(0)" class="document-link" onclick="event.preventDefault(); window.MarkdownPreviewModal && window.MarkdownPreviewModal.open('${markdownPath}')">${passage.title}</a>
+                      <a href="/passage#${encodeURIComponent(passage.title)}" class="document-link">${passage.title}</a>
                     </h3>
                     <div class="document-date">${formattedDate}</div>
                   </div>

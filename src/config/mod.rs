@@ -108,7 +108,7 @@ pub struct CliArgs {
     pub port: u16,
 
     /// Host to bind to
-    #[arg(long, default_value = "127.0.0.1")]
+    #[arg(long, default_value = "0.0.0.0")]
     pub host: String,
 
     /// Database file path (SQLite)
@@ -364,7 +364,7 @@ pub struct ServerConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            host: "127.0.0.1".to_string(),
+            host: "0.0.0.0".to_string(),
             port: 8080,
         }
     }
