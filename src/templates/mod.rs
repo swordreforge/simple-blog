@@ -501,17 +501,58 @@ pub fn create_index_context() -> TeraContext {
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("external_link_whitelist", &external_link_whitelist);
     
-    // Live2D
-    context.insert("live2d_enabled", &false);
-    context.insert("live2d_show_on_index", &false);
-    context.insert("live2d_model_id", &1);
+    // Live2D - 从数据库加载
+    let live2d_enabled = if let Ok(settings) = load_template_settings() {
+        settings.live2d_enabled
+    } else {
+        false
+    };
+    let live2d_show_on_index = if let Ok(settings) = load_template_settings() {
+        settings.live2d_show_on_index
+    } else {
+        false
+    };
+    let live2d_model_id = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_id.clone()
+    } else {
+        "1".to_string()
+    };
+    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_cdn_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget@latest".to_string()
+    };
+    let live2d_model_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
+    };
+    let live2d_position = if let Ok(settings) = load_template_settings() {
+        settings.live2d_position.clone()
+    } else {
+        "right".to_string()
+    };
+    let live2d_width = if let Ok(settings) = load_template_settings() {
+        settings.live2d_width.clone()
+    } else {
+        "280".to_string()
+    };
+    let live2d_height = if let Ok(settings) = load_template_settings() {
+        settings.live2d_height.clone()
+    } else {
+        "260".to_string()
+    };
+    
+    context.insert("live2d_enabled", &live2d_enabled);
+    context.insert("live2d_show_on_index", &live2d_show_on_index);
+    context.insert("live2d_model_id", &live2d_model_id);
     context.insert("live2d_model_name", "shizuku");
     context.insert("live2d_model_textures_id", &1);
-    context.insert("live2d_cdn_path", "https://unpkg.com/live2d-widget@latest");
-    context.insert("live2d_model_path", "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json");
-    context.insert("live2d_position", "right");
-    context.insert("live2d_width", &280);
-    context.insert("live2d_height", &260);
+    context.insert("live2d_cdn_path", &live2d_cdn_path);
+    context.insert("live2d_model_path", &live2d_model_path);
+    context.insert("live2d_position", &live2d_position);
+    context.insert("live2d_width", &live2d_width);
+    context.insert("live2d_height", &live2d_height);
     context.insert("global_avatar", &global_avatar);
     
     context
@@ -688,15 +729,56 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("sponsor_button_text", &sponsor_button_text);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D
-    context.insert("live2d_enabled", &false);
-    context.insert("live2d_show_on_passage", &false);
-    context.insert("live2d_cdn_path", "https://unpkg.com/live2d-widget@latest");
-    context.insert("live2d_model_id", &1);
-    context.insert("live2d_model_path", "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json");
-    context.insert("live2d_position", "right");
-    context.insert("live2d_width", &280);
-    context.insert("live2d_height", &260);
+    // Live2D - 从数据库加载
+    let live2d_enabled = if let Ok(settings) = load_template_settings() {
+        settings.live2d_enabled
+    } else {
+        false
+    };
+    let live2d_show_on_passage = if let Ok(settings) = load_template_settings() {
+        settings.live2d_show_on_passage
+    } else {
+        false
+    };
+    let live2d_model_id = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_id.clone()
+    } else {
+        "1".to_string()
+    };
+    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_cdn_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget@latest".to_string()
+    };
+    let live2d_model_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
+    };
+    let live2d_position = if let Ok(settings) = load_template_settings() {
+        settings.live2d_position.clone()
+    } else {
+        "right".to_string()
+    };
+    let live2d_width = if let Ok(settings) = load_template_settings() {
+        settings.live2d_width.clone()
+    } else {
+        "280".to_string()
+    };
+    let live2d_height = if let Ok(settings) = load_template_settings() {
+        settings.live2d_height.clone()
+    } else {
+        "260".to_string()
+    };
+    
+    context.insert("live2d_enabled", &live2d_enabled);
+    context.insert("live2d_show_on_passage", &live2d_show_on_passage);
+    context.insert("live2d_cdn_path", &live2d_cdn_path);
+    context.insert("live2d_model_id", &live2d_model_id);
+    context.insert("live2d_model_path", &live2d_model_path);
+    context.insert("live2d_position", &live2d_position);
+    context.insert("live2d_width", &live2d_width);
+    context.insert("live2d_height", &live2d_height);
     
     context
 }
@@ -761,15 +843,56 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D
-    context.insert("live2d_enabled", &false);
-    context.insert("live2d_show_on_collect", &false);
-    context.insert("live2d_cdn_path", "https://unpkg.com/live2d-widget@latest");
-    context.insert("live2d_model_id", &1);
-    context.insert("live2d_model_path", "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json");
-    context.insert("live2d_position", "right");
-    context.insert("live2d_width", &280);
-    context.insert("live2d_height", &260);
+    // Live2D - 从数据库加载
+    let live2d_enabled = if let Ok(settings) = load_template_settings() {
+        settings.live2d_enabled
+    } else {
+        false
+    };
+    let live2d_show_on_collect = if let Ok(settings) = load_template_settings() {
+        settings.live2d_show_on_collect
+    } else {
+        false
+    };
+    let live2d_model_id = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_id.clone()
+    } else {
+        "1".to_string()
+    };
+    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_cdn_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget@latest".to_string()
+    };
+    let live2d_model_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
+    };
+    let live2d_position = if let Ok(settings) = load_template_settings() {
+        settings.live2d_position.clone()
+    } else {
+        "right".to_string()
+    };
+    let live2d_width = if let Ok(settings) = load_template_settings() {
+        settings.live2d_width.clone()
+    } else {
+        "280".to_string()
+    };
+    let live2d_height = if let Ok(settings) = load_template_settings() {
+        settings.live2d_height.clone()
+    } else {
+        "260".to_string()
+    };
+    
+    context.insert("live2d_enabled", &live2d_enabled);
+    context.insert("live2d_show_on_collect", &live2d_show_on_collect);
+    context.insert("live2d_cdn_path", &live2d_cdn_path);
+    context.insert("live2d_model_id", &live2d_model_id);
+    context.insert("live2d_model_path", &live2d_model_path);
+    context.insert("live2d_position", &live2d_position);
+    context.insert("live2d_width", &live2d_width);
+    context.insert("live2d_height", &live2d_height);
     
     context
 }
@@ -828,16 +951,57 @@ pub fn create_about_context() -> TeraContext {
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
-    
-    // Live2D
-    context.insert("live2d_enabled", &false);
-    context.insert("live2d_show_on_about", &false);
-    context.insert("live2d_cdn_path", "https://unpkg.com/live2d-widget@latest");
-    context.insert("live2d_model_id", &1);
-    context.insert("live2d_model_path", "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json");
-    context.insert("live2d_position", "right");
-    context.insert("live2d_width", &280);
-    context.insert("live2d_height", &260);
+
+    // Live2D - 从数据库加载
+    let live2d_enabled = if let Ok(settings) = load_template_settings() {
+        settings.live2d_enabled
+    } else {
+        false
+    };
+    let live2d_show_on_about = if let Ok(settings) = load_template_settings() {
+        settings.live2d_show_on_about
+    } else {
+        false
+    };
+    let live2d_model_id = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_id.clone()
+    } else {
+        "1".to_string()
+    };
+    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_cdn_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget@latest".to_string()
+    };
+    let live2d_model_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
+    };
+    let live2d_position = if let Ok(settings) = load_template_settings() {
+        settings.live2d_position.clone()
+    } else {
+        "right".to_string()
+    };
+    let live2d_width = if let Ok(settings) = load_template_settings() {
+        settings.live2d_width.clone()
+    } else {
+        "280".to_string()
+    };
+    let live2d_height = if let Ok(settings) = load_template_settings() {
+        settings.live2d_height.clone()
+    } else {
+        "260".to_string()
+    };
+
+    context.insert("live2d_enabled", &live2d_enabled);
+    context.insert("live2d_show_on_about", &live2d_show_on_about);
+    context.insert("live2d_cdn_path", &live2d_cdn_path);
+    context.insert("live2d_model_id", &live2d_model_id);
+    context.insert("live2d_model_path", &live2d_model_path);
+    context.insert("live2d_position", &live2d_position);
+    context.insert("live2d_width", &live2d_width);
+    context.insert("live2d_height", &live2d_height);
     
     context
 }
@@ -965,15 +1129,56 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D
-    context.insert("live2d_enabled", &false);
-    context.insert("live2d_show_on_admin", &false);
-    context.insert("live2d_cdn_path", "https://unpkg.com/live2d-widget@latest");
-    context.insert("live2d_model_id", &1);
-    context.insert("live2d_model_path", "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json");
-    context.insert("live2d_position", "right");
-    context.insert("live2d_width", &280);
-    context.insert("live2d_height", &260);
+    // Live2D - 从数据库加载
+    let live2d_enabled = if let Ok(settings) = load_template_settings() {
+        settings.live2d_enabled
+    } else {
+        false
+    };
+    let live2d_show_on_admin = if let Ok(settings) = load_template_settings() {
+        settings.live2d_show_on_admin
+    } else {
+        false
+    };
+    let live2d_model_id = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_id.clone()
+    } else {
+        "1".to_string()
+    };
+    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_cdn_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget@latest".to_string()
+    };
+    let live2d_model_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
+    };
+    let live2d_position = if let Ok(settings) = load_template_settings() {
+        settings.live2d_position.clone()
+    } else {
+        "right".to_string()
+    };
+    let live2d_width = if let Ok(settings) = load_template_settings() {
+        settings.live2d_width.clone()
+    } else {
+        "280".to_string()
+    };
+    let live2d_height = if let Ok(settings) = load_template_settings() {
+        settings.live2d_height.clone()
+    } else {
+        "260".to_string()
+    };
+
+    context.insert("live2d_enabled", &live2d_enabled);
+    context.insert("live2d_show_on_admin", &live2d_show_on_admin);
+    context.insert("live2d_cdn_path", &live2d_cdn_path);
+    context.insert("live2d_model_id", &live2d_model_id);
+    context.insert("live2d_model_path", &live2d_model_path);
+    context.insert("live2d_position", &live2d_position);
+    context.insert("live2d_width", &live2d_width);
+    context.insert("live2d_height", &live2d_height);
     
     context
 }
