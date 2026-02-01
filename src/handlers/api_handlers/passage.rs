@@ -304,13 +304,25 @@ pub async fn create(
 
     // 处理标签
     let tags_json = if let Some(ref tags) = req.tags {
-        // 解析标签 JSON 并确保标签存在于 tags 表中
-        if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
-            let _ = ensure_tags_exist(&tag_list).await;
-            tags.clone()
+        // 解析标签：支持 JSON 数组和逗号分隔的字符串
+        let tag_list: Vec<String> = if tags.trim().starts_with('[') {
+            // JSON 格式
+            serde_json::from_str(tags).unwrap_or_default()
         } else {
-            "[]".to_string()
+            // 逗号分隔格式
+            tags.split(',')
+                .map(|t| t.trim().to_string())
+                .filter(|t| !t.is_empty())
+                .collect()
+        };
+
+        // 确保标签存在
+        if !tag_list.is_empty() {
+            let _ = ensure_tags_exist(&tag_list).await;
         }
+
+        // 返回 JSON 格式的标签列表
+        serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string())
     } else {
         "[]".to_string()
     };
@@ -474,11 +486,25 @@ pub async fn update(
         passage.category = category.clone();
     }
     if let Some(ref tags) = req.tags {
-        // 解析标签 JSON 并确保标签存在于 tags 表中
-        if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
+        // 解析标签：支持 JSON 数组和逗号分隔的字符串
+        let tag_list: Vec<String> = if tags.trim().starts_with('[') {
+            // JSON 格式
+            serde_json::from_str(tags).unwrap_or_default()
+        } else {
+            // 逗号分隔格式
+            tags.split(',')
+                .map(|t| t.trim().to_string())
+                .filter(|t| !t.is_empty())
+                .collect()
+        };
+
+        // 确保标签存在
+        if !tag_list.is_empty() {
             let _ = ensure_tags_exist(&tag_list).await;
         }
-        passage.tags = tags.clone();
+
+        // 保存为 JSON 格式
+        passage.tags = serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string());
     }
     if let Some(ref status) = req.status {
         passage.status = status.clone();
@@ -947,13 +973,29 @@ pub async fn update_by_query(
         passage.author = author.clone();
     }
     if let Some(ref tags) = req_json.tags {
-        // 解析标签 JSON 并确保标签存在于 tags 表中
-        if let Ok(tag_list) = serde_json::from_str::<Vec<String>>(tags) {
+        // 解析标签：支持 JSON 数组和逗号分隔的字符串
+        let tag_list: Vec<String> = if tags.trim().starts_with('[') {
+            // JSON 格式
+            serde_json::from_str(tags).unwrap_or_default()
+        } else {
+            // 逗号分隔格式
+            tags.split(',')
+                .map(|t| t.trim().to_string())
+                .filter(|t| !t.is_empty())
+                .collect()
+        };
+
+        // 确保标签存在
+        if !tag_list.is_empty() {
             let _ = ensure_tags_exist(&tag_list).await;
         }
-        passage.tags = tags.clone();
+
+        // 保存为 JSON 格式
+        passage.tags = serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string());
     }
     if let Some(ref category) = req_json.category {
+        // 确保分类存在
+        let _ = ensure_category_exist(category).await;
         passage.category = category.clone();
     }
     if let Some(ref status) = req_json.status {
