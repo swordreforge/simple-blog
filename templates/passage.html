@@ -10,12 +10,12 @@
 <title>{{ title }} - 文章阅读</title>
 <!-- Disable favicon -->
 <link rel="icon" href="data:,">
-<!-- Highlight.js CSS -->
+<!-- Highlight.js CSS (关键) -->
 <link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
-<!-- KaTeX CSS -->
-<link rel="stylesheet" href="/css/katex.min.css">
-<!-- 飘字效果 CSS -->
-<link rel="stylesheet" href="/css/floating-text.css">
+<!-- KaTeX CSS (延迟加载) -->
+<link rel="stylesheet" href="/css/katex.min.css" media="print" onload="this.media='all'">
+<!-- 飘字效果 CSS (延迟加载) -->
+<link rel="stylesheet" href="/css/floating-text.css" media="print" onload="this.media='all'">
 <!--script defer src="/js/katex@0.16.27/dist/katex.min.js" integrity="sha384-2B8pfmZZ6JlVoScJm/5hQfNS2TI/6hPqDZInzzPc8oHpN5SgeNOf4LzREO6p5YtZ" crossorigin="anonymous"-->
 <style>
 * {
@@ -2397,17 +2397,17 @@ body.focus-mode-right .sidebar {
 }
 </style>
 
-<!-- 暗色模式样式 -->
-<link rel="stylesheet" href="/css/dark-mode.css">
+<!-- 暗色模式样式 (延迟加载) -->
+<link rel="stylesheet" href="/css/dark-mode.css" media="print" onload="this.media='all'">
 
-<!-- 毛玻璃效果样式 -->
-<link rel="stylesheet" href="/css/glass-effect.css">
+<!-- 毛玻璃效果样式 (延迟加载) -->
+<link rel="stylesheet" href="/css/glass-effect.css" media="print" onload="this.media='all'">
 
-<!-- 模态框动画样式 -->
-<link rel="stylesheet" href="/css/modal-animations.css">
+<!-- 模态框动画样式 (延迟加载) -->
+<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
 
-<!-- 键盘快捷键样式 -->
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css">
+<!-- 键盘快捷键样式 (延迟加载) -->
+<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
 </head>
 <body>
 <div class="toast-container" id="toastContainer"></div>
@@ -2893,12 +2893,12 @@ body.focus-mode-right .sidebar {
   </button>
 </div>
 
-<!-- KaTeX JavaScript -->
-<script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script>
-<!-- KaTeX auto-render extension -->
-<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script>
-<!-- Mermaid JavaScript -->
-<script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
+<!-- KaTeX JavaScript (延迟加载) -->
+<script src="/js/npm/katex-0.16.27/dist/katex.min.js" defer></script>
+<!-- KaTeX auto-render extension (延迟加载) -->
+<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js" defer></script>
+<!-- Mermaid JavaScript (延迟加载) -->
+<script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js" defer></script>
 
 <script>
 // 初始化 Mermaid
@@ -5431,8 +5431,8 @@ document.addEventListener('DOMContentLoaded', () => initApp());
 }
 </style>
 
-<!-- Highlight.js JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Highlight.js JS (延迟加载) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
 <script>
 // Toast 通知系统
 function showToast(message, type = 'success') {
@@ -6286,11 +6286,8 @@ function escapeHtml(text) {
 }
 </script>
 
-<!-- ECC加密工具 -->
-<script src="/js/ecc-encrypt.js"></script>
-<script src="/js/login.js"></script>
 <!-- 模态框动画控制脚本 -->
-<script src="/js/modal-animations.js"></script>
+<script src="/js/modal-animations.js" defer></script>
 <!-- Markdown 预览模态框 -->
 <script src="/js/markdown-preview-modal.js?v=2"></script>
 
@@ -6632,14 +6629,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- 键盘快捷键脚本 -->
 <script src="/js/keyboard-shortcuts.js"></script>
 <!-- 文章页面专用快捷键脚本 -->
-<script src="/js/passage-shortcuts.js"></script>
+<script src="/js/passage-shortcuts.js" defer></script>
 <!-- 文本聚焦模式脚本 -->
-<script src="/js/passage-focus-mode.js"></script>
+<script src="/js/passage-focus-mode.js" defer></script>
 
-<!-- 音乐播放器样式 -->
-<link rel="stylesheet" href="/css/music-player.css">
+<!-- 音乐播放器样式 (延迟加载) -->
+<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
 <!-- 音乐播放器脚本 -->
-<script src="/js/music-player.js"></script>
+<script src="/js/music-player.js" defer></script>
 <script>
 // 文章筛选模态框功能
 document.addEventListener('DOMContentLoaded', function() {
@@ -6919,7 +6916,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 飘字效果 JS -->
 {% if settings.floating_text_enabled %}
-<script src="/js/floating-text.js"></script>
+<script src="/js/floating-text.js" defer></script>
 {% endif %}
 </body>
 </html>
