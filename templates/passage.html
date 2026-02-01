@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
@@ -2884,8 +2884,14 @@ body.focus-mode-right .sidebar {
 <script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js" defer></script>
 
 <script>
-// 初始化 Mermaid
-mermaid.initialize({
+// 等待 Mermaid 加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+  // 检查 mermaid 是否已加载
+  const checkMermaid = setInterval(() => {
+    if (typeof mermaid !== 'undefined') {
+      clearInterval(checkMermaid);
+      // 初始化 Mermaid
+      mermaid.initialize({
   startOnLoad: false,
   theme: 'base',
   themeVariables: {
@@ -2953,6 +2959,10 @@ mermaid.initialize({
     taskTextColor: '#808080',
   },
   securityLevel: 'loose',
+});
+
+    }
+  }, 100); // 每 100ms 检查一次
 });
 
 // 渲染数学公式和流程图
