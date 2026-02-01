@@ -801,6 +801,90 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
         println!("✅ 已插入 3 篇示例文章");
     }
 
+    // 检查是否已有主卡片数据
+    let main_card_count: i64 = conn.query_row("SELECT COUNT(*) FROM about_main_cards", [], |row| row.get(0))?;
+    
+    if main_card_count == 0 {
+        // 插入主卡片示例
+        let main_cards = vec![
+            ("项目简介", "📖", "default", "", 1, true),
+            ("核心特性", "⚡", "grid", "", 2, true),
+            ("开发团队", "👥", "grid", "", 3, true),
+            ("联系我们", "📞", "flex", "", 4, true),
+            ("卡片使用指南", "🎯", "default", "", 5, true),
+        ];
+
+        let mut main_card_ids: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+
+        for (title, icon, layout_type, custom_css, sort_order, is_enabled) in &main_cards {
+            let now = chrono::Utc::now();
+            match conn.execute(
+                "INSERT INTO about_main_cards (title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                rusqlite::params![
+                    title, icon, layout_type, custom_css, sort_order, is_enabled, now, now
+                ],
+            ) {
+                Ok(_) => {
+                    let id = conn.last_insert_rowid();
+                    main_card_ids.insert(title.to_string(), id);
+                },
+                Err(e) => {
+                    eprintln!("❌ 插入主卡片 '{}' 失败: {}", title, e);
+                    return Err(e.into());
+                }
+            }
+        }
+
+        // 插入次卡片示例
+        let sub_cards = vec![
+            // 项目简介
+            ("项目简介", "欢迎", "欢迎来到我们的网站！这是一个专注于技术分享与知识管理的平台。", "", "", "default", "", 1, true),
+            ("项目简介", "目标", "我们的目标是构建一个开放、友好、专业的技术社区。", "", "", "default", "", 2, true),
+            // 核心特性
+            ("核心特性", "高性能", "采用现代化技术栈，确保网站快速响应。", "🚀", "", "default", "", 1, true),
+            ("核心特性", "安全可靠", "多层安全防护机制，保护用户数据隐私。", "🔒", "", "default", "", 2, true),
+            ("核心特性", "全平台", "响应式设计，各类设备完美呈现。", "📱", "", "default", "", 3, true),
+            ("核心特性", "开放API", "提供完善的API接口，方便集成扩展。", "🌐", "", "default", "", 4, true),
+            // 开发团队
+            ("开发团队", "技术总监", "负责平台架构设计与技术选型。", "JD", "", "default", "", 1, true),
+            ("开发团队", "前端负责人", "专注于用户体验与交互设计。", "LW", "", "default", "", 2, true),
+            ("开发团队", "后端工程师", "负责服务器端逻辑与数据库设计。", "ZY", "", "default", "", 3, true),
+            // 联系我们
+            ("联系我们", "电子邮件", "contact@example.com", "📧", "mailto:contact@example.com", "default", "", 1, true),
+            ("联系我们", "GitHub", "github.com/ourproject", "🐙", "https://github.com/ourproject", "default", "", 2, true),
+            ("联系我们", "社交媒体", "@ourproject", "🐦", "https://twitter.com/ourproject", "default", "", 3, true),
+            // 卡片使用指南
+            ("卡片使用指南", "主卡片介绍", "主卡片用于组织和分类内容，可以设置标题、图标和布局方式。每个主卡片下可以包含多个次卡片，形成层级结构。", "📁", "", "default", "", 1, true),
+            ("卡片使用指南", "次卡片介绍", "次卡片用于展示具体内容，可以包含标题、描述、图标和链接。次卡片归属于某个主卡片，支持自定义布局样式。", "📄", "", "default", "", 2, true),
+            ("卡片使用指南", "布局类型说明", "支持三种布局类型：default（默认布局）、grid（网格布局）、flex（弹性布局）。在主卡片或次卡片中设置 layout_type 即可应用不同布局。", "🎨", "", "default", "", 3, true),
+            ("卡片使用指南", "自定义样式", "可以通过 custom_css 字段为卡片添加自定义 CSS 样式，实现个性化的视觉效果。支持所有标准 CSS 属性。", "✨", "", "default", "", 4, true),
+            ("卡片使用指南", "排序与启用", "使用 sort_order 字段控制卡片显示顺序，数值越小越靠前。通过 is_enabled 字段可以控制卡片的显示与隐藏。", "🔢", "", "default", "", 5, true),
+            ("卡片使用指南", "管理入口", "登录管理后台，访问关于页面设置即可管理所有卡片。支持创建、编辑、删除和排序操作，实时预览效果。", "⚙️", "/admin", "default", "", 6, true),
+        ];
+
+        for (main_card_title, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled) in &sub_cards {
+            if let Some(&main_card_id) = main_card_ids.get(*main_card_title) {
+                let now = chrono::Utc::now();
+                match conn.execute(
+                    "INSERT INTO about_sub_cards (main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    rusqlite::params![
+                        main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, now, now
+                    ],
+                ) {
+                    Ok(_) => {},
+                    Err(e) => {
+                        eprintln!("❌ 插入次卡片 '{}' 失败: {}", title, e);
+                        return Err(e.into());
+                    }
+                }
+            }
+        }
+        
+        println!("✅ 已插入关于页面卡片示例数据");
+    }
+
     println!("✅ 默认数据插入完成");
     Ok(())
 }

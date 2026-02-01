@@ -3096,8 +3096,31 @@ async function initApp() {
   await fetchArticlesData();
   setupEventListeners();
 
+  // 检查 URL hash 是否包含要打开的文章标题
+  if (window.location.hash) {
+    // 解析 hash，格式如: #文章标题1,文章标题2,文章标题3
+    const hashTitles = window.location.hash.substring(1).split(',');
+    
+    // 查找并打开所有指定的文章
+    for (const title of hashTitles) {
+      // URL 解码标题
+      const decodedTitle = decodeURIComponent(title.trim());
+      if (decodedTitle) {
+        // 查找匹配的文章
+        const article = findArticleByTitle(decodedTitle);
+        if (article) {
+          await openArticle(article.id);
+        } else {
+          console.warn('未找到文章:', decodedTitle);
+        }
+      }
+    }
+    
+    // 清空 hash（可选，避免 URL 变长）
+    // window.location.hash = '';
+  }
   // 如果 URL 中指定了文章 ID，自动打开并显示该文章
-  if (currentPassageID) {
+  else if (currentPassageID) {
     const articleId = `article-${currentPassageID}`;
     const articleData = findArticleById(articleId);
     if (articleData) {
@@ -3112,6 +3135,64 @@ async function initApp() {
 
   // 初始化评论功能（确保在 currentPassageID 设置完成后）
   initComments();
+}
+
+// 根据标题查找文章
+function findArticleByTitle(title) {
+  console.log('查找文章，输入标题:', title);
+  console.log('当前文章数据:', articlesData);
+  
+  // 标准化标题函数（用于模糊匹配）
+  const normalizeTitle = (t) => t.toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '');
+
+  const normalizedInput = normalizeTitle(title);
+  console.log('标准化后的输入标题:', normalizedInput);
+
+  // 递归搜索所有文件夹
+  function searchInFolders(folders) {
+    if (!folders || folders.length === 0) {
+      return null;
+    }
+    
+    for (const folder of folders) {
+      console.log('检查文件夹:', folder.name);
+      if (folder.files && folder.files.length > 0) {
+        console.log('  文件夹中的文章:', folder.files.map(f => f.title));
+        // 先尝试精确匹配
+        let found = folder.files.find(file => file.title === title);
+        
+        // 如果精确匹配失败，尝试标准化后的匹配
+        if (!found) {
+          found = folder.files.find(file => normalizeTitle(file.title) === normalizedInput);
+          if (found) {
+            console.log('  通过标准化匹配找到:', found.title);
+          }
+        } else {
+          console.log('  通过精确匹配找到:', found.title);
+        }
+        
+        if (found) {
+          return found;
+        }
+      }
+      if (folder.subfolders) {
+        const found = searchInFolders(Object.values(folder.subfolders));
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
+  }
+  
+  // articlesData 的结构是 { folders: [...] }
+  const folders = articlesData.folders || Object.values(articlesData);
+  const result = searchInFolders(folders);
+  console.log('查找结果:', result);
+  return result;
 }
 
 // 从路径加载当前文章
