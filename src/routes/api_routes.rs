@@ -366,4 +366,19 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/db/health")
             .route(web::get().to(api_handlers::db_stats::health_check))
     );
+
+    // 友链 API
+    cfg.service(
+        web::resource("/api/friend-links")
+            .route(web::get().to(api_handlers::friend_link::list))
+            .route(web::post().to(api_handlers::friend_link::create))
+    ).service(
+        web::resource("/api/friend-links/{id}")
+            .route(web::get().to(api_handlers::friend_link::get))
+            .route(web::put().to(api_handlers::friend_link::update))
+            .route(web::delete().to(api_handlers::friend_link::delete))
+    ).service(
+        web::resource("/api/admin/friend-links/batch-delete")
+            .route(web::post().to(api_handlers::friend_link::delete_batch))
+    );
 }

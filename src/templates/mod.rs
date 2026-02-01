@@ -997,6 +997,94 @@ pub fn create_about_context() -> TeraContext {
     context
 }
 
+/// 创建友链页面上下文
+pub fn create_friends_context() -> TeraContext {
+    let mut context = TeraContext::new();
+    let now = chrono::Local::now();
+    let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
+    let mut external_link_warning = true;
+    let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
+    let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
+    let global_avatar = "/img/avatar.webp".to_string();
+
+    // 从数据库加载设置
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+                foodes = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+                external_link_warning = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+                external_link_whitelist = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+                external_link_warning_text = setting.value;
+            }
+        }
+    }
+
+    context.insert("title", "友链 - RustBlog");
+    context.insert("year", &now.format("%Y").to_string());
+    context.insert("foodes", &foodes);
+    context.insert("external_link_warning", &external_link_warning);
+    context.insert("external_link_whitelist", &external_link_whitelist);
+    context.insert("external_link_warning_text", &external_link_warning_text);
+    context.insert("global_avatar", &global_avatar);
+
+    // 从数据库加载背景图片
+    let background_image = if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_background_image") {
+                setting.value
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+    context.insert("background_image", &background_image);
+
+    // Live2D 配置
+    let live2d_enabled = if let Ok(settings) = load_template_settings() {
+        settings.live2d_enabled
+    } else {
+        false
+    };
+    let live2d_model_path = if let Ok(settings) = load_template_settings() {
+        settings.live2d_model_path.clone()
+    } else {
+        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
+    };
+    let live2d_position = if let Ok(settings) = load_template_settings() {
+        settings.live2d_position.clone()
+    } else {
+        "right".to_string()
+    };
+    let live2d_width = if let Ok(settings) = load_template_settings() {
+        settings.live2d_width.clone()
+    } else {
+        "280".to_string()
+    };
+    let live2d_height = if let Ok(settings) = load_template_settings() {
+        settings.live2d_height.clone()
+    } else {
+        "260".to_string()
+    };
+
+    context.insert("live2d_enabled", &live2d_enabled);
+    context.insert("live2d_model_path", &live2d_model_path);
+    context.insert("live2d_position", &live2d_position);
+    context.insert("live2d_width", &live2d_width);
+    context.insert("live2d_height", &live2d_height);
+
+    context
+}
+
 /// 创建编辑器上下文
 pub fn create_markdown_editor_context() -> TeraContext {
     let mut context = TeraContext::new();

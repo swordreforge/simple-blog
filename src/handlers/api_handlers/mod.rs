@@ -18,3 +18,4 @@ pub mod filemanager;
 pub mod stats;
 pub mod db_stats;
 pub mod markdown_preview;
+pub mod friend_link;

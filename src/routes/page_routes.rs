@@ -18,6 +18,9 @@ pub fn configure_page_routes(cfg: &mut web::ServiceConfig) {
     // 关于页面
     cfg.route("/about", web::get().to(page_handlers::about));
 
+    // 友链页面
+    cfg.route("/friends", web::get().to(page_handlers::friends));
+
     // Markdown 编辑器
     cfg.route("/markdown-editor", web::get().to(page_handlers::markdown_editor));
 

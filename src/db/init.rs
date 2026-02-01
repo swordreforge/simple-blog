@@ -505,6 +505,24 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     )?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_music_tracks_created_at ON music_tracks(created_at)", [])?;
 
+    // 创建友链表
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS friend_links (
+            id INTEGER PRIMARY KEY,
+            nickname TEXT NOT NULL,
+            link_url TEXT NOT NULL,
+            avatar_url TEXT DEFAULT '',
+            motto TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 0,
+            is_enabled BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )",
+        [],
+    )?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_friend_links_sort ON friend_links(sort_order)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_friend_links_enabled ON friend_links(is_enabled)", [])?;
+
     println!("✅ 数据库表结构创建完成");
     Ok(())
 }

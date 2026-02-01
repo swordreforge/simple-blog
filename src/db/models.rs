@@ -145,3 +145,17 @@ pub struct MusicTrack {
     pub cover_image: String,
     pub created_at: DateTime<Utc>,
 }
+
+/// 友链模型
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FriendLink {
+    pub id: Option<i64>,
+    pub nickname: String,
+    pub link_url: String,
+    pub avatar_url: String,
+    pub motto: String,
+    pub sort_order: i32,
+    pub is_enabled: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}

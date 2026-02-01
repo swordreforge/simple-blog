@@ -1591,3 +1591,135 @@ impl AboutSubCardRepository {
         Ok(())
     }
 }
+
+/// 友链仓库
+pub struct FriendLinkRepository {
+    pool: Arc<Pool<SqliteConnectionManager>>,
+}
+
+#[async_trait::async_trait]
+impl Repository for FriendLinkRepository {
+    fn get_pool(&self) -> Arc<Pool<SqliteConnectionManager>> {
+        self.pool.clone()
+    }
+}
+
+impl FriendLinkRepository {
+    pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
+        Self { pool }
+    }
+
+    pub async fn get_all(&self) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE is_enabled = 1 ORDER BY sort_order ASC, created_at DESC")?;
+        
+        let links = stmt.query_map([], |row| {
+            Ok(FriendLink {
+                id: Some(row.get(0)?),
+                nickname: row.get(1)?,
+                link_url: row.get(2)?,
+                avatar_url: row.get(3)?,
+                motto: row.get(4)?,
+                sort_order: row.get(5)?,
+                is_enabled: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+        
+        Ok(links)
+    }
+
+    pub async fn get_all_including_disabled(&self) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links ORDER BY sort_order ASC, created_at DESC")?;
+        
+        let links = stmt.query_map([], |row| {
+            Ok(FriendLink {
+                id: Some(row.get(0)?),
+                nickname: row.get(1)?,
+                link_url: row.get(2)?,
+                avatar_url: row.get(3)?,
+                motto: row.get(4)?,
+                sort_order: row.get(5)?,
+                is_enabled: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+        
+        Ok(links)
+    }
+
+    pub async fn get_by_id(&self, id: i64) -> Result<Option<FriendLink>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE id = ?")?;
+        
+        let link = stmt.query_row(params![id], |row| {
+            Ok(FriendLink {
+                id: Some(row.get(0)?),
+                nickname: row.get(1)?,
+                link_url: row.get(2)?,
+                avatar_url: row.get(3)?,
+                motto: row.get(4)?,
+                sort_order: row.get(5)?,
+                is_enabled: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+            })
+        }).optional()?;
+        
+        Ok(link)
+    }
+
+    pub async fn create(&self, link: &FriendLink) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "INSERT INTO friend_links (nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                &link.nickname,
+                &link.link_url,
+                &link.avatar_url,
+                &link.motto,
+                &link.sort_order,
+                &link.is_enabled,
+                &link.created_at,
+                &link.updated_at,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub async fn update(&self, link: &FriendLink) -> Result<(), Box<dyn std::error::Error>> {
+        let id = link.id.ok_or("友链 ID 不能为空")?;
+        let conn = self.pool.get()?;
+        conn.execute(
+            "UPDATE friend_links SET nickname = ?, link_url = ?, avatar_url = ?, motto = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
+             WHERE id = ?",
+            params![
+                &link.nickname,
+                &link.link_url,
+                &link.avatar_url,
+                &link.motto,
+                &link.sort_order,
+                &link.is_enabled,
+                &link.updated_at,
+                id,
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("DELETE FROM friend_links WHERE id = ?", params![id])?;
+        Ok(())
+    }
+
+    pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM friend_links WHERE is_enabled = 1", [], |row| row.get(0))?;
+        Ok(count)
+    }
+}

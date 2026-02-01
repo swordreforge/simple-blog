@@ -6,6 +6,7 @@ use crate::templates::{
     create_passage_context,
     create_collect_context,
     create_about_context,
+    create_friends_context,
     create_markdown_editor_context,
 };
 
@@ -38,6 +39,12 @@ pub async fn collect() -> HttpResponse {
 pub async fn about() -> HttpResponse {
     let context = create_about_context();
     render_template("about.html", &context).await
+}
+
+/// 友链页面
+pub async fn friends() -> HttpResponse {
+    let context = create_friends_context();
+    render_template("friends.html", &context).await
 }
 
 /// Markdown 编辑器
