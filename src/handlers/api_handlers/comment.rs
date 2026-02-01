@@ -3,6 +3,22 @@ use serde::{Deserialize, Serialize};
 use crate::db::repositories::{CommentRepository, Repository};
 use std::sync::Arc;
 
+/// 将 Markdown 转换为 HTML
+fn convert_markdown_to_html(markdown: &str) -> String {
+    use pulldown_cmark::{Parser, html, Options};
+
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_STRIKETHROUGH);
+    options.insert(Options::ENABLE_TASKLISTS);
+
+    let parser = Parser::new_ext(markdown, options);
+    let mut html_output = String::new();
+    html::push_html(&mut html_output, parser);
+
+    html_output
+}
+
 /// 评论列表请求参数
 #[derive(Debug, Deserialize)]
 pub struct CommentListQuery {
@@ -100,15 +116,18 @@ pub async fn create(
     }
     
     let comment_repo = CommentRepository::new(repo.get_pool().clone());
-    
+
+    // 将 Markdown 转换为 HTML
+    let html_content = convert_markdown_to_html(&req.content);
+
     let comment = crate::db::models::Comment {
         id: None,
         username: req.username.clone(),
-        content: req.content.clone(),
+        content: html_content,
         passage_uuid: req.passage_uuid.clone(),
         created_at: chrono::Utc::now(),
     };
-    
+
     match comment_repo.create(&comment).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,

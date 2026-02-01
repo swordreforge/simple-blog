@@ -6263,7 +6263,7 @@ function createCommentElement(comment) {
       </div>
       <span class="comment-date">${formatDate(comment.created_at)}</span>
     </div>
-    <div class="comment-content">${escapeHtml(comment.content)}</div>
+    <div class="comment-content">${comment.content}</div>
   `;
 
   return commentEl;
