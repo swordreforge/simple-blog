@@ -1,5 +1,6 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
+use rusqlite::params;
 
 /// 全局数据库连接池
 static DB_POOL: tokio::sync::OnceCell<Pool<SqliteConnectionManager>> = tokio::sync::OnceCell::const_new();
@@ -901,6 +902,26 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
         }
         
         println!("✅ 已插入关于页面卡片示例数据");
+    }
+
+    // 检查是否已有友链
+    let friend_link_count: i64 = conn.query_row("SELECT COUNT(*) FROM friend_links", [], |row| row.get(0))?;
+    
+    if friend_link_count == 0 {
+        // 插入开发者友链
+        let sample_friend_links = vec![
+            ("swordreforge", "/img/avatar.webp", "https://github.com/swordreforge", "Rust 开发者，热爱开源技术"),
+        ];
+        
+        for (nickname, avatar_url, link_url, motto) in sample_friend_links {
+            conn.execute(
+                "INSERT INTO friend_links (nickname, avatar_url, link_url, motto, sort_order, is_enabled, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                params![nickname, avatar_url, link_url, motto, 0, true],
+            )?;
+        }
+        
+        println!("✅ 已插入开发者友链示例数据");
     }
 
     println!("✅ 默认数据插入完成");

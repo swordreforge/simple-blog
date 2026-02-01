@@ -10,6 +10,7 @@
 <meta name="description" content="RustBlog 友链页面 - 与志同道合的朋友建立连接">
 <title>{{ title }}</title>
 <link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
 <style>
 * {
   margin: 0;
@@ -586,8 +587,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
   document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color || 'rgba(255, 255, 255, 0.9)');
   
+  // 初始化快捷键
+  if (typeof KeyboardShortcuts !== 'undefined') {
+    KeyboardShortcuts.init();
+  }
+  
   loadFriendLinks();
 });
 </script>
+<script src="/js/keyboard-shortcuts.js" defer></script>
 </body>
 </html>
