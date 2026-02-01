@@ -708,10 +708,10 @@ impl CategoryRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Category, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at 
+            "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
              FROM categories WHERE id = ?"
         )?;
-        
+
         let category = stmt.query_row(params![id], |row| {
             Ok(Category {
                 id: Some(row.get(0)?),
@@ -724,7 +724,31 @@ impl CategoryRepository {
                 updated_at: row.get(7)?,
             })
         })?;
-        
+
+        Ok(category)
+    }
+
+    /// 根据名称获取分类
+    pub async fn get_by_name(&self, name: &str) -> Result<Category, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
+             FROM categories WHERE name = ?"
+        )?;
+
+        let category = stmt.query_row(params![name], |row| {
+            Ok(Category {
+                id: Some(row.get(0)?),
+                name: row.get(1)?,
+                description: row.get(2)?,
+                icon: row.get(3)?,
+                sort_order: row.get(4)?,
+                is_enabled: row.get(5)?,
+                created_at: row.get(6)?,
+                updated_at: row.get(7)?,
+            })
+        })?;
+
         Ok(category)
     }
 

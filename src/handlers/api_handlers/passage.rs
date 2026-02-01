@@ -804,7 +804,7 @@ async fn ensure_category_exist(category_name: &str) -> Result<(), String> {
             id: None,
             name: category_name.to_string(),
             description: format!("用户创建的分类: {}", category_name),
-            icon: Some("📁".to_string()),
+            icon: "📁".to_string(),
             sort_order: 0,
             is_enabled: true,
             created_at: now,
