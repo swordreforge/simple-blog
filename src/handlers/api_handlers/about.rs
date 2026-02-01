@@ -471,3 +471,105 @@ pub async fn delete_sub_card(
         }
     }
 }
+
+/// 切换主卡片启用/禁用状态
+pub async fn toggle_main_card_enabled(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "无效的主卡片ID"
+            }));
+        }
+    };
+    
+    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    let mut card = match main_card_repo.get_by_id(id).await {
+        Ok(c) => c,
+        Err(_) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "主卡片不存在"
+            }));
+        }
+    };
+    
+    // 切换启用状态
+    card.is_enabled = !card.is_enabled;
+    card.updated_at = chrono::Utc::now();
+    
+    match main_card_repo.update(&card).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": if card.is_enabled {
+                "主卡片已启用"
+            } else {
+                "主卡片已禁用"
+            },
+            "is_enabled": card.is_enabled
+        })),
+        Err(e) => {
+            eprintln!("更新主卡片状态失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "更新主卡片状态失败"
+            }))
+        }
+    }
+}
+
+/// 切换次卡片启用/禁用状态
+pub async fn toggle_sub_card_enabled(
+    query: web::Query<std::collections::HashMap<String, String>>,
+    repo: web::Data<Arc<dyn Repository>>,
+) -> HttpResponse {
+    let id_str = query.get("id").cloned().unwrap_or_default();
+    let id: i64 = match id_str.parse() {
+        Ok(i) => i,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "无效的次卡片ID"
+            }));
+        }
+    };
+    
+    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let mut card = match sub_card_repo.get_by_id(id).await {
+        Ok(c) => c,
+        Err(_) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "次卡片不存在"
+            }));
+        }
+    };
+    
+    // 切换启用状态
+    card.is_enabled = !card.is_enabled;
+    card.updated_at = chrono::Utc::now();
+    
+    match sub_card_repo.update(&card).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": if card.is_enabled {
+                "次卡片已启用"
+            } else {
+                "次卡片已禁用"
+            },
+            "is_enabled": card.is_enabled
+        })),
+        Err(e) => {
+            eprintln!("更新次卡片状态失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "更新次卡片状态失败"
+            }))
+        }
+    }
+}

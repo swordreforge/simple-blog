@@ -177,6 +177,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/about/main-cards/delete")
             .route(web::delete().to(api_handlers::about::delete_main_card))
     ).service(
+        web::resource("/api/about/main-cards/enabled")
+            .route(web::put().to(api_handlers::about::toggle_main_card_enabled))
+    ).service(
         web::resource("/api/about/sub-cards")
             .route(web::get().to(api_handlers::about::get_sub_cards))
             .route(web::post().to(api_handlers::about::create_sub_card))
@@ -186,6 +189,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     ).service(
         web::resource("/api/about/sub-cards/delete")
             .route(web::delete().to(api_handlers::about::delete_sub_card))
+    ).service(
+        web::resource("/api/about/sub-cards/enabled")
+            .route(web::put().to(api_handlers::about::toggle_sub_card_enabled))
     );
 
     // 用户信息 API
