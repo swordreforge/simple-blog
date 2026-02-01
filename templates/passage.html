@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="description" content="{{ summary | default(value='阅读技术文章、分享编程经验、探索技术边界 - ' ~ title) }}">
+<meta name="keywords" content="{{ tags | default(value='技术博客,编程,开发') }}">
 <title>{{ title }} - 文章阅读</title>
 <!-- Disable favicon -->
 <link rel="icon" href="data:,">
@@ -3016,6 +3018,15 @@ async function renderMathAndDiagrams(container) {
 
   if (mermaidBlocks.length > 0) {
     try {
+      // 检查 mermaid 是否已加载
+      if (typeof mermaid === 'undefined') {
+        console.warn('Mermaid 尚未加载，跳过渲染');
+        mermaidBlocks.forEach(block => {
+          block.innerHTML = '<div style="color: #666; padding: 10px;">流程图加载中...</div>';
+        });
+        return;
+      }
+
       await mermaid.run({
         nodes: [...mermaidBlocks],
       });
