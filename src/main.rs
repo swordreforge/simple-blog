@@ -221,7 +221,8 @@ async fn main() -> std::io::Result<()> {
             // 添加中间件
             .wrap(LoggingMiddleware)
             // 优化的压缩中间件（已压缩内容不会再次压缩）
-            .wrap(actix_middleware::Compress::default())
+            // 支持 Gzip、Deflate、Brotli，优先使用 Brotli
+            .wrap(actix_middleware::Compress::default().exclude("/img/").exclude("/music/").exclude("/attachments/"))
     })
     .bind((config.server.host.as_str(), config.server.port))?
     .run();
