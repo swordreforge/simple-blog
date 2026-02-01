@@ -6834,12 +6834,6 @@ document.addEventListener('DOMContentLoaded', function() {
       // 关闭模态框
       closeModal();
 
-      // 在移动端打开侧边栏
-      if (window.innerWidth < 992) {
-        appState.sidebarOpen = true;
-        sidebar.classList.remove('hidden');
-      }
-
       // 在标签页中打开文章
       if (article.id) {
         openArticleInNewTab(article.id);
