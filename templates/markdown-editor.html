@@ -733,8 +733,8 @@ nav a .shortcut-hint {
 <!--script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"-->
 <script src="/js/npm/marked@14.1.4/marked.min.js"></script>
 <link rel="stylesheet" href="/css/katex.min.css">
-<script src="/js/npm/katex-0.16.27/dist/katex.min.js" defer></script>
-<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js" defer></script>
+<script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script>
+<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script>
 <!--script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"-->
 <script defer src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
 <script defer>
@@ -783,13 +783,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // 处理数学公式
       if (window.renderMathInElement) {
-        renderMathInElement(previewOutput, {
-          delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false}
-          ],
-          throwOnError: false
-        }).catch((err) => console.log('KaTeX error:', err));
+        try {
+          renderMathInElement(previewOutput, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false
+          });
+        } catch (err) {
+          console.log('KaTeX error:', err);
+        }
       }
 
       // 处理 Mermaid 图表
@@ -1150,4 +1154,3 @@ function hello() {
   }
 });
 </script>
-<script src="/js/music-player.js" defer></script>
