@@ -497,10 +497,7 @@ pub fn create_index_context() -> TeraContext {
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
-    context.insert("external_link_warning", &external_link_warning);
-    context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("external_link_whitelist", &external_link_whitelist);
-    
+
     // Live2D - 从数据库加载
     let live2d_enabled = if let Ok(settings) = load_template_settings() {
         settings.live2d_enabled
@@ -838,9 +835,6 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
-    context.insert("external_link_warning", &external_link_warning);
-    context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
 
     // Live2D - 从数据库加载
@@ -947,9 +941,6 @@ pub fn create_about_context() -> TeraContext {
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
-    context.insert("external_link_warning", &external_link_warning);
-    context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
 
     // Live2D - 从数据库加载
@@ -1061,9 +1052,6 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
-    context.insert("external_link_warning", &external_link_warning);
-    context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
 
     context
@@ -1124,9 +1112,6 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("settings", &TemplateSettings::default());
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
-    context.insert("external_link_warning", &external_link_warning);
-    context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("global_avatar", &global_avatar);
 
     // Live2D - 从数据库加载
