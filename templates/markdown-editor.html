@@ -732,6 +732,13 @@ nav a .shortcut-hint {
 <!-- 引入必要的库 -->
 <!--script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"-->
 <script src="/js/npm/marked@14.1.4/marked.min.js"></script>
+<!-- Highlight.js 代码高亮 -->
+<link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/rust.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/go.min.js"></script>
 <link rel="stylesheet" href="/css/katex.min.css">
 <script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script>
 <script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script>
@@ -761,7 +768,14 @@ document.addEventListener('DOMContentLoaded', function() {
       breaks: true,
       gfm: true,
       highlight: function(code, lang) {
-        return code;
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return hljs.highlight(code, { language: lang }).value;
+          } catch (err) {
+            console.error('Highlight error:', err);
+          }
+        }
+        return hljs.highlightAuto(code).value;
       }
     });
 
