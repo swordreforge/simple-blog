@@ -4384,6 +4384,9 @@ async function openArticle(articleId) {
     appState.openTabs.push(articleId);
   }
 
+  // 更新页面标题
+  updatePageTitle(articleData);
+
   // 更新UI
   updateUI();
 
@@ -4983,6 +4986,9 @@ function switchToTab(articleId) {
 
   if (!articleData) return;
 
+  // 更新页面标题
+  updatePageTitle(articleData);
+
   // 检查文章是否已经渲染（DOM 中是否存在该文章元素）
   const articleEl = document.getElementById(`article-${articleId}`);
 
@@ -5027,6 +5033,9 @@ function closeTab(articleId) {
         }
       });
       emptyState.style.display = 'flex';
+
+      // 更新页面标题为默认值
+      updatePageTitle(null);
     }
   }
   
@@ -6360,6 +6369,17 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// 更新页面标题
+function updatePageTitle(articleData) {
+  if (articleData && articleData.title) {
+    document.title = `${articleData.title} - 文章阅读`;
+  } else {
+    document.title = 'RustBlog - 文章阅读';
+  }
+  // 更新原始标题，用于页面可见性变化时恢复
+  originalTitle = document.title;
 }
 </script>
 
