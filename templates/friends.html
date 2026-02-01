@@ -587,10 +587,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
   document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color || 'rgba(255, 255, 255, 0.9)');
   
-  // 初始化快捷键
-  if (typeof KeyboardShortcuts !== 'undefined') {
-    KeyboardShortcuts.init();
-  }
+  // 初始化快捷键（等脚本加载完成）
+  window.addEventListener('load', () => {
+    if (typeof KeyboardShortcuts !== 'undefined' && typeof KeyboardShortcuts.init === 'function') {
+      KeyboardShortcuts.init();
+    }
+  });
   
   loadFriendLinks();
 });
