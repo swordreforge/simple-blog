@@ -577,7 +577,17 @@ window.addEventListener('scroll', () => {
 });
 
 // 页面加载完成后加载友链
-document.addEventListener('DOMContentLoaded', loadFriendLinks);
+document.addEventListener('DOMContentLoaded', () => {
+  // 设置导航栏颜色和透明度
+  const settings = {
+    navbar_glass_color: '{{ settings.navbar_glass_color }}',
+    navbar_text_color: '{{ settings.navbar_text_color }}'
+  };
+  document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
+  document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color || 'rgba(255, 255, 255, 0.9)');
+  
+  loadFriendLinks();
+});
 </script>
 </body>
 </html>
