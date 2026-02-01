@@ -1032,22 +1032,11 @@ pub fn create_friends_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("global_avatar", &global_avatar);
-
-    // 从数据库加载背景图片
-    let background_image = if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_background_image") {
-                setting.value
-            } else {
-                String::new()
-            }
-        } else {
-            String::new()
-        }
-    } else {
-        String::new()
-    };
-    context.insert("background_image", &background_image);
+    context.insert("settings", &TemplateSettings::default());
+    
+    // 登录状态（前端会通过 API 检查）
+    context.insert("is_logged_in", &false);
+    context.insert("username", &"");
 
     // Live2D 配置
     let live2d_enabled = if let Ok(settings) = load_template_settings() {
