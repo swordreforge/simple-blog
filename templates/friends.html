@@ -157,15 +157,16 @@ nav a.current {
 
 /* 主容器 */
 .container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 120px 40px 60px;
+  width: 100%;
 }
 
 /* 页面标题 */
 .page-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 50px;
 }
 
 .page-title {
@@ -181,19 +182,28 @@ nav a.current {
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* 友链卡片网格 */
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  width: 100%;
+}
+
 /* 友链卡片样式 */
 .friend-card {
   background: rgba(0, 0, 0, 0);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 30px 40px;
+  padding: 30px 35px;
   border-radius: 20px;
-  margin-bottom: 25px;
   transition: all 0.3s ease;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 30px;
+  text-align: center;
+  gap: 20px;
 }
 
 .friend-card:hover {
@@ -302,11 +312,14 @@ nav a.current {
     padding: 100px 20px 40px;
   }
 
-  .friend-card {
-    flex-direction: column;
-    text-align: center;
-    padding: 25px 30px;
+  .friends-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
+  }
+
+  .friend-card {
+    padding: 25px 30px;
+    gap: 18px;
   }
 
   .friend-avatar {
@@ -442,7 +455,9 @@ async function loadFriendLinks() {
     const result = await response.json();
     
     if (result.success && result.data && result.data.length > 0) {
-      container.innerHTML = '';
+      // 创建 grid 容器
+      container.innerHTML = '<div class="friends-grid"></div>';
+      const grid = container.querySelector('.friends-grid');
       
       result.data.forEach((link, index) => {
         const card = document.createElement('div');
@@ -471,7 +486,7 @@ async function loadFriendLinks() {
           </div>
         `;
         
-        container.appendChild(card);
+        grid.appendChild(card);
         
         setTimeout(() => {
           card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
