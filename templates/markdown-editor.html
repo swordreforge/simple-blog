@@ -995,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 添加示例内容
     if (!markdownInput.value.trim()) {
-      markdownInput.value = \`# 在线 Markdown 编辑器
+      markdownInput.value = `# 在线 Markdown 编辑器
 
 这是一个支持实时预览的 Markdown 编辑器，支持数学公式和流程图。
 
@@ -1019,21 +1019,21 @@ $$
 
 ## 流程图示例
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TD
     A[开始] --> B{判断}
     B -->|是| C[继续]
     B -->|否| D[结束]
     C --> B
-\\\`\\\`\\\`
+\`\`\`
 
 ## 代码示例
 
-\\\`\\\`\\\`javascript
+\`\`\`javascript
 function hello() {
     console.log('Hello, World!');
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## 表格示例
 
@@ -1043,7 +1043,7 @@ function hello() {
 | D   | E   | F   |
 
 开始您的创作吧！
-\`;
+`;
       renderPreview();
     }
 
@@ -1080,16 +1080,16 @@ function hello() {
 
         if (shortcut.url) {
           if (window.location.pathname !== shortcut.url) {
-            console.log(\`导航到: \${shortcut.url}\`);
+            console.log(`导航到: ${shortcut.url}`);
             window.location.href = shortcut.url;
           } else {
-            console.log(\`已在目标页面: \${shortcut.url}\`);
+            console.log(`已在目标页面: ${shortcut.url}`);
           }
         } else if (shortcut.action === 'openModal') {
           const modal = document.getElementById(shortcut.modalId);
           if (modal) {
             modal.classList.add('active');
-            showToast(\`已打开: \${shortcut.label}\`, 'success');
+            showToast(`已打开: ${shortcut.label}`, 'success');
           }
         }
       }
@@ -1114,7 +1114,7 @@ function hello() {
       // Ctrl/Cmd + K: 代码
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        insertMarkdown('\`', '\`');
+        insertMarkdown('`', '`');
         return;
       }
 
@@ -1128,7 +1128,7 @@ function hello() {
       // Ctrl/Cmd + G: 流程图
       if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
         e.preventDefault();
-        insertMarkdown('\`\`\`mermaid\n', '\n\`\`\`');
+        insertMarkdown('```mermaid\n', '\n```');
         return;
       }
 
