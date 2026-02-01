@@ -76,6 +76,15 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
             .body(content));
     }
     
+    // 尝试从 static/css 目录读取（新路径）
+    let file_path = Path::new("static/css").join(&filename);
+    if file_path.exists() {
+        return Ok(HttpResponse::Ok()
+            .content_type("text/css; charset=utf-8")
+            .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
+            .body(std::fs::read(file_path)?));
+    }
+    
     // 如果内嵌文件不存在，尝试从文件系统读取（向后兼容）
     let file_path = Path::new("templates/css").join(&filename);
     if file_path.exists() {
