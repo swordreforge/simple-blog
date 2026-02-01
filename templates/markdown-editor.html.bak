@@ -735,8 +735,8 @@ nav a .shortcut-hint {
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
 <!--script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"-->
 <script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
-<script defer>
-// 初始化 Mermaid（在脚本加载时立即执行）
+<script>
+// 初始化 Mermaid
 if (typeof mermaid !== 'undefined') {
   mermaid.initialize({
     startOnLoad: false,
@@ -759,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function() {
       breaks: true,
       gfm: true,
       highlight: function(code, lang) {
-        return code;
+        return code; // 简单处理，实际可以使用 highlight.js 等
       }
     });
 
@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 渲染预览
     function renderPreview() {
       const markdown = markdownInput.value;
-      
+
       if (!markdown.trim()) {
         previewOutput.innerHTML = '<div class="loading">输入 Markdown 内容开始预览...</div>';
         return;
@@ -791,211 +791,211 @@ document.addEventListener('DOMContentLoaded', function() {
     // 处理 Mermaid 图表
     function processMermaidCharts() {
       const mermaidBlocks = previewOutput.querySelectorAll('pre code');
-      
+
       mermaidBlocks.forEach((block) => {
         const code = block.textContent;
-        if (code.trim().startsWith('mermaid')) {
-          const mermaidCode = code.replace(/^mermaid\n/, '').trim();
-          const pre = block.parentElement;
-          
-          // 创建新的 div 用于渲染图表
-          const mermaidDiv = document.createElement('div');
-          mermaidDiv.className = 'mermaid';
-          mermaidDiv.textContent = mermaidCode;
-          
-          // 替换原来的代码块
-          pre.replaceWith(mermaidDiv);
-        }
-      });
-
-      // 重新渲染所有 mermaid 图表
-      if (typeof mermaid !== 'undefined') {
-        mermaid.run().catch((err) => console.log('Mermaid error:', err));
-      }
+    if (code.trim().startsWith('mermaid')) {
+      const mermaidCode = code.replace(/^mermaid\n/, '').trim();
+      const pre = block.parentElement;
+      
+      // 创建新的 div 用于渲染图表
+      const mermaidDiv = document.createElement('div');
+      mermaidDiv.className = 'mermaid';
+      mermaidDiv.textContent = mermaidCode;
+      
+      // 替换原来的代码块
+      pre.replaceWith(mermaidDiv);
     }
+  });
 
-    // 插入 Markdown 语法
-    function insertMarkdown(before, after) {
-      const start = markdownInput.selectionStart;
-      const end = markdownInput.selectionEnd;
-      const text = markdownInput.value;
-      const selectedText = text.substring(start, end);
-      
-      const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
-      markdownInput.value = newText;
-      
-      // 设置光标位置
-      const newCursorPos = start + before.length + selectedText.length;
-      markdownInput.setSelectionRange(newCursorPos, newCursorPos);
-      markdownInput.focus();
-      
-      // 触发渲染
-      renderPreview();
+  // 重新渲染所有 mermaid 图表
+  mermaid.run().catch((err) => console.log('Mermaid error:', err));
+}
+
+// 插入 Markdown 语法
+function insertMarkdown(before, after) {
+  const start = markdownInput.selectionStart;
+  const end = markdownInput.selectionEnd;
+  const text = markdownInput.value;
+  const selectedText = text.substring(start, end);
+  
+  const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
+  markdownInput.value = newText;
+  
+  // 设置光标位置
+  const newCursorPos = start + before.length + selectedText.length;
+  markdownInput.setSelectionRange(newCursorPos, newCursorPos);
+  markdownInput.focus();
+  
+  // 触发渲染
+  renderPreview();
+}
+
+// 防抖函数
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// 下载 Markdown 文件
+function downloadMarkdown() {
+  const content = markdownInput.value;
+  const title = document.getElementById('saveTitle').value || 'untitled';
+  
+  if (!content.trim()) {
+    showToast('请输入 Markdown 内容', 'error');
+    return;
+  }
+  
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('下载成功', 'success');
+}
+
+// 显示保存模态框
+function showSaveModal() {
+  saveModal.classList.add('active');
+}
+
+// 隐藏保存模态框
+function hideSaveModal() {
+  saveModal.classList.remove('active');
+}
+
+// 保存到数据库
+async function saveToDatabase() {
+  const title = document.getElementById('saveTitle').value.trim();
+  const category = document.getElementById('saveCategory').value.trim();
+  const tags = document.getElementById('saveTags').value.trim();
+  const summary = document.getElementById('saveSummary').value.trim();
+  const content = markdownInput.value;
+  
+  if (!title) {
+    showToast('请输入文章标题', 'error');
+    return;
+  }
+  
+  if (!content.trim()) {
+    showToast('请输入 Markdown 内容', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/markdown-editor/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: title,
+        content: content,
+        category: category,
+        tags: tags,
+        summary: summary,
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('保存成功！', 'success');
+      hideSaveModal();
+      // 清空表单
+      document.getElementById('saveTitle').value = '';
+      document.getElementById('saveCategory').value = '';
+      document.getElementById('saveTags').value = '';
+      document.getElementById('saveSummary').value = '';
+    } else {
+      showToast(data.message || '保存失败', 'error');
     }
+  } catch (error) {
+    console.error('Save error:', error);
+    showToast('保存失败，请检查网络连接', 'error');
+  }
+}
 
-    // 防抖函数
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
+// 显示提示信息
+function showToast(message, type = 'info') {
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
 
-    // 下载 Markdown 文件
-    function downloadMarkdown() {
-      const content = markdownInput.value;
-      const title = document.getElementById('saveTitle').value || 'untitled';
-      
-      if (!content.trim()) {
-        showToast('请输入 Markdown 内容', 'error');
-        return;
-      }
-      
-      const blob = new Blob([content], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title}.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showToast('下载成功', 'success');
-    }
-
-    // 显示保存模态框
-    function showSaveModal() {
-      saveModal.classList.add('active');
-    }
-
-    // 隐藏保存模态框
-    function hideSaveModal() {
-      saveModal.classList.remove('active');
-    }
-
-    // 保存到数据库
-    async function saveToDatabase() {
-      const title = document.getElementById('saveTitle').value.trim();
-      const category = document.getElementById('saveCategory').value.trim();
-      const tags = document.getElementById('saveTags').value.trim();
-      const summary = document.getElementById('saveSummary').value.trim();
-      const content = markdownInput.value;
-      
-      if (!title) {
-        showToast('请输入文章标题', 'error');
-        return;
-      }
-      
-      if (!content.trim()) {
-        showToast('请输入 Markdown 内容', 'error');
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/markdown-editor/save', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            title: title,
-            content: content,
-            category: category,
-            tags: tags,
-            summary: summary,
-          }),
+// 检查用户权限并显示/隐藏保存按钮
+async function checkUserPermission() {
+  try {
+    const response = await fetch('/api/user/info');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.role === 'admin') {
+        document.querySelectorAll('.admin-only').forEach(el => {
+          el.style.display = 'flex';
         });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          showToast('保存成功！', 'success');
-          hideSaveModal();
-          // 清空表单
-          document.getElementById('saveTitle').value = '';
-          document.getElementById('saveCategory').value = '';
-          document.getElementById('saveTags').value = '';
-          document.getElementById('saveSummary').value = '';
-        } else {
-          showToast(data.message || '保存失败', 'error');
-        }
-      } catch (error) {
-        console.error('Save error:', error);
-        showToast('保存失败，请检查网络连接', 'error');
       }
     }
+  } catch (error) {
+    console.log('Permission check failed:', error);
+  }
+}
 
-    // 显示提示信息
-    function showToast(message, type = 'info') {
-      toast.textContent = message;
-      toast.className = `toast ${type}`;
-      toast.classList.add('show');
-      
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-
-    // 检查用户权限并显示/隐藏保存按钮
-    async function checkUserPermission() {
-      try {
-        const response = await fetch('/api/user/info');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.role === 'admin') {
-            document.querySelectorAll('.admin-only').forEach(el => {
-              el.style.display = 'flex';
-            });
-          }
-        }
-      } catch (error) {
-        console.log('Permission check failed:', error);
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', () => {
+  // 加载外观设置
+  fetch('/api/settings/appearance')
+    .then(response => response.json())
+    .then(settings => {
+      // 应用导航栏文字颜色
+      if (settings.navbar_text_color) {
+        document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color);
       }
-    }
 
-    // 加载外观设置
-    fetch('/api/settings/appearance')
-      .then(response => response.json())
-      .then(settings => {
-        // 应用导航栏文字颜色
-        if (settings.navbar_text_color) {
-          document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color);
+      // 响应式加载背景图片
+      function applyBackgroundImage() {
+        const isMobile = window.innerWidth <= 768;
+        const backgroundImage = isMobile && settings.mobile_background_image ? settings.mobile_background_image : settings.background_image;
+        if (backgroundImage) {
+          document.body.style.backgroundImage = `url('${backgroundImage}')`;
         }
+      }
 
-        // 响应式加载背景图片
-        function applyBackgroundImage() {
-          const isMobile = window.innerWidth <= 768;
-          const backgroundImage = isMobile && settings.mobile_background_image ? settings.mobile_background_image : settings.background_image;
-          if (backgroundImage) {
-            document.body.style.backgroundImage = `url('${backgroundImage}')`;
-          }
-        }
+      // 初始应用
+      applyBackgroundImage();
 
-        // 初始应用
-        applyBackgroundImage();
+      // 监听窗口大小变化
+      window.addEventListener('resize', applyBackgroundImage);
+    })
+    .catch(error => {
+      console.error('加载外观设置失败:', error);
+    });
 
-        // 监听窗口大小变化
-        window.addEventListener('resize', applyBackgroundImage);
-      })
-      .catch(error => {
-        console.error('加载外观设置失败:', error);
-      });
-
-    // 检查用户权限
-    checkUserPermission();
-    
-    // 初始渲染
-    renderPreview();
-    
-    // 添加示例内容
-    if (!markdownInput.value.trim()) {
-      markdownInput.value = \`# 在线 Markdown 编辑器
+  // 检查用户权限
+  checkUserPermission();
+  
+  // 初始渲染
+  renderPreview();
+  
+  // 添加示例内容
+  if (!markdownInput.value.trim()) {
+    markdownInput.value = `# 在线 Markdown 编辑器
 
 这是一个支持实时预览的 Markdown 编辑器，支持数学公式和流程图。
 
@@ -1014,26 +1014,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
 块级公式：
 $$
-\\\\int_{-\\\\infty}^{\\\\infty} e^{-x^2} dx = \\\\sqrt{\\\\pi}
+\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}
 $$
 
 ## 流程图示例
 
-\\\`\\\`\\\`mermaid
+\`\`\`mermaid
 graph TD
-    A[开始] --> B{判断}
-    B -->|是| C[继续]
-    B -->|否| D[结束]
-    C --> B
-\\\`\\\`\\\`
+    A[开始] --> B[处理]
+    B --> C{判断}
+    C -->|是| D[继续]
+    C -->|否| E[结束]
+    D --> C
+\`\`\`
 
 ## 代码示例
 
-\\\`\\\`\\\`javascript
+\`\`\`javascript
 function hello() {
     console.log('Hello, World!');
 }
-\\\`\\\`\\\`
+\`\`\`
 
 ## 表格示例
 
@@ -1043,103 +1044,134 @@ function hello() {
 | D   | E   | F   |
 
 开始您的创作吧！
-\`;
-      renderPreview();
+`;
+    renderPreview();
+  }
+});
+
+// 点击模态框外部关闭
+saveModal.addEventListener('click', (e) => {
+  if (e.target === saveModal) {
+    hideSaveModal();
+  }
+});
+
+// ESC 键关闭模态框
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hideSaveModal();
+  }
+});
+
+// 导航快捷键配置（仅在未聚焦输入框时触发）
+const navigationShortcuts = {
+  '1': { url: '/', label: '主页' },
+  '2': { url: '/passage', label: '文章' },
+  '3': { url: '/collect', label: '归档' },
+  '4': { url: '/about', label: '关于' },
+  '6': { url: '/markdown-editor', label: '编辑器' },
+  'l': { action: 'openModal', modalId: 'loginModal', label: '登录' }
+};
+
+// 全局快捷键监听
+document.addEventListener('keydown', (e) => {
+  // 如果是 Ctrl/Cmd 组合键，不处理导航快捷键
+  if (e.ctrlKey || e.metaKey) return;
+
+  // 检查是否在输入框中
+  const activeElement = document.activeElement;
+  if (activeElement && (
+    activeElement.tagName === 'INPUT' ||
+    activeElement.tagName === 'TEXTAREA' ||
+    activeElement.isContentEditable
+  )) {
+    return;
+  }
+
+  const key = e.key;
+  const shortcut = navigationShortcuts[key];
+
+  if (shortcut) {
+    e.preventDefault();
+
+    if (shortcut.url) {
+      if (window.location.pathname !== shortcut.url) {
+        console.log(`导航到: ${shortcut.url}`);
+        window.location.href = shortcut.url;
+      } else {
+        console.log(`已在目标页面: ${shortcut.url}`);
+      }
+    } else if (shortcut.action === 'openModal') {
+      const modal = document.getElementById(shortcut.modalId);
+      if (modal) {
+        modal.classList.add('active');
+        showToast(`已打开: ${shortcut.label}`, 'success');
+      }
     }
+  }
+});
 
-    // 导航快捷键配置（仅在未聚焦输入框时触发）
-    const navigationShortcuts = {
-      '1': { url: '/', label: '主页' },
-      '2': { url: '/passage', label: '文章' },
-      '3': { url: '/collect', label: '归档' },
-      '4': { url: '/about', label: '关于' },
-      '6': { url: '/markdown-editor', label: '编辑器' },
-      'l': { action: 'openModal', modalId: 'loginModal', label: '登录' }
-    };
+// 编辑器专用快捷键
+markdownInput.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + S: 保存
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    showSaveModal();
+    return;
+  }
 
-    // 全局快捷键监听
-    document.addEventListener('keydown', (e) => {
-      // 如果是 Ctrl/Cmd 组合键，不处理导航快捷键
-      if (e.ctrlKey || e.metaKey) return;
+  // Ctrl/Cmd + D: 下载
+  if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+    e.preventDefault();
+    downloadMarkdown();
+    return;
+  }
 
-      // 检查是否在输入框中
-      const activeElement = document.activeElement;
-      if (activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.isContentEditable
-      )) {
-        return;
-      }
+  // Ctrl/Cmd + B: 粗体
+  if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+    e.preventDefault();
+    insertMarkdown('**', '**');
+    return;
+  }
 
-      const key = e.key;
-      const shortcut = navigationShortcuts[key];
+  // Ctrl/Cmd + I: 斜体
+  if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+    e.preventDefault();
+    insertMarkdown('*', '*');
+    return;
+  }
 
-      if (shortcut) {
-        e.preventDefault();
+  // Ctrl/Cmd + K: 代码
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    insertMarkdown('`', '`');
+    return;
+  }
 
-        if (shortcut.url) {
-          if (window.location.pathname !== shortcut.url) {
-            console.log(\`导航到: \${shortcut.url}\`);
-            window.location.href = shortcut.url;
-          } else {
-            console.log(\`已在目标页面: \${shortcut.url}\`);
-          }
-        } else if (shortcut.action === 'openModal') {
-          const modal = document.getElementById(shortcut.modalId);
-          if (modal) {
-            modal.classList.add('active');
-            showToast(\`已打开: \${shortcut.label}\`, 'success');
-          }
-        }
-      }
-    });
+  // Ctrl/Cmd + M: 数学公式
+  if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+    e.preventDefault();
+    insertMarkdown('$$\n', '\n$$');
+    return;
+  }
 
-    // 编辑器专用快捷键
-    markdownInput.addEventListener('keydown', (e) => {
-      // Ctrl/Cmd + B: 粗体
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-        e.preventDefault();
-        insertMarkdown('**', '**');
-        return;
-      }
+  // Ctrl/Cmd + G: 流程图
+  if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+    e.preventDefault();
+    insertMarkdown('```mermaid\n', '\n```');
+    return;
+  }
 
-      // Ctrl/Cmd + I: 斜体
-      if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
-        e.preventDefault();
-        insertMarkdown('*', '*');
-        return;
-      }
-
-      // Ctrl/Cmd + K: 代码
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        insertMarkdown('\`', '\`');
-        return;
-      }
-
-      // Ctrl/Cmd + M: 数学公式
-      if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
-        e.preventDefault();
-        insertMarkdown('$$\n', '\n$$');
-        return;
-      }
-
-      // Ctrl/Cmd + G: 流程图
-      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
-        e.preventDefault();
-        insertMarkdown('\`\`\`mermaid\n', '\n\`\`\`');
-        return;
-      }
-
-      // Tab: 插入2个空格
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        insertMarkdown('  ', '');
-        return;
-      }
-    });
+  // Tab: 插入2个空格
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    insertMarkdown('  ', '');
+    return;
   }
 });
 </script>
+
+<!-- 音乐播放器样式 -->
+<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
+<!-- 音乐播放器脚本 -->
 <script src="/js/music-player.js" defer></script>
