@@ -1,0 +1,1 @@
+# to abosorb the advantage of rust
