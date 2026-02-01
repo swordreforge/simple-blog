@@ -908,9 +908,13 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
     let friend_link_count: i64 = conn.query_row("SELECT COUNT(*) FROM friend_links", [], |row| row.get(0))?;
     
     if friend_link_count == 0 {
-        // 插入开发者友链
+        // 插入测试友链
         let sample_friend_links = vec![
             ("swordreforge", "/img/avatar.webp", "https://github.com/swordreforge", "Rust 开发者，热爱开源技术"),
+            ("Rust 官方博客", "/img/avatar.webp", "https://blog.rust-lang.org/", "Rust 编程语言官方博客"),
+            ("Rust 中文社区", "/img/avatar.webp", "https://rust-lang-cn.org/", "Rust 中文学习社区"),
+            ("Actix-web", "/img/avatar.webp", "https://actix.rs/", "强大的 Rust Web 框架"),
+            ("Mozilla Hacks", "/img/avatar.webp", "https://hacks.mozilla.org/", "Mozilla 开发者博客"),
         ];
         
         for (nickname, avatar_url, link_url, motto) in sample_friend_links {
