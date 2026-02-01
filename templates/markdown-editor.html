@@ -621,7 +621,7 @@ nav a .shortcut-hint {
 </style>
 
 <!-- 键盘快捷键样式 -->
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css">
+<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
 </head>
 <body>
 <nav>
@@ -731,10 +731,10 @@ nav a .shortcut-hint {
 
 <!-- 引入必要的库 -->
 <!--script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"-->
-<script src="/js/npm/marked@14.1.4/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+<script src="/js/npm/marked@14.1.4/marked.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js" defer></script>
 <!--script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"-->
-<script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
+<script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js" defer></script>
 <script>
 // 初始化 Mermaid
 mermaid.initialize({
@@ -1167,6 +1167,6 @@ markdownInput.addEventListener('keydown', (e) => {
 </script>
 
 <!-- 音乐播放器样式 -->
-<link rel="stylesheet" href="/css/music-player.css">
+<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
 <!-- 音乐播放器脚本 -->
-<script src="/js/music-player.js"></script>
+<script src="/js/music-player.js" defer></script>

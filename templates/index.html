@@ -644,9 +644,9 @@ footer {
 }
 </style>
 <!-- 模态框动画样式 -->
-<link rel="stylesheet" href="/css/modal-animations.css">
+<link rel="stylesheet" href="/css/modal-animations.css" defer>
 <!-- 飘字效果样式 -->
-<link rel="stylesheet" href="/css/floating-text.css">
+<link rel="stylesheet" href="/css/floating-text.css" defer>
 </head>
 <body>
 <nav>
@@ -1143,12 +1143,17 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- ECC加密工具 -->
-<script src="/js/ecc-encrypt.js"></script>
-<script src="/js/login.js"></script>
+<script src="/js/ecc-encrypt.js" defer></script>
+<script src="/js/login.js" defer></script>
 <!-- 模态框动画控制脚本 -->
-<script src="/js/modal-animations.js"></script>
+<script src="/js/modal-animations.js" defer></script>
 <!-- 键盘快捷键脚本 -->
-<script src="/js/keyboard-shortcuts.js"></script>
+<script src="/js/keyboard-shortcuts.js" defer></script>
+
+<!-- 音乐播放器样式 -->
+<link rel="stylesheet" href="/css/music-player.css">
+<!-- 音乐播放器脚本 -->
+<script src="/js/music-player.js" defer></script>
 
 <script>
 // 浏览器标签页标题提示功能
@@ -1462,9 +1467,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- 音乐播放器样式 -->
-<link rel="stylesheet" href="/css/music-player.css">
+<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
 <!-- 音乐播放器脚本 -->
 <script src="/js/music-player.js"></script>
 <!-- 飘字效果脚本 -->
-<script src="/js/floating-text.js"></script>
+<script src="/js/floating-text.js" defer></script>
 </body>

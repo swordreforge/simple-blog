@@ -845,12 +845,12 @@ body.about-focus-mode .about-focus-selected {
 }
 </style>
 <!-- 模态框动画样式 -->
-<link rel="stylesheet" href="/css/modal-animations.css">
+<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
 
 <!-- 键盘快捷键样式 -->
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css">
+<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
 <!-- 飘字效果样式 -->
-<link rel="stylesheet" href="/css/floating-text.css">
+<link rel="stylesheet" href="/css/floating-text.css" media="print" onload="this.media='all'">
 </head>
 <body>
 <nav id="mainNav">
@@ -1620,10 +1620,10 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- ECC加密工具 -->
-<script src="/js/ecc-encrypt.js"></script>
-<script src="/js/login.js"></script>
+<script src="/js/ecc-encrypt.js" defer></script>
+<script src="/js/login.js" defer></script>
 <!-- 模态框动画控制脚本 -->
-<script src="/js/modal-animations.js"></script>
+<script src="/js/modal-animations.js" defer></script>
 
 <script>
 // 浏览器标签页标题提示功能
@@ -1716,10 +1716,10 @@ window.addEventListener('focus', function() {
 </script>
 
 <!-- 音乐播放器样式 -->
-<link rel="stylesheet" href="/css/music-player.css">
+<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
 <!-- 音乐播放器脚本 -->
-<script src="/js/music-player.js"></script>
+<script src="/js/music-player.js" defer></script>
 <!-- 飘字效果脚本 -->
-<script src="/js/floating-text.js"></script>
+<script src="/js/floating-text.js" defer></script>
 </body>
 </html>

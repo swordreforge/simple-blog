@@ -9,8 +9,7 @@
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <title>文件管理 - 管理员</title>
 <link rel="stylesheet" href="/css/filemanager.css">
-<link rel="stylesheet" href="/css/modal-animations.css">
-</head>
+  <link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'"></head>
 <body>
   <div class="file-manager-container">
     <!-- 顶部导航栏 -->
@@ -183,6 +182,6 @@
   <!-- Toast 通知 -->
   <div id="toast" class="toast"></div>
 
-  <script src="/js/filemanager.js?v=4"></script>
+  <script src="/js/filemanager.js?v=4" defer></script>
 </body>
 </html>
