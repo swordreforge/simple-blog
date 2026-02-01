@@ -6831,28 +6831,19 @@ document.addEventListener('DOMContentLoaded', function() {
     item.appendChild(info);
 
     item.addEventListener('click', function() {
-      // 使用 markdownPath 构建预览链接
-      if (article.markdownPath) {
-        const markdownPath = article.markdownPath.endsWith('.md') ? article.markdownPath : article.markdownPath + '.md';
-        if (window.MarkdownPreviewModal) {
-          window.MarkdownPreviewModal.open(markdownPath);
-        }
-      } else {
-        // 如果没有 markdownPath，尝试从日期和标题构建
-        const date = new Date(article.date);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const sanitizedTitle = article.title.toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '')
-          .replace(/-+/g, '-');
-        const markdownPath = `${year}/${month}/${day}/${sanitizedTitle}.md`;
-        if (window.MarkdownPreviewModal) {
-          window.MarkdownPreviewModal.open(markdownPath);
-        }
-      }
+      // 关闭模态框
       closeModal();
+
+      // 在移动端打开侧边栏
+      if (window.innerWidth < 992) {
+        appState.sidebarOpen = true;
+        sidebar.classList.remove('hidden');
+      }
+
+      // 在标签页中打开文章
+      if (article.id) {
+        openArticleInNewTab(article.id);
+      }
     });
 
     return item;
