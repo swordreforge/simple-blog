@@ -1684,15 +1684,29 @@ body.fullscreen .content-area {
   .article-container {
     padding: 20px;
   }
-  
+
   .article-title {
     font-size: 1.8em;
   }
-  
+
   .tab {
-    min-width: 100px;
-    max-width: 150px;
-    padding: 0 15px;
+    min-width: 80px;
+    max-width: 120px;
+    padding: 0 12px;
+  }
+
+  .tab .tab-title {
+    font-size: 0.85em;
+    max-width: 3em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab .tab-close {
+    margin-left: 5px;
+    width: 16px;
+    height: 16px;
   }
 
   /* 移动端导航栏图标化处理 */
