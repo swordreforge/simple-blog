@@ -12,6 +12,8 @@
 <link rel="icon" href="data:,">
 <!-- Highlight.js CSS (关键) -->
 <link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
+<!-- 核心动画 CSS (关键 - 包含 @keyframes) -->
+<link rel="stylesheet" href="/css/animations.css">
 <!-- KaTeX CSS (延迟加载) -->
 <link rel="stylesheet" href="/css/katex.min.css" media="print" onload="this.media='all'">
 <!-- 飘字效果 CSS (延迟加载) -->
@@ -605,11 +607,6 @@ nav a.current {
 .article.active {
   display: block;
   animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .article-header {
@@ -1529,17 +1526,6 @@ html.dark-mode .submit-comment-btn:hover {
   animation: slideIn 0.3s ease;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .comment-item:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -2286,26 +2272,6 @@ body.focus-mode-right .sidebar {
 
 .toast-close:hover {
   color: #4b5563;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
 }
 
 @media (max-width: 768px) {
@@ -5344,11 +5310,6 @@ document.addEventListener('DOMContentLoaded', () => initApp());
   to { opacity: 1; }
 }
 
-@keyframes slideIn {
-  from { transform: translateY(-50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
 .modal-content::after {
   content: '';
   position: absolute;
@@ -5362,17 +5323,6 @@ document.addEventListener('DOMContentLoaded', () => initApp());
 
 .modal.active .modal-content::after {
   width: 100%;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .modal.active {
