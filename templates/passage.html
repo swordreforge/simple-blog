@@ -13,7 +13,23 @@
 <!-- Highlight.js CSS (关键) -->
 <link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
 <!-- 核心动画 CSS (关键 - 包含 @keyframes) -->
-<link rel="stylesheet" href="/css/animations.css">
+<!-- 内联关键动画 CSS，减少 HTTP 请求 -->
+<style>
+/* 核心动画定义 - 内联以减少渲染阻塞 */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.fade-in { animation: fadeIn 0.3s ease; }
+.slide-in { animation: slideIn 0.3s ease; }
+.spin { animation: spin 0.8s linear infinite; }
+.pulse { animation: pulse 1.5s ease-in-out infinite; }
+</style>
 <!-- KaTeX CSS (延迟加载) -->
 <link rel="stylesheet" href="/css/katex.min.css" media="print" onload="this.media='all'">
 <!-- 飘字效果 CSS (延迟加载) -->
