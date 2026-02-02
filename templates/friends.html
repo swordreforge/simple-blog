@@ -675,10 +675,27 @@ document.addEventListener('DOMContentLoaded', () => {
   // 设置导航栏颜色和透明度
   const settings = {
     navbar_glass_color: '{{ settings.navbar_glass_color }}',
-    navbar_text_color: '{{ settings.navbar_text_color }}'
+    navbar_text_color: '{{ settings.navbar_text_color }}',
+    background_image: '{{ settings.background_image | safe }}',
+    mobile_background_image: '{{ settings.mobile_background_image | safe }}'
   };
   document.documentElement.style.setProperty('--navbar-glass-color', settings.navbar_glass_color || 'rgba(255, 255, 255, 0.85)');
   document.documentElement.style.setProperty('--navbar-text-color', settings.navbar_text_color || 'rgba(255, 255, 255, 0.9)');
+  
+  // 响应式加载背景图片
+  function applyBackgroundImage() {
+    const isMobile = window.innerWidth <= 768;
+    const backgroundImage = isMobile && settings.mobile_background_image ? settings.mobile_background_image : settings.background_image;
+    if (backgroundImage) {
+      document.body.style.backgroundImage = `url('${backgroundImage}')`;
+    }
+  }
+
+  // 初始应用
+  applyBackgroundImage();
+
+  // 监听窗口大小变化
+  window.addEventListener('resize', applyBackgroundImage);
   
   // 初始化快捷键（等脚本加载完成）
   window.addEventListener('load', () => {

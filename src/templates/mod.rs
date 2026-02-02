@@ -65,6 +65,7 @@ pub struct TemplateSettings {
     
     // 外观相关
     pub background_image: String,
+    pub mobile_background_image: String,
     pub background_color: String,
     pub background_size: String,
     pub background_position: String,
@@ -135,6 +136,7 @@ impl Default for TemplateSettings {
             
             // 外观相关
             background_image: "/img/test.webp".to_string(),
+            mobile_background_image: "/img/mobile-test.webp".to_string(),
             background_color: "#ffffff".to_string(),
             background_size: "cover".to_string(),
             background_position: "center".to_string(),
@@ -384,6 +386,7 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
 pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> TemplateSettings {
     TemplateSettings {
         background_image: appearance.background_image.clone(),
+        mobile_background_image: appearance.mobile_background_image.clone(),
         background_color: "#1a1a2e".to_string(),
         background_size: appearance.background_size.clone(),
         background_position: appearance.background_position.clone(),
@@ -661,6 +664,7 @@ pub fn create_passage_context() -> TeraContext {
         year: now.format("%Y").to_string(),
         foodes: foodes.clone(),
         background_image: "/img/test.webp".to_string(),
+        mobile_background_image: "/img/mobile-test.webp".to_string(),
         background_color: "#ffffff".to_string(),
         background_size: "cover".to_string(),
         background_position: "center".to_string(),
