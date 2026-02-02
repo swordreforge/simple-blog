@@ -1717,6 +1717,7 @@ impl FriendLinkRepository {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM friend_links WHERE is_enabled = 1", [], |row| row.get(0))?;

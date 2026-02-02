@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use gm_quic::QuicServer;
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use reqwest::Client;
 
 /// HTTP/3 帧类型
@@ -43,19 +43,9 @@ struct FrameHeader {
     length: u64,
 }
 
-/// HTTP/3 Settings 参数
-#[derive(Debug)]
-struct SettingsFrame {
-    max_header_list_size: Option<u64>,
-    max_table_capacity: Option<u64>,
-    blocked_streams: Option<u64>,
-    enable_qpack: bool,
-}
-
 /// HTTP/3 头部帧
 #[derive(Debug)]
 struct HeadersFrame {
-    header_block: Bytes,
     headers: Vec<(String, String)>,
 }
 
@@ -421,36 +411,10 @@ fn parse_frame_header(data: &[u8], pos: &mut usize) -> Result<FrameHeader, Box<d
     Ok(FrameHeader { frame_type, length })
 }
 
-fn parse_settings_frame(data: &[u8]) -> Result<SettingsFrame, Box<dyn std::error::Error>> {
-    let mut pos = 0;
-    let mut settings = SettingsFrame {
-        max_header_list_size: None,
-        max_table_capacity: None,
-        blocked_streams: None,
-        enable_qpack: false,
-    };
-    
-    while pos + 2 <= data.len() {
-        let identifier = read_varint(data, &mut pos)?;
-        let value = read_varint(data, &mut pos)?;
-        
-        match identifier {
-            0x6 => settings.max_header_list_size = Some(value),
-            0x1 => settings.max_table_capacity = Some(value),
-            0x7 => settings.blocked_streams = Some(value),
-            0x8 => settings.enable_qpack = value != 0,
-            _ => println!("⚠️  未知设置: 0x{:x} = {}", identifier, value),
-        }
-    }
-    
-    Ok(settings)
-}
-
 fn parse_headers_frame(data: &[u8], qpack: &QpackDecoder) -> Result<HeadersFrame, Box<dyn std::error::Error>> {
-    let header_block = Bytes::copy_from_slice(data);
-    let headers = qpack.decode(&header_block)?;
+    let headers = qpack.decode(&Bytes::copy_from_slice(data))?;
     
-    Ok(HeadersFrame { header_block, headers })
+    Ok(HeadersFrame { headers })
 }
 
 fn parse_data_frame(data: &[u8]) -> Result<DataFrame, Box<dyn std::error::Error>> {

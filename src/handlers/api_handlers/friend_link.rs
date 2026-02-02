@@ -258,11 +258,13 @@ pub async fn delete(
 
 /// 批量删除友链请求
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct BatchDeleteRequest {
     pub ids: Vec<i64>,
 }
 
 /// 批量删除友链
+#[allow(dead_code)]
 pub async fn delete_batch(
     req_json: web::Json<BatchDeleteRequest>,
     repo: web::Data<Arc<dyn Repository>>,
