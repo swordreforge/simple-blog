@@ -10895,8 +10895,8 @@ function updateMainCardsTable() {
       <td>${card.layout_type}</td>
       <td>${getSubCardCount(card.id)}</td>
       <td>
-        <span class="status ${card.is_enabled ? 'active' : 'inactive'}">
-          ${card.is_enabled ? '启用' : '禁用'}
+        <span style="color: ${card.is_enabled ? '#28a745' : '#dc3545'}; font-weight: bold;">
+          ${card.is_enabled ? '✓ 启用' : '✕ 禁用'}
         </span>
       </td>
       <td>
@@ -10982,8 +10982,8 @@ function updateSubCardsTable() {
         <td>${card.description.substring(0, 30)}${card.description.length > 30 ? '...' : ''}</td>
         <td>${card.link_url || '-'}</td>
         <td>
-          <span class="status ${card.is_enabled ? 'active' : 'inactive'}">
-            ${card.is_enabled ? '启用' : '禁用'}
+          <span style="color: ${card.is_enabled ? '#28a745' : '#dc3545'}; font-weight: bold;">
+            ${card.is_enabled ? '✓ 启用' : '✕ 禁用'}
           </span>
         </td>
         <td>
