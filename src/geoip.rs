@@ -60,71 +60,92 @@ static GEOIP_READER: Lazy<Option<Arc<Reader<memmap2::Mmap>>>> = Lazy::new(|| {
 
 /// 根据 IP 地址查询地理位置信息
 pub fn lookup_ip(ip: &str) -> GeoLocation {
-    // 如果没有加载 GeoIP 数据库，返回默认值
+    // 如果没有加载 GeoIP 数据库，返回 unknown
     let reader: &Reader<memmap2::Mmap> = match GEOIP_READER.as_ref() {
         Some(r) => r,
-        None => return GeoLocation::default(),
+        None => return GeoLocation {
+            country: "unknown".to_string(),
+            city: "unknown".to_string(),
+            region: "unknown".to_string(),
+        },
     };
 
     // 解析 IP 地址
     let ip_addr: IpAddr = match ip.parse() {
         Ok(addr) => addr,
-        Err(_) => return GeoLocation::default(),
+        Err(_) => return GeoLocation {
+            country: "unknown".to_string(),
+            city: "unknown".to_string(),
+            region: "unknown".to_string(),
+        },
     };
 
     // 查询 GeoIP 数据库
-    match reader.lookup::<City>(ip_addr) {
-        Ok(city) => {
-            // 获取国家名称
-            let country = if let Some(country) = city.country {
-                if let Some(names) = country.names {
-                    names.get("zh-CN")
-                        .or_else(|| names.get("en"))
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| "unknown".to_string())
-                } else {
-                    "unknown".to_string()
-                }
-            } else {
-                "unknown".to_string()
-            };
-
-            // 获取城市名称
-            let city_name = if let Some(city_data) = city.city {
-                if let Some(names) = city_data.names {
-                    names.get("zh-CN")
-                        .or_else(|| names.get("en"))
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| "unknown".to_string())
-                } else {
-                    "unknown".to_string()
-                }
-            } else {
-                "unknown".to_string()
-            };
-
-            // 获取地区名称
-            let region = if let Some(subdivisions) = city.subdivisions {
-                if let Some(sub) = subdivisions.into_iter().next() {
-                    if let Some(names) = sub.names {
-                        names.get("zh-CN")
-                            .or_else(|| names.get("en"))
-                            .map(|s| s.to_string())
-                            .unwrap_or_else(|| "unknown".to_string())
+    match reader.lookup(ip_addr) {
+        Ok(lookup_result) => {
+            // 解码为 City 类型
+            match lookup_result.decode::<City>() {
+                Ok(Some(city)) => {
+                    // 获取国家名称
+                    let country = if !city.country.is_empty() {
+                        if !city.country.names.is_empty() {
+                            city.country.names.simplified_chinese
+                                .or_else(|| city.country.names.english)
+                                .map(|s| s.to_string())
+                                .unwrap_or_else(|| "unknown".to_string())
+                        } else {
+                            "unknown".to_string()
+                        }
                     } else {
                         "unknown".to_string()
-                    }
-                } else {
-                    "unknown".to_string()
-                }
-            } else {
-                "unknown".to_string()
-            };
+                    };
 
-            GeoLocation {
-                country,
-                city: city_name,
-                region,
+                    // 获取城市名称
+                    let city_name = if !city.city.is_empty() {
+                        if !city.city.names.is_empty() {
+                            city.city.names.simplified_chinese
+                                .or_else(|| city.city.names.english)
+                                .map(|s| s.to_string())
+                                .unwrap_or_else(|| "unknown".to_string())
+                        } else {
+                            "unknown".to_string()
+                        }
+                    } else {
+                        "unknown".to_string()
+                    };
+
+                    // 获取地区名称
+                    let region = if !city.subdivisions.is_empty() {
+                        if let Some(sub) = city.subdivisions.first() {
+                            if !sub.names.is_empty() {
+                                sub.names.simplified_chinese
+                                    .or_else(|| sub.names.english)
+                                    .map(|s| s.to_string())
+                                    .unwrap_or_else(|| "unknown".to_string())
+                            } else {
+                                "unknown".to_string()
+                            }
+                        } else {
+                            "unknown".to_string()
+                        }
+                    } else {
+                        "unknown".to_string()
+                    };
+
+                    GeoLocation {
+                        country,
+                        city: city_name,
+                        region,
+                    }
+                }
+                Ok(None) => {
+                    // 查询成功但没有数据
+                    GeoLocation::default()
+                }
+                Err(e) => {
+                    eprintln!("GeoIP 解码失败 {}: {}", ip, e);
+                    GeoLocation::default()
+                }
             }
         }
         Err(e) => {

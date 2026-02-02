@@ -1,59 +1,92 @@
-✦ 已完成！当前 HTTP/3 实现状态：
+error[E0107]: method takes 0 generic arguments but 1 generic argument was supplied
+   --> src/geoip.rs:76:18
+    |
+ 76 |     match reader.lookup::<City>(ip_addr) {
+    |                  ^^^^^^-------- help: remove the unnecessary generics
+    |                  |
+    |                  expected 0 generic arguments
+    |
+note: method defined here, with 0 generic parameters
+   --> /home/swordreforge/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/maxminddb-0.27.1/src/reader.rs:194:12
+    |
+194 |     pub fn lookup(&'de self, address: IpAddr) -> Result<LookupResult...
+    |            ^^^^^^
 
-  已完成：
-   - ✅ 从 quinn 迁移到 gm-quic
-   - ✅ 添加 HTTP/3 相关依赖（h3, bytes, http, reqwest）
-   - ✅ 建立 QUIC 连接并完成握手
-   - ✅ 编译通过
+error[E0609]: no field `country` on type `LookupResult<'_, Mmap>`
+  --> src/geoip.rs:79:55
+   |
+79 |             let country = if let Some(country) = city.country {
+   |                                                       ^^^^^^^ unknown field
 
-  待实现（需要进一步工作）：
-   - HTTP/3 帧解析（SETTINGS, HEADERS, DATA 等）✅
-   - QPACK 头部压缩/解压缩✅
-   - 从 QUIC 流中提取 HTTP 请求
-   - 转发到 Actix Web (http://127.0.0.1:8080) 并返回响应
+error[E0282]: type annotations needed
+  --> src/geoip.rs:81:21
+   |
+81 |                     names.get("zh-CN")
+   |                     ^^^^^ cannot infer type
 
+error[E0282]: type annotations needed
+  --> src/geoip.rs:83:31
+   |
+83 |                         .map(|s| s.to_string())
+   |                               ^  - type must be known at this point
+   |
+help: consider giving this closure parameter an explicit type
+   |
+83 |                         .map(|s: /* Type */| s.to_string())
+   |                                ++++++++++++
 
+error[E0609]: no field `city` on type `LookupResult<'_, Mmap>`
+  --> src/geoip.rs:93:59
+   |
+93 |             let city_name = if let Some(city_data) = city.city {
+   |                                                           ^^^^ unknown field
 
-HTTP/3 转发功能已实现完成！
+error[E0282]: type annotations needed
+  --> src/geoip.rs:95:21
+   |
+95 |                     names.get("zh-CN")
+   |                     ^^^^^ cannot infer type
 
-  完整功能列表：
+error[E0282]: type annotations needed
+  --> src/geoip.rs:97:31
+   |
+97 |                         .map(|s| s.to_string())
+   |                               ^  - type must be known at this point
+   |
+help: consider giving this closure parameter an explicit type
+   |
+97 |                         .map(|s: /* Type */| s.to_string())
+   |                                ++++++++++++
 
-   1. QUIC 连接层 (gm-quic)
-      - ✅ 建立 QUIC 连接
-      - ✅ TLS 握手和 ALPN 协商
-      - ✅ 接受双向流
+error[E0609]: no field `subdivisions` on type `LookupResult<'_, Mmap>`
+   --> src/geoip.rs:107:59
+    |
+107 | ...bdivisions) = city.subdivisions {
+    |                       ^^^^^^^^^^^^ unknown field
 
-   2. HTTP/3 帧解析
-      - ✅ FrameType 枚举（Data, Headers, Settings 等）
-      - ✅ 变长整数读取
-      - ✅ 帧头部解析
-      - ✅ Settings 帧解析
-      - ✅ Headers 帧解析
-      - ✅ Data 帧解析
+error[E0282]: type annotations needed
+   --> src/geoip.rs:108:36
+    |
+108 |                 if let Some(sub) = subdivisions.into_iter().next() {
+    |                                    ^^^^^^^^^^^^ cannot infer type
 
-   3. QPACK 头部解码
-      - ✅ 简化版 QPACK 解码器
-      - ✅ 提取 HTTP 伪头部（:method, :path）
-      - ✅ 提取普通头部
+error[E0282]: type annotations needed
+   --> src/geoip.rs:110:25
+    |
+110 |                         names.get("zh-CN")
+    |                         ^^^^^ cannot infer type
 
-   4. HTTP 转发
-      - ✅ 使用 reqwest 客户端
-      - ✅ 提取 HTTP 请求信息
-      - ✅ 转发到 Actix Web (http://127.0.0.1:8080)
-      - ✅ 转发请求头部（跳过伪头部）
-      - ✅ 转发请求体
-      - ✅ 接收响应并返回
+error[E0282]: type annotations needed
+   --> src/geoip.rs:112:35
+    |
+112 | ...                   .map(|s| s.to_string())
+    |                             ^  - type must be known at this point
+    |
+help: consider giving this closure parameter an explicit type
+    |
+112 |                             .map(|s: /* Type */| s.to_string())
+    |                                    ++++++++++++
 
-   5. 响应处理
-      - ✅ 使用 AsyncWrite trait 发送响应
-      - ✅ write_all 写入响应体
-      - ✅ shutdown 关闭流
-
-  代码现在可以：
-   - 接受 HTTP/3 (QUIC) 连接
-   - 解析 HTTP/3 帧协议
-   - 提取 HTTP 请求
-   - 转发到后端 Actix Web 服务器
-   - 返回响应给客户端
-
-✦ 编译通过，无错误！
+Some errors have detailed explanations: E0107, E0282, E0609.
+For more information about an error, try `rustc --explain E0107`.
+error: could not compile `rustblog` (bin "rustblog") due to 11 previous errors
