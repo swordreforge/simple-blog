@@ -4759,13 +4759,20 @@ function setupEventListeners() {
   sidebarToggleFixed.addEventListener('click', (event) => {
     event.stopPropagation();
     const nav = document.querySelector('nav');
+    const footer = document.querySelector('footer');
     const mainContainer = document.querySelector('.main-container');
     
-    if (nav.style.display === 'none') {
+    const isNavHidden = nav.style.display === 'none';
+    
+    if (isNavHidden) {
+      // 显示导航栏和底栏
       nav.style.display = 'flex';
+      if (footer) footer.style.display = '';
       mainContainer.style.height = 'calc(100vh - var(--header-height))';
     } else {
+      // 隐藏导航栏和底栏
       nav.style.display = 'none';
+      if (footer) footer.style.display = 'none';
       mainContainer.style.height = '100vh';
     }
   });

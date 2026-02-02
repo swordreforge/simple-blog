@@ -115,28 +115,17 @@ class PassageShortcuts {
   toggleHeader() {
     const nav = document.querySelector('nav');
     const sidebarToggleFixed = document.getElementById('sidebarToggleFixed');
-    const footer = document.querySelector('footer');
-    const mainContainer = document.querySelector('.main-container');
 
-    if (nav && sidebarToggleFixed && mainContainer) {
+    if (nav && sidebarToggleFixed) {
       // 记录当前标题栏状态
       const wasNavHidden = nav.style.display === 'none';
 
-      // 切换标题栏显示/隐藏
+      // 切换标题栏和底栏显示/隐藏
       sidebarToggleFixed.click();
 
-      // 同时切换底栏显示/隐藏
-      if (footer) {
-        // 如果标题栏原本是隐藏的（将要显示），底栏也显示
-        // 如果标题栏原本是显示的（将要隐藏），底栏也隐藏
-        const shouldHideFooter = !wasNavHidden;
-        footer.style.display = shouldHideFooter ? 'none' : '';
-
-        this.showToast(shouldHideFooter ? '标题栏和底栏已隐藏' : '标题栏和底栏已显示', 'success');
-      } else {
-        const isNowHidden = !wasNavHidden;
-        this.showToast(isNowHidden ? '标题栏已隐藏' : '标题栏已显示', 'success');
-      }
+      // 显示提示信息
+      const isNowHidden = !wasNavHidden;
+      this.showToast(isNowHidden ? '标题栏和底栏已隐藏' : '标题栏和底栏已显示', 'success');
     }
   }
 
