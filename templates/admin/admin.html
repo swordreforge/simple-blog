@@ -4492,6 +4492,38 @@ body.admin-focus-mode .modal-header {
             </div>
           </div>
 
+          <!-- 备案信息设置 -->
+          <div class="settings-section">
+            <h4>📋 备案信息（中国内地）</h4>
+            <div class="settings-grid">
+              <div class="form-group">
+                <label for="beianEnabled">
+                  <input type="checkbox" id="beianEnabled" style="margin-right: 8px;">
+                  启用备案显示
+                </label>
+                <p style="font-size: 0.85em; color: #666; margin-top: 5px;">在页脚显示备案信息（仅针对中国内地网站）</p>
+              </div>
+
+              <div class="form-group">
+                <label for="icpNumber">ICP备案号</label>
+                <input type="text" id="icpNumber" class="form-control" placeholder="京ICP备12345678号-1">
+                <p style="font-size: 0.85em; color: #666; margin-top: 5px;">工信部备案号，将显示在页脚并可点击跳转至工信部官网</p>
+              </div>
+
+              <div class="form-group">
+                <label for="policeRecordCode">公安备案号</label>
+                <input type="text" id="policeRecordCode" class="form-control" placeholder="12345678号">
+                <p style="font-size: 0.85em; color: #666; margin-top: 5px;">公安联网备案号（如：12345678号），仅用于链接中的recordcode参数</p>
+              </div>
+
+              <div class="form-group">
+                <label for="policeRecordContent">公安备案显示内容</label>
+                <input type="text" id="policeRecordContent" class="form-control" placeholder="京公网安备 12345678号">
+                <p style="font-size: 0.85em; color: #666; margin-top: 5px;">在页脚显示的完整公安备案文字（通常包含图标和备案号）</p>
+              </div>
+            </div>
+          </div>
+
           <div class="btn-group">
             <button class="btn-secondary" id="resetSettingsBtn">重置为默认</button>
             <button class="btn-primary" id="saveMusicSettingsBtn">保存音乐设置</button>
@@ -9945,6 +9977,12 @@ async function loadTemplateSettings() {
       document.getElementById('sponsorImage').value = settings.sponsor_image || '/img/avatar.webp';
       document.getElementById('sponsorDescription').value = settings.sponsor_description || '如果您觉得这个博客对您有帮助，欢迎赞助支持！';
       document.getElementById('sponsorButtonText').value = settings.sponsor_button_text || '❤️ 赞助支持';
+
+      // 填充备案信息设置
+      document.getElementById('beianEnabled').checked = settings.beian_enabled || false;
+      document.getElementById('icpNumber').value = settings.icp_number || '';
+      document.getElementById('policeRecordCode').value = settings.police_record_code || '';
+      document.getElementById('policeRecordContent').value = settings.police_record_content || '';
     } else {
       console.error('加载模板设置失败');
     }
@@ -9994,7 +10032,11 @@ async function saveTemplateSettings() {
       sponsor_title: document.getElementById('sponsorTitle').value,
       sponsor_image: document.getElementById('sponsorImage').value,
       sponsor_description: document.getElementById('sponsorDescription').value,
-      sponsor_button_text: document.getElementById('sponsorButtonText').value
+      sponsor_button_text: document.getElementById('sponsorButtonText').value,
+      beian_enabled: document.getElementById('beianEnabled').checked,
+      icp_number: document.getElementById('icpNumber').value,
+      police_record_code: document.getElementById('policeRecordCode').value,
+      police_record_content: document.getElementById('policeRecordContent').value
     };
 
     // 只发送发生变化的字段

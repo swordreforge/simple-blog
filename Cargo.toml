@@ -1,6 +1,6 @@
 [package]
 name = "rustblog"
-version = "0.1.0"
+version = "1.1.4"
 edition = "2024"
 
 [dependencies]
@@ -92,3 +92,11 @@ h3 = "0.0"
 bytes = "1.7"
 http = "1.1"
 reqwest = { version = "0.12", features = ["json"] }
+
+[profile.release]
+opt-level = "z"       
+lto = "fat"            
+codegen-units = 1
+panic = "abort"
+strip = true
+

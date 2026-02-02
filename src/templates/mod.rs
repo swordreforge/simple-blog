@@ -123,6 +123,12 @@ pub struct TemplateSettings {
     pub attachment_default_visibility: String,
     pub attachment_max_size: i64,
     pub attachment_allowed_types: String,
+
+    // 备案信息（针对中国内地）
+    pub beian_enabled: bool,
+    pub icp_number: String,
+    pub police_record_code: String,
+    pub police_record_content: String,
 }
 
 impl Default for TemplateSettings {
@@ -194,6 +200,12 @@ impl Default for TemplateSettings {
             attachment_default_visibility: "public".to_string(),
             attachment_max_size: 524288000, // 500MB
             attachment_allowed_types: "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz".to_string(),
+
+            // 备案信息（针对中国内地）
+            beian_enabled: false,
+            icp_number: "".to_string(),
+            police_record_code: "".to_string(),
+            police_record_content: "".to_string(),
         }
     }
 }
@@ -337,6 +349,7 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
         "sponsor_description", "sponsor_button_text",
         "global_avatar",
         "attachment_default_visibility", "attachment_max_size", "attachment_allowed_types",
+        "beian_enabled", "icp_number", "police_record_code", "police_record_content",
     ];
     
     for db_key in keys {
@@ -374,6 +387,10 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
                 "attachment_default_visibility" => settings.attachment_default_visibility = setting.value,
                 "attachment_max_size" => settings.attachment_max_size = setting.value.parse().unwrap_or(524288000),
                 "attachment_allowed_types" => settings.attachment_allowed_types = setting.value,
+                "beian_enabled" => settings.beian_enabled = setting.value == "true",
+                "icp_number" => settings.icp_number = setting.value,
+                "police_record_code" => settings.police_record_code = setting.value,
+                "police_record_content" => settings.police_record_content = setting.value,
                 _ => {}
             }
         }
@@ -488,6 +505,29 @@ pub fn create_index_context() -> TeraContext {
             }
         }
     }
+
+    // 备案信息（针对中国内地）
+    let mut beian_enabled = false;
+    let mut icp_number = "".to_string();
+    let mut police_record_code = "".to_string();
+    let mut police_record_content = "".to_string();
+
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+                beian_enabled = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+                icp_number = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+                police_record_code = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+                police_record_content = setting.value;
+            }
+        }
+    }
     
     context.insert("title", "RustBlog");
     context.insert("name", &name);
@@ -554,7 +594,13 @@ pub fn create_index_context() -> TeraContext {
     context.insert("live2d_width", &live2d_width);
     context.insert("live2d_height", &live2d_height);
     context.insert("global_avatar", &global_avatar);
-    
+
+    // 备案信息
+    context.insert("beian_enabled", &beian_enabled);
+    context.insert("icp_number", &icp_number);
+    context.insert("police_record_code", &police_record_code);
+    context.insert("police_record_content", &police_record_content);
+
     context
 }
 
@@ -706,6 +752,10 @@ pub fn create_passage_context() -> TeraContext {
         attachment_default_visibility: "public".to_string(),
         attachment_max_size: 10485760,
         attachment_allowed_types: "jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,zip,rar,mp3,mp4".to_string(),
+        beian_enabled: false,
+        icp_number: "".to_string(),
+        police_record_code: "".to_string(),
+        police_record_content: "".to_string(),
     };
 
     context.insert("settings", &settings);
@@ -780,7 +830,35 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("live2d_position", &live2d_position);
     context.insert("live2d_width", &live2d_width);
     context.insert("live2d_height", &live2d_height);
-    
+
+    // 备案信息（针对中国内地）
+    let mut beian_enabled = false;
+    let mut icp_number = "".to_string();
+    let mut police_record_code = "".to_string();
+    let mut police_record_content = "".to_string();
+
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+                beian_enabled = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+                icp_number = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+                police_record_code = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+                police_record_content = setting.value;
+            }
+        }
+    }
+
+    context.insert("beian_enabled", &beian_enabled);
+    context.insert("icp_number", &icp_number);
+    context.insert("police_record_code", &police_record_code);
+    context.insert("police_record_content", &police_record_content);
+
     context
 }
 
@@ -891,7 +969,35 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("live2d_position", &live2d_position);
     context.insert("live2d_width", &live2d_width);
     context.insert("live2d_height", &live2d_height);
-    
+
+    // 备案信息（针对中国内地）
+    let mut beian_enabled = false;
+    let mut icp_number = "".to_string();
+    let mut police_record_code = "".to_string();
+    let mut police_record_content = "".to_string();
+
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+                beian_enabled = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+                icp_number = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+                police_record_code = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+                police_record_content = setting.value;
+            }
+        }
+    }
+
+    context.insert("beian_enabled", &beian_enabled);
+    context.insert("icp_number", &icp_number);
+    context.insert("police_record_code", &police_record_code);
+    context.insert("police_record_content", &police_record_content);
+
     context
 }
 
@@ -997,7 +1103,35 @@ pub fn create_about_context() -> TeraContext {
     context.insert("live2d_position", &live2d_position);
     context.insert("live2d_width", &live2d_width);
     context.insert("live2d_height", &live2d_height);
-    
+
+    // 备案信息（针对中国内地）
+    let mut beian_enabled = false;
+    let mut icp_number = "".to_string();
+    let mut police_record_code = "".to_string();
+    let mut police_record_content = "".to_string();
+
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+                beian_enabled = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+                icp_number = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+                police_record_code = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+                police_record_content = setting.value;
+            }
+        }
+    }
+
+    context.insert("beian_enabled", &beian_enabled);
+    context.insert("icp_number", &icp_number);
+    context.insert("police_record_code", &police_record_code);
+    context.insert("police_record_content", &police_record_content);
+
     context
 }
 
@@ -1074,6 +1208,34 @@ pub fn create_friends_context() -> TeraContext {
     context.insert("live2d_position", &live2d_position);
     context.insert("live2d_width", &live2d_width);
     context.insert("live2d_height", &live2d_height);
+
+    // 备案信息（针对中国内地）
+    let mut beian_enabled = false;
+    let mut icp_number = "".to_string();
+    let mut police_record_code = "".to_string();
+    let mut police_record_content = "".to_string();
+
+    if let Ok(pool) = crate::db::get_db_pool_sync() {
+        if let Ok(conn) = pool.get() {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+                beian_enabled = setting.value == "true";
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+                icp_number = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+                police_record_code = setting.value;
+            }
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+                police_record_content = setting.value;
+            }
+        }
+    }
+
+    context.insert("beian_enabled", &beian_enabled);
+    context.insert("icp_number", &icp_number);
+    context.insert("police_record_code", &police_record_code);
+    context.insert("police_record_content", &police_record_content);
 
     context
 }

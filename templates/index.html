@@ -727,7 +727,12 @@ footer {
   </div>
 </main>
 
-<footer>&copy; {{ year }} {{ foodes }}</footer>
+<footer>&copy; {{ year }} {{ foodes }}{% if beian_enabled %}
+  <div style="margin-top: 10px; font-size: 0.9em;">
+    {% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %}
+    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 10px;">{{ police_record_content }}</a>{% endif %}
+  </div>{% endif %}
+</footer>
 
 <!-- 登录模态框 -->
 <div class="modal" id="loginModal">

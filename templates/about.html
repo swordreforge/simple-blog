@@ -935,6 +935,11 @@ body.about-focus-mode .about-focus-selected {
 <footer>
   <div>&copy; {{ year }} {{ foodes }}</div>
   <p>让知识分享变得简单 | 版本 2.0.1</p>
+  {% if beian_enabled %}
+  <div style="margin-top: 10px; font-size: 0.9em;">
+    {% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %}
+    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 10px;">{{ police_record_content }}</a>{% endif %}
+  </div>{% endif %}
 </footer>
 
 <script>
