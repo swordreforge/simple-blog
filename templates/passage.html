@@ -1,25 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="description" content="{{ summary | default(value='阅读技术文章、分享编程经验、探索技术边界 - ' ~ title) }}">
-<meta name="keywords" content="{{ tags | default(value='技术博客,编程,开发') }}">
-<title>{{ title }} - 文章阅读</title>
-<!-- Disable favicon -->
-<link rel="icon" href="data:,">
-<!-- Highlight.js CSS (关键) -->
-<link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
-<!-- 文章页面基础样式 (关键) -->
-<link rel="stylesheet" href="/css/passage-base.css">
-<!-- 核心动画 CSS (关键 - 包含 @keyframes) -->
-<!-- 内联关键动画 CSS，减少 HTTP 请求 -->
-<style>
-/* 核心动画定义 - 内联以减少渲染阻塞 */
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"><meta name="description" content="{{ summary | default(value='阅读技术文章、分享编程经验、探索技术边界 - ' ~ title) }}"><meta name="keywords" content="{{ tags | default(value='技术博客,编程,开发') }}"><title>{{ title }} - 文章阅读</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/css/tokyo-night-dark.min.css"><link rel="stylesheet" href="/css/passage-base.css"><style>/* 核心动画定义 - 内联以减少渲染阻塞 */
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -32,15 +11,7 @@
 .fade-in { animation: fadeIn 0.3s ease; }
 .slide-in { animation: slideIn 0.3s ease; }
 .spin { animation: spin 0.8s linear infinite; }
-.pulse { animation: pulse 1.5s ease-in-out infinite; }
-</style>
-<!-- KaTeX CSS (延迟加载) -->
-<link rel="stylesheet" href="/css/katex.min.css" media="print" onload="this.media='all'">
-<!-- 飘字效果 CSS (延迟加载) -->
-<link rel="stylesheet" href="/css/floating-text.css" media="print" onload="this.media='all'">
-<!--script defer src="/js/katex@0.16.27/dist/katex.min.js" integrity="sha384-2B8pfmZZ6JlVoScJm/5hQfNS2TI/6hPqDZInzzPc8oHpN5SgeNOf4LzREO6p5YtZ" crossorigin="anonymous"-->
-<style>
-* {
+.pulse { animation: pulse 1.5s ease-in-out infinite; }</style><link rel="stylesheet" href="/css/katex.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/floating-text.css" media="print" onload="this.media='all'"><style>* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -2447,518 +2418,7 @@ body.focus-mode-right .sidebar {
 /* Mermaid 箭头样式 */
 .mermaid .arrowheadPath {
   fill: #7aa2f7 !important;
-}
-</style>
-
-<!-- 暗色模式样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/dark-mode.css" media="print" onload="this.media='all'">
-
-<!-- 毛玻璃效果样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/glass-effect.css" media="print" onload="this.media='all'">
-
-<!-- 模态框动画样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
-
-<!-- 键盘快捷键样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
-</head>
-<body>
-<div class="toast-container" id="toastContainer"></div>
-
-<nav>
-  <div class="nav-left">
-    <button id="articleFilterToggle" aria-label="打开文章筛选" style="display: none; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 8px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: var(--navbar-text-color, rgba(255, 255, 255, 0.9)); margin-right: 4px;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-    </button>
-    <button id="sidebarToggle" class="sidebar-toggle" aria-label="切换侧边栏">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
-      </svg>
-    </button>
-    <a href="/">主页</a>
-    <a href="/passage" class="current">文章</a>
-    <a href="/collect">归档</a>
-    <a href="/about">关于</a>
-    <a href="/friends">友链<span class="shortcut-hint">f</span></a>
-    <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a>
-    <a href="/admin" class="admin-only">管理员设置</a>
-  </div>
-  <div class="nav-right">
-    <button id="readingModeToggle" aria-label="切换阅读模式" style="display: flex; align-items: center; gap: 8px; color: var(--navbar-text-color, rgba(255, 255, 255, 0.9)); font-weight: 500; transition: all 0.3s ease; padding: 8px 16px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.3); cursor: pointer; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-      </svg>
-      <span id="readingModeText">时间戳</span>
-    </button>
-  </div>
-</nav>
-
-<!-- 文章筛选模态框 -->
-<div class="modal article-filter-modal" id="articleFilterModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>文章索引</h3>
-      <button class="modal-close" data-modal="articleFilterModal">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-    <div class="modal-body">
-    <div class="filter-tabs">
-      <button class="filter-tab active" data-mode="timestamp">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
-        文章索引
-      </button>
-      <button class="filter-tab" data-mode="outline">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="8" y1="6" x2="21" y2="6"></line>
-          <line x1="8" y1="12" x2="21" y2="12"></line>
-          <line x1="8" y1="18" x2="21" y2="18"></line>
-          <line x1="3" y1="6" x2="3.01" y2="6"></line>
-          <line x1="3" y1="12" x2="3.01" y2="12"></line>
-          <line x1="3" y1="18" x2="3.01" y2="18"></line>
-        </svg>
-        本文目录
-      </button>
-    </div>
-    <div class="filter-search">
-      <input type="text" id="articleFilterSearch" placeholder="搜索文章..." />
-    </div>
-    <div class="filter-content" id="filterContent">
-      <!-- 文章列表将在这里动态生成 -->
-    </div>
-  </div>
-  </div>
-</div>
-
-<main class="main-container" role="main">
-  <!-- 左侧文件树 -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h2 id="sidebarTitle">文章索引</h2>
-      <div class="sidebar-controls" id="fileTreeControls">
-        <button id="collapseAll" title="全部折叠">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="18 15 12 9 6 15"></polyline>
-          </svg>
-        </button>
-        <button id="expandAll" title="全部展开">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
-      </div>
-    </div>
-    <div class="file-tree" id="fileTree">
-      <!-- 文件树将通过JavaScript动态生成 -->
-    </div>
-    <div class="toc-container" id="tocContainer">
-      <!-- 本文索引将通过JavaScript动态生成 -->
-    </div>
-  </div>
-  
-  <!-- 分割线 -->
-  <div class="resizer" id="resizer"></div>
-  
-  <!-- 右侧内容区域 -->
-  <div class="content-area">
-    <!-- 标签栏 -->
-    <div class="tab-bar" id="tabBar">
-      <!-- 标签页将通过JavaScript动态生成 -->
-    </div>
-    
-    <!-- 文章内容区域 -->
-    <div class="article-container" id="articleContainer">
-      <!-- 未发布文章提示 -->
-      {% if is_unpublished %}
-      <div class="unpublished-notice" id="unpublishedNotice" style="display: block;">
-        <div class="notice-content">
-          <div class="notice-icon">🔒</div>
-          <div class="notice-text">
-            <h3>文章尚未发布</h3>
-            {% if passage_status == "draft" %}
-              <p>此文章是草稿，正在编辑中，暂时无法访问。</p>
-            {% elif passage_status == "pending" %}
-              <p>此文章正在等待审核，暂时无法访问。</p>
-            {% else %}
-              <p>此文章尚未发布，暂时无法访问。</p>
-            {% endif %}
-            {% if is_scheduled %}
-            <p>
-              预计发布时间：<span id="scheduledTime">{{ published_at }}</span>
-            </p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      {% else %}
-      <div class="unpublished-notice" id="unpublishedNotice" style="display: none;">
-        <div class="notice-content">
-          <div class="notice-icon">🔒</div>
-          <div class="notice-text">
-            <h3>文章尚未发布</h3>
-            <p id="unpublishedMessage">此文章正在编辑中，暂时无法访问。</p>
-            <p id="scheduledMessage" style="display: none;">
-              预计发布时间：<span id="scheduledTime"></span>
-            </p>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if content %}
-      <!-- 服务器端渲染的 markdown 内容 -->
-      <div class="article active" id="articleContent" {% if is_unpublished %}style="display: none;"{% endif %}>
-        <div class="article-header">
-          <div class="article-meta">
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <span class="article-date">{{ date }}</span>
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <span class="article-category" id="articleCategory">加载中...</span>
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-                <line x1="7" y1="7" x2="7.01" y2="7"></line>
-              </svg>
-              <span class="article-tags-inline" id="articleTagsInline">加载中...</span>
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-              </svg>
-              <span class="article-readtime" id="articleReadTime">预计 {{ read_time }} 分钟读完</span>
-            </div>
-          </div>
-        </div>
-        <div class="article-content">
-          {{ content }}
-        </div>
-
-        <!-- 附件列表区域 -->
-        <div class="attachments-section" id="attachmentsSection" style="display: none;">
-          <div class="attachments-header">
-            <h3>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-              </svg>
-              附件
-            </h3>
-            <span class="attachments-count" id="attachmentsCount">0 个附件</span>
-          </div>
-          <div class="attachments-list" id="attachmentsList">
-            <!-- 加载状态 -->
-            <div class="loading-state" id="attachmentsLoading" style="display: none;">
-              <div class="spinner"></div>
-              <span>加载附件中...</span>
-            </div>
-            <!-- 空状态 -->
-            <div class="empty-attachments" id="emptyAttachments" style="display: none;">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                <polyline points="13 2 13 9 20 9"></polyline>
-              </svg>
-              <p>暂无附件</p>
-            </div>
-            <!-- 附件列表将通过JavaScript动态生成 -->
-          </div>
-        </div>
-
-        <!-- 赞助区域 - Bing 风格 -->
-        {% if sponsor_enabled %}
-        <div class="sponsor-section">
-          <div class="sponsor-card">
-            <div class="sponsor-header">
-              <div class="sponsor-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-              </div>
-              <div class="sponsor-title">
-                <h3>感谢您的支持</h3>
-                <p>{{ sponsor_description }}</p>
-              </div>
-            </div>
-            <div class="sponsor-options">
-              <button class="sponsor-option-btn" data-amount="5">
-                <span class="amount">¥5</span>
-                <span class="label">咖啡</span>
-              </button>
-              <button class="sponsor-option-btn" data-amount="10">
-                <span class="amount">¥10</span>
-                <span class="label">奶茶</span>
-              </button>
-              <button class="sponsor-option-btn" data-amount="20">
-                <span class="amount">¥20</span>
-                <span class="label">午餐</span>
-              </button>
-              <button class="sponsor-option-btn custom-amount">
-                <span class="amount">自定义</span>
-              </button>
-            </div>
-            <button class="sponsor-submit-btn" id="sponsorSubmitBtn">支持作者</button>
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- 评论区域 - GitHub 风格 -->
-        <div class="comments-section" id="commentsSection" {% if is_unpublished %}style="display: none;"{% endif %}>
-          <div class="comments-header">
-            <h3>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-              </svg>
-              评论
-            </h3>
-            <span class="comments-count" id="commentsCount">0 条评论</span>
-          </div>
-
-          <!-- GitHub 风格的评论表单 -->
-          <div class="github-comment-form">
-            <div class="comment-user-avatar">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
-            </div>
-            <div class="comment-input-wrapper">
-              <input type="text" id="commentUsername" class="comment-username-input" placeholder="用户名" required>
-              <textarea id="commentContent" class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea>
-              <div class="comment-actions">
-                <div class="comment-tips">
-                  <span class="tip">支持 Markdown 语法</span>
-                  <span class="tip">•</span>
-                  <span class="tip">Ctrl+Enter 提交</span>
-                </div>
-                <button type="button" class="submit-comment-btn" id="submitCommentBtn">发表评论</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 评论列表 -->
-          <div class="comments-list" id="commentsList">
-            <!-- 评论将通过JavaScript动态加载 -->
-          </div>
-
-          <!-- 加载状态 -->
-          <div class="loading-state" id="commentsLoading" style="display: none;">
-            <div class="spinner"></div>
-            <span>加载评论中...</span>
-          </div>
-
-          <!-- 空状态 -->
-          <div class="empty-comments" id="emptyComments" style="display: none;">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-            </svg>
-            <p>还没有评论，快来发表第一条评论吧！</p>
-          </div>
-        </div>
-      </div>
-      {% else %}
-      <!-- 初始空状态 -->
-      <div class="empty-state" id="emptyState">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-        <h3>选择文章开始阅读</h3>
-        <p>从左侧文件树中选择一篇文章，或双击文章以在新标签页中打开</p>
-      </div>
-      {% endif %}
-      
-      <!-- 文章模板（隐藏，用于动态生成） -->
-      <div class="article" id="articleTemplate" style="display: none;">
-        <div class="article-header">
-          <h1 class="article-title">文章标题</h1>
-          <div class="article-meta">
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <span class="article-date">2024-01-01</span>
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <span class="article-category">未分类</span>
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-                <line x1="7" y1="7" x2="7.01" y2="7"></line>
-              </svg>
-              <span class="article-tags-inline">无标签</span>
-            </div>
-            <div class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-              </svg>
-              <span class="article-readtime">预计 10 分钟读完</span>
-            </div>
-          </div>
-          <div class="article-tags">
-            <!-- 标签将通过JavaScript动态生成 -->
-          </div>
-        </div>
-        <div class="article-content">
-          <!-- 文章内容将通过JavaScript动态生成 -->
-        </div>
-
-        <!-- 附件列表区域 -->
-        <div class="attachments-section attachments-section-template" style="display: none;">
-          <div class="attachments-header">
-            <h3>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-              </svg>
-              附件
-            </h3>
-            <span class="attachments-count" id="attachmentsCount">0 个附件</span>
-          </div>
-          <div class="attachments-list" id="attachmentsList">
-            <!-- 加载状态 -->
-            <div class="loading-state" id="attachmentsLoading" style="display: none;">
-              <div class="spinner"></div>
-              <span>加载附件中...</span>
-            </div>
-            <!-- 空状态 -->
-            <div class="empty-attachments" id="emptyAttachments" style="display: none;">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                <polyline points="13 2 13 9 20 9"></polyline>
-              </svg>
-              <p>暂无附件</p>
-            </div>
-            <!-- 附件列表将通过JavaScript动态生成 -->
-          </div>
-        </div>
-
-        <!-- 赞助区域 -->
-        <div class="sponsor-section sponsor-section-template" style="display: none;">
-          <button class="sponsor-btn" id="sponsorBtn">{{ sponsor_button_text }}</button>
-        </div>
-
-        <!-- 文章评论系统 - 每篇文章都有独立的评论区域 -->
-        <div class="article-comments" data-article-id="">
-          <div class="comments-section">
-            <div class="comments-header">
-              <h3>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                </svg>
-                评论
-              </h3>
-              <span class="comments-count">0 条评论</span>
-            </div>
-
-            <!-- GitHub 风格的评论表单 -->
-            <div class="github-comment-form">
-              <div class="comment-user-avatar">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-              </div>
-              <div class="comment-input-wrapper">
-                <input type="text" class="comment-username-input" placeholder="用户名" required>
-                <textarea class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea>
-                <div class="comment-actions">
-                  <div class="comment-tips">
-                    <span class="tip">支持 Markdown 语法</span>
-                    <span class="tip">•</span>
-                    <span class="tip">Ctrl+Enter 提交</span>
-                  </div>
-                  <button type="button" class="submit-comment-btn">发表评论</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 评论列表 -->
-            <div class="comments-list">
-              <!-- 评论将通过JavaScript动态加载 -->
-            </div>
-
-            <!-- 加载状态 -->
-            <div class="loading-state" style="display: none;">
-              <div class="spinner"></div>
-              <span>加载评论中...</span>
-            </div>
-
-            <!-- 空状态 -->
-            <div class="empty-comments" style="display: none;">
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-              </svg>
-              <p>还没有评论，快来发表第一条评论吧！</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</main>
-
-<!-- 页脚和备案信息 -->
-<footer style="text-align: center; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: auto; position: relative; z-index: 1; color: rgba(255, 255, 255, 0.9); font-size: 0.9em;">
-  <div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div>
-  {% if beian_enabled %}
-  <div style="font-size: 0.85em;">
-    {% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %}
-    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}
-  </div>{% endif %}
-</footer>
-
-<!-- 工具按钮 -->
-<div class="toolbar" id="toolbar" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; pointer-events: auto;">
-  <button id="fullscreenToggle" title="切换全屏">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-    </svg>
-  </button>
-  <button id="sidebarToggleFixed" title="切换导航栏">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M4 6h16M4 12h16M4 18h16"></path>
-    </svg>
-  </button>
-</div>
-
-<!-- KaTeX JavaScript (延迟加载) -->
-<script src="/js/npm/katex-0.16.27/dist/katex.min.js" defer></script>
-<!-- KaTeX auto-render extension (延迟加载) -->
-<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js" defer></script>
-<!-- Mermaid JavaScript (延迟加载) -->
-<script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js" defer></script>
-
-<script>
-// 等待 Mermaid 加载完成后初始化
+}</style><link rel="stylesheet" href="/css/dark-mode.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/glass-effect.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'"></head><body><div class="toast-container" id="toastContainer"></div><nav><div class="nav-left"><button id="articleFilterToggle" aria-label="打开文章筛选" style="display: none; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 8px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; color: var(--navbar-text-color, rgba(255, 255, 255, 0.9)); margin-right: 4px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button> <button id="sidebarToggle" class="sidebar-toggle" aria-label="切换侧边栏"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button> <a href="/">主页</a> <a href="/passage" class="current">文章</a> <a href="/collect">归档</a> <a href="/about">关于</a> <a href="/friends">友链<span class="shortcut-hint">f</span></a> <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a> <a href="/admin" class="admin-only">管理员设置</a></div><div class="nav-right"><button id="readingModeToggle" aria-label="切换阅读模式" style="display: flex; align-items: center; gap: 8px; color: var(--navbar-text-color, rgba(255, 255, 255, 0.9)); font-weight: 500; transition: all 0.3s ease; padding: 8px 16px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(30px) saturate(200%); -webkit-backdrop-filter: blur(30px) saturate(200%); border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.3); cursor: pointer; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg> <span id="readingModeText">时间戳</span></button></div></nav><div class="modal article-filter-modal" id="articleFilterModal"><div class="modal-content"><div class="modal-header"><h3>文章索引</h3><button class="modal-close" data-modal="articleFilterModal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div><div class="modal-body"><div class="filter-tabs"><button class="filter-tab active" data-mode="timestamp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 文章索引</button> <button class="filter-tab" data-mode="outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg> 本文目录</button></div><div class="filter-search"><input type="text" id="articleFilterSearch" placeholder="搜索文章..."></div><div class="filter-content" id="filterContent"></div></div></div></div><main class="main-container" role="main"><div class="sidebar" id="sidebar"><div class="sidebar-header"><h2 id="sidebarTitle">文章索引</h2><div class="sidebar-controls" id="fileTreeControls"><button id="collapseAll" title="全部折叠"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg></button> <button id="expandAll" title="全部展开"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></button></div></div><div class="file-tree" id="fileTree"></div><div class="toc-container" id="tocContainer"></div></div><div class="resizer" id="resizer"></div><div class="content-area"><div class="tab-bar" id="tabBar"></div><div class="article-container" id="articleContainer">{% if is_unpublished %}<div class="unpublished-notice" id="unpublishedNotice" style="display: block;"><div class="notice-content"><div class="notice-icon">🔒</div><div class="notice-text"><h3>文章尚未发布</h3>{% if passage_status == "draft" %}<p>此文章是草稿，正在编辑中，暂时无法访问。</p>{% elif passage_status == "pending" %}<p>此文章正在等待审核，暂时无法访问。</p>{% else %}<p>此文章尚未发布，暂时无法访问。</p>{% endif %} {% if is_scheduled %}<p>预计发布时间：<span id="scheduledTime">{{ published_at }}</span></p>{% endif %}</div></div></div>{% else %}<div class="unpublished-notice" id="unpublishedNotice" style="display: none;"><div class="notice-content"><div class="notice-icon">🔒</div><div class="notice-text"><h3>文章尚未发布</h3><p id="unpublishedMessage">此文章正在编辑中，暂时无法访问。</p><p id="scheduledMessage" style="display: none;">预计发布时间：<span id="scheduledTime"></span></p></div></div></div>{% endif %} {% if content %}<div class="article active" id="articleContent" {% if is_unpublished %}style="display: none;" {% endif %}><div class="article-header"><div class="article-meta"><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> <span class="article-date">{{ date }}</span></div><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> <span class="article-category" id="articleCategory">加载中...</span></div><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg> <span class="article-tags-inline" id="articleTagsInline">加载中...</span></div><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> <span class="article-readtime" id="articleReadTime">预计 {{ read_time }} 分钟读完</span></div></div></div><div class="article-content">{{ content }}</div><div class="attachments-section" id="attachmentsSection" style="display: none;"><div class="attachments-header"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg> 附件</h3><span class="attachments-count" id="attachmentsCount">0 个附件</span></div><div class="attachments-list" id="attachmentsList"><div class="loading-state" id="attachmentsLoading" style="display: none;"><div class="spinner"></div><span>加载附件中...</span></div><div class="empty-attachments" id="emptyAttachments" style="display: none;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg><p>暂无附件</p></div></div></div>{% if sponsor_enabled %}<div class="sponsor-section"><div class="sponsor-card"><div class="sponsor-header"><div class="sponsor-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></div><div class="sponsor-title"><h3>感谢您的支持</h3><p>{{ sponsor_description }}</p></div></div><div class="sponsor-options"><button class="sponsor-option-btn" data-amount="5"><span class="amount">¥5</span> <span class="label">咖啡</span></button> <button class="sponsor-option-btn" data-amount="10"><span class="amount">¥10</span> <span class="label">奶茶</span></button> <button class="sponsor-option-btn" data-amount="20"><span class="amount">¥20</span> <span class="label">午餐</span></button> <button class="sponsor-option-btn custom-amount"><span class="amount">自定义</span></button></div><button class="sponsor-submit-btn" id="sponsorSubmitBtn">支持作者</button></div></div>{% endif %}<div class="comments-section" id="commentsSection" {% if is_unpublished %}style="display: none;" {% endif %}><div class="comments-header"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> 评论</h3><span class="comments-count" id="commentsCount">0 条评论</span></div><div class="github-comment-form"><div class="comment-user-avatar"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="comment-input-wrapper"><input type="text" id="commentUsername" class="comment-username-input" placeholder="用户名" required> <textarea id="commentContent" class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea><div class="comment-actions"><div class="comment-tips"><span class="tip">支持 Markdown 语法</span> <span class="tip">•</span> <span class="tip">Ctrl+Enter 提交</span></div><button type="button" class="submit-comment-btn" id="submitCommentBtn">发表评论</button></div></div></div><div class="comments-list" id="commentsList"></div><div class="loading-state" id="commentsLoading" style="display: none;"><div class="spinner"></div><span>加载评论中...</span></div><div class="empty-comments" id="emptyComments" style="display: none;"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><p>还没有评论，快来发表第一条评论吧！</p></div></div></div>{% else %}<div class="empty-state" id="emptyState"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><h3>选择文章开始阅读</h3><p>从左侧文件树中选择一篇文章，或双击文章以在新标签页中打开</p></div>{% endif %}<div class="article" id="articleTemplate" style="display: none;"><div class="article-header"><h1 class="article-title">文章标题</h1><div class="article-meta"><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> <span class="article-date">2024-01-01</span></div><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> <span class="article-category">未分类</span></div><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg> <span class="article-tags-inline">无标签</span></div><div class="meta-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> <span class="article-readtime">预计 10 分钟读完</span></div></div><div class="article-tags"></div></div><div class="article-content"></div><div class="attachments-section attachments-section-template" style="display: none;"><div class="attachments-header"><h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg> 附件</h3><span class="attachments-count" id="attachmentsCount">0 个附件</span></div><div class="attachments-list" id="attachmentsList"><div class="loading-state" id="attachmentsLoading" style="display: none;"><div class="spinner"></div><span>加载附件中...</span></div><div class="empty-attachments" id="emptyAttachments" style="display: none;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg><p>暂无附件</p></div></div></div><div class="sponsor-section sponsor-section-template" style="display: none;"><button class="sponsor-btn" id="sponsorBtn">{{ sponsor_button_text }}</button></div><div class="article-comments" data-article-id=""><div class="comments-section"><div class="comments-header"><h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> 评论</h3><span class="comments-count">0 条评论</span></div><div class="github-comment-form"><div class="comment-user-avatar"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div><div class="comment-input-wrapper"><input type="text" class="comment-username-input" placeholder="用户名" required> <textarea class="comment-textarea" placeholder="写下你的评论..." rows="3" required></textarea><div class="comment-actions"><div class="comment-tips"><span class="tip">支持 Markdown 语法</span> <span class="tip">•</span> <span class="tip">Ctrl+Enter 提交</span></div><button type="button" class="submit-comment-btn">发表评论</button></div></div></div><div class="comments-list"></div><div class="loading-state" style="display: none;"><div class="spinner"></div><span>加载评论中...</span></div><div class="empty-comments" style="display: none;"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg><p>还没有评论，快来发表第一条评论吧！</p></div></div></div></div></div></div></main><footer style="text-align: center; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: auto; position: relative; z-index: 1; color: rgba(255, 255, 255, 0.9); font-size: 0.9em;"><div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div>{% if beian_enabled %}<div style="font-size: 0.85em;">{% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %} {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}</div>{% endif %}</footer><div class="toolbar" id="toolbar" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; pointer-events: auto;"><button id="fullscreenToggle" title="切换全屏"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg></button> <button id="sidebarToggleFixed" title="切换导航栏"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div><script src="/js/npm/katex-0.16.27/dist/katex.min.js" defer="defer"></script><script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js" defer="defer"></script><script src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js" defer="defer"></script><script>// 等待 Mermaid 加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
   // 检查 mermaid 是否已加载
   const checkMermaid = setInterval(() => {
@@ -5420,92 +4880,7 @@ function handleWindowResize() {
 }
 
 // 初始化应用
-document.addEventListener('DOMContentLoaded', () => initApp());
-</script>
-
-<!-- 全屏图片查看器 -->
-<div class="image-viewer" id="imageViewer">
-  <div class="image-viewer-close" id="imageViewerClose">×</div>
-  <img id="imageViewerImg" src="" alt="放大查看">
-</div>
-
-<!-- 全屏代码查看器 -->
-<div class="code-viewer" id="codeViewer">
-  <div class="code-viewer-header">
-    <span class="code-viewer-title" id="codeViewerTitle">代码查看</span>
-    <div style="display: flex; gap: 8px;">
-      <button class="code-viewer-copy" id="codeViewerCopy" title="复制代码">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
-        复制
-      </button>
-      <button class="code-viewer-close" id="codeViewerClose">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-        关闭
-      </button>
-    </div>
-  </div>
-  <div class="code-viewer-content" id="codeViewerContent"></div>
-  <div class="code-viewer-toast" id="codeViewerToast">复制成功！</div>
-</div>
-
-<!-- 登录模态框 -->
-<div class="modal" id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.3s ease;">
-  <div class="modal-content" style="background: rgba(0, 0, 0, 0); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); max-width: 500px; width: 100%; animation: slideIn 0.3s ease; position: relative; overflow: hidden;">
-    <div class="modal-header" style="background: linear-gradient(90deg, #007bff, #00b894); padding: 20px 30px; color: white; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center;">
-      <h3 style="font-size: 1.5em; font-weight: 600;">用户登录</h3>
-      <button class="modal-close" data-modal="loginModal" style="background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s;">×</button>
-    </div>
-    <div class="modal-body" style="padding: 30px;">
-      <form id="loginForm">
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="loginUsername" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">用户名</label>
-          <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required autocomplete="username" style="width: 100%; padding: 12px 15px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; font-size: 1em; background: rgba(255, 255, 255, 0.9); transition: all 0.3s ease;">
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="loginPassword" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">密码</label>
-          <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required autocomplete="current-password" style="width: 100%; padding: 12px 15px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; font-size: 1em; background: rgba(255, 255, 255, 0.9); transition: all 0.3s ease;">
-        </div>
-        <div class="form-group" id="loginError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div>
-        <button type="submit" id="loginSubmitBtn" class="btn-primary" style="width: 100%; background: rgba(255, 183, 122, 0.8); color: white; padding: 12px 30px; border-radius: 8px; border: none; font-size: 1em; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">登录</button>
-      </form>
-      <div style="margin-top: 20px; text-align: center; font-size: 0.9em;">
-        <a href="#" id="openRegisterModal" style="color: #007bff; text-decoration: none;">还没有账号？立即注册</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 外部链接警告模态框 -->
-<div class="modal" id="externalLinkModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>⚠️ 外部链接警告</h3>
-      <button class="modal-close" data-modal="externalLinkModal">×</button>
-    </div>
-    <div class="modal-body">
-      <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 20px;">
-        {{ external_link_warning_text }}
-      </p>
-      <div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; word-break: break-all;">
-        <p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-bottom: 5px;">目标链接：</p>
-        <p id="externalLinkUrl" style="color: #007bff; font-weight: 500;"></p>
-      </div>
-      <div style="display: flex; gap: 10px;">
-        <button type="button" class="btn-secondary" id="cancelExternalLinkBtn" style="flex: 1;">不跳转</button>
-        <button type="button" class="btn-primary" id="proceedExternalLinkBtn" style="flex: 1;">跳转</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-@keyframes fadeIn {
+document.addEventListener('DOMContentLoaded', () => initApp());</script><div class="image-viewer" id="imageViewer"><div class="image-viewer-close" id="imageViewerClose">×</div><img id="imageViewerImg" src="" alt="放大查看"></div><div class="code-viewer" id="codeViewer"><div class="code-viewer-header"><span class="code-viewer-title" id="codeViewerTitle">代码查看</span><div style="display: flex; gap: 8px;"><button class="code-viewer-copy" id="codeViewerCopy" title="复制代码"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> 复制</button> <button class="code-viewer-close" id="codeViewerClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> 关闭</button></div></div><div class="code-viewer-content" id="codeViewerContent"></div><div class="code-viewer-toast" id="codeViewerToast">复制成功！</div></div><div class="modal" id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.3s ease;"><div class="modal-content" style="background: rgba(0, 0, 0, 0); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); max-width: 500px; width: 100%; animation: slideIn 0.3s ease; position: relative; overflow: hidden;"><div class="modal-header" style="background: linear-gradient(90deg, #007bff, #00b894); padding: 20px 30px; color: white; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: center;"><h3 style="font-size: 1.5em; font-weight: 600;">用户登录</h3><button class="modal-close" data-modal="loginModal" style="background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s;">×</button></div><div class="modal-body" style="padding: 30px;"><form id="loginForm"><div class="form-group" style="margin-bottom: 20px;"><label for="loginUsername" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">用户名</label> <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required autocomplete="username" style="width: 100%; padding: 12px 15px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; font-size: 1em; background: rgba(255, 255, 255, 0.9); transition: all 0.3s ease;"></div><div class="form-group" style="margin-bottom: 20px;"><label for="loginPassword" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">密码</label> <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required autocomplete="current-password" style="width: 100%; padding: 12px 15px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; font-size: 1em; background: rgba(255, 255, 255, 0.9); transition: all 0.3s ease;"></div><div class="form-group" id="loginError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div><button type="submit" id="loginSubmitBtn" class="btn-primary" style="width: 100%; background: rgba(255, 183, 122, 0.8); color: white; padding: 12px 30px; border-radius: 8px; border: none; font-size: 1em; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">登录</button></form><div style="margin-top: 20px; text-align: center; font-size: 0.9em;"><a href="#" id="openRegisterModal" style="color: #007bff; text-decoration: none;">还没有账号？立即注册</a></div></div></div></div><div class="modal" id="externalLinkModal"><div class="modal-content"><div class="modal-header"><h3>⚠️ 外部链接警告</h3><button class="modal-close" data-modal="externalLinkModal">×</button></div><div class="modal-body"><p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 20px;">{{ external_link_warning_text }}</p><div style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px; word-break: break-all;"><p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-bottom: 5px;">目标链接：</p><p id="externalLinkUrl" style="color: #007bff; font-weight: 500;"></p></div><div style="display: flex; gap: 10px;"><button type="button" class="btn-secondary" id="cancelExternalLinkBtn" style="flex: 1;">不跳转</button> <button type="button" class="btn-primary" id="proceedExternalLinkBtn" style="flex: 1;">跳转</button></div></div></div></div><style>@keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
@@ -5578,13 +4953,7 @@ document.addEventListener('DOMContentLoaded', () => initApp());
 #logoutBtn:hover {
   background: rgba(231, 76, 60, 0.1);
   color: #c0392b;
-}
-</style>
-
-<!-- Highlight.js JS (延迟加载) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
-<script>
-// Toast 通知系统
+}</style><script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer="defer"></script><script>// Toast 通知系统
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   if (!container) {
@@ -6444,16 +5813,7 @@ function updatePageTitle(articleData) {
   }
   // 更新原始标题，用于页面可见性变化时恢复
   originalTitle = document.title;
-}
-</script>
-
-<!-- 模态框动画控制脚本 -->
-<script src="/js/modal-animations.js" defer></script>
-<!-- Markdown 预览模态框 -->
-<script src="/js/markdown-preview-modal.js?v=2" defer></script>
-
-<script>
-// 浏览器标签页标题提示功能
+}</script><script src="/js/modal-animations.js" defer="defer"></script><script src="/js/markdown-preview-modal.js?v=2" defer="defer"></script><script>// 浏览器标签页标题提示功能
 let originalTitle = document.title;
 const switchNoticeText = '{{ switch_notice_text }}';
 const isNoticeEnabled = {{ switch_notice }};
@@ -6592,12 +5952,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
-</script>
-
-<!-- Live2D 看板娘样式 -->
-<style>
-/* Live2D 看板娘容器 - 固定在最上层左下角 */
+});</script><style>/* Live2D 看板娘容器 - 固定在最上层左下角 */
 #waifu {
   position: fixed !important;
   left: 0 !important;
@@ -6627,12 +5982,7 @@ document.addEventListener('DOMContentLoaded', function() {
   left: 0 !important;
   bottom: 0 !important;
   z-index: 9999 !important;
-}
-</style>
-
-<!-- Live2D 看板娘配置 -->
-<script>
-// Live2D 看板娘初始化配置
+}</style><script>// Live2D 看板娘初始化配置
 (function() {
   // 检查是否启用看板娘
   const live2dEnabled = {{ live2d_enabled }};
@@ -6694,26 +6044,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }, 1000); // 延迟1秒加载
   });
-})();
-</script>
-
-<!-- 赞助模态框 -->
-{% if sponsor_enabled %}
-<div class="modal" id="sponsorModal">
-  <div class="modal-content" style="max-width: 500px;">
-    <div class="modal-header">
-      <h3>{{ sponsor_title }}</h3>
-      <button class="modal-close" data-modal="sponsorModal">×</button>
-    </div>
-    <div class="modal-body" style="text-align: center;">
-      <img src="{{ sponsor_image }}" alt="赞助二维码" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px;">
-      <p style="color: #666; line-height: 1.6;">{{ sponsor_description }}</p>
-    </div>
-  </div>
-</div>
-
-<style>
-/* 赞助区域 */
+})();</script>{% if sponsor_enabled %}<div class="modal" id="sponsorModal"><div class="modal-content" style="max-width: 500px;"><div class="modal-header"><h3>{{ sponsor_title }}</h3><button class="modal-close" data-modal="sponsorModal">×</button></div><div class="modal-body" style="text-align: center;"><img src="{{ sponsor_image }}" alt="赞助二维码" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 20px;"><p style="color: #666; line-height: 1.6;">{{ sponsor_description }}</p></div></div></div><style>/* 赞助区域 */
 .sponsor-section {
   text-align: right;
   margin: 30px 0;
@@ -6750,11 +6081,7 @@ html.dark-mode .sponsor-btn {
 
 html.dark-mode .sponsor-btn:hover {
   background: #3395ff;
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
+}</style><script>document.addEventListener('DOMContentLoaded', function() {
   // 从模板变量设置赞助配置
   window.sponsorEnabled = {{ sponsor_enabled }};
   window.sponsorButtonText = "{{ sponsor_button_text }}";
@@ -6783,23 +6110,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
-</script>
-{% endif %}
-
-<!-- 键盘快捷键脚本 (延迟加载 - 最大文件 84.6KB) -->
-<script src="/js/keyboard-shortcuts.js" defer></script>
-<!-- 文章页面专用快捷键脚本 -->
-<script src="/js/passage-shortcuts.js" defer></script>
-<!-- 文本聚焦模式脚本 -->
-<script src="/js/passage-focus-mode.js" defer></script>
-
-<!-- 音乐播放器样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
-<!-- 音乐播放器脚本 -->
-<script src="/js/music-player.js" defer></script>
-<script>
-// 文章筛选模态框功能
+});</script>{% endif %}<script src="/js/keyboard-shortcuts.js" defer="defer"></script><script src="/js/passage-shortcuts.js" defer="defer"></script><script src="/js/passage-focus-mode.js" defer="defer"></script><link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'"><script src="/js/music-player.js" defer="defer"></script><script>// 文章筛选模态框功能
 document.addEventListener('DOMContentLoaded', function() {
   const articleFilterToggle = document.getElementById('articleFilterToggle');
   const articleFilterModal = document.getElementById('articleFilterModal');
@@ -7057,12 +6368,4 @@ document.addEventListener('DOMContentLoaded', function() {
     const date = new Date(dateString);
     return date.toLocaleDateString('zh-CN');
   }
-});
-</script>
-
-<!-- 飘字效果 JS -->
-{% if settings.floating_text_enabled %}
-<script src="/js/floating-text.js" defer></script>
-{% endif %}
-</body>
-</html>
+});</script>{% if settings.floating_text_enabled %}<script src="/js/floating-text.js" defer="defer"></script>{% endif %}</body></html>

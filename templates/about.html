@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="description" content="了解{{ title }} - 关于我们的团队、愿景和技术理念。探索我们的特色功能、联系方式以及如何使用这个技术博客平台。">
-<title>{{ title }} - 关于</title>
-<style>
-* {
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"><meta name="description" content="了解{{ title }} - 关于我们的团队、愿景和技术理念。探索我们的特色功能、联系方式以及如何使用这个技术博客平台。"><title>{{ title }} - 关于</title><style>* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -842,108 +830,7 @@ body.about-focus-mode .about-focus-selected {
     content: '⚙️';
     font-size: 18px;
   }
-}
-</style>
-<!-- 模态框动画样式 -->
-<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
-
-<!-- 键盘快捷键样式 -->
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
-<!-- 飘字效果样式 -->
-<link rel="stylesheet" href="/css/floating-text.css" media="print" onload="this.media='all'">
-</head>
-<body>
-<nav id="mainNav">
-  <button id="userCenterToggle">个人中心<span class="shortcut-hint">5</span></button>
-  <a href="/">主页</a>
-  <a href="/passage">文章</a>
-  <a href="/collect">归档</a>
-  <a href="/friends">友链<span class="shortcut-hint">f</span></a>
-  <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a>
-  <a class="navbtn admin-only" href="/admin">管理员设置</a>
-  <button id="loginBtn">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-      <polyline points="10 17 15 12 10 7"></polyline>
-      <line x1="15" y1="12" x2="3" y2="12"></line>
-    </svg>
-    登录
-  </button>
-</nav>
-
-<!-- 个人中心模态框 -->
-<div class="modal" id="userCenterModal">
-  <div class="modal-content user-center-modal">
-    <div class="modal-header">
-      <h3>个人中心</h3>
-      <button class="modal-close" data-modal="userCenterModal">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="user-profile">
-        <div class="user-avatar-container">
-          <img src="{{ global_avatar }}" alt="用户头像" class="user-avatar-image" id="userAvatar">
-        </div>
-        <h3 id="userCenterUsername">用户名</h3>
-      </div>
-      <div class="user-center-menu">
-        <a href="/admin" class="user-center-item admin-only">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          管理后台
-        </a>
-        <a href="/passage" class="user-center-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          我的文章
-        </a>
-        <div class="divider"></div>
-        <button id="logoutBtn" class="user-center-item logout-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          退出登录
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="scroll-indicator" id="scrollIndicator">
-  <div class="scroll-progress" id="scrollProgress"></div>
-</div>
-
-<main>
-  <div class="title-container">
-    <h1 class="h1" id="main-title">关于我们</h1>
-  </div>
-
-  <div class="about-container" id="aboutContainer">
-    <!-- 动态加载卡片内容 -->
-    <div class="loading-spinner">加载中...</div>
-  </div>
-</main>
-
-<footer style="text-align: center; padding: 12px 20px; font-size: 0.9em;">
-  <div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div>
-  <p style="margin: 4px 0; font-size: 0.85em;">让知识分享变得简单 | 版本 2.0.1</p>
-  {% if beian_enabled %}
-  <div style="font-size: 0.85em;">
-    {% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %}
-    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}
-  </div>{% endif %}
-</footer>
-
-<script>
-// 加载关于页面卡片
+}</style><link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/floating-text.css" media="print" onload="this.media='all'"></head><body><nav id="mainNav"><button id="userCenterToggle">个人中心<span class="shortcut-hint">5</span></button> <a href="/">主页</a> <a href="/passage">文章</a> <a href="/collect">归档</a> <a href="/friends">友链<span class="shortcut-hint">f</span></a> <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a> <a class="navbtn admin-only" href="/admin">管理员设置</a> <button id="loginBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> 登录</button></nav><div class="modal" id="userCenterModal"><div class="modal-content user-center-modal"><div class="modal-header"><h3>个人中心</h3><button class="modal-close" data-modal="userCenterModal">×</button></div><div class="modal-body"><div class="user-profile"><div class="user-avatar-container"><img src="{{ global_avatar }}" alt="用户头像" class="user-avatar-image" id="userAvatar"></div><h3 id="userCenterUsername">用户名</h3></div><div class="user-center-menu"><a href="/admin" class="user-center-item admin-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> 管理后台 </a><a href="/passage" class="user-center-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> 我的文章</a><div class="divider"></div><button id="logoutBtn" class="user-center-item logout-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> 退出登录</button></div></div></div></div><div class="scroll-indicator" id="scrollIndicator"><div class="scroll-progress" id="scrollProgress"></div></div><main><div class="title-container"><h1 class="h1" id="main-title">关于我们</h1></div><div class="about-container" id="aboutContainer"><div class="loading-spinner">加载中...</div></div></main><footer style="text-align: center; padding: 12px 20px; font-size: 0.9em;"><div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div><p style="margin: 4px 0; font-size: 0.85em;">让知识分享变得简单 | 版本 2.0.1</p>{% if beian_enabled %}<div style="font-size: 0.85em;">{% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %} {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}</div>{% endif %}</footer><script>// 加载关于页面卡片
 async function loadAboutCards() {
   const container = document.getElementById('aboutContainer');
   try {
@@ -1182,70 +1069,7 @@ if (mainTitle) {
   mainTitle.addEventListener('mouseleave', function() {
     this.style.animationPlayState = 'running';
   });
-}
-</script>
-
-<!-- 登录模态框 -->
-<div class="modal" id="loginModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>用户登录</h3>
-      <button class="modal-close" data-modal="loginModal">×</button>
-    </div>
-    <div class="modal-body">
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="loginUsername">用户名</label>
-          <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label for="loginPassword">密码</label>
-          <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required autocomplete="current-password">
-        </div>
-        <div class="form-group" id="loginError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div>
-        <button type="submit" id="loginSubmitBtn" class="btn-primary" style="width: 100%;">登录</button>
-      </form>
-      <div style="margin-top: 20px; text-align: center; font-size: 0.9em;">
-        <a href="#" id="openRegisterModal" style="color: #007bff; text-decoration: none;">还没有账号？立即注册</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 注册模态框 -->
-<div class="modal" id="registerModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>用户注册</h3>
-      <button class="modal-close" data-modal="registerModal">×</button>
-    </div>
-    <div class="modal-body">
-      <form id="registerForm">
-        <div class="form-group">
-          <label for="registerUsername">用户名</label>
-          <input type="text" id="registerUsername" class="form-control" placeholder="请输入用户名（3-20个字符，字母数字下划线）" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label for="registerEmail">邮箱</label>
-          <input type="email" id="registerEmail" class="form-control" placeholder="请输入邮箱" required autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label for="registerPassword">密码</label>
-          <input type="password" id="registerPassword" class="form-control" placeholder="请输入密码（至少6个字符）" required autocomplete="new-password">
-        </div>
-        <div class="form-group" id="registerError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div>
-        <button type="submit" id="registerSubmitBtn" class="btn-primary" style="width: 100%;">注册</button>
-      </form>
-      <div style="margin-top: 20px; text-align: center; font-size: 0.9em;">
-        <a href="#" id="openLoginModal" style="color: #007bff; text-decoration: none;">已有账号？立即登录</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 模态框样式 -->
-<style>
-.modal {
+}</script><div class="modal" id="loginModal"><div class="modal-content"><div class="modal-header"><h3>用户登录</h3><button class="modal-close" data-modal="loginModal">×</button></div><div class="modal-body"><form id="loginForm"><div class="form-group"><label for="loginUsername">用户名</label> <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required autocomplete="username"></div><div class="form-group"><label for="loginPassword">密码</label> <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required autocomplete="current-password"></div><div class="form-group" id="loginError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div><button type="submit" id="loginSubmitBtn" class="btn-primary" style="width: 100%;">登录</button></form><div style="margin-top: 20px; text-align: center; font-size: 0.9em;"><a href="#" id="openRegisterModal" style="color: #007bff; text-decoration: none;">还没有账号？立即注册</a></div></div></div></div><div class="modal" id="registerModal"><div class="modal-content"><div class="modal-header"><h3>用户注册</h3><button class="modal-close" data-modal="registerModal">×</button></div><div class="modal-body"><form id="registerForm"><div class="form-group"><label for="registerUsername">用户名</label> <input type="text" id="registerUsername" class="form-control" placeholder="请输入用户名（3-20个字符，字母数字下划线）" required autocomplete="username"></div><div class="form-group"><label for="registerEmail">邮箱</label> <input type="email" id="registerEmail" class="form-control" placeholder="请输入邮箱" required autocomplete="email"></div><div class="form-group"><label for="registerPassword">密码</label> <input type="password" id="registerPassword" class="form-control" placeholder="请输入密码（至少6个字符）" required autocomplete="new-password"></div><div class="form-group" id="registerError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div><button type="submit" id="registerSubmitBtn" class="btn-primary" style="width: 100%;">注册</button></form><div style="margin-top: 20px; text-align: center; font-size: 0.9em;"><a href="#" id="openLoginModal" style="color: #007bff; text-decoration: none;">已有账号？立即登录</a></div></div></div></div><style>.modal {
   display: none;
   position: fixed;
   top: 0;
@@ -1514,17 +1338,7 @@ if (mainTitle) {
 
 .modal.active .user-center-item:nth-child(3) {
   transition-delay: 0.45s;
-}
-</style>
-
-<!-- 暗色模式样式 -->
-<link rel="stylesheet" href="/css/dark-mode.css">
-
-<!-- 毛玻璃效果样式 -->
-<link rel="stylesheet" href="/css/glass-effect.css">
-
-<script>
-// 带动画的模态框关闭函数
+}</style><link rel="stylesheet" href="/css/dark-mode.css"><link rel="stylesheet" href="/css/glass-effect.css"><script>// 带动画的模态框关闭函数
 function closeModalWithAnimation(modal) {
   if (!modal) return;
   
@@ -1621,17 +1435,7 @@ document.addEventListener('DOMContentLoaded', function() {
       closeAllModals();
     }
   });
-});
-</script>
-
-<!-- ECC加密工具 -->
-<script src="/js/ecc-encrypt.js" defer></script>
-<script src="/js/login.js" defer></script>
-<!-- 模态框动画控制脚本 -->
-<script src="/js/modal-animations.js" defer></script>
-
-<script>
-// 浏览器标签页标题提示功能
+});</script><script src="/js/ecc-encrypt.js" defer="defer"></script><script src="/js/login.js" defer="defer"></script><script src="/js/modal-animations.js" defer="defer"></script><script>// 浏览器标签页标题提示功能
 let originalTitle = document.title;
 const switchNoticeText = '{{ switch_notice_text }}';
 const isNoticeEnabled = {{ switch_notice }};
@@ -1653,16 +1457,7 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('focus', function() {
   if (!isNoticeEnabled) return;
   document.title = originalTitle;
-});
-</script>
-<!-- 关于页面聚焦模式脚本 -->
-<script src="/js/about-focus-mode.js"></script>
-<!-- 键盘快捷键脚本 -->
-<script src="/js/keyboard-shortcuts.js"></script>
-
-<!-- Live2D 看板娘配置 -->
-<script>
-(function() {
+});</script><script src="/js/about-focus-mode.js"></script><script src="/js/keyboard-shortcuts.js"></script><script>(function() {
   const live2dEnabled = {{ live2d_enabled }};
   const live2dShowOnAbout = {{ live2d_show_on_about }};
 
@@ -1717,14 +1512,4 @@ window.addEventListener('focus', function() {
       }
     }, 1000);
   });
-})();
-</script>
-
-<!-- 音乐播放器样式 -->
-<link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
-<!-- 音乐播放器脚本 -->
-<script src="/js/music-player.js" defer></script>
-<!-- 飘字效果脚本 -->
-<script src="/js/floating-text.js" defer></script>
-</body>
-</html>
+})();</script><link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'"><script src="/js/music-player.js" defer="defer"></script><script src="/js/floating-text.js" defer="defer"></script></body></html>

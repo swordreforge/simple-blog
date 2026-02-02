@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="description" content="在线Markdown编辑器 - 实时预览、语法高亮、快捷键支持。一个强大的Markdown编辑工具，支持代码高亮、图片上传、自动保存等功能。">
-<title>在线Markdown编辑器</title>
-<style>
-* {
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"><meta name="description" content="在线Markdown编辑器 - 实时预览、语法高亮、快捷键支持。一个强大的Markdown编辑工具，支持代码高亮、图片上传、自动保存等功能。"><title>在线Markdown编辑器</title><style>* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -622,132 +610,7 @@ nav a .shortcut-hint {
   transform: none;
   opacity: 1;
   pointer-events: none;
-}
-</style>
-
-<!-- 键盘快捷键样式 -->
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
-</head>
-<body>
-<nav>
-  <a href="/">主页<span class="shortcut-hint">1</span></a>
-  <a href="/passage">文章<span class="shortcut-hint">2</span></a>
-  <a href="/collect">归档<span class="shortcut-hint">3</span></a>
-  <a href="/about">关于<span class="shortcut-hint">4</span></a>
-  <a href="/friends">友链<span class="shortcut-hint">f</span></a>
-  <a href="/markdown-editor" class="current">Markdown编辑器<span class="shortcut-hint">6</span></a>
-</nav>
-
-<main>
-  <div class="editor-container">
-    <div class="editor-panel">
-      <div class="panel-header">
-        <span class="panel-title">编辑器</span>
-        <div class="panel-actions">
-          <div class="toolbar">
-            <button class="btn" onclick="insertMarkdown('**', '**')" title="粗体 (Ctrl+B)">
-              <strong>B</strong>
-              <span class="shortcut-hint">Ctrl+B</span>
-            </button>
-            <button class="btn" onclick="insertMarkdown('*', '*')" title="斜体 (Ctrl+I)">
-              <em>I</em>
-              <span class="shortcut-hint">Ctrl+I</span>
-            </button>
-            <button class="btn" onclick="insertMarkdown('`', '`')" title="代码 (Ctrl+K)">
-              &lt;/&gt;
-              <span class="shortcut-hint">Ctrl+K</span>
-            </button>
-            <button class="btn" onclick="insertMarkdown('$$\n', '\n$$')" title="数学公式 (Ctrl+M)">
-              ∑
-              <span class="shortcut-hint">Ctrl+M</span>
-            </button>
-            <button class="btn" onclick="insertMarkdown('```mermaid\n', '\n```')" title="流程图 (Ctrl+G)">
-              ○
-              <span class="shortcut-hint">Ctrl+G</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      <textarea id="markdownInput" placeholder="在这里输入Markdown内容..."></textarea>
-    </div>
-    
-    <div class="preview-panel">
-      <div class="panel-header">
-        <span class="panel-title">预览</span>
-        <div class="panel-actions">
-          <button class="btn btn-success" onclick="downloadMarkdown()" title="下载Markdown文件 (Ctrl+D)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            下载
-            <span class="shortcut-hint">Ctrl+D</span>
-          </button>
-          <button class="btn btn-primary admin-only" onclick="showSaveModal()" title="保存到数据库 (Ctrl+S)">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-              <polyline points="17 21 17 13 7 13 7 21"></polyline>
-              <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
-            保存
-            <span class="shortcut-hint">Ctrl+S</span>
-          </button>
-        </div>
-      </div>
-      <div id="previewOutput"></div>
-    </div>
-  </div>
-</main>
-
-<!-- 保存模态框 -->
-<div class="modal" id="saveModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>保存文章</h3>
-      <button class="modal-close" onclick="hideSaveModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="saveTitle">文章标题</label>
-        <input type="text" id="saveTitle" placeholder="请输入文章标题" required>
-      </div>
-      <div class="form-group">
-        <label for="saveCategory">分类</label>
-        <input type="text" id="saveCategory" placeholder="请输入分类（可选）">
-      </div>
-      <div class="form-group">
-        <label for="saveTags">标签（用逗号分隔）</label>
-        <input type="text" id="saveTags" placeholder="请输入标签（可选）">
-      </div>
-      <div class="form-group">
-        <label for="saveSummary">摘要</label>
-        <input type="text" id="saveSummary" placeholder="请输入摘要（可选）">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="hideSaveModal()">取消</button>
-      <button class="btn btn-primary" onclick="saveToDatabase()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- 提示信息 -->
-<div class="toast" id="toast"></div>
-
-<!-- 引入必要的库 -->
-<!--script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"-->
-<script src="/js/npm/marked@14.1.4/marked.min.js"></script>
-<!-- Highlight.js 代码高亮 -->
-<link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
-<link rel="stylesheet" href="/css/katex.min.css">
-<script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script>
-<script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script>
-<!--script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"-->
-<script defer src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
-<script defer>
-// 初始化 Mermaid（在脚本加载时立即执行）
+}</style><link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'"></head><body><nav><a href="/">主页<span class="shortcut-hint">1</span></a> <a href="/passage">文章<span class="shortcut-hint">2</span></a> <a href="/collect">归档<span class="shortcut-hint">3</span></a> <a href="/about">关于<span class="shortcut-hint">4</span></a> <a href="/friends">友链<span class="shortcut-hint">f</span></a> <a href="/markdown-editor" class="current">Markdown编辑器<span class="shortcut-hint">6</span></a></nav><main><div class="editor-container"><div class="editor-panel"><div class="panel-header"><span class="panel-title">编辑器</span><div class="panel-actions"><div class="toolbar"><button class="btn" onclick="insertMarkdown('**', '**')" title="粗体 (Ctrl+B)"><strong>B</strong> <span class="shortcut-hint">Ctrl+B</span></button> <button class="btn" onclick="insertMarkdown('*', '*')" title="斜体 (Ctrl+I)"><em>I</em> <span class="shortcut-hint">Ctrl+I</span></button> <button class="btn" onclick="insertMarkdown('`', '`')" title="代码 (Ctrl+K)">&lt;/&gt; <span class="shortcut-hint">Ctrl+K</span></button> <button class="btn" onclick="insertMarkdown('$$\n', '\n$$')" title="数学公式 (Ctrl+M)">∑ <span class="shortcut-hint">Ctrl+M</span></button> <button class="btn" onclick="insertMarkdown('```mermaid\n', '\n```')" title="流程图 (Ctrl+G)">○ <span class="shortcut-hint">Ctrl+G</span></button></div></div></div><textarea id="markdownInput" placeholder="在这里输入Markdown内容..."></textarea></div><div class="preview-panel"><div class="panel-header"><span class="panel-title">预览</span><div class="panel-actions"><button class="btn btn-success" onclick="downloadMarkdown()" title="下载Markdown文件 (Ctrl+D)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> 下载 <span class="shortcut-hint">Ctrl+D</span></button> <button class="btn btn-primary admin-only" onclick="showSaveModal()" title="保存到数据库 (Ctrl+S)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg> 保存 <span class="shortcut-hint">Ctrl+S</span></button></div></div><div id="previewOutput"></div></div></div></main><div class="modal" id="saveModal"><div class="modal-content"><div class="modal-header"><h3>保存文章</h3><button class="modal-close" onclick="hideSaveModal()">×</button></div><div class="modal-body"><div class="form-group"><label for="saveTitle">文章标题</label> <input type="text" id="saveTitle" placeholder="请输入文章标题" required></div><div class="form-group"><label for="saveCategory">分类</label> <input type="text" id="saveCategory" placeholder="请输入分类（可选）"></div><div class="form-group"><label for="saveTags">标签（用逗号分隔）</label> <input type="text" id="saveTags" placeholder="请输入标签（可选）"></div><div class="form-group"><label for="saveSummary">摘要</label> <input type="text" id="saveSummary" placeholder="请输入摘要（可选）"></div></div><div class="modal-footer"><button class="btn" onclick="hideSaveModal()">取消</button> <button class="btn btn-primary" onclick="saveToDatabase()">保存</button></div></div></div><div class="toast" id="toast"></div><script src="/js/npm/marked@14.1.4/marked.min.js"></script><link rel="stylesheet" href="/css/tokyo-night-dark.min.css"><script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script><link rel="stylesheet" href="/css/katex.min.css"><script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script><script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script><script defer="defer" src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script><script defer="defer">// 初始化 Mermaid（在脚本加载时立即执行）
 if (typeof mermaid !== 'undefined') {
   mermaid.initialize({
     startOnLoad: false,
@@ -1166,5 +1029,4 @@ function hello() {
       }
     });
   }
-});
-</script>
+});</script></body></html>

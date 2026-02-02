@@ -1,22 +1,4 @@
-// Markdown Preview Modal
-(function() {
-  // Modal element
-  let modal = null;
-  let modalContent = null;
-  let modalClose = null;
-  let modalTitle = null;
-  let modalBody = null;
-  let isLoading = false;
-
-  // Initialize modal
-  function initModal() {
-    if (modal) return;
-
-    // Create modal structure
-    modal = document.createElement('div');
-    modal.id = 'markdown-preview-modal';
-    modal.className = 'markdown-preview-modal';
-    modal.style.cssText = `
+!function(){let a=null,d=null,n=null,l=null,s=null,p=!1;function c(){var e,t;a||((a=document.createElement("div")).id="markdown-preview-modal",a.className="markdown-preview-modal",a.style.cssText=`
       position: fixed;
       top: 0;
       left: 0;
@@ -30,11 +12,7 @@
       justify-content: center;
       opacity: 0;
       transition: opacity 0.3s ease;
-    `;
-
-    modalContent = document.createElement('div');
-    modalContent.className = 'markdown-preview-content';
-    modalContent.style.cssText = `
+    `,(d=document.createElement("div")).className="markdown-preview-content",d.style.cssText=`
       background: white;
       width: 90%;
       max-width: 800px;
@@ -46,33 +24,19 @@
       transition: transform 0.3s ease;
       display: flex;
       flex-direction: column;
-    `;
-
-    // Modal header
-    const modalHeader = document.createElement('div');
-    modalHeader.className = 'markdown-preview-header';
-    modalHeader.style.cssText = `
+    `,(e=document.createElement("div")).className="markdown-preview-header",e.style.cssText=`
       padding: 16px 20px;
       border-bottom: 1px solid #e0e0e0;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #f5f5f5;
-    `;
-
-    modalTitle = document.createElement('h3');
-    modalTitle.className = 'markdown-preview-title';
-    modalTitle.style.cssText = `
+    `,(l=document.createElement("h3")).className="markdown-preview-title",l.style.cssText=`
       margin: 0;
       font-size: 18px;
       font-weight: 600;
       color: #333;
-    `;
-
-    modalClose = document.createElement('button');
-    modalClose.className = 'markdown-preview-close';
-    modalClose.innerHTML = '×';
-    modalClose.style.cssText = `
+    `,(n=document.createElement("button")).className="markdown-preview-close",n.innerHTML="×",n.style.cssText=`
       background: none;
       border: none;
       font-size: 24px;
@@ -85,37 +49,14 @@
       justify-content: center;
       border-radius: 50%;
       transition: all 0.2s ease;
-    `;
-
-    modalClose.addEventListener('mouseenter', () => {
-      modalClose.style.background = '#e0e0e0';
-      modalClose.style.color = '#333';
-    });
-
-    modalClose.addEventListener('mouseleave', () => {
-      modalClose.style.background = 'none';
-      modalClose.style.color = '#666';
-    });
-
-    modalHeader.appendChild(modalTitle);
-    modalHeader.appendChild(modalClose);
-
-    // Modal body
-    modalBody = document.createElement('div');
-    modalBody.className = 'markdown-preview-body';
-    modalBody.style.cssText = `
+    `,n.addEventListener("mouseenter",()=>{n.style.background="#e0e0e0",n.style.color="#333"}),n.addEventListener("mouseleave",()=>{n.style.background="none",n.style.color="#666"}),e.appendChild(l),e.appendChild(n),(s=document.createElement("div")).className="markdown-preview-body",s.style.cssText=`
       padding: 20px;
       overflow-y: auto;
       flex: 1;
       font-family: 'Segoe UI', 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
       line-height: 1.6;
       color: #333;
-    `;
-
-    // Loading indicator
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.className = 'markdown-preview-loading';
-    loadingIndicator.innerHTML = `
+    `,(t=document.createElement("div")).className="markdown-preview-loading",t.innerHTML=`
       <div style="
         display: flex;
         flex-direction: column;
@@ -141,41 +82,7 @@
           100% { transform: rotate(360deg); }
         }
       </style>
-    `;
-
-    modalContent.appendChild(modalHeader);
-    modalContent.appendChild(modalBody);
-    modal.appendChild(modalContent);
-    document.body.appendChild(modal);
-
-    // Event listeners
-    modalClose.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        closeModal();
-      }
-    });
-
-    // Escape key to close
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.style.display === 'flex') {
-        closeModal();
-      }
-    });
-  }
-
-  // Open modal with markdown content
-  async function openModal(markdownPath) {
-    if (isLoading) return;
-
-    initModal();
-    isLoading = true;
-
-    // Show loading state
-    modalBody.innerHTML = '';
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.className = 'markdown-preview-loading';
-    loadingIndicator.innerHTML = `
+    `,d.appendChild(e),d.appendChild(s),a.appendChild(d),document.body.appendChild(a),n.addEventListener("click",o),a.addEventListener("click",e=>{e.target===a&&o()}),document.addEventListener("keydown",e=>{"Escape"===e.key&&"flex"===a.style.display&&o()}))}function o(){a&&(a.style.opacity="0",d.style.transform="scale(0.9)",setTimeout(()=>{a.style.display="none",s.innerHTML=""},300))}window.MarkdownPreviewModal={open:async function(e){if(!p){c(),p=!0,s.innerHTML="";var t=document.createElement("div");t.className="markdown-preview-loading",t.innerHTML=`
       <div style="
         display: flex;
         flex-direction: column;
@@ -201,138 +108,7 @@
           100% { transform: rotate(360deg); }
         }
       </style>
-    `;
-    modalBody.appendChild(loadingIndicator);
-
-    // Show modal
-    modal.style.display = 'flex';
-    requestAnimationFrame(() => {
-      modal.style.opacity = '1';
-      modalContent.style.transform = 'scale(1)';
-    });
-
-    try {
-      // Fetch markdown content
-      const response = await fetch(`/api/markdown/preview?path=${encodeURIComponent(markdownPath)}`);
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.message || '加载失败');
-      }
-
-      const data = result.data;
-
-      // Update title
-      modalTitle.textContent = data.title;
-
-      // Parse markdown to HTML (simple parser)
-      const htmlContent = parseMarkdown(data.content);
-
-      // Update content
-      modalBody.innerHTML = htmlContent;
-
-      // Add styles for markdown content
-      addMarkdownStyles();
-
-    } catch (error) {
-      console.error('Failed to load markdown:', error);
-      modalBody.innerHTML = `
-        <div style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 200px;
-          color: #e74c3c;
-        ">
-          <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
-          <div style="font-size: 14px; font-weight: 600;">加载失败</div>
-          <div style="font-size: 12px; color: #666; margin-top: 4px;">${error.message}</div>
-        </div>
-      `;
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  // Close modal
-  function closeModal() {
-    if (!modal) return;
-
-    modal.style.opacity = '0';
-    modalContent.style.transform = 'scale(0.9)';
-
-    setTimeout(() => {
-      modal.style.display = 'none';
-      modalBody.innerHTML = '';
-    }, 300);
-  }
-
-  // Simple markdown parser
-  function parseMarkdown(markdown) {
-    let html = markdown;
-
-    // Escape HTML
-    html = html.replace(/&/g, '&amp;');
-    html = html.replace(/</g, '&lt;');
-    html = html.replace(/>/g, '&gt;');
-
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
-
-    // Italic
-    html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
-
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>');
-
-    // Images
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;">');
-
-    // Code blocks
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/gim, '<pre><code>$2</code></pre>');
-
-    // Inline code
-    html = html.replace(/`([^`]+)`/gim, '<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>');
-
-    // Blockquotes
-    html = html.replace(/^> (.*$)/gim, '<blockquote style="border-left: 4px solid #ddd; padding-left: 16px; margin: 10px 0; color: #666;">$1</blockquote>');
-
-    // Horizontal rules
-    html = html.replace(/^---$/gim, '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">');
-
-    // Lists
-    html = html.replace(/^\- (.*$)/gim, '<li style="margin: 4px 0;">$1</li>');
-    html = html.replace(/^(\d+)\. (.*$)/gim, '<li style="margin: 4px 0;">$2</li>');
-
-    // Paragraphs (double line breaks)
-    html = html.replace(/\n\n/g, '</p><p style="margin: 10px 0;">');
-
-    // Single line breaks
-    html = html.replace(/\n/g, '<br>');
-
-    // Wrap in paragraph
-    html = `<p style="margin: 10px 0;">${html}</p>`;
-
-    // Fix list styling
-    html = html.replace(/<li>/g, '<ul style="margin: 10px 0; padding-left: 20px;"><li>');
-    html = html.replace(/<\/li>/g, '</li></ul>');
-    html = html.replace(/<\/ul><ul>/g, '');
-
-    return html;
-  }
-
-  // Add markdown styles
-  function addMarkdownStyles() {
-    if (!document.getElementById('markdown-preview-styles')) {
-      const style = document.createElement('style');
-      style.id = 'markdown-preview-styles';
-      style.textContent = `
+    `,s.appendChild(t),a.style.display="flex",requestAnimationFrame(()=>{a.style.opacity="1",d.style.transform="scale(1)"});try{var n=await(await fetch("/api/markdown/preview?path="+encodeURIComponent(e))).json();if(!n.success)throw new Error(n.message||"加载失败");var o,i=n.data,r=(l.textContent=i.title,function(e){let t=e;return t=(t=(t=(t=`<p style="margin: 10px 0;">${t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=(t=t.replace(/&/g,"&amp;")).replace(/</g,"&lt;")).replace(/>/g,"&gt;")).replace(/^### (.*$)/gim,"<h3>$1</h3>")).replace(/^## (.*$)/gim,"<h2>$1</h2>")).replace(/^# (.*$)/gim,"<h1>$1</h1>")).replace(/\*\*(.*?)\*\*/gim,"<strong>$1</strong>")).replace(/\*(.*?)\*/gim,"<em>$1</em>")).replace(/\[([^\]]+)\]\(([^)]+)\)/gim,'<a href="$2" target="_blank">$1</a>')).replace(/!\[([^\]]*)\]\(([^)]+)\)/gim,'<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;">')).replace(/```(\w+)?\n([\s\S]*?)```/gim,"<pre><code>$2</code></pre>")).replace(/`([^`]+)`/gim,'<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>')).replace(/^> (.*$)/gim,'<blockquote style="border-left: 4px solid #ddd; padding-left: 16px; margin: 10px 0; color: #666;">$1</blockquote>')).replace(/^---$/gim,'<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">')).replace(/^\- (.*$)/gim,'<li style="margin: 4px 0;">$1</li>')).replace(/^(\d+)\. (.*$)/gim,'<li style="margin: 4px 0;">$2</li>')).replace(/\n\n/g,'</p><p style="margin: 10px 0;">')).replace(/\n/g,"<br>")}</p>`).replace(/<li>/g,'<ul style="margin: 10px 0; padding-left: 20px;"><li>')).replace(/<\/li>/g,"</li></ul>")).replace(/<\/ul><ul>/g,"")}(i.content));s.innerHTML=r,document.getElementById("markdown-preview-styles")||((o=document.createElement("style")).id="markdown-preview-styles",o.textContent=`
         .markdown-preview-body h1,
         .markdown-preview-body h2,
         .markdown-preview-body h3 {
@@ -413,23 +189,17 @@
           border-radius: 4px;
           margin: 10px 0;
         }
-      `;
-      document.head.appendChild(style);
-    }
-  }
-
-  // Export to global scope
-  window.MarkdownPreviewModal = {
-    open: openModal,
-    close: closeModal
-  };
-
-  // Auto-initialize when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initModal();
-    });
-  } else {
-    initModal();
-  }
-})();
+      `,document.head.appendChild(o))}catch(e){console.error("Failed to load markdown:",e),s.innerHTML=`
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 200px;
+          color: #e74c3c;
+        ">
+          <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+          <div style="font-size: 14px; font-weight: 600;">加载失败</div>
+          <div style="font-size: 12px; color: #666; margin-top: 4px;">${e.message}</div>
+        </div>
+      `}finally{p=!1}}},close:o},"loading"===document.readyState?document.addEventListener("DOMContentLoaded",()=>{c()}):c()}();

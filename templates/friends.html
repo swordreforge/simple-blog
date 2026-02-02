@@ -1,18 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<meta name="description" content="RustBlog 友链页面 - 与志同道合的朋友建立连接">
-<title>{{ title }}</title>
-<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
-<style>
-* {
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"><meta name="description" content="RustBlog 友链页面 - 与志同道合的朋友建立连接"><title>{{ title }}</title><link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'"><style>* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -421,110 +407,7 @@ nav a.current {
   .page-subtitle {
     font-size: 1.1em;
   }
-}
-</style>
-</head>
-<body>
-<!-- 导航栏 -->
-<nav id="navbar">
-  <a href="/">首页</a>
-  <a href="/passage">文章</a>
-  <a href="/collect">归档</a>
-  <a href="/about">关于</a>
-  {% if is_logged_in %}
-  <button id="userCenterToggle" onclick="openUserCenter()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-    <span>{{ username }}</span>
-  </button>
-  {% else %}
-  <a href="#" id="loginBtn" onclick="openLoginModal()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-      <polyline points="10 17 15 12 10 7"></polyline>
-      <line x1="15" y1="12" x2="3" y2="12"></line>
-    </svg>
-    登录
-  </a>
-  {% endif %}
-</nav>
-
-<!-- 主容器 -->
-<div class="container">
-  <div class="page-header">
-    <h1 class="page-title">友链</h1>
-    <p class="page-subtitle">与志同道合的朋友建立连接</p>
-  </div>
-  
-  <div id="friendLinksContainer">
-    <div class="loading">加载中...</div>
-  </div>
-</div>
-
-<!-- 登录模态框 -->
-<div class="modal" id="loginModal">
-  <div class="modal-content" style="max-width: 400px;">
-    <div class="modal-header">
-      <h3>登录</h3>
-      <button class="modal-close" onclick="closeLoginModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="loginForm">
-        <div class="form-group">
-          <label>用户名</label>
-          <input type="text" id="loginUsername" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label>密码</label>
-          <input type="password" id="loginPassword" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-primary">登录</button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- 个人中心模态框 -->
-<div class="modal user-center-modal" id="userCenterModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>个人中心</h3>
-      <button class="modal-close" onclick="closeUserCenter()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="user-profile">
-        <div class="user-avatar-container">
-          <img src="{{ global_avatar }}" alt="Avatar" class="user-avatar-image">
-        </div>
-        <h3>{{ username }}</h3>
-      </div>
-      <div class="user-center-menu">
-        <a href="/admin" class="user-center-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-          管理后台
-        </a>
-        <button class="user-center-item" onclick="logout()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          退出登录
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// 加载友链列表
+}</style></head><body><nav id="navbar"><a href="/">首页</a> <a href="/passage">文章</a> <a href="/collect">归档</a> <a href="/about">关于</a> {% if is_logged_in %} <button id="userCenterToggle" onclick="openUserCenter()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> <span>{{ username }}</span></button> {% else %} <a href="#" id="loginBtn" onclick="openLoginModal()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> 登录 </a>{% endif %}</nav><div class="container"><div class="page-header"><h1 class="page-title">友链</h1><p class="page-subtitle">与志同道合的朋友建立连接</p></div><div id="friendLinksContainer"><div class="loading">加载中...</div></div></div><div class="modal" id="loginModal"><div class="modal-content" style="max-width: 400px;"><div class="modal-header"><h3>登录</h3><button class="modal-close" onclick="closeLoginModal()">&times;</button></div><div class="modal-body"><form id="loginForm"><div class="form-group"><label>用户名</label> <input type="text" id="loginUsername" class="form-control" required></div><div class="form-group"><label>密码</label> <input type="password" id="loginPassword" class="form-control" required></div><button type="submit" class="btn btn-primary">登录</button></form></div></div></div><div class="modal user-center-modal" id="userCenterModal"><div class="modal-content"><div class="modal-header"><h3>个人中心</h3><button class="modal-close" onclick="closeUserCenter()">&times;</button></div><div class="modal-body"><div class="user-profile"><div class="user-avatar-container"><img src="{{ global_avatar }}" alt="Avatar" class="user-avatar-image"></div><h3>{{ username }}</h3></div><div class="user-center-menu"><a href="/admin" class="user-center-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> 管理后台 </a><button class="user-center-item" onclick="logout()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> 退出登录</button></div></div></div></div><script>// 加载友链列表
 async function loadFriendLinks() {
   const container = document.getElementById('friendLinksContainer');
   
@@ -705,19 +588,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadFriendLinks();
-});
-</script>
-
-<!-- 页脚和备案信息 -->
-<footer style="text-align: center; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: auto; position: relative; z-index: 1; color: rgba(255, 255, 255, 0.9); font-size: 0.9em;">
-  <div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div>
-  {% if beian_enabled %}
-  <div style="font-size: 0.85em;">
-    {% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %}
-    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}
-  </div>{% endif %}
-</footer>
-
-<script src="/js/keyboard-shortcuts.js" defer></script>
-</body>
-</html>
+});</script><footer style="text-align: center; padding: 12px 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: auto; position: relative; z-index: 1; color: rgba(255, 255, 255, 0.9); font-size: 0.9em;"><div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div>{% if beian_enabled %}<div style="font-size: 0.85em;">{% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %} {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}</div>{% endif %}</footer><script src="/js/keyboard-shortcuts.js" defer="defer"></script></body></html>
