@@ -7,7 +7,7 @@ class PassageShortcuts {
       // 文章页面专用快捷键
       's': { action: 'toggleSidebar', label: '切换侧边栏' },
       't': { action: 'toggleReadingMode', label: '切换阅读模式' },
-      'h': { action: 'toggleHeader', label: '切换标题栏' },
+      'h': { action: 'toggleHeader', label: '切换标题栏和底栏' },
       'f': { action: 'toggleFullscreen', label: '全屏模式' },
       'Escape': { action: 'exitFullscreen', label: '退出全屏' }
     };
@@ -115,12 +115,26 @@ class PassageShortcuts {
   toggleHeader() {
     const nav = document.querySelector('nav');
     const sidebarToggleFixed = document.getElementById('sidebarToggleFixed');
+    const footer = document.querySelector('footer');
     const mainContainer = document.querySelector('.main-container');
 
     if (nav && sidebarToggleFixed && mainContainer) {
+      // 切换标题栏显示/隐藏
       sidebarToggleFixed.click();
-      const isHidden = nav.style.display === 'none';
-      this.showToast(isHidden ? '标题栏已隐藏' : '标题栏已显示', 'success');
+
+      // 同时切换底栏显示/隐藏
+      if (footer) {
+        const wasNavHidden = nav.style.display === 'none';
+        // 如果标题栏被隐藏了，也隐藏底栏；如果标题栏显示了，也显示底栏
+        const shouldHideFooter = !wasNavHidden;
+        footer.style.display = shouldHideFooter ? 'none' : '';
+
+        const isNowHidden = nav.style.display === 'none';
+        this.showToast(isNowHidden ? '标题栏和底栏已隐藏' : '标题栏和底栏已显示', 'success');
+      } else {
+        const isHidden = nav.style.display === 'none';
+        this.showToast(isHidden ? '标题栏已隐藏' : '标题栏已显示', 'success');
+      }
     }
   }
 
