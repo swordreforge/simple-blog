@@ -19,7 +19,11 @@ const AuthManager = {
       // 检查浏览器支持
       const support = checkCryptoSupport();
       if (!support.supported) {
-        console.warn('Web Crypto API not supported, falling back to plain text');
+        let message = 'Web Crypto API not supported, falling back to plain text';
+        if (support.reason === 'insecure_context') {
+          message += ` (${support.protocol}://${support.hostname} is not a secure context - requires HTTPS or localhost)`;
+        }
+        console.warn(message);
         return;
       }
 

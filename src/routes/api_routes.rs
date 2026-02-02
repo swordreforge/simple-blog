@@ -212,6 +212,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/admin/users/{id}")
             .route(web::get().to(api_handlers::user::get))
             .route(web::put().to(api_handlers::user::update))
+            .route(web::patch().to(api_handlers::user::update))
             .route(web::delete().to(api_handlers::user::delete))
     );
 

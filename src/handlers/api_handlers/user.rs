@@ -191,19 +191,30 @@ pub async fn create(
     req: web::Json<CreateUserRequest>,
 ) -> HttpResponse {
     let user_repo = UserRepository::new(repo.get_pool().clone());
-    
+
+    // 使用 Argon2id 哈希密码
+    let hashed_password = match hash_password(&req.password) {
+        Ok(hash) => hash,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": format!("密码哈希失败: {}", e)
+            }));
+        }
+    };
+
     let now = Utc::now();
     let user = User {
         id: None,
         username: req.username.clone(),
-        password: req.password.clone(),
+        password: hashed_password,
         email: req.email.clone(),
         role: req.role.clone().unwrap_or_else(|| "user".to_string()),
         status: req.status.clone().unwrap_or_else(|| "active".to_string()),
         created_at: now,
         updated_at: now,
     };
-    
+
     match user_repo.create(&user).await {
         Ok(id) => {
             HttpResponse::Ok().json(serde_json::json!({
@@ -213,7 +224,24 @@ pub async fn create(
             }))
         }
         Err(e) => {
+            let error_msg = e.to_string();
             eprintln!("创建用户失败: {}", e);
+
+            // 检查是否是 UNIQUE 约束错误
+            if error_msg.contains("UNIQUE constraint failed") {
+                if error_msg.contains("email") {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "success": false,
+                        "message": "该邮箱已被使用，请更换邮箱"
+                    }));
+                } else if error_msg.contains("username") {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "success": false,
+                        "message": "该用户名已被使用，请更换用户名"
+                    }));
+                }
+            }
+
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": "创建用户失败"
@@ -248,7 +276,17 @@ pub async fn update(
         user.username = username.clone();
     }
     if let Some(ref password) = req.password {
-        user.password = password.clone();
+        // 使用 Argon2id 哈希密码
+        let hashed_password = match hash_password(password) {
+            Ok(hash) => hash,
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("密码哈希失败: {}", e)
+                }));
+            }
+        };
+        user.password = hashed_password;
     }
     if let Some(ref email) = req.email {
         user.email = email.clone();
@@ -269,7 +307,24 @@ pub async fn update(
             }))
         }
         Err(e) => {
+            let error_msg = e.to_string();
             eprintln!("更新用户失败: {}", e);
+            
+            // 检查是否是 UNIQUE 约束错误
+            if error_msg.contains("UNIQUE constraint failed") {
+                if error_msg.contains("email") {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "success": false,
+                        "message": "该邮箱已被其他用户使用，请更换邮箱"
+                    }));
+                } else if error_msg.contains("username") {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "success": false,
+                        "message": "该用户名已被其他用户使用，请更换用户名"
+                    }));
+                }
+            }
+            
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": "更新用户失败"
@@ -320,9 +375,9 @@ pub async fn delete_batch(
             "message": "用户ID列表不能为空"
         }));
     }
-    
+
     let user_repo = UserRepository::new(repo.get_pool().clone());
-    
+
     match user_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             HttpResponse::Ok().json(serde_json::json!({
@@ -339,4 +394,17 @@ pub async fn delete_batch(
             }))
         }
     }
+}
+
+/// 哈希密码（使用 Argon2id）
+pub fn hash_password(password: &str) -> Result<String, String> {
+    use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
+
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let password_hash = argon2.hash_password(password.as_bytes(), &salt);
+
+    password_hash
+        .map(|hash| hash.to_string())
+        .map_err(|e| format!("密码哈希失败: {}", e))
 }

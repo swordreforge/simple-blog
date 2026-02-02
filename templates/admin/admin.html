@@ -7748,13 +7748,13 @@ function bindActionButtons() {
             headers['Authorization'] = `Bearer ${token}`;
           }
 
-          const response = await fetch(`/api/admin/users?id=${itemId}`, {
+          const response = await fetch(`/api/admin/users/${itemId}`, {
             headers: headers
           });
           const result = await response.json();
 
-          if (result.success && result.data && result.data.length > 0) {
-            const userData = result.data[0];
+          if (result.success && result.data) {
+            const userData = result.data;
             // 填充编辑表单
             document.getElementById('editUserName').value = userData.username || '';
             document.getElementById('editUserEmail').value = userData.email || '';
@@ -7784,13 +7784,13 @@ function bindActionButtons() {
             headers['Authorization'] = `Bearer ${token}`;
           }
 
-          const response = await fetch(`/api/admin/users?id=${itemId}`, {
+          const response = await fetch(`/api/admin/users/${itemId}`, {
             headers: headers
           });
           const result = await response.json();
 
-          if (result.success && result.data && result.data.length > 0) {
-            const userData = result.data[0];
+          if (result.success && result.data) {
+            const userData = result.data;
             // 填充详情模态框
             document.getElementById('viewUserId').textContent = '#' + userData.id;
             document.getElementById('viewUserName').textContent = userData.username || '';
@@ -7798,7 +7798,7 @@ function bindActionButtons() {
             document.getElementById('viewUserRole').textContent = userData.role || '普通用户';
             document.getElementById('viewUserStatus').textContent = userData.status || '正常';
             document.getElementById('viewUserDate').textContent = userData.created_at || '';
-            
+
             openModal('viewUserModal');
           } else {
             showToast('获取用户详情失败：' + (result.message || '未知错误'), 'error');
@@ -8771,7 +8771,7 @@ document.getElementById('editUserForm').addEventListener('submit', async functio
       updates.password = password;
     }
 
-    const response = await fetch(`/api/admin/users?id=${userId}`, {
+    const response = await fetch(`/api/admin/users/${userId}`, {
       method: 'PATCH',
       headers: headers,
       body: JSON.stringify(updates)
@@ -8985,7 +8985,7 @@ document.getElementById('confirmAction').addEventListener('click', async functio
       } else if (currentAction === 'delete-comment') {
         apiUrl = `/api/admin/comments/${currentItemId}`;
       } else if (currentAction === 'delete-user') {
-        apiUrl = `/api/admin/users?id=${currentItemId}`;
+        apiUrl = `/api/admin/users/${currentItemId}`;
       } else if (currentAction === 'delete-category') {
         apiUrl = `/api/admin/categories?id=${currentItemId}`;
       } else if (currentAction === 'delete-tag') {

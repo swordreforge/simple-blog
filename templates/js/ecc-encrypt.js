@@ -291,10 +291,21 @@ class ECCEncryptor {
  * @returns {Object}
  */
 function checkCryptoSupport() {
-  if (!window.crypto || !window.crypto.subtle) {
+  if (!window.crypto) {
     return {
       supported: false,
-      message: 'Web Crypto API is not supported in this browser'
+      message: 'window.crypto is not available',
+      reason: 'browser_not_supported'
+    };
+  }
+
+  if (!window.crypto.subtle) {
+    return {
+      supported: false,
+      message: 'Web Crypto API is not available (requires HTTPS or localhost)',
+      reason: 'insecure_context',
+      protocol: window.location.protocol,
+      hostname: window.location.hostname
     };
   }
 
