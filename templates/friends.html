@@ -299,13 +299,92 @@ nav a.current {
 
 @media (max-width: 768px) {
   nav {
-    padding: 12px env(safe-area-inset-right) 12px env(safe-area-inset-left);
+    padding: 10px env(safe-area-inset-right) 10px env(safe-area-inset-left);
   }
 
-  nav a, #loginBtn, #userCenterToggle {
-    margin: 0 8px;
-    padding: 6px 12px;
-    font-size: 0.85em;
+  nav a, nav button, #loginBtn, #userCenterToggle {
+    font-size: 0;
+    margin: 0 4px;
+    padding: 10px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  /* 隐藏导航栏文字，只显示图标 */
+  nav a span:not(.shortcut-hint),
+  nav button span:not(.shortcut-hint),
+  #loginBtn span:not(:has(svg)),
+  #userCenterToggle span:not(:has(svg)) {
+    display: none;
+  }
+
+  /* 隐藏快捷键按钮 */
+  .shortcuts-help-btn {
+    display: none !important;
+  }
+
+  /* 隐藏快捷键提示 */
+  .shortcut-hint {
+    display: none !important;
+  }
+
+  /* 确保图标可见 */
+  nav a svg,
+  nav button svg,
+  #loginBtn svg,
+  #userCenterToggle svg {
+    display: block;
+    font-size: initial;
+  }
+
+  /* 为没有图标的链接添加默认图标 */
+  nav a[href="/"]::before {
+    content: '🏠';
+    font-size: 18px;
+  }
+
+  nav a[href="/passage"]::before {
+    content: '📝';
+    font-size: 18px;
+  }
+
+  nav a[href="/collect"]::before {
+    content: '📁';
+    font-size: 18px;
+  }
+
+  nav a[href="/about"]::before {
+    content: 'ℹ️';
+    font-size: 18px;
+  }
+
+  nav a[href="/friends"]::before {
+    content: '🔗';
+    font-size: 18px;
+  }
+
+  nav a[href="/markdown-editor"]::before {
+    content: '✏️';
+    font-size: 18px;
+  }
+
+  nav a[href="/admin"]::before {
+    content: '⚙️';
+    font-size: 18px;
+  }
+
+  #userCenterToggle::before {
+    content: '👤';
+    font-size: 18px;
+  }
+
+  #loginBtn svg {
+    width: 20px;
+    height: 20px;
   }
 
   .container {
