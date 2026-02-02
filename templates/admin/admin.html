@@ -3649,13 +3649,18 @@ body.admin-focus-mode .modal-header {
               <button class="btn-secondary" id="refreshFriendLinksBtn">
                 <span style="margin-right: 5px;">↻</span>刷新
               </button>
+              <button class="btn-danger" id="batchDeleteFriendLinksBtn" style="display: none;">
+                <span style="margin-right: 5px;">🗑</span>批量删除 (<span id="friendLinkSelectedCount">0</span>)
+              </button>
             </div>
 
             <div style="margin-top: 20px;">
               <table class="data-table" id="friendLinksTable">
                 <thead>
                   <tr>
-                    <th style="width: 60px;">排序</th>
+                    <th style="width: 50px;">
+                      <input type="checkbox" id="selectAllFriendLinks" style="width: auto;">
+                    </th>
                     <th style="width: 80px;">头像</th>
                     <th>昵称</th>
                     <th>链接</th>
@@ -11315,6 +11320,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   let friendLinks = [];
+  let selectedFriendLinkIds = [];
 
 async function loadFriendLinks() {
   try {
@@ -11358,12 +11364,17 @@ function updateFriendLinksTable() {
         </td>
       </tr>
     `;
+    updateBatchDeleteButton();
     return;
   }
 
   tbody.innerHTML = friendLinks.map(link => `
     <tr style="${!link.is_enabled ? 'opacity: 0.6;' : ''}">
-      <td>${link.sort_order}</td>
+      <td>
+        <input type="checkbox" class="friend-link-checkbox" data-id="${link.id}"
+               style="width: auto;"
+               ${selectedFriendLinkIds.includes(link.id) ? 'checked' : ''}>
+      </td>
       <td>
         <img src="${link.avatar_url || '/img/avatar.webp'}" alt="${link.nickname}"
              style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
@@ -11393,6 +11404,117 @@ function updateFriendLinksTable() {
       </td>
     </tr>
   `).join('');
+
+  // 为每个复选框绑定事件
+  document.querySelectorAll('.friend-link-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const id = parseInt(this.getAttribute('data-id'));
+      toggleFriendLinkSelection(id);
+    });
+  });
+
+  updateBatchDeleteButton();
+  updateSelectAllCheckbox();
+}
+
+// 切换友链选择
+function toggleFriendLinkSelection(id) {
+  console.log('toggleFriendLinkSelection called with id:', id);
+  console.log('Current selectedFriendLinkIds:', selectedFriendLinkIds);
+
+  const index = selectedFriendLinkIds.indexOf(id);
+  if (index > -1) {
+    selectedFriendLinkIds.splice(index, 1);
+    console.log('Removed from selection');
+  } else {
+    selectedFriendLinkIds.push(id);
+    console.log('Added to selection');
+  }
+
+  console.log('New selectedFriendLinkIds:', selectedFriendLinkIds);
+  updateBatchDeleteButton();
+  updateSelectAllCheckbox();
+}
+
+// 全选/取消全选
+function toggleSelectAllFriendLinks() {
+  const selectAll = document.getElementById('selectAllFriendLinks');
+  if (selectAll.checked) {
+    selectedFriendLinkIds = friendLinks.map(link => link.id);
+  } else {
+    selectedFriendLinkIds = [];
+  }
+  // 更新所有复选框状态
+  document.querySelectorAll('.friend-link-checkbox').forEach(checkbox => {
+    checkbox.checked = selectAll.checked;
+  });
+  updateBatchDeleteButton();
+}
+
+// 更新全选复选框状态
+function updateSelectAllCheckbox() {
+  const selectAll = document.getElementById('selectAllFriendLinks');
+  const checkboxes = document.querySelectorAll('.friend-link-checkbox');
+  if (checkboxes.length === 0) {
+    selectAll.checked = false;
+    selectAll.disabled = true;
+    return;
+  }
+  selectAll.disabled = false;
+  selectAll.checked = checkboxes.length > 0 && selectedFriendLinkIds.length === friendLinks.length;
+}
+
+// 更新批量删除按钮状态
+function updateBatchDeleteButton() {
+  const batchDeleteBtn = document.getElementById('batchDeleteFriendLinksBtn');
+  const selectedCount = document.getElementById('friendLinkSelectedCount');
+
+  if (selectedFriendLinkIds.length > 0) {
+    batchDeleteBtn.style.display = 'inline-flex';
+    selectedCount.textContent = selectedFriendLinkIds.length;
+  } else {
+    batchDeleteBtn.style.display = 'none';
+  }
+}
+
+// 批量删除友链
+async function batchDeleteFriendLinks() {
+  if (selectedFriendLinkIds.length === 0) {
+    showToast('请先选择要删除的友链', 'warning');
+    return;
+  }
+
+  if (!confirm(`确定要删除选中的 ${selectedFriendLinkIds.length} 个友链吗？\n此操作不可恢复！`)) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('auth_token');
+    const response = await fetch('/api/admin/friend-links/batch-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        ids: selectedFriendLinkIds
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showToast(result.message || '批量删除成功', 'success');
+      selectedFriendLinkIds = [];
+      updateBatchDeleteButton();
+      await loadFriendLinks();
+    } else {
+      showToast(result.message || '批量删除失败', 'error');
+    }
+  } catch (error) {
+    console.error('批量删除失败:', error);
+    showToast('批量删除失败，请重试', 'error');
+  }
 }
 
 function openAddFriendLinkModal() {
@@ -11551,6 +11673,18 @@ function initializeFriendLinksManagement() {
   const refreshFriendLinksBtn = document.getElementById('refreshFriendLinksBtn');
   if (refreshFriendLinksBtn) {
     refreshFriendLinksBtn.addEventListener('click', loadFriendLinks);
+  }
+
+  // 全选复选框
+  const selectAllFriendLinks = document.getElementById('selectAllFriendLinks');
+  if (selectAllFriendLinks) {
+    selectAllFriendLinks.addEventListener('change', toggleSelectAllFriendLinks);
+  }
+
+  // 批量删除按钮
+  const batchDeleteFriendLinksBtn = document.getElementById('batchDeleteFriendLinksBtn');
+  if (batchDeleteFriendLinksBtn) {
+    batchDeleteFriendLinksBtn.addEventListener('click', batchDeleteFriendLinks);
   }
 
   // 友链表单提交
