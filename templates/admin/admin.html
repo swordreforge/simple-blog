@@ -3296,7 +3296,7 @@ body.admin-focus-mode .modal-header {
         <button class="tab-btn" data-tab="categories">分类管理<span class="shortcut-hint">4</span></button>
         <button class="tab-btn" data-tab="tags">标签管理<span class="shortcut-hint">5</span></button>
         <button class="tab-btn" data-tab="analytics">统计分析<span class="shortcut-hint">6</span></button>
-        <button class="tab-btn" data-tab="about">关于页面<span class="shortcut-hint">7</span></button>
+        <button class="tab-btn" data-tab="about">卡片管理<span class="shortcut-hint">7</span></button>
         <button class="tab-btn" data-tab="filemanager">文件管理<span class="shortcut-hint">8</span></button>
         <button class="tab-btn" data-tab="attachments">附件管理<span class="shortcut-hint">9</span></button>
         <button class="tab-btn" data-tab="settings">系统设置<span class="shortcut-hint">0</span></button>
@@ -3635,6 +3635,44 @@ body.admin-focus-mode .modal-header {
                 <!-- 数据将通过JavaScript动态加载 -->
               </tbody>
             </table>
+          </div>
+
+          <!-- 友情链接管理 -->
+          <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+            <h4>友情链接管理</h4>
+            <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 20px;">管理网站友情链接，包括添加、编辑、删除和启用/禁用操作。</p>
+
+            <div class="quick-actions">
+              <button class="btn-primary" id="addFriendLinkBtn">
+                <span style="margin-right: 5px;">+</span>添加友链
+              </button>
+              <button class="btn-secondary" id="refreshFriendLinksBtn">
+                <span style="margin-right: 5px;">↻</span>刷新
+              </button>
+            </div>
+
+            <div style="margin-top: 20px;">
+              <table class="data-table" id="friendLinksTable">
+                <thead>
+                  <tr>
+                    <th style="width: 60px;">排序</th>
+                    <th style="width: 80px;">头像</th>
+                    <th>昵称</th>
+                    <th>链接</th>
+                    <th>个性签名</th>
+                    <th style="width: 80px;">状态</th>
+                    <th style="width: 180px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="friendLinksTableBody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 30px;">
+                      <div style="opacity: 0.5;">加载中...</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -5164,6 +5202,52 @@ body.admin-focus-mode .modal-header {
         </div>
         <div class="btn-group">
           <button type="button" class="btn-secondary" data-modal="subCardModal">取消</button>
+          <button type="submit" class="btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 友情链接模态框 -->
+<div class="modal" id="friendLinkModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="friendLinkModalTitle">添加友情链接</h3>
+      <button class="modal-close" data-modal="friendLinkModal">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="friendLinkForm">
+        <input type="hidden" id="friendLinkId">
+        <div class="form-group">
+          <label for="friendLinkNickname">昵称 *</label>
+          <input type="text" id="friendLinkNickname" class="form-control" placeholder="请输入友链昵称" required>
+        </div>
+        <div class="form-group">
+          <label for="friendLinkUrl">链接地址 *</label>
+          <input type="url" id="friendLinkUrl" class="form-control" placeholder="https://example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="friendLinkAvatar">头像地址</label>
+          <input type="text" id="friendLinkAvatar" class="form-control" placeholder="/img/avatar.png 或 https://example.com/avatar.png">
+        </div>
+        <div class="form-group">
+          <label for="friendLinkMotto">个性签名</label>
+          <input type="text" id="friendLinkMotto" class="form-control" placeholder="简短的个性签名或描述">
+        </div>
+        <div class="form-group">
+          <label for="friendLinkSortOrder">排序顺序</label>
+          <input type="number" id="friendLinkSortOrder" class="form-control" placeholder="0" min="0" value="0">
+          <small style="color: rgba(255, 255, 255, 0.6);">数字越小越靠前</small>
+        </div>
+        <div class="form-group">
+          <label for="friendLinkEnabled">
+            <input type="checkbox" id="friendLinkEnabled" checked>
+            启用此友链
+          </label>
+        </div>
+        <div class="btn-group">
+          <button type="button" class="btn-secondary" data-modal="friendLinkModal">取消</button>
           <button type="submit" class="btn-primary">保存</button>
         </div>
       </form>
@@ -11097,8 +11181,13 @@ document.addEventListener('DOMContentLoaded', function() {
     aboutTab.addEventListener('click', function() {
       loadMainCards();
       loadSubCards();
+      loadFriendLinks();
     });
   }
+
+  // 友情链接管理初始化
+  initializeFriendLinksManagement();
+});
 
   // 主卡片表单提交
   const mainCardForm = document.getElementById('mainCardForm');
@@ -11215,11 +11304,262 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
-});
-</script>
 
-<!-- 文件管理器脚本 -->
-<script>
+  // 友情链接管理
+  // HTML 转义工具函数
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  let friendLinks = [];
+
+async function loadFriendLinks() {
+  try {
+    const token = localStorage.getItem('auth_token');
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    };
+
+    const response = await fetch('/api/admin/friend-links?include_disabled=true', {
+      headers: headers
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        friendLinks = result.data;
+        updateFriendLinksTable();
+      } else {
+        showToast(result.message || '加载友链列表失败', 'error');
+      }
+    } else {
+      showToast('加载友链列表失败', 'error');
+    }
+  } catch (error) {
+    console.error('加载友链列表失败:', error);
+    showToast('加载友链列表失败', 'error');
+  }
+}
+
+function updateFriendLinksTable() {
+  const tbody = document.getElementById('friendLinksTableBody');
+
+  if (friendLinks.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 40px;">
+          <div style="opacity: 0.5;">暂无友情链接</div>
+          <div style="margin-top: 10px;">
+            <button class="btn-primary" onclick="openAddFriendLinkModal()">添加第一个友链</button>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = friendLinks.map(link => `
+    <tr style="${!link.is_enabled ? 'opacity: 0.6;' : ''}">
+      <td>${link.sort_order}</td>
+      <td>
+        <img src="${link.avatar_url || '/img/avatar.webp'}" alt="${link.nickname}"
+             style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
+             onerror="this.src='/img/avatar.webp'">
+      </td>
+      <td><strong>${escapeHtml(link.nickname)}</strong></td>
+      <td>
+        <a href="${escapeHtml(link.link_url)}" target="_blank" rel="noopener noreferrer"
+           style="color: #007bff; max-width: 200px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          ${escapeHtml(link.link_url)}
+        </a>
+      </td>
+      <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        ${escapeHtml(link.motto || '-')}
+      </td>
+      <td>
+        <span style="color: ${link.is_enabled ? '#28a745' : '#dc3545'}; font-weight: bold;">
+          ${link.is_enabled ? '✓ 启用' : '✕ 禁用'}
+        </span>
+      </td>
+      <td>
+        <button class="btn-secondary" onclick="toggleFriendLinkStatus(${link.id})" title="${link.is_enabled ? '禁用' : '启用'}">
+          ${link.is_enabled ? '禁用' : '启用'}
+        </button>
+        <button class="btn-primary" onclick="openEditFriendLinkModal(${link.id})" title="编辑">编辑</button>
+        <button class="btn-danger" onclick="deleteFriendLink(${link.id})" title="删除">删除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openAddFriendLinkModal() {
+  document.getElementById('friendLinkModalTitle').textContent = '添加友情链接';
+  document.getElementById('friendLinkId').value = '';
+  document.getElementById('friendLinkNickname').value = '';
+  document.getElementById('friendLinkUrl').value = '';
+  document.getElementById('friendLinkAvatar').value = '';
+  document.getElementById('friendLinkMotto').value = '';
+  document.getElementById('friendLinkSortOrder').value = '0';
+  document.getElementById('friendLinkEnabled').checked = true;
+  openModal('friendLinkModal');
+}
+
+function openEditFriendLinkModal(id) {
+  const link = friendLinks.find(l => l.id === id);
+  if (!link) {
+    showToast('友链不存在', 'error');
+    return;
+  }
+
+  document.getElementById('friendLinkModalTitle').textContent = '编辑友情链接';
+  document.getElementById('friendLinkId').value = link.id;
+  document.getElementById('friendLinkNickname').value = link.nickname;
+  document.getElementById('friendLinkUrl').value = link.link_url;
+  document.getElementById('friendLinkAvatar').value = link.avatar_url;
+  document.getElementById('friendLinkMotto').value = link.motto;
+  document.getElementById('friendLinkSortOrder').value = link.sort_order;
+  document.getElementById('friendLinkEnabled').checked = link.is_enabled;
+  openModal('friendLinkModal');
+}
+
+async function saveFriendLink(e) {
+  e.preventDefault();
+
+  const id = document.getElementById('friendLinkId').value;
+  const isEdit = !!id;
+
+  const data = {
+    nickname: document.getElementById('friendLinkNickname').value.trim(),
+    link_url: document.getElementById('friendLinkUrl').value.trim(),
+    avatar_url: document.getElementById('friendLinkAvatar').value.trim(),
+    motto: document.getElementById('friendLinkMotto').value.trim(),
+    sort_order: parseInt(document.getElementById('friendLinkSortOrder').value) || 0,
+    is_enabled: document.getElementById('friendLinkEnabled').checked
+  };
+
+  if (!data.nickname || !data.link_url) {
+    showToast('昵称和链接地址不能为空', 'error');
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('auth_token');
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+
+    const url = isEdit ? `/api/admin/friend-links/${id}` : '/api/admin/friend-links';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method: method,
+      headers: headers,
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showToast(isEdit ? '友链更新成功' : '友链添加成功', 'success');
+      closeModal('friendLinkModal');
+      await loadFriendLinks();
+    } else {
+      showToast(result.message || '操作失败', 'error');
+    }
+  } catch (error) {
+    console.error('保存友链失败:', error);
+    showToast('操作失败，请重试', 'error');
+  }
+}
+
+async function toggleFriendLinkStatus(id) {
+  const link = friendLinks.find(l => l.id === id);
+  if (!link) return;
+
+  try {
+    const token = localStorage.getItem('auth_token');
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+
+    const response = await fetch('/api/admin/friend-links/batch-update-status', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        ids: [id],
+        is_enabled: !link.is_enabled
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showToast(result.message || '状态更新成功', 'success');
+      await loadFriendLinks();
+    } else {
+      showToast(result.message || '状态更新失败', 'error');
+    }
+  } catch (error) {
+    console.error('切换状态失败:', error);
+    showToast('操作失败，请重试', 'error');
+  }
+}
+
+function deleteFriendLink(id) {
+  const link = friendLinks.find(l => l.id === id);
+  if (!link) return;
+
+  if (!confirm(`确定要删除友链 "${link.nickname}" 吗？\n此操作不可恢复！`)) {
+    return;
+  }
+
+  const token = localStorage.getItem('auth_token');
+  fetch(`/api/admin/friend-links/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.success) {
+      showToast('友链删除成功', 'success');
+      loadFriendLinks();
+    } else {
+      showToast(result.message || '删除失败', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('删除友链失败:', error);
+    showToast('删除失败，请重试', 'error');
+  });
+}
+
+function initializeFriendLinksManagement() {
+  // 添加友链按钮
+  const addFriendLinkBtn = document.getElementById('addFriendLinkBtn');
+  if (addFriendLinkBtn) {
+    addFriendLinkBtn.addEventListener('click', openAddFriendLinkModal);
+  }
+
+  // 刷新友链按钮
+  const refreshFriendLinksBtn = document.getElementById('refreshFriendLinksBtn');
+  if (refreshFriendLinksBtn) {
+    refreshFriendLinksBtn.addEventListener('click', loadFriendLinks);
+  }
+
+  // 友链表单提交
+  const friendLinkForm = document.getElementById('friendLinkForm');
+  if (friendLinkForm) {
+    friendLinkForm.addEventListener('submit', saveFriendLink);
+  }
+}
+
 // 文件管理器对象
 const FileManager = {
   currentPath: 'img',

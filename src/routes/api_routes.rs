@@ -377,8 +377,23 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::friend_link::get))
             .route(web::put().to(api_handlers::friend_link::update))
             .route(web::delete().to(api_handlers::friend_link::delete))
-    ).service(
+    );
+
+    // 管理员 API - 友链
+    cfg.service(
         web::resource("/api/admin/friend-links/batch-delete")
-            .route(web::post().to(api_handlers::friend_link::delete_batch))
+            .route(web::post().to(api_handlers::admin_friend_link::delete_batch))
+    ).service(
+        web::resource("/api/admin/friend-links/batch-update-status")
+            .route(web::post().to(api_handlers::admin_friend_link::batch_update_status))
+    ).service(
+        web::resource("/api/admin/friend-links")
+            .route(web::get().to(api_handlers::admin_friend_link::list))
+            .route(web::post().to(api_handlers::admin_friend_link::create))
+    ).service(
+        web::resource("/api/admin/friend-links/{id}")
+            .route(web::get().to(api_handlers::admin_friend_link::get))
+            .route(web::put().to(api_handlers::admin_friend_link::update))
+            .route(web::delete().to(api_handlers::admin_friend_link::delete))
     );
 }
