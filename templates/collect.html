@@ -1212,13 +1212,13 @@ body.collect-focus-mode-sub .cloud-tag {
   </div>
 </main>
 
-<footer>
-  <div>&copy; {{ year }} {{ foodes }}</div>
-  <p>知识归档 | 版本 2.0.1 | 共收录 22 篇文章</p>
+<footer style="text-align: center; padding: 12px 20px; font-size: 0.9em;">
+  <div style="margin-bottom: 4px;">&copy; {{ year }} {{ foodes }}</div>
+  <p style="margin: 4px 0; font-size: 0.85em;">知识归档 | 版本 2.0.1 | 共收录 22 篇文章</p>
   {% if beian_enabled %}
-  <div style="margin-top: 10px; font-size: 0.9em;">
+  <div style="font-size: 0.85em;">
     {% if icp_number %}<a href="http://beian.miit.gov.cn/" target="_blank" style="color: inherit; text-decoration: none;">{{ icp_number }}</a>{% endif %}
-    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 10px;">{{ police_record_content }}</a>{% endif %}
+    {% if police_record_code %}<a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode={{ police_record_code }}" target="_blank" style="color: inherit; text-decoration: none; margin-left: 8px;">{{ police_record_content }}</a>{% endif %}
   </div>{% endif %}
 </footer>
 
