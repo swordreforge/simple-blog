@@ -1771,6 +1771,11 @@ body.fullscreen .content-area {
     font-size: 18px;
   }
 
+  .nav-left a[href="/friends"]::before {
+    content: '🔗';
+    font-size: 18px;
+  }
+
   .nav-left a[href="/markdown-editor"]::before {
     content: '✏️';
     font-size: 18px;
@@ -2431,6 +2436,7 @@ body.focus-mode-right .sidebar {
     <a href="/passage" class="current">文章</a>
     <a href="/collect">归档</a>
     <a href="/about">关于</a>
+    <a href="/friends">友链<span class="shortcut-hint">f</span></a>
     <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a>
     <a href="/admin" class="admin-only">管理员设置</a>
   </div>

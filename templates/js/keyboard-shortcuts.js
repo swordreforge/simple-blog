@@ -13,6 +13,7 @@ class KeyboardShortcuts {
       '6': { action: 'navigate', url: '/markdown-editor', label: '编辑器' },
 
       // 功能快捷键
+      'f': { action: 'navigate', url: '/friends', label: '友链' },
       'l': { action: 'openModal', modalId: 'loginModal', label: '登录' },
       '/': { action: 'showHelp', label: '快捷键帮助' },
       'Escape': { action: 'closeAllModals', label: '关闭模态框' },
@@ -332,7 +333,7 @@ class KeyboardShortcuts {
             ${this.renderShortcutList(['1', '2', '3', '4', '6'])}
 
             <h4>功能快捷键</h4>
-            ${this.renderShortcutList(['5', 'l', '/', 'Escape'])}
+            ${this.renderShortcutList(['5', 'f', 'l', '/', 'Escape'])}
 
             ${this.isPassagePage() ? `
             <h4>文章页面 - 文本聚焦模式</h4>

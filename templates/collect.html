@@ -986,6 +986,11 @@ footer p {
     font-size: 18px;
   }
 
+  nav a[href="/friends"]::before {
+    content: '🔗';
+    font-size: 18px;
+  }
+
   nav a[href="/markdown-editor"]::before {
     content: '✏️';
     font-size: 18px;
@@ -1096,8 +1101,8 @@ body.collect-focus-mode-sub .cloud-tag {
   <button id="userCenterToggle">个人中心<span class="shortcut-hint">5</span></button>
   <a href="/">主页</a>
   <a href="/passage">文章</a>
-  <a href="/collect" class="current">归档</a>
   <a href="/about">关于</a>
+  <a href="/friends">友链<span class="shortcut-hint">f</span></a>
   <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a>
   <a class="navbtn admin-only" href="/admin">管理员设置</a>
   <button id="loginBtn">
