@@ -95,11 +95,22 @@ function getCssFiles(dir) {
   return files
 }
 
+// 检查文件是否包含模板语法
+function containsTemplateSyntax(css) {
+  return /{{\s*\w+\.?\w+\s*}}/.test(css)
+}
+
 // 处理 CSS 文件
 async function optimizeCss(inputPath, outputPath) {
   try {
     // 读取 CSS 文件
     const css = readFileSync(inputPath, 'utf-8')
+
+    // 检查是否包含模板语法
+    if (containsTemplateSyntax(css)) {
+      console.log(`⏭ 跳过 ${inputPath.split('/').pop()} (包含模板语法)`)
+      return null
+    }
 
     // 处理 CSS
     const result = await processor.process(css, {
