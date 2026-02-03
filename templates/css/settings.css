@@ -1,1 +1,434 @@
-.preview-box,.preview-box p{position:relative;transition:.3s}.settings-section{margin-bottom:30px;background:#fff;border-radius:12px;padding:30px;border:1px solid #e0e0e0;box-shadow:0 2px 8px rgba(0,0,0,.08)}.settings-section h4{font-size:1.4em;color:#1a1a1a!important;margin-bottom:25px;padding-bottom:12px;border-bottom:2px solid #e0e0e0;font-weight:600}.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:25px;margin-bottom:30px}.settings-section .form-group{margin-bottom:0}.settings-section .form-group label{display:block;margin-bottom:10px;color:#333!important;font-weight:600;font-size:.95em}.settings-section .form-group div,.settings-section .form-group p{color:#666!important;font-size:.85em;line-height:1.5}.settings-section .form-control{width:100%;padding:14px 16px;border:2px solid #d0d0d0!important;border-radius:8px;font-size:1em;background:#fafafa!important;color:#222!important;transition:.3s;font-family:inherit}.settings-section .form-control:focus{outline:0;border-color:#007bff!important;background:#fff!important;box-shadow:0 0 0 3px rgba(0,123,255,.15)}.settings-section .form-control::placeholder{color:#999!important}.settings-section select.form-control{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23333333' d='M7 10L2 5h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:45px}.settings-section select.form-control option{background:#fff;color:#222;padding:12px}html.dark-mode .settings-section .form-group label,html.dark-mode .settings-section h4{color:var(--text-primary)!important}.settings-section input[type=range].form-control{width:100%;padding:15px 0;background:0 0!important;border:none!important}.settings-section input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;background:#e0e0e0;border-radius:4px;outline:0}.settings-section input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;background:#007bff;border-radius:50%;cursor:pointer;transition:.3s;box-shadow:0 2px 6px rgba(0,123,255,.3)}.settings-section input[type=range]::-webkit-slider-thumb:hover{background:#0056b3;transform:scale(1.1);box-shadow:0 2px 8px rgba(0,123,255,.5)}.settings-section input[type=range]::-moz-range-thumb{width:22px;height:22px;background:#007bff;border-radius:50%;cursor:pointer;border:none;transition:.3s;box-shadow:0 2px 6px rgba(0,123,255,.3)}.settings-section input[type=range]::-moz-range-thumb:hover{background:#0056b3;transform:scale(1.1);box-shadow:0 2px 8px rgba(0,123,255,.5)}.settings-section .form-group p{margin-top:8px}.settings-preview{margin-top:35px;padding:25px}.settings-preview h5{font-size:1.15em;color:#1a1a1a!important;margin-bottom:20px;font-weight:600}.preview-box{min-height:180px;padding:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1em;text-align:center;overflow:hidden;border:2px solid #d0d0d0;background-color:#333}.preview-box::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background-image:var(--preview-image, url('/img/test.webp'));background-size:var(--preview-size,cover);background-position:var(--preview-position,center);background-repeat:var(--preview-repeat,no-repeat);background-attachment:var(--preview-attachment,fixed);z-index:0;filter:blur(var(--preview-blur, 0px)) saturate(var(--preview-saturate, 100%));transition:.3s}.preview-box p{z-index:2;text-shadow:0 2px 8px rgba(0,0,0,.8),0 0 20px rgba(0,0,0,.6);font-weight:600;background:rgba(0,0,0,.7);padding:15px 25px;border-radius:10px;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.2);color:#fff!important}.settings-section .btn-group{display:flex;gap:15px;margin-top:35px;padding-top:25px;border-top:1px solid #e0e0e0}.settings-section .btn-primary,.settings-section .btn-secondary{color:#fff!important;padding:14px 35px;font-size:1em;cursor:pointer;transition:.3s;font-weight:600}.settings-section .btn-primary{background:#007bff!important;border:none!important;border-radius:8px;box-shadow:0 2px 6px rgba(0,123,255,.3)}.settings-section .btn-primary:hover{background:#0056b3!important;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,123,255,.4)}.settings-section .btn-primary:active,.settings-section .btn-secondary:active{transform:translateY(0)}.settings-section .btn-secondary{background:#6c757d!important;border:none!important;border-radius:8px;box-shadow:0 2px 6px rgba(108,117,125,.3)}.settings-section .btn-secondary:hover{background:#545b62!important;transform:translateY(-2px);box-shadow:0 4px 12px rgba(108,117,125,.4)}@media (max-width:768px){.settings-section{padding:20px}.settings-grid{grid-template-columns:1fr;gap:20px}.settings-section .btn-group{flex-direction:column}.settings-section .btn-primary,.settings-section .btn-secondary{width:100%}.preview-box{min-height:150px;padding:30px}}html.dark-mode{--bg-primary:#1a1a1a;--bg-secondary:#2d2d2d;--bg-tertiary:#3d3d3d;--text-primary:#e0e0e0;--text-secondary:#a0a0a0;--border-color:#404040;--accent-color:#4a9eff;--shadow-color:rgba(0, 0, 0, 0.5)}html.dark-mode .settings-section{background:var(--bg-secondary);border-color:var(--border-color);box-shadow:0 2px 8px var(--shadow-color)}html.dark-mode .settings-section h4{border-bottom-color:var(--border-color)}html.dark-mode .settings-section .form-group p{color:var(--text-secondary)!important}html.dark-mode .preview-box,html.dark-mode .settings-section .form-control{background:var(--bg-tertiary);color:var(--text-primary);border-color:var(--border-color)}html.dark-mode .settings-section .form-control:focus{background:var(--bg-secondary);border-color:var(--accent-color);box-shadow:0 0 0 3px rgba(74,158,255,.2)}html.dark-mode .settings-section select.form-control,html.dark-mode .settings-section select.form-control option{background:var(--bg-tertiary);color:var(--text-primary)}html.dark-mode .settings-preview{background:var(--bg-secondary);border-color:var(--border-color)}html.dark-mode .settings-preview h5{color:var(--text-primary)}html.dark-mode input[type=range]{background:var(--bg-tertiary)}html.dark-mode input[type=range]::-webkit-slider-thumb{background:var(--accent-color)}html.dark-mode input[type=checkbox]{background:var(--bg-tertiary);border-color:var(--border-color)}html.dark-mode input[type=checkbox]:checked{background:var(--accent-color);border-color:var(--accent-color)}html.dark-mode #opacityValue{color:var(--accent-color);font-weight:600}html.dark-mode .settings-section .btn-primary{background:var(--accent-color)!important;box-shadow:0 2px 6px rgba(74,158,255,.3)}html.dark-mode .settings-section .btn-primary:hover{background:#3a8eef!important;box-shadow:0 4px 12px rgba(74,158,255,.4)}html.dark-mode .settings-section .btn-secondary{background:var(--bg-tertiary)!important;border:1px solid var(--border-color)!important;box-shadow:0 2px 6px var(--shadow-color)}html.dark-mode .settings-section .btn-secondary:hover{background:var(--bg-secondary)!important}
+/* ========================================
+   外观设置独立样式
+   确保所有表单元素清晰可见
+   ======================================== */
+
+/* 设置区域容器 */
+.settings-section {
+  margin-bottom: 30px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.settings-section h4 {
+  font-size: 1.4em;
+  color: #1a1a1a !important;
+  margin-bottom: 25px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e0e0;
+  font-weight: 600;
+}
+
+/* 设置网格布局 */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+/* 表单组 */
+.settings-section .form-group {
+  margin-bottom: 0;
+}
+
+/* 表单标签 - 使用 !important 确保覆盖其他样式 */
+.settings-section .form-group label {
+  display: block;
+  margin-bottom: 10px;
+  color: #333333 !important;
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+/* 表单输入框 - 使用 !important 确保覆盖其他样式 */
+.settings-section .form-control {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #d0d0d0 !important;
+  border-radius: 8px;
+  font-size: 1em;
+  background: #fafafa !important;
+  color: #222222 !important;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.settings-section .form-control:focus {
+  outline: none;
+  border-color: #007bff !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.settings-section .form-control::placeholder {
+  color: #999999 !important;
+}
+
+/* 下拉选择框 */
+.settings-section select.form-control {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23333333' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 45px;
+}
+
+.settings-section select.form-control option {
+  background: #ffffff;
+  color: #222222;
+  padding: 12px;
+}
+
+/* 滑块输入框 */
+.settings-section input[type="range"].form-control {
+  width: 100%;
+  padding: 15px 0;
+  background: transparent !important;
+  border: none !important;
+}
+
+.settings-section input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  outline: none;
+}
+
+.settings-section input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+}
+
+.settings-section input[type="range"]::-webkit-slider-thumb:hover {
+  background: #0056b3;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.5);
+}
+
+.settings-section input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+}
+
+.settings-section input[type="range"]::-moz-range-thumb:hover {
+  background: #0056b3;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.5);
+}
+
+/* 提示文字 */
+.settings-section .form-group p {
+  color: #666666 !important;
+  font-size: 0.85em;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* 滑块值显示 */
+.settings-section .form-group div {
+  color: #666666 !important;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* ========================================
+   预览区域样式
+   ======================================== */
+
+.settings-preview {
+  margin-top: 35px;
+  padding: 25px;
+}
+
+.settings-preview h5 {
+  font-size: 1.15em;
+  color: #1a1a1a !important;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.preview-box {
+  min-height: 180px;
+  padding: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.1em;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #d0d0d0;
+  background-color: #333333;
+}
+
+/* 预览框背景层 - 使用 CSS 变量 */
+.preview-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: var(--preview-image, url('/img/test.webp'));
+  background-size: var(--preview-size, cover);
+  background-position: var(--preview-position, center);
+  background-repeat: var(--preview-repeat, no-repeat);
+  background-attachment: var(--preview-attachment, fixed);
+  z-index: 0;
+  filter: blur(var(--preview-blur, 0px)) saturate(var(--preview-saturate, 100%));
+  transition: all 0.3s ease;
+}
+
+/* 预览框文字 */
+.preview-box p {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.6);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px 25px;
+  border-radius: 10px;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff !important;
+  transition: all 0.3s ease;
+}
+
+/* ========================================
+   按钮组样式
+   ======================================== */
+
+.settings-section .btn-group {
+  display: flex;
+  gap: 15px;
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* 主要按钮 */
+.settings-section .btn-primary {
+  background: #007bff !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 14px 35px;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+}
+
+.settings-section .btn-primary:hover {
+  background: #0056b3 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+}
+
+.settings-section .btn-primary:active {
+  transform: translateY(0);
+}
+
+/* 次要按钮 */
+.settings-section .btn-secondary {
+  background: #6c757d !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 14px 35px;
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3);
+}
+
+.settings-section .btn-secondary:hover {
+  background: #545b62 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.settings-section .btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   响应式设计
+   ======================================== */
+
+@media (max-width: 768px) {
+  .settings-section {
+    padding: 20px;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .settings-section .btn-group {
+    flex-direction: column;
+  }
+
+  .settings-section .btn-primary,
+  .settings-section .btn-secondary {
+    width: 100%;
+  }
+
+  .preview-box {
+    min-height: 150px;
+    padding: 30px;
+  }
+}
+
+/* ========================================
+   暗色模式样式
+   ======================================== */
+
+/* 当 html 元素有 dark-mode 类时应用暗色主题 */
+html.dark-mode {
+  /* 全局颜色变量 */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #404040;
+  --accent-color: #4a9eff;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 设置区域 - 暗色模式 */
+html.dark-mode .settings-section {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+html.dark-mode .settings-section h4 {
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--border-color);
+}
+
+/* 表单标签 - 暗色模式 */
+html.dark-mode .settings-section .form-group label {
+  color: var(--text-primary) !important;
+}
+
+html.dark-mode .settings-section .form-group p {
+  color: var(--text-secondary) !important;
+}
+
+/* 表单输入框 - 暗色模式 */
+html.dark-mode .settings-section .form-control {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+html.dark-mode .settings-section .form-control:focus {
+  background: var(--bg-secondary);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+}
+
+/* 选择框 - 暗色模式 */
+html.dark-mode .settings-section select.form-control {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+html.dark-mode .settings-section select.form-control option {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* 预览区域 - 暗色模式 */
+html.dark-mode .settings-preview {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+html.dark-mode .settings-preview h5 {
+  color: var(--text-primary);
+}
+
+html.dark-mode .preview-box {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+/* 滑块 - 暗色模式 */
+html.dark-mode input[type="range"] {
+  background: var(--bg-tertiary);
+}
+
+html.dark-mode input[type="range"]::-webkit-slider-thumb {
+  background: var(--accent-color);
+}
+
+/* 复选框 - 暗色模式 */
+html.dark-mode input[type="checkbox"] {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+html.dark-mode input[type="checkbox"]:checked {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+/* 透明度值显示 - 暗色模式 */
+html.dark-mode #opacityValue {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* 按钮组 - 暗色模式 */
+html.dark-mode .settings-section .btn-primary {
+  background: var(--accent-color) !important;
+  box-shadow: 0 2px 6px rgba(74, 158, 255, 0.3);
+}
+
+html.dark-mode .settings-section .btn-primary:hover {
+  background: #3a8eef !important;
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+}
+
+html.dark-mode .settings-section .btn-secondary {
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+html.dark-mode .settings-section .btn-secondary:hover {
+  background: var(--bg-secondary) !important;
+}

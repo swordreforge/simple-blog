@@ -57,9 +57,7 @@ impl PassageRepository {
         let conn = self.pool.get()?;
         
         // 生成 Flake UUID（使用基于主机名的唯一 machine ID）
-        let machine_id = get_machine_id();
-        let mut flaker = flaker::Flaker::new(machine_id, flaker::Endianness::LittleEndian);
-        let uuid = flaker.get_id().map_err(|e| format!("Failed to generate UUID: {:?}", e))?.to_string();
+        let uuid = crate::id_generator::generate_unique_id();
         
         let _ = conn.execute(
             "INSERT INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 

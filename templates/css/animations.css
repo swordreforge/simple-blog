@@ -1,1 +1,111 @@
-@keyframes fadeIn{0%{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes slideIn{0%{opacity:0;transform:translateY(-50px)}to{opacity:1;transform:translateY(0)}}@keyframes slideOut{0%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-50px)}}@keyframes spin{0%{transform:rotate(0)}to{transform:rotate(1turn)}}@keyframes slideDown{0%{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}@keyframes slideInLeft{0%{transform:translateX(-100%)}to{transform:translateX(0)}}@keyframes slideInRight{0%{transform:translateX(100%)}to{transform:translateX(0)}}@keyframes fadeOut{0%{opacity:1}to{opacity:0}}@keyframes pulse{0%,to{opacity:1}50%{opacity:.5}}@keyframes bounce{0%,to{transform:translateY(0)}50%{transform:translateY(-10px)}}.fade-in{animation:fadeIn .3s}.slide-in{animation:slideIn .3s}.spin{animation:spin .8s linear infinite}.pulse{animation:pulse 1.5s ease-in-out infinite}.bounce{animation:bounce .5s}
+/* 核心动画定义 - 仅包含必需的关键帧动画 */
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 滑入动画 */
+@keyframes slideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 滑出动画 */
+@keyframes slideOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-50px); opacity: 0; }
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 下滑动画 */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 从左侧滑入 */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* 从右侧滑入 */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* 淡出动画 */
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* 弹跳动画 */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 工具类 - 常用动画 */
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease;
+}
+
+.slide-down {
+  animation: slideDown 0.3s ease;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.3s ease;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.bounce {
+  animation: bounce 0.5s ease;
+}
+
+/* 过渡工具类 */
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+.transition-base {
+  transition: all 0.2s ease;
+}
+
+.transition-slow {
+  transition: all 0.3s ease;
+}
+
+.transition-smooth {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}

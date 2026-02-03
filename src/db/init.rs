@@ -198,15 +198,13 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             conn.execute("ALTER TABLE passages ADD COLUMN uuid TEXT", [])?;
             
             // 为现有文章生成 UUID
-            let machine_id = crate::db::repositories::get_machine_id();
-            let mut flaker = flaker::Flaker::new(machine_id, flaker::Endianness::LittleEndian);
             let mut stmt = conn.prepare("SELECT id FROM passages WHERE uuid IS NULL")?;
             let mut rows = stmt.query([])?;
             
             let mut updated_count = 0;
             while let Some(row) = rows.next()? {
                 let id: i64 = row.get(0)?;
-                let uuid = flaker.get_id().map_err(|e| format!("Failed to generate UUID: {:?}", e))?.to_string();
+                let uuid = crate::id_generator::generate_unique_id();
                 conn.execute("UPDATE passages SET uuid = ? WHERE id = ?", rusqlite::params![&uuid, &id])?;
                 updated_count += 1;
             }
@@ -622,6 +620,12 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ("music_custom_css", "", "string", "音乐播放器自定义CSS样式", "appearance"),
             ("music_player_color", "rgba(66, 133, 244, 0.9)", "string", "音乐播放器颜色 (RGBA格式)", "appearance"),
             ("music_position", "bottom-right", "string", "音乐播放器显示位置 (top-left, top-right, bottom-left, bottom-right)", "template"),
+            
+            // 备案设置
+            ("beian_enabled", "false", "boolean", "是否启用备案信息", "template"),
+            ("icp_number", "", "string", "ICP 备案号", "template"),
+            ("police_record_code", "", "string", "公安备案代码（用于链接）", "template"),
+            ("police_record_content", "", "string", "公安备案内容（显示文字）", "template"),
         ];
 
         for (key, value, setting_type, description, category) in default_settings {
@@ -701,6 +705,12 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ("music_custom_css", "", "string", "音乐播放器自定义CSS样式", "appearance"),
             ("music_player_color", "rgba(66, 133, 244, 0.9)", "string", "音乐播放器颜色 (RGBA格式)", "appearance"),
             ("music_position", "bottom-right", "string", "音乐播放器显示位置 (top-left, top-right, bottom-left, bottom-right)", "template"),
+            
+            // 备案设置
+            ("beian_enabled", "false", "boolean", "是否启用备案信息", "template"),
+            ("icp_number", "", "string", "ICP 备案号", "template"),
+            ("police_record_code", "", "string", "公安备案代码（用于链接）", "template"),
+            ("police_record_content", "", "string", "公安备案内容（显示文字）", "template"),
         ];
 
         // 获取所有现有设置的键名
@@ -776,15 +786,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             let html_content = convert_markdown_to_html(content);
             
             // 生成 UUID
-            let machine_id = crate::db::repositories::get_machine_id();
-            let mut flaker = flaker::Flaker::new(machine_id, flaker::Endianness::LittleEndian);
-            let uuid = match flaker.get_id() {
-                Ok(id) => id.to_string(),
-                Err(e) => {
-                    eprintln!("❌ 生成 UUID 失败: {:?}", e);
-                    return Err(format!("Failed to generate UUID: {:?}", e).into());
-                }
-            };
+            let uuid = crate::id_generator::generate_unique_id();
             
             match conn.execute(
                 "INSERT OR IGNORE INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, created_at, updated_at) 

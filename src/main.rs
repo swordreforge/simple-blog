@@ -13,6 +13,7 @@ mod cache;
 mod view_batch;
 mod jwt;
 mod http3_server;
+mod id_generator;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use clap::Parser;
