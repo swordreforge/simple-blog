@@ -78,7 +78,6 @@ pub struct TlsConfigFile {
     pub enabled: Option<bool>,
     pub cert: Option<String>,
     pub key: Option<String>,
-    pub enable_http3: Option<bool>,
 }
 
 /// 日志配置（配置文件）
@@ -130,10 +129,6 @@ pub struct CliArgs {
     /// Enable TLS (HTTPS)
     #[arg(long)]
     pub enable_tls: bool,
-
-    /// Enable HTTP/3 (QUIC) support (requires TLS)
-    #[arg(long)]
-    pub enable_http3: bool,
 
     /// Path to TLS certificate file
     #[arg(long)]
@@ -215,9 +210,6 @@ impl CliArgs {
         if let Some(tls) = config.tls {
             if let Some(enabled) = tls.enabled {
                 self.enable_tls = enabled;
-            }
-            if let Some(enable_http3) = tls.enable_http3 {
-                self.enable_http3 = enable_http3;
             }
             if let Some(cert) = tls.cert {
                 self.tls_cert = Some(cert);

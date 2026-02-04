@@ -12,17 +12,23 @@ mod embedded;
 mod cache;
 mod view_batch;
 mod jwt;
-mod http3_server;
 mod id_generator;
 
+#[cfg(not(feature = "no_std"))]
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
+#[cfg(not(feature = "no_std"))]
 use clap::Parser;
+#[cfg(not(feature = "no_std"))]
 use config::{AppConfig, CliArgs};
+#[cfg(not(feature = "no_std"))]
 use routes::configure_routes;
+#[cfg(not(feature = "no_std"))]
 use middleware::logging::LoggingMiddleware;
+#[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
 /// 检查首次运行所需的文件和目录
+#[cfg(not(feature = "no_std"))]
 fn check_first_run(args: &CliArgs) {
     println!("🔍 检查运行环境...");
     
@@ -95,6 +101,7 @@ fn check_first_run(args: &CliArgs) {
     }
 }
 
+#[cfg(not(feature = "no_std"))]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 解析命令行参数
@@ -209,7 +216,7 @@ async fn main() -> std::io::Result<()> {
     }
     
     // 启动 HTTP/1.1/HTTP/2 服务器
-    let http_server = HttpServer::new(move || {
+    HttpServer::new(move || {
         App::new()
             // 注入数据库连接池
             .app_data(web::Data::new(repository.clone()))
@@ -226,41 +233,12 @@ async fn main() -> std::io::Result<()> {
             .wrap(actix_middleware::Compress::default())
     })
     .bind((config.server.host.as_str(), config.server.port))?
-    .run();
-
-    // 如果启用了 TLS，同时启动 HTTP/3 服务器
-    let http3_task = if args.enable_tls && args.enable_http3 {
-        if let (Some(cert), Some(key)) = (args.tls_cert, args.tls_key) {
-            let http3_config = http3_server::Http3ServerConfig {
-                cert_path: cert,
-                key_path: key,
-                bind_addr: format!("{}:443", config.server.host),
-                forward_addr: format!("http://{}:{}", config.server.host, config.server.port),
-            };
-            Some(tokio::spawn(async move {
-                if let Err(e) = http3_server::start_http3_server(http3_config).await {
-                    eprintln!("❌ HTTP/3 服务器启动失败: {}", e);
-                }
-            }))
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
-    // 等待 HTTP/1.1/HTTP/2 服务器完成
-    let http_result = http_server.await;
-
-    // 如果 HTTP/3 服务器正在运行，等待它完成
-    if let Some(task) = http3_task {
-        task.abort();
-    }
-
-    http_result
+    .run()
+    .await
 }
 
 /// 创建必要的目录
+#[cfg(not(feature = "no_std"))]
 fn create_directories(base_dir: &Path) {
     let dirs = vec![
         "img",
