@@ -3,6 +3,15 @@
 ### 一.包体小于10M(8.96M)
 ### 二.运行内存极低,100多m运存即可运行，峰值运行不超过100M，512m服务器即可正常运行
 ```shell
+->lsof -i :8080
+COMMAND      PID         USER FD   TYPE DEVICE SIZE/OFF NODE NAME
+rustblog 2511793 swordreforge 17u  IPv4 609744      0t0  TCP *:http-alt (LISTEN)
+-> ps -p 2511793  -o pid,rss,vsize,pcpu,pmem,cmd
+    PID   RSS    VSZ %CPU %MEM CMD
+2511793 33380 149608  215  0.1 ./rustblog
+```
+### 三.无畏并发
+```shell
 wrk -t2 -c100 -d30s http://localhost:8080/api/passages
 Running 30s test @ http://localhost:8080/api/passages
   2 threads and 100 connections
@@ -13,6 +22,5 @@ Running 30s test @ http://localhost:8080/api/passages
 Requests/sec:  18901.25
 Transfer/sec:      4.47MB
 ```
-### 三.无畏并发
 ### 四.零插件依赖
 ### 五.单文件部署
