@@ -21,4 +21,9 @@ lerna-debug.log*
 
 # OS
 .DS_Store
-Thumbs.db
+Thumbs.dbtarget/
+Cargo.lock
+data/GeoLite2-City.mmdb
+.idea/
+target/
+*.log
