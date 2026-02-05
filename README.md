@@ -33,7 +33,7 @@ Transfer/sec:      4.47MB
 感谢以下下开源库的作者的贡献
 ```rust
  cargo tree
-rustblog v1.1.4 (/home/nobody/project/rustblog)
+rustblog v1.1.4 (/home/swordreforge/project/rustblog)
 ├── actix-files v0.6.9
 │   ├── actix-http v3.11.2
 │   │   ├── actix-codec v0.5.2
@@ -653,117 +653,6 @@ rustblog v1.1.4 (/home/nobody/project/rustblog)
 │   │   ├── memchr v2.7.6
 │   │   └── regex-syntax v0.8.8
 │   └── regex-syntax v0.8.8
-├── reqwest v0.12.28
-│   ├── base64 v0.22.1
-│   ├── bytes v1.11.0
-│   ├── futures-core v0.3.31
-│   ├── http v1.4.0
-│   │   ├── bytes v1.11.0
-│   │   └── itoa v1.0.17
-│   ├── http-body v1.0.1
-│   │   ├── bytes v1.11.0
-│   │   └── http v1.4.0 (*)
-│   ├── http-body-util v0.1.3
-│   │   ├── bytes v1.11.0
-│   │   ├── futures-core v0.3.31
-│   │   ├── http v1.4.0 (*)
-│   │   ├── http-body v1.0.1 (*)
-│   │   └── pin-project-lite v0.2.16
-│   ├── hyper v1.8.1
-│   │   ├── atomic-waker v1.1.2
-│   │   ├── bytes v1.11.0
-│   │   ├── futures-channel v0.3.31
-│   │   │   └── futures-core v0.3.31
-│   │   ├── futures-core v0.3.31
-│   │   ├── http v1.4.0 (*)
-│   │   ├── http-body v1.0.1 (*)
-│   │   ├── httparse v1.10.1
-│   │   ├── itoa v1.0.17
-│   │   ├── pin-project-lite v0.2.16
-│   │   ├── pin-utils v0.1.0
-│   │   ├── smallvec v1.15.1
-│   │   ├── tokio v1.49.0 (*)
-│   │   └── want v0.3.1
-│   │       └── try-lock v0.2.5
-│   ├── hyper-rustls v0.27.7
-│   │   ├── http v1.4.0 (*)
-│   │   ├── hyper v1.8.1 (*)
-│   │   ├── hyper-util v0.1.19
-│   │   │   ├── base64 v0.22.1
-│   │   │   ├── bytes v1.11.0
-│   │   │   ├── futures-channel v0.3.31 (*)
-│   │   │   ├── futures-core v0.3.31
-│   │   │   ├── futures-util v0.3.31 (*)
-│   │   │   ├── http v1.4.0 (*)
-│   │   │   ├── http-body v1.0.1 (*)
-│   │   │   ├── hyper v1.8.1 (*)
-│   │   │   ├── ipnet v2.11.0
-│   │   │   ├── libc v0.2.180
-│   │   │   ├── percent-encoding v2.3.2
-│   │   │   ├── pin-project-lite v0.2.16
-│   │   │   ├── socket2 v0.5.10 (*)
-│   │   │   ├── tokio v1.49.0 (*)
-│   │   │   ├── tower-service v0.3.3
-│   │   │   └── tracing v0.1.44 (*)
-│   │   ├── rustls v0.23.36
-│   │   │   ├── once_cell v1.21.3
-│   │   │   ├── ring v0.17.14
-│   │   │   │   ├── cfg-if v1.0.4
-│   │   │   │   ├── getrandom v0.2.17 (*)
-│   │   │   │   └── untrusted v0.9.0
-│   │   │   │   [build-dependencies]
-│   │   │   │   └── cc v1.2.55 (*)
-│   │   │   ├── rustls-pki-types v1.14.0
-│   │   │   │   └── zeroize v1.8.2
-│   │   │   ├── rustls-webpki v0.103.9
-│   │   │   │   ├── ring v0.17.14 (*)
-│   │   │   │   ├── rustls-pki-types v1.14.0 (*)
-│   │   │   │   └── untrusted v0.9.0
-│   │   │   ├── subtle v2.6.1
-│   │   │   └── zeroize v1.8.2
-│   │   ├── rustls-pki-types v1.14.0 (*)
-│   │   ├── tokio v1.49.0 (*)
-│   │   ├── tokio-rustls v0.26.4
-│   │   │   ├── rustls v0.23.36 (*)
-│   │   │   └── tokio v1.49.0 (*)
-│   │   ├── tower-service v0.3.3
-│   │   └── webpki-roots v1.0.6
-│   │       └── rustls-pki-types v1.14.0 (*)
-│   ├── hyper-util v0.1.19 (*)
-│   ├── log v0.4.29
-│   ├── percent-encoding v2.3.2
-│   ├── pin-project-lite v0.2.16
-│   ├── rustls v0.23.36 (*)
-│   ├── rustls-pki-types v1.14.0 (*)
-│   ├── serde v1.0.228 (*)
-│   ├── serde_json v1.0.149 (*)
-│   ├── serde_urlencoded v0.7.1 (*)
-│   ├── sync_wrapper v1.0.2
-│   │   └── futures-core v0.3.31
-│   ├── tokio v1.49.0 (*)
-│   ├── tokio-rustls v0.26.4 (*)
-│   ├── tower v0.5.3
-│   │   ├── futures-core v0.3.31
-│   │   ├── futures-util v0.3.31 (*)
-│   │   ├── pin-project-lite v0.2.16
-│   │   ├── sync_wrapper v1.0.2 (*)
-│   │   ├── tokio v1.49.0 (*)
-│   │   ├── tower-layer v0.3.3
-│   │   └── tower-service v0.3.3
-│   ├── tower-http v0.6.8
-│   │   ├── bitflags v2.10.0
-│   │   ├── bytes v1.11.0
-│   │   ├── futures-util v0.3.31 (*)
-│   │   ├── http v1.4.0 (*)
-│   │   ├── http-body v1.0.1 (*)
-│   │   ├── iri-string v0.7.10
-│   │   ├── pin-project-lite v0.2.16
-│   │   ├── tower v0.5.3 (*)
-│   │   ├── tower-layer v0.3.3
-│   │   └── tower-service v0.3.3
-│   ├── tower-service v0.3.3
-│   ├── url v2.5.8 (*)
-│   └── webpki-roots v1.0.6 (*)
 ├── rusqlite v0.32.1 (*)
 ├── rust-embed v8.11.0
 │   ├── rust-embed-impl v8.11.0 (proc-macro)
