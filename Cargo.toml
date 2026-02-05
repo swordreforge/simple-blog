@@ -1,103 +1,119 @@
 [package]
 name = "rustblog"
 version = "1.1.4"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 actix-web = { version = "4.12.1", default-features = false, features = ["macros", "compress-brotli", "cookies"] }
 actix-files = "0.6.9"
-actix-multipart = "0.7.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+actix-multipart = { version = "0.7.2", default-features = false, features = ["derive"] }
+serde = { version = "1.0", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
 lazy_static = "1.5"
-md-5 = "0.10"
-tokio = { version = "1.49", features = ["io-util", "fs", "sync", "rt-multi-thread", "net"] }
-tera = "1.20"
-chrono = { version = "0.4", features = ["serde"] }
-futures-util = "0.3"
+md-5 = { version = "0.10", default-features = false, features = ["std"] }
+tokio = { version = "1.49", default-features = false, features = ["rt-multi-thread", "net", "io-util", "fs", "sync", "macros"] }
+tera = { version = "1.20", default-features = false, features = ["builtins"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+futures-util = { version = "0.3", default-features = false, features = ["async-await-macro"] }
 
 # SQLite 数据库
-rusqlite = { version = "0.32", features = ["bundled", "chrono", "serde_json"], default-features = false }
+rusqlite = { version = "0.32", default-features = false, features = ["bundled", "chrono", "serde_json"] }
 r2d2 = "0.8"
 r2d2_sqlite = "0.25"
 
 # 密码哈希
-argon2 = "0.5"
-rand = "0.8"
+argon2 = { version = "0.5", default-features = false, features = ["password-hash", "alloc"] }
+rand = { version = "0.8", default-features = false, features = ["std_rng"] }
 
 # ECC 加密
-p256 = { version = "0.13", features = ["ecdh", "pkcs8"] }
-elliptic-curve = { version = "0.13", features = ["ecdh"] }
-ecdsa = "0.16"
-sha2 = "0.10"
-base64 = "0.22"
-hex = "0.4"
-aes-gcm = "0.10"
+p256 = { version = "0.13", default-features = false, features = ["ecdh", "pkcs8", "ecdsa", "std"] }
+elliptic-curve = { version = "0.13", default-features = false, features = ["ecdh", "std"] }
+ecdsa = { version = "0.16", default-features = false, features = ["signing", "std", "digest"] }
+sha2 = { version = "0.10", default-features = false, features = ["std"] }
+base64 = { version = "0.22", default-features = false, features = ["std"] }
+hex = { version = "0.4", default-features = false, features = ["std"] }
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
 spki = "0.7"
 
 # Markdown 解析
-pulldown-cmark = "0.12"
+pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
 
 # 文件上传
-mime_guess = "2.0"
+mime_guess = { version = "2.0" }
 
 # URL 解码
 urlencoding = "2.1"
 
 # 正则表达式
-regex = "1.11"
+regex = { version = "1.11", default-features = false, features = ["std", "perf"] }
 
 # 异步 trait
 async-trait = "0.1"
 
 # 音频元数据提取
-id3 = "0.6"
-metaflac = "0.2"
+id3 = { version = "0.6", default-features = false }
+metaflac = { version = "0.2", default-features = false }
 
 # Snowflake ID 生成
 snowflake-id-generator = "0.4"
 
 # 命令行参数解析
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.5", default-features = false, features = ["std", "derive"] }
 
 # 配置文件解析
-toml = "0.8"
+toml = { version = "0.8", default-features = false, features = ["parse"] }
 
 # GeoIP 数据库查询
 maxminddb = "0.27.1"
 memmap2 = "0.9"
 
 # 静态变量
-once_cell = "1.21"
+once_cell = { version = "1.21", default-features = false, features = ["std", "alloc"] }
 
 # 文件嵌入
-rust-embed = { version = "8.11", features = ["include-exclude"] }
+rust-embed = { version = "8.11", default-features = false, features = ["include-exclude"] }
 
 # JWT 认证
-jsonwebtoken = "10.3"
+jsonwebtoken = { version = "10.3", default-features = false, features = ["use_pem", "rust_crypto"] }
 
 # HTTP 客户端
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "rustls-tls-webpki-roots"] }
 
 [profile.release]
 opt-level = "z"
 lto = "fat"
 codegen-units = 1
 panic = "abort"
-strip = true
+strip = "symbols"
 overflow-checks = false
+debug = false
+debug-assertions = false
+incremental = false
+
+[profile.release.build-override]
+opt-level = "z"
+codegen-units = 1
 
 [profile.release.package."*"]
 opt-level = "z"
 strip = true
 codegen-units = 1
+debug = false
+debug-assertions = false
+
+[profile.dev]
+opt-level = 0
 
 [build]
+target = "x86_64-unknown-linux-musl"
 rustflags = [
     "-C", "link-arg=-s",
-    "-C", "target-cpu=native",
+    "-C", "target-cpu=x86-64",
     "-C", "embed-bitcode=yes",
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=pie",
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=3",
 ]
 

@@ -1,17 +1,36 @@
 [build]
+target = "x86_64-unknown-linux-musl"
 rustflags = [
     "-C", "link-arg=-s",
-    "-C", "target-cpu=native",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=x86-64",
     "-C", "embed-bitcode=yes",
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=3",
 ]
 
 [target.x86_64-unknown-linux-musl]
 rustflags = [
     "-C", "link-arg=-s",
-    "-C", "target-cpu=native",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=x86-64",
     "-C", "embed-bitcode=yes",
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=3",
 ]
