@@ -1,0 +1,43 @@
+# 构建产物
+build/
+bin/
+*.o
+*.a
+*.so
+*.dylib
+
+# 依赖
+bearssl/
+sqlite3.c
+sqlite3.h
+
+# 数据和日志
+data/*.db
+data/*.der
+data/*.pem
+logs/
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 上传文件
+uploads/*
+!uploads/.gitkeep
+
+# Markdown 文件
+markdown/*
+!markdown/.gitkeep
+
+# 配置文件（如果包含敏感信息）
+# config.json
