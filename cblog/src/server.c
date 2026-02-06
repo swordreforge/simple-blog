@@ -4,6 +4,7 @@
 #include "include/http.h"
 #include "include/router.h"
 #include "include/database.h"
+#include "include/template.h"
 #include "include/common.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -381,13 +382,48 @@ int server_send_error(Server *srv, Connection *conn, int status, const char *mes
     HttpResponse resp;
     http_response_init(&resp, status);
     http_set_header(&resp, "Content-Type", "application/json");
-    
+
     char *body = http_build_error_response(status, message);
     http_set_body(&resp, body, strlen(body));
-    
+
     int ret = server_send_response(srv, conn, &resp);
     free(body);
-    
+
+    return ret;
+}
+
+/* === 发送错误页面（使用模板） === */
+
+int server_send_error_page(Server *srv, Connection *conn, int status, const char *message, const char *description) {
+    TemplateContext *ctx = template_context_create();
+    if (!ctx) {
+        return server_send_error(srv, conn, status, message);
+    }
+
+    /* 设置模板变量 */
+    char status_str[16];
+    snprintf(status_str, sizeof(status_str), "%d", status);
+    template_set_var(ctx, "status", status_str);
+    template_set_var(ctx, "message", message ? message : "Error");
+    template_set_var(ctx, "description", description ? description : "服务器发生错误，请稍后重试");
+
+    /* 渲染模板 */
+    char *html = template_render(ctx, "error");
+    template_context_destroy(ctx);
+
+    if (!html) {
+        return server_send_error(srv, conn, status, message);
+    }
+
+    /* 发送 HTML 响应 */
+    HttpResponse resp;
+    http_response_init(&resp, status);
+    http_set_header(&resp, "Content-Type", "text/html; charset=utf-8");
+    http_set_body(&resp, html, strlen(html));
+
+    int ret = server_send_response(srv, conn, &resp);
+    free(html);
+
     return ret;
 }
 

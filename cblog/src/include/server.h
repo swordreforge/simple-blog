@@ -137,4 +137,9 @@ int server_send_html(Server *srv, Connection *conn, const char *html);
  */
 int server_send_redirect(Server *srv, Connection *conn, const char *location);
 
+/**
+ * 发送错误页面（使用模板）
+ */
+int server_send_error_page(Server *srv, Connection *conn, int status, const char *message, const char *description);
+
 #endif /* SERVER_H */

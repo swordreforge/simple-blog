@@ -143,20 +143,24 @@ int router_handle_request(Server *srv, Connection *conn, HttpRequest *req) {
     if (need_auth) {
         const char *auth_header = http_get_header(req, "Authorization");
         if (!auth_header) {
-            return server_send_error(srv, conn, HTTP_STATUS_UNAUTHORIZED, "未登录");
+            return server_send_error_page(srv, conn, HTTP_STATUS_UNAUTHORIZED,
+                                        "未登录",
+                                        "您需要登录才能访问此页面，请先登录");
         }
-        
+
         /* TODO: 验证 JWT token */
         /* jwt_verify(auth_header, &claims); */
-        
+
         /* 如果需要管理员权限 */
         if (need_admin) {
             /* TODO: 检查是否为管理员 */
             /* if (!jwt_is_admin(auth_header)) */
-            return server_send_error(srv, conn, HTTP_STATUS_FORBIDDEN, "权限不足");
+            return server_send_error_page(srv, conn, HTTP_STATUS_FORBIDDEN,
+                                        "权限不足",
+                                        "您没有权限访问此页面，需要管理员权限");
         }
     }
-    
+
     /* 执行处理器 */
     return handler(srv, conn, req);
 }
@@ -353,13 +357,30 @@ int handle_favicon(Server *srv, Connection *conn, HttpRequest *req) {
 /* === 错误处理 === */
 
 int handle_not_found(Server *srv, Connection *conn, HttpRequest *req) {
-    return server_send_error(srv, conn, HTTP_STATUS_NOT_FOUND, "页面不存在");
+    const char *path = req->path[0] ? req->path : "/";
+    char desc[512];
+    snprintf(desc, sizeof(desc), "您访问的页面 <strong>%s</strong> 不存在或已被删除", path);
+    return server_send_error_page(srv, conn, HTTP_STATUS_NOT_FOUND, "页面不存在", desc);
 }
 
 int handle_method_not_allowed(Server *srv, Connection *conn, HttpRequest *req) {
-    return server_send_error(srv, conn, HTTP_STATUS_METHOD_NOT_ALLOWED, "方法不允许");
+    const char *method_str = "UNKNOWN";
+    switch (req->method) {
+        case HTTP_GET: method_str = "GET"; break;
+        case HTTP_POST: method_str = "POST"; break;
+        case HTTP_PUT: method_str = "PUT"; break;
+        case HTTP_DELETE: method_str = "DELETE"; break;
+        case HTTP_PATCH: method_str = "PATCH"; break;
+        case HTTP_OPTIONS: method_str = "OPTIONS"; break;
+        case HTTP_HEAD: method_str = "HEAD"; break;
+    }
+    char desc[512];
+    snprintf(desc, sizeof(desc), "当前页面不支持 <strong>%s</strong> 方法", method_str);
+    return server_send_error_page(srv, conn, HTTP_STATUS_METHOD_NOT_ALLOWED, "方法不允许", desc);
 }
 
 int handle_internal_error(Server *srv, Connection *conn, HttpRequest *req) {
-    return server_send_error(srv, conn, HTTP_STATUS_INTERNAL_SERVER_ERROR, "服务器内部错误");
+    return server_send_error_page(srv, conn, HTTP_STATUS_INTERNAL_SERVER_ERROR,
+                                  "服务器内部错误",
+                                  "服务器遇到了一些问题，请稍后重试或联系管理员");
 }
