@@ -76,9 +76,6 @@ rust-embed = { version = "8.11", default-features = false, features = ["include-
 # JWT 认证
 jsonwebtoken = { version = "10.3", default-features = false, features = ["use_pem", "rust_crypto"] }
 
-# HTTP 客户端
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "rustls-tls-webpki-roots"] }
-
 [profile.release]
 opt-level = "z"
 lto = "fat"
@@ -103,17 +100,4 @@ debug-assertions = false
 
 [profile.dev]
 opt-level = 0
-
-[build]
-target = "x86_64-unknown-linux-musl"
-rustflags = [
-    "-C", "link-arg=-s",
-    "-C", "target-cpu=x86-64",
-    "-C", "embed-bitcode=yes",
-    "-C", "codegen-units=1",
-    "-C", "relocation-model=pie",
-    "-Z", "share-generics=y",
-    "-Z", "location-detail=none",
-    "-Z", "mir-opt-level=3",
-]
 

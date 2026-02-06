@@ -14,21 +14,14 @@ mod view_batch;
 mod jwt;
 mod id_generator;
 
-#[cfg(not(feature = "no_std"))]
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
-#[cfg(not(feature = "no_std"))]
 use clap::Parser;
-#[cfg(not(feature = "no_std"))]
 use config::{AppConfig, CliArgs};
-#[cfg(not(feature = "no_std"))]
 use routes::configure_routes;
-#[cfg(not(feature = "no_std"))]
 use middleware::logging::LoggingMiddleware;
-#[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
 /// 检查首次运行所需的文件和目录
-#[cfg(not(feature = "no_std"))]
 fn check_first_run(args: &CliArgs) {
     println!("🔍 检查运行环境...");
     
@@ -101,7 +94,6 @@ fn check_first_run(args: &CliArgs) {
     }
 }
 
-#[cfg(not(feature = "no_std"))]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 解析命令行参数
@@ -238,7 +230,6 @@ async fn main() -> std::io::Result<()> {
 }
 
 /// 创建必要的目录
-#[cfg(not(feature = "no_std"))]
 fn create_directories(base_dir: &Path) {
     let dirs = vec![
         "img",

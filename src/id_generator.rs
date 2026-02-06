@@ -78,32 +78,6 @@ pub fn generate_unique_id() -> String {
     ID_GENERATOR.generate_id()
 }
 
-/// 使用指定机器 ID 生成唯一 ID
-/// 
-/// # 参数
-/// * `machine_id` - 机器 ID
-/// 
-/// # 返回
-/// 返回生成的唯一 ID 字符串
-#[cfg(test)]
-pub fn generate_unique_id_with_machine(machine_id: u64) -> String {
-    let mut generator = IdGenerator::new(machine_id);
-    generator.generate_id()
-}
-
-/// 从字节数组生成唯一 ID
-/// 
-/// # 参数
-/// * `machine_id_bytes` - 机器 ID 字节数组
-/// 
-/// # 返回
-/// 返回生成的唯一 ID 字符串
-#[cfg(test)]
-pub fn generate_unique_id_from_bytes(machine_id_bytes: [u8; 6]) -> String {
-    let mut generator = IdGenerator::from_bytes(machine_id_bytes);
-    generator.generate_id()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
