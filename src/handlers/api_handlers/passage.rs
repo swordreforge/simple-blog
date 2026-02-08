@@ -68,6 +68,7 @@ pub struct UpdatePassageRequest {
 pub async fn list(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
@@ -75,6 +76,23 @@ pub async fn list(
     let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(10);
     let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
     let offset = (page - 1) * limit;
+    
+    // 生成缓存键
+    let cache_key = format!("passage:list:page: {}:limit:{}", page, limit);
+    
+    // 尝试从缓存获取
+    if let Some(manager) = app_cache.manager() {
+        if let Some(cached_data) = manager.get(&cache_key).await {
+            if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
+                return HttpResponse::Ok()
+                    .insert_header(("Cache-Control", "public, max-age=60"))
+                    .insert_header(("X-Cache", "HIT"))
+                    .json(response);
+            }
+        }
+    }
+    
+    // 缓存未命中，从数据库获取
     
     // 获取已发布的文章（不包含完整内容，只返回摘要）
     match passage_repo.get_published(limit, offset).await {
@@ -109,19 +127,29 @@ pub async fn list(
             
             let total_pages = (total + limit - 1) / limit;
 
+            let response = serde_json::json!({
+                "success": true,
+                "data": data,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": total,
+                    "total_pages": total_pages,
+                    "has_more": page < total_pages
+                }
+            });
+            
+            // 存储到缓存（TTL 5 分钟）
+            if let Some(manager) = app_cache.manager() {
+                if let Ok(json_str) = serde_json::to_string(&response) {
+                    let _ = manager.set(&cache_key, &json_str).await;
+                }
+            }
+            
             HttpResponse::Ok()
-                .insert_header(("Cache-Control", "public, max-age=60")) // 公开列表缓存 1 分钟
-                .json(serde_json::json!({
-                    "success": true,
-                    "data": data,
-                    "pagination": {
-                        "page": page,
-                        "limit": limit,
-                        "total": total,
-                        "total_pages": total_pages,
-                        "has_more": page < total_pages
-                    }
-                }))
+                .insert_header(("Cache-Control", "public, max-age=60"))
+                .insert_header(("X-Cache", "MISS"))
+                .json(response)
         }
         Err(e) => {
             eprintln!("获取文章列表失败: {}", e);
@@ -139,6 +167,7 @@ pub async fn get(
     path: web::Path<String>,
     req: HttpRequest,
     view_batch_processor: web::Data<Arc<ViewBatchProcessor>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let param = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
@@ -209,6 +238,25 @@ pub async fn get(
         }
     }
     
+    // 生成缓存键
+    let cache_key = format!("passage:get:{}", param);
+    
+    // 尝试从缓存获取（仅对公开文章缓存）
+    if passage.status == "published" && passage.visibility == "public" {
+        if let Some(manager) = app_cache.manager() {
+            if let Some(cached_data) = manager.get(&cache_key).await {
+                if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
+                    return HttpResponse::Ok()
+                        .insert_header(("Cache-Control", "public, max-age=300"))
+                        .insert_header(("X-Cache", "HIT"))
+                        .json(response);
+                }
+            }
+        }
+    }
+    
+    // 缓存未命中，继续处理
+    
     // 使用批量处理器记录文章阅读（不阻塞响应）
     let passage_uuid = passage.uuid.clone().unwrap_or_default();
     let user_agent = req.headers().get("user-agent")
@@ -253,9 +301,9 @@ pub async fn get(
         author: passage.author,
         tags: passage.tags,
         category: passage.category,
-        status: passage.status,
+        status: passage.status.clone(),
         file_path: passage.file_path,
-        visibility: passage.visibility,
+        visibility: passage.visibility.clone(),
         is_scheduled: passage.is_scheduled,
         published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
         cover_image: passage.cover_image,
@@ -279,13 +327,25 @@ pub async fn get(
         }
     }
     
-    HttpResponse::Ok()
-        .insert_header(("ETag", etag))
-        .insert_header(("Cache-Control", "public, max-age=300")) // 文章缓存 5 分钟
-        .json(serde_json::json!({
+    let response_json = serde_json::json!({
             "success": true,
             "data": response
-        }))
+        });
+        
+    // 存储到缓存（仅对公开文章，TTL 10 分钟）
+    if passage.status == "published" && passage.visibility == "public" {
+        if let Some(manager) = app_cache.manager() {
+            if let Ok(json_str) = serde_json::to_string(&response_json) {
+                let _ = manager.set(&cache_key, &json_str).await;
+            }
+        }
+    }
+    
+    HttpResponse::Ok()
+        .insert_header(("ETag", etag))
+        .insert_header(("Cache-Control", "public, max-age=300"))
+        .insert_header(("X-Cache", "MISS"))
+        .json(response_json)
 }
 
 /// 创建文章
@@ -418,6 +478,7 @@ pub async fn update(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
     req: web::Json<UpdatePassageRequest>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let id = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
@@ -433,6 +494,9 @@ pub async fn update(
             }));
         }
     };
+    
+    // 保存原始 UUID 用于缓存失效
+    let passage_uuid = passage.uuid.clone();
     
     // 更新字段
     let mut file_updated = false;
@@ -530,6 +594,23 @@ pub async fn update(
     
     match passage_repo.update(&passage).await {
         Ok(_) => {
+            // 失效相关缓存
+            if let Some(uuid) = passage_uuid {
+                let cache_keys = vec![
+                    format!("passage:get:{}", uuid),
+                    format!("passage:get:{}", id),
+                    // 清除列表缓存（因为文章状态可能改变）
+                    "passage:list:page:1:limit:10".to_string(),
+                    "passage:list:page:1:limit:20".to_string(),
+                ];
+                
+                if let Some(manager) = app_cache.manager() {
+                    for key in cache_keys {
+                        let _ = manager.delete(&key).await;
+                    }
+                }
+            }
+            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "文章更新成功"
