@@ -118,10 +118,14 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
                 })
                 .collect();
             
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "data": data
-            }))
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
+                .insert_header(("Pragma", "no-cache"))
+                .insert_header(("Expires", "0"))
+                .json(serde_json::json!({
+                    "success": true,
+                    "data": data
+                }))
         }
         Err(e) => {
             eprintln!("获取分类失败: {}", e);
