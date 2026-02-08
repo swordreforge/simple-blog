@@ -58,7 +58,7 @@ metaflac = { version = "0.2", default-features = false }
 snowflake-id-generator = "0.4"
 
 # 命令行参数解析
-clap = { version = "4.5", default-features = false, features = ["std", "derive"] }
+clap = { version = "4.5", default-features = false, features = ["std", "derive", "help", "color"] }
 
 # 配置文件解析
 toml = { version = "0.8", default-features = false, features = ["parse"] }
