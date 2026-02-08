@@ -83,9 +83,13 @@ redis = { version = "0.28", default-features = false, features = ["tokio-comp", 
 dashmap = "5.5"
 thiserror = "2.0"
 
+# 性能分析
+pprof = { version = "0.14", features = ["flamegraph", "criterion", "protobuf-codec"], optional = true }
+
 [features]
 default = []
 valkey = ["redis"]
+profiling = ["pprof"]
 
 [profile.release]
 opt-level = "z"

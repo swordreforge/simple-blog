@@ -13,6 +13,7 @@ mod cache;
 mod view_batch;
 mod jwt;
 mod id_generator;
+mod profiling;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web};
 use clap::Parser;
@@ -134,6 +135,22 @@ async fn main() -> std::io::Result<()> {
     // 检查首次运行
     check_first_run(&args);
 
+    // 初始化性能分析
+    #[cfg(feature = "profiling")]
+    let mut profiling_manager = profiling::ProfilingManager::new(std::path::PathBuf::from("./profiling"));
+    if args.enable_profiling {
+        #[cfg(feature = "profiling")]
+        {
+            if let Err(e) = profiling_manager.enable() {
+                eprintln!("⚠️  启用性能分析失败: {}", e);
+            }
+        }
+        #[cfg(not(feature = "profiling"))]
+        {
+            eprintln!("⚠️  性能分析功能未启用，请使用 --features profiling 编译");
+        }
+    }
+
     // 释放嵌入的资源并创建必要的目录
     println!("📦 资源初始化...");
     let base_dir = args.get_base_dir();
@@ -232,7 +249,7 @@ async fn main() -> std::io::Result<()> {
     }
     
     // 启动 HTTP/1.1/HTTP/2 服务器
-    HttpServer::new(move || {
+    let server_result = HttpServer::new(move || {
         App::new()
             // 注入数据库连接池
             .app_data(web::Data::new(repository.clone()))
@@ -250,7 +267,19 @@ async fn main() -> std::io::Result<()> {
     })
     .bind((config.server.host.as_str(), config.server.port))?
     .run()
-    .await
+    .await;
+
+    // 程序结束时生成性能分析报告
+    #[cfg(feature = "profiling")]
+    {
+        if args.enable_profiling {
+            if let Err(e) = profiling_manager.disable_and_generate_report() {
+                eprintln!("⚠️  生成性能分析报告失败: {}", e);
+            }
+        }
+    }
+
+    server_result
 }
 
 /// 创建必要的目录

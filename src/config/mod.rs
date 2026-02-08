@@ -185,6 +185,10 @@ pub struct CliArgs {
     #[arg(long, default_value = "true")]
     pub cache_fallback: bool,
 
+    /// Enable performance profiling (requires --features profiling)
+    #[arg(long)]
+    pub enable_profiling: bool,
+
     /// 基础目录（可执行文件所在目录，自动计算）
     #[arg(skip)]
     pub base_dir: PathBuf,
@@ -211,6 +215,7 @@ impl Default for CliArgs {
             valkey_url: None,
             cache_ttl: 3600,
             cache_fallback: true,
+            enable_profiling: false,
             base_dir: PathBuf::from("."),
         }
     }
