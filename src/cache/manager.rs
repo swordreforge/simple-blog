@@ -138,32 +138,6 @@ impl CacheManager {
         }
     }
 
-    /// 设置缓存值（自定义 TTL）
-    pub async fn set_with_ttl(&self, key: &str, value: &str, ttl: Duration) -> Result<(), CacheError> {
-        // 尝试设置到主缓存
-        match self.primary.set(key, value, ttl).await {
-            Ok(()) => {
-                // 如果启用了降级，同时设置到备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
-                        let _ = fallback.set(key, value, ttl).await;
-                    }
-                }
-                Ok(())
-            }
-            Err(e) => {
-                // 主缓存失败，尝试降级到备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
-                        eprintln!("⚠️  主缓存写入失败: {}, 降级到备用缓存", e);
-                        return fallback.set(key, value, ttl).await;
-                    }
-                }
-                Err(e)
-            }
-        }
-    }
-
     /// 删除缓存值
     pub async fn delete(&self, key: &str) -> Result<(), CacheError> {
         // 从主缓存删除
@@ -179,70 +153,9 @@ impl CacheManager {
         primary_result
     }
 
-    /// 检查键是否存在
-    pub async fn exists(&self, key: &str) -> bool {
-        // 检查主缓存
-        if self.primary.exists(key).await {
-            return true;
-        }
-
-        // 检查备用缓存
-        if self.fallback_enabled.load(Ordering::Relaxed) {
-            if let Some(fallback) = &self.fallback {
-                return fallback.exists(key).await;
-            }
-        }
-
-        false
-    }
-
-    /// 清空所有缓存
-    pub async fn clear(&self) -> Result<(), CacheError> {
-        // 清空主缓存
-        let primary_result = self.primary.clear().await;
-
-        // 清空备用缓存
-        if self.fallback_enabled.load(Ordering::Relaxed) {
-            if let Some(fallback) = &self.fallback {
-                let _ = fallback.clear().await;
-            }
-        }
-
-        primary_result
-    }
-
-    /// 获取当前使用的后端名称
-    pub fn backend_name(&self) -> &'static str {
-        self.primary.backend_name()
-    }
-
-    /// 检查健康状态
-    pub async fn health_check(&self) -> bool {
-        let primary_healthy = self.primary.health_check().await;
-        
-        if !primary_healthy {
-            eprintln!("⚠️  主缓存后端不健康");
-            
-            if self.fallback_enabled.load(Ordering::Relaxed) {
-                if let Some(fallback) = &self.fallback {
-                    let fallback_healthy = fallback.health_check().await;
-                    if fallback_healthy {
-                        println!("✅ 备用缓存后端健康");
-                        return true;
-                    }
-                }
-            }
-            
-            return false;
-        }
-        
-        true
-    }
-
     /// 获取缓存统计信息
     pub fn get_stats(&self) -> CacheStats {
         CacheStats {
-            backend: self.primary.backend_name().to_string(),
             has_fallback: self.fallback.is_some(),
             fallback_enabled: self.fallback_enabled.load(Ordering::Relaxed),
             default_ttl: self.config.default_ttl,
@@ -253,7 +166,6 @@ impl CacheManager {
 /// 缓存统计信息
 #[derive(Debug, Clone)]
 pub(crate) struct CacheStats {
-    pub(crate) backend: String,
     pub(crate) has_fallback: bool,
     pub(crate) fallback_enabled: bool,
     pub(crate) default_ttl: u64,

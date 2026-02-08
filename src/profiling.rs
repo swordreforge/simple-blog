@@ -10,6 +10,7 @@
 
 #[cfg(feature = "profiling")]
 use pprof::{ProfilerGuard, ProfilerGuardBuilder};
+
 use std::path::PathBuf;
 
 #[cfg(feature = "profiling")]
@@ -20,6 +21,7 @@ pub struct ProfilingManager {
 }
 
 #[cfg(feature = "profiling")]
+#[allow(dead_code)]
 impl ProfilingManager {
     /// 创建性能分析管理器
     pub fn new(output_dir: PathBuf) -> Self {
@@ -73,11 +75,6 @@ impl ProfilingManager {
 
         Ok(())
     }
-
-    /// 检查是否已启用
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
 }
 
 #[cfg(feature = "profiling")]
@@ -93,6 +90,7 @@ impl Drop for ProfilingManager {
 pub struct ProfilingManager;
 
 #[cfg(not(feature = "profiling"))]
+#[allow(dead_code)]
 impl ProfilingManager {
     pub fn new(_output_dir: PathBuf) -> Self {
         println!("⚠️  性能分析功能未启用，请使用 --features profiling 编译");
@@ -105,9 +103,5 @@ impl ProfilingManager {
 
     pub fn disable_and_generate_report(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
-    }
-
-    pub fn is_enabled(&self) -> bool {
-        false
     }
 }

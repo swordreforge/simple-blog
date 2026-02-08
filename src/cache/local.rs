@@ -29,7 +29,6 @@ impl CacheEntry {
 /// 本地内存缓存后端（降级方案）
 pub struct LocalCacheBackend {
     cache: DashMap<String, CacheEntry>,
-    cleanup_interval: StdDuration,
     max_size: usize,
 }
 
@@ -38,23 +37,7 @@ impl LocalCacheBackend {
     pub fn new(max_size: Option<usize>) -> Self {
         Self {
             cache: DashMap::new(),
-            cleanup_interval: StdDuration::from_secs(300), // 5 分钟清理一次
             max_size: max_size.unwrap_or(10000),
-        }
-    }
-
-    /// 清理过期条目
-    fn cleanup_expired(&self) {
-        let mut keys_to_remove = Vec::new();
-        
-        for entry in self.cache.iter() {
-            if entry.value().is_expired() {
-                keys_to_remove.push(entry.key().clone());
-            }
-        }
-
-        for key in keys_to_remove {
-            self.cache.remove(&key);
         }
     }
 
@@ -78,31 +61,6 @@ impl LocalCacheBackend {
                 self.cache.remove(&key);
             }
         }
-    }
-
-    /// 启动后台清理任务
-    pub async fn start_cleanup_task(&self) {
-        let cache = self.cache.clone();
-        let interval = self.cleanup_interval;
-
-        tokio::spawn(async move {
-            let mut ticker = tokio::time::interval(interval);
-            loop {
-                ticker.tick().await;
-                
-                let mut keys_to_remove = Vec::new();
-
-                for entry in cache.iter() {
-                    if entry.value().is_expired() {
-                        keys_to_remove.push(entry.key().clone());
-                    }
-                }
-
-                for key in keys_to_remove {
-                    cache.remove(&key);
-                }
-            }
-        });
     }
 }
 
@@ -132,31 +90,5 @@ impl CacheBackend for LocalCacheBackend {
     async fn delete(&self, key: &str) -> Result<(), CacheError> {
         self.cache.remove(key);
         Ok(())
-    }
-
-    async fn exists(&self, key: &str) -> bool {
-        if let Some(entry) = self.cache.get(key) {
-            if entry.is_expired() {
-                self.cache.remove(key);
-                false
-            } else {
-                true
-            }
-        } else {
-            false
-        }
-    }
-
-    async fn clear(&self) -> Result<(), CacheError> {
-        self.cache.clear();
-        Ok(())
-    }
-
-    fn backend_name(&self) -> &'static str {
-        "local"
-    }
-
-    async fn health_check(&self) -> bool {
-        true // 本地缓存总是健康的
     }
 }

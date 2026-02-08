@@ -204,7 +204,7 @@ async fn main() -> std::io::Result<()> {
         } else {
             if let Some(manager) = app_cache.manager() {
                 let stats = manager.get_stats();
-                println!("✅ 缓存已启用: {} (TTL: {}秒)", stats.backend, stats.default_ttl);
+                println!("✅ 缓存已启用 (TTL: {}秒)", stats.default_ttl);
                 if stats.has_fallback && stats.fallback_enabled {
                     println!("🔄 自动降级已启用");
                 }
