@@ -280,13 +280,131 @@ int user_verify_password(sqlite3 *db, const char *username, const char *password
 int passage_get_by_id(sqlite3 *db, int id, Passage *passage) { return -1; }
 int passage_get_by_uuid(sqlite3 *db, const char *uuid, Passage *passage) { return -1; }
 int passage_get_list(sqlite3 *db, Passage **passages, int *count, int limit, int offset) { return -1; }
-int passage_get_published(sqlite3 *db, Passage **passages, int *count, int limit, int offset) { return -1; }
+
+int passage_get_published(sqlite3 *db, Passage **passages, int *count, int limit, int offset) {
+    if (!db || !passages || !count) return -1;
+
+    const char *sql = "SELECT id, uuid, title, content, html_content, summary, author, tags, "
+                      "category, status, file_path, visibility, is_scheduled, published_at, "
+                      "cover_image, created_at, updated_at "
+                      "FROM passages WHERE status = 'published' AND visibility = 'public' "
+                      "ORDER BY published_at DESC LIMIT ? OFFSET ?";
+
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        LOG_ERROR("准备查询失败: %s", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_int(stmt, 1, limit);
+    sqlite3_bind_int(stmt, 2, offset);
+
+    /* 先查询结果数量 */
+    int result_count = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        result_count++;
+    }
+    sqlite3_reset(stmt);
+
+    if (result_count == 0) {
+        *passages = NULL;
+        *count = 0;
+        sqlite3_finalize(stmt);
+        return 0;
+    }
+
+    /* 分配内存 */
+    *passages = (Passage*)calloc(result_count, sizeof(Passage));
+    if (!*passages) {
+        LOG_ERROR("内存分配失败");
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    /* 重新执行查询获取数据 */
+    int idx = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW && idx < result_count) {
+        Passage *p = &(*passages)[idx];
+        memset(p, 0, sizeof(Passage));
+        p->id = sqlite3_column_int(stmt, 0);
+
+        const char *text = (const char*)sqlite3_column_text(stmt, 1);
+        if (text) strncpy(p->uuid, text, sizeof(p->uuid) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 2);
+        if (text) strncpy(p->title, text, sizeof(p->title) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 3);
+        if (text) strncpy(p->content, text, sizeof(p->content) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 4);
+        if (text) strncpy(p->html_content, text, sizeof(p->html_content) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 5);
+        if (text) strncpy(p->summary, text, sizeof(p->summary) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 6);
+        if (text) strncpy(p->author, text, sizeof(p->author) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 7);
+        if (text) strncpy(p->tags, text, sizeof(p->tags) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 8);
+        if (text) strncpy(p->category, text, sizeof(p->category) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 9);
+        if (text) strncpy(p->status, text, sizeof(p->status) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 10);
+        if (text) strncpy(p->file_path, text, sizeof(p->file_path) - 1);
+
+        text = (const char*)sqlite3_column_text(stmt, 11);
+        if (text) strncpy(p->visibility, text, sizeof(p->visibility) - 1);
+
+        p->is_scheduled = sqlite3_column_int(stmt, 12) != 0;
+        p->published_at = sqlite3_column_int64(stmt, 13);
+
+        text = (const char*)sqlite3_column_text(stmt, 14);
+        if (text) strncpy(p->cover_image, text, sizeof(p->cover_image) - 1);
+
+        p->created_at = sqlite3_column_int64(stmt, 15);
+        p->updated_at = sqlite3_column_int64(stmt, 16);
+        idx++;
+    }
+
+    *count = idx;
+    sqlite3_finalize(stmt);
+    return 0;
+}
+
 int passage_update(sqlite3 *db, const Passage *passage) { return -1; }
 int passage_delete_by_id(sqlite3 *db, int id) { return -1; }
 int passage_delete_by_uuid(sqlite3 *db, const char *uuid) { return -1; }
 int passage_delete_batch(sqlite3 *db, const int *ids, int count) { return -1; }
 int passage_count(sqlite3 *db, int *count) { return -1; }
-int passage_count_published(sqlite3 *db, int *count) { return -1; }
+
+int passage_count_published(sqlite3 *db, int *count) {
+    if (!db || !count) return -1;
+
+    const char *sql = "SELECT COUNT(*) FROM passages WHERE status = 'published' AND visibility = 'public'";
+
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        LOG_ERROR("准备查询失败: %s", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        *count = sqlite3_column_int(stmt, 0);
+    } else {
+        *count = 0;
+    }
+
+    sqlite3_finalize(stmt);
+    return 0;
+}
 
 int user_create(sqlite3 *db, const User *user, int *id) { return -1; }
 int user_get_by_id(sqlite3 *db, int id, User *user) { return -1; }

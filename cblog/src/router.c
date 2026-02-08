@@ -4,6 +4,7 @@
 #include "include/server.h"
 #include "include/http.h"
 #include "include/template.h"
+#include "include/database.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -202,7 +203,140 @@ int handle_passage_detail(Server *srv, Connection *conn, HttpRequest *req) {
 }
 
 int handle_archive(Server *srv, Connection *conn, HttpRequest *req) {
-    return server_send_html(srv, conn, "<h1>归档页面</h1><p>开发中...</p>");
+    /* 获取分页参数 */
+    const char *page_str = http_get_param(req, "page");
+    int page = page_str ? atoi(page_str) : 1;
+    if (page < 1) page = 1;
+
+    const int per_page = 10;
+    const int offset = (page - 1) * per_page;
+
+    /* 获取文章总数 */
+    int total_count = 0;
+    if (passage_count_published(srv->db, &total_count) < 0) {
+        return server_send_error_page(srv, conn, HTTP_STATUS_INTERNAL_SERVER_ERROR,
+                                      "数据库错误", "无法获取文章总数");
+    }
+
+    /* 获取文章列表 */
+    Passage *passages = NULL;
+    int passage_count = 0;
+    if (passage_get_published(srv->db, &passages, &passage_count, per_page, offset) < 0) {
+        return server_send_error_page(srv, conn, HTTP_STATUS_INTERNAL_SERVER_ERROR,
+                                      "数据库错误", "无法获取文章列表");
+    }
+
+    /* 创建模板上下文 */
+    TemplateContext *ctx = template_context_create();
+    template_set_var(ctx, "site_name", "RustBlog");
+    template_set_var(ctx, "year", "2026");
+
+    /* 设置文章总数 */
+    char total_str[32];
+    snprintf(total_str, sizeof(total_str), "%d", total_count);
+    template_set_var(ctx, "total", total_str);
+
+    /* 生成文章列表 HTML - 使用固定大小的缓冲区 */
+    char passages_html[16384] = {0};
+    passages_html[0] = '\0';
+
+    for (int i = 0; i < passage_count; i++) {
+        Passage *p = &passages[i];
+
+        /* 格式化发布时间 */
+        char time_str[64];
+        time_t pub_time = (time_t)p->published_at;
+        struct tm *tm_info = localtime(&pub_time);
+        strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M", tm_info);
+
+        /* 生成文章卡片 HTML */
+        char passage_html[2048];
+        snprintf(passage_html, sizeof(passage_html),
+                 "<div class=\"passage\">"
+                 "<h3><a href=\"/passage/%d\">%s</a></h3>"
+                 "<div class=\"meta\">%s | 作者: %s</div>",
+                 p->id, p->title, time_str, p->author);
+
+        /* 添加摘要 */
+        if (strlen(p->summary) > 0) {
+            char summary_html[600];
+            snprintf(summary_html, sizeof(summary_html),
+                     "<div class=\"summary\">%s</div>", p->summary);
+            strcat(passage_html, summary_html);
+        }
+
+        /* 添加标签 */
+        if (strlen(p->tags) > 0) {
+            strcat(passage_html, "<div class=\"tags\">");
+            /* 简化版：直接显示 tags 字符串 */
+            char tags_html[300];
+            snprintf(tags_html, sizeof(tags_html),
+                     "<span>%s</span>", p->tags);
+            strcat(passage_html, tags_html);
+            strcat(passage_html, "</div>");
+        }
+
+        strcat(passage_html, "</div>");
+
+        /* 追加到列表，检查缓冲区大小 */
+        if (strlen(passages_html) + strlen(passage_html) < sizeof(passages_html) - 1) {
+            strcat(passages_html, passage_html);
+        }
+    }
+
+    template_set_var(ctx, "passages", passages_html);
+
+    /* 生成分页 HTML */
+    char pagination_html[512] = "";
+    int total_pages = (total_count + per_page - 1) / per_page;
+
+    if (total_pages > 1) {
+        if (page > 1) {
+            char prev_link[64];
+            snprintf(prev_link, sizeof(prev_link),
+                     "<a href=\"/archive?page=%d\">&laquo; 上一页</a>", page - 1);
+            strcat(pagination_html, prev_link);
+        }
+
+        for (int i = 1; i <= total_pages; i++) {
+            if (i == page) {
+                char page_num[32];
+                snprintf(page_num, sizeof(page_num),
+                         "<span class=\"current\">%d</span>", i);
+                strcat(pagination_html, page_num);
+            } else {
+                char page_link[64];
+                snprintf(page_link, sizeof(page_link),
+                         "<a href=\"/archive?page=%d\">%d</a>", i, i);
+                strcat(pagination_html, page_link);
+            }
+        }
+
+        if (page < total_pages) {
+            char next_link[64];
+            snprintf(next_link, sizeof(next_link),
+                     "<a href=\"/archive?page=%d\">下一页 &raquo;</a>", page + 1);
+            strcat(pagination_html, next_link);
+        }
+    }
+
+    template_set_var(ctx, "pagination", pagination_html);
+
+    /* 渲染模板 */
+    char *html = template_render(ctx, "archive");
+
+    /* 清理资源 */
+    if (passages) free(passages);
+    template_context_destroy(ctx);
+
+    if (!html) {
+        return server_send_error_page(srv, conn, HTTP_STATUS_INTERNAL_SERVER_ERROR,
+                                      "渲染错误", "无法渲染归档页面");
+    }
+
+    int ret = server_send_html(srv, conn, html);
+    free(html);
+    return ret;
 }
 
 int handle_about(Server *srv, Connection *conn, HttpRequest *req) {
