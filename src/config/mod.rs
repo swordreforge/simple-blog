@@ -22,6 +22,8 @@ pub struct ConfigFile {
     pub logging: Option<LoggingConfigFile>,
     #[serde(default)]
     pub jwt: Option<JwtConfigFile>,
+    #[serde(default)]
+    pub cache: Option<CacheConfigFile>,
 }
 
 impl Default for ConfigFile {
@@ -35,6 +37,7 @@ impl Default for ConfigFile {
             tls: None,
             logging: None,
             jwt: None,
+            cache: None,
         }
     }
 }
@@ -92,18 +95,30 @@ pub struct JwtConfigFile {
     pub secret: Option<String>,
 }
 
+/// 缓存配置（配置文件）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheConfigFile {
+    pub enabled: Option<bool>,
+    pub backend: Option<String>,
+    pub valkey_url: Option<String>,
+    pub valkey_pool_size: Option<u32>,
+    pub ttl_seconds: Option<u64>,
+    pub fallback_to_local: Option<bool>,
+}
+
 /// 命令行参数配置
 #[derive(Parser, Debug, Clone)]
 #[command(name = "rustblog")]
 #[command(about = "A simple blog system written in Rust", long_about = None)]
-#[command(version)]
+#[command(version = "1.1.4")]
+#[command(arg_required_else_help = false)]
 pub struct CliArgs {
     /// 配置文件路径 (TOML 格式)
     #[arg(short = 'c', long)]
     pub config: Option<String>,
 
     /// Port to listen on
-    #[arg(short, long, default_value = "8080")]
+    #[arg(short = 'p', long, default_value = "8080")]
     pub port: u16,
 
     /// Host to bind to
@@ -150,9 +165,55 @@ pub struct CliArgs {
     #[arg(long)]
     pub jwt_secret: Option<String>,
 
+    /// Enable cache
+    #[arg(long)]
+    pub enable_cache: bool,
+
+    /// Cache backend (valkey, local, auto)
+    #[arg(long, default_value = "auto")]
+    pub cache_backend: String,
+
+    /// Valkey connection URL
+    #[arg(long)]
+    pub valkey_url: Option<String>,
+
+    /// Cache TTL in seconds
+    #[arg(long, default_value = "3600")]
+    pub cache_ttl: u64,
+
+    /// Fallback to local cache if Valkey fails
+    #[arg(long, default_value = "true")]
+    pub cache_fallback: bool,
+
     /// 基础目录（可执行文件所在目录，自动计算）
-    #[clap(skip)]
+    #[arg(skip)]
     pub base_dir: PathBuf,
+}
+
+impl Default for CliArgs {
+    fn default() -> Self {
+        Self {
+            config: None,
+            port: 8080,
+            host: "0.0.0.0".to_string(),
+            db_path: "./data/blog.db".to_string(),
+            templates_dir: "templates".to_string(),
+            static_dir: "static".to_string(),
+            log_level: "info".to_string(),
+            enable_tls: false,
+            tls_cert: None,
+            tls_key: None,
+            geoip_db_path: "./data/GeoLite2-City.mmdb".to_string(),
+            disable_template_cache: false,
+            jwt_secret: None,
+            enable_cache: false,
+            cache_backend: "auto".to_string(),
+            valkey_url: None,
+            cache_ttl: 3600,
+            cache_fallback: true,
+            base_dir: PathBuf::from("."),
+        }
+    }
 }
 
 impl CliArgs {
@@ -230,6 +291,25 @@ impl CliArgs {
         if let Some(jwt) = config.jwt {
             if let Some(secret) = jwt.secret {
                 self.jwt_secret = Some(secret);
+            }
+        }
+
+        // 缓存配置
+        if let Some(cache) = config.cache {
+            if let Some(enabled) = cache.enabled {
+                self.enable_cache = enabled;
+            }
+            if let Some(backend) = cache.backend {
+                self.cache_backend = backend;
+            }
+            if let Some(valkey_url) = cache.valkey_url {
+                self.valkey_url = Some(valkey_url);
+            }
+            if let Some(ttl) = cache.ttl_seconds {
+                self.cache_ttl = ttl;
+            }
+            if let Some(fallback) = cache.fallback_to_local {
+                self.cache_fallback = fallback;
             }
         }
     }

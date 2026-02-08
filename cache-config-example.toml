@@ -1,0 +1,20 @@
+# 缓存配置示例文件
+
+[cache]
+# 是否启用缓存
+enabled = true
+
+# 缓存后端类型
+# - "local": 仅使用本地内存缓存
+# - "valkey": 仅使用 Valkey/Redis 缓存
+# - "auto": 自动选择，优先使用 Valkey，失败时降级到本地缓存
+backend = "auto"
+
+# Valkey 连接 URL（仅在 backend 为 "valkey" 或 "auto" 时使用）
+valkey_url = "redis://localhost:6379"
+
+# 缓存默认过期时间（秒）
+ttl_seconds = 3600
+
+# 当 Valkey 不可用时是否自动降级到本地缓存
+fallback_to_local = true

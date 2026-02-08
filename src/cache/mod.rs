@@ -1,20 +1,30 @@
-// Cache module - simplified version for future use
+mod backend;
+mod manager;
+mod local;
+mod valkey;
 
-/// 缓存配置
-#[derive(Debug, Clone)]
-pub struct CacheConfig;
+pub use backend::{CacheConfig, CacheError};
+pub use manager::CacheManager;
 
-impl Default for CacheConfig {
-    fn default() -> Self {
-        Self
-    }
+/// 应用缓存（兼容旧接口）
+pub struct AppCache {
+    manager: Option<CacheManager>,
 }
-
-/// 应用缓存
-pub struct AppCache;
 
 impl AppCache {
     pub fn new(_config: CacheConfig) -> Self {
-        Self
+        Self { manager: None }
+    }
+
+    /// 初始化缓存管理器
+    pub async fn init_manager(&mut self, backend_type: &str, valkey_url: Option<&str>, config: CacheConfig) -> Result<(), CacheError> {
+        let manager = CacheManager::new(backend_type, valkey_url, config).await?;
+        self.manager = Some(manager);
+        Ok(())
+    }
+
+    /// 获取缓存管理器
+    pub fn manager(&self) -> Option<&CacheManager> {
+        self.manager.as_ref()
     }
 }

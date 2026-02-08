@@ -129,6 +129,7 @@ async fn main() -> std::io::Result<()> {
     println!("💾 模板缓存: {}", if config.templates.cache_enabled { "启用" } else { "禁用" });
     println!("🔒 TLS: {}", if args.enable_tls { "启用" } else { "禁用" });
     println!("📊 日志级别: {}", args.log_level);
+    println!("💾 应用缓存: {}", if args.enable_cache { "启用" } else { "禁用" });
 
     // 检查首次运行
     check_first_run(&args);
@@ -172,8 +173,31 @@ async fn main() -> std::io::Result<()> {
     
     // 初始化应用缓存
     println!("💾 初始化应用缓存...");
-    let cache_config = cache::CacheConfig::default();
-    let app_cache = std::sync::Arc::new(cache::AppCache::new(cache_config));
+    let cache_config = cache::CacheConfig::new(args.cache_ttl, args.cache_fallback);
+    let mut app_cache = cache::AppCache::new(cache_config.clone());
+    
+    // 如果启用了缓存，初始化缓存管理器
+    if args.enable_cache {
+        println!("🚀 缓存模式: {}", args.cache_backend);
+        let valkey_url = args.valkey_url.as_deref();
+        
+        if let Err(e) = app_cache.init_manager(&args.cache_backend, valkey_url, cache_config.clone()).await {
+            eprintln!("⚠️  缓存初始化失败: {}", e);
+            println!("📊 缓存功能将不可用");
+        } else {
+            if let Some(manager) = app_cache.manager() {
+                let stats = manager.get_stats();
+                println!("✅ 缓存已启用: {} (TTL: {}秒)", stats.backend, stats.default_ttl);
+                if stats.has_fallback && stats.fallback_enabled {
+                    println!("🔄 自动降级已启用");
+                }
+            }
+        }
+    } else {
+        println!("⚠️  缓存未启用");
+    }
+    
+    let app_cache = std::sync::Arc::new(app_cache);
     
     // 初始化阅读记录批量处理器
     println!("📊 初始化阅读记录批量处理器...");
