@@ -72,9 +72,17 @@ pub async fn list(
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
-    // 解析分页参数
-    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(10);
-    let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
+    // 解析并验证分页参数
+    let limit: i64 = query.get("limit")
+        .and_then(|l| l.parse::<i64>().ok())
+        .filter(|&l| l > 0 && l <= 1000) // 限制范围：1-1000
+        .unwrap_or(10);
+    
+    let page: i64 = query.get("page")
+        .and_then(|p| p.parse::<i64>().ok())
+        .filter(|&p| p > 0)
+        .unwrap_or(1);
+    
     let offset = (page - 1) * limit;
     
     // 生成缓存键

@@ -59,8 +59,9 @@ pub async fn list(
 ) -> HttpResponse {
     let comment_repo = CommentRepository::new(repo.get_pool().clone());
     
-    let page = query.page.unwrap_or(1);
-    let limit = query.limit.unwrap_or(10);
+    // 验证并设置默认值
+    let page = query.page.filter(|&p| p > 0).unwrap_or(1);
+    let limit = query.limit.filter(|&l| l > 0 && l <= 1000).unwrap_or(10);
     let offset = (page - 1) * limit;
     
     let comments = if let Some(ref passage_uuid) = query.passage_uuid {

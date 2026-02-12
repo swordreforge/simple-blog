@@ -45,9 +45,16 @@ pub async fn list(
 ) -> HttpResponse {
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
     
-    // 解析分页参数
-    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
-    let offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+    // 解析并验证分页参数
+    let limit: i64 = query.get("limit")
+        .and_then(|l| l.parse::<i64>().ok())
+        .filter(|&l| l > 0 && l <= 1000)
+        .unwrap_or(20);
+    
+    let offset: i64 = query.get("offset")
+        .and_then(|o| o.parse::<i64>().ok())
+        .filter(|&o| o >= 0)
+        .unwrap_or(0);
     
     // 检查是否有 passage_id 参数
     let passage_id = query.get("passage_id");
