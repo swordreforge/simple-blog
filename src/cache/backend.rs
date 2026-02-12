@@ -14,6 +14,7 @@ pub trait CacheBackend: Send + Sync {
     async fn delete(&self, key: &str) -> Result<(), CacheError>;
 
     /// 批量删除缓存值
+    #[allow(dead_code)]
     async fn delete_many(&self, keys: &[String]) -> Result<(), CacheError>;
 
     /// 根据模式删除缓存值（支持通配符）

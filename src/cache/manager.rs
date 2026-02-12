@@ -154,6 +154,7 @@ impl CacheManager {
     }
 
     /// 批量删除缓存值
+    #[allow(dead_code)]
     pub async fn delete_many(&self, keys: &[String]) -> Result<(), CacheError> {
         if keys.is_empty() {
             return Ok(());

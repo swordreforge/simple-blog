@@ -1083,11 +1083,9 @@ pub async fn update_by_query(
     
     // 更新字段
     let mut file_updated = false;
-    let mut title_updated = false;
     if let Some(ref title) = req_json.title {
         passage.title = title.clone();
         file_updated = true;
-        title_updated = true;
     }
     if let Some(ref content) = req_json.content {
         // 转换 Markdown 为 HTML
