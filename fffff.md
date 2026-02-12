@@ -11,4 +11,4 @@
    - 引入 Write-Behind：写操作时异步删除相关缓存
    - 使用 Redis 的 Pub/Sub 或 Key Space 
      Notifications：监听数据变化并自动失效缓存
-   - 缩短 TTL 时间（如改为 30-60 秒）来平衡一致性与性能
+   - 缩短 TTL 时间（如改为 30-60 秒）来平衡一致性与性

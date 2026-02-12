@@ -91,4 +91,30 @@ impl CacheBackend for LocalCacheBackend {
         self.cache.remove(key);
         Ok(())
     }
+
+    async fn delete_many(&self, keys: &[String]) -> Result<(), CacheError> {
+        for key in keys {
+            self.cache.remove(key);
+        }
+        Ok(())
+    }
+
+    async fn delete_pattern(&self, pattern: &str) -> Result<(), CacheError> {
+        use glob::Pattern;
+        
+        let glob_pattern = Pattern::new(pattern).map_err(|e| {
+            CacheError::Unknown(format!("Invalid glob pattern: {}", e))
+        })?;
+        
+        let keys_to_remove: Vec<String> = self.cache.iter()
+            .filter(|entry| glob_pattern.matches(entry.key()))
+            .map(|entry| entry.key().clone())
+            .collect();
+        
+        for key in keys_to_remove {
+            self.cache.remove(&key);
+        }
+        
+        Ok(())
+    }
 }

@@ -227,6 +227,7 @@ pub async fn create(
 /// 更新分类
 pub async fn update(
     repo: web::Data<Arc<dyn Repository>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     path: web::Path<i64>,
     req: web::Json<UpdateCategoryRequest>,
     http_req: actix_web::HttpRequest,
@@ -272,6 +273,12 @@ pub async fn update(
     
     match category_repo.update(&category).await {
         Ok(_) => {
+            // 清除所有文章列表和详情缓存
+            if let Some(manager) = app_cache.manager() {
+                let _ = manager.delete_pattern("passage:list:*").await;
+                let _ = manager.delete_pattern("passage:get:*").await;
+            }
+            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "分类更新成功"
@@ -290,6 +297,7 @@ pub async fn update(
 /// 删除分类
 pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     path: web::Path<i64>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -305,6 +313,12 @@ pub async fn delete(
     
     match category_repo.delete(id).await {
         Ok(_) => {
+            // 清除所有文章列表和详情缓存
+            if let Some(manager) = app_cache.manager() {
+                let _ = manager.delete_pattern("passage:list:*").await;
+                let _ = manager.delete_pattern("passage:get:*").await;
+            }
+            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "分类删除成功"
@@ -329,6 +343,7 @@ pub struct BatchDeleteRequest {
 /// 批量删除分类
 pub async fn delete_batch(
     repo: web::Data<Arc<dyn Repository>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     req: web::Json<BatchDeleteRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -350,6 +365,12 @@ pub async fn delete_batch(
     
     match category_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
+            // 清除所有文章列表和详情缓存
+            if let Some(manager) = app_cache.manager() {
+                let _ = manager.delete_pattern("passage:list:*").await;
+                let _ = manager.delete_pattern("passage:get:*").await;
+            }
+            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": format!("成功删除 {} 个分类", count),

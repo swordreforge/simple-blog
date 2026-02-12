@@ -153,6 +153,40 @@ impl CacheManager {
         primary_result
     }
 
+    /// 批量删除缓存值
+    pub async fn delete_many(&self, keys: &[String]) -> Result<(), CacheError> {
+        if keys.is_empty() {
+            return Ok(());
+        }
+
+        // 从主缓存删除
+        let primary_result = self.primary.delete_many(keys).await;
+
+        // 从备用缓存删除
+        if self.fallback_enabled.load(Ordering::Relaxed) {
+            if let Some(fallback) = &self.fallback {
+                let _ = fallback.delete_many(keys).await;
+            }
+        }
+
+        primary_result
+    }
+
+    /// 根据模式删除缓存值
+    pub async fn delete_pattern(&self, pattern: &str) -> Result<(), CacheError> {
+        // 从主缓存删除
+        let primary_result = self.primary.delete_pattern(pattern).await;
+
+        // 从备用缓存删除
+        if self.fallback_enabled.load(Ordering::Relaxed) {
+            if let Some(fallback) = &self.fallback {
+                let _ = fallback.delete_pattern(pattern).await;
+            }
+        }
+
+        primary_result
+    }
+
     /// 获取缓存统计信息
     pub fn get_stats(&self) -> CacheStats {
         CacheStats {

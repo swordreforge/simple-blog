@@ -1,6 +1,5 @@
 use super::backend::{CacheBackend, CacheError};
 
-#[cfg(feature = "valkey")]
 use async_trait::async_trait;
 
 #[cfg(feature = "valkey")]
@@ -68,6 +67,58 @@ impl CacheBackend for ValkeyCacheBackend {
             .await
             .map_err(|e| CacheError::ConnectionError(format!("DEL failed: {}", e)))
     }
+
+    async fn delete_many(&self, keys: &[String]) -> Result<(), CacheError> {
+        if keys.is_empty() {
+            return Ok(());
+        }
+
+        let prefixed_keys: Vec<String> = keys.iter()
+            .map(|k| self.prefixed_key(k))
+            .collect();
+        
+        let mut conn = self.manager.clone();
+        
+        conn.del(prefixed_keys)
+            .await
+            .map_err(|e| CacheError::ConnectionError(format!("DEL many failed: {}", e)))
+    }
+
+    async fn delete_pattern(&self, pattern: &str) -> Result<(), CacheError> {
+        let prefixed_pattern = self.prefixed_key(pattern);
+        let mut conn = self.manager.clone();
+        
+        // 使用 SCAN 命令找到所有匹配的键，然后删除
+        let mut keys_to_delete = Vec::new();
+        let mut cursor: u64 = 0;
+        
+        loop {
+            let (next_cursor, keys): (u64, Vec<String>) = redis::cmd("SCAN")
+                .arg(cursor)
+                .arg("MATCH")
+                .arg(&prefixed_pattern)
+                .arg("COUNT")
+                .arg(100)
+                .query_async(&mut conn)
+                .await
+                .map_err(|e| CacheError::ConnectionError(format!("SCAN failed: {}", e)))?;
+            
+            keys_to_delete.extend(keys);
+            
+            cursor = next_cursor;
+            if cursor == 0 {
+                break;
+            }
+        }
+        
+        if !keys_to_delete.is_empty() {
+            conn.del::<_, ()>(keys_to_delete)
+                .await
+                .map_err(|e| CacheError::ConnectionError(format!("DEL pattern failed: {}", e)))?;
+        }
+        
+        Ok(())
+    }
 }
 
 /// 禁用 Valkey 特性时的存根实现
@@ -84,7 +135,7 @@ impl ValkeyCacheBackend {
 }
 
 #[cfg(not(feature = "valkey"))]
-#[async_trait::async_trait]
+#[async_trait]
 impl CacheBackend for ValkeyCacheBackend {
     async fn get(&self, _key: &str) -> Option<String> {
         None
@@ -97,6 +148,18 @@ impl CacheBackend for ValkeyCacheBackend {
     }
 
     async fn delete(&self, _key: &str) -> Result<(), CacheError> {
+        Err(CacheError::ConnectionError(
+            "Valkey feature is not enabled".to_string(),
+        ))
+    }
+
+    async fn delete_many(&self, _keys: &[String]) -> Result<(), CacheError> {
+        Err(CacheError::ConnectionError(
+            "Valkey feature is not enabled".to_string(),
+        ))
+    }
+
+    async fn delete_pattern(&self, _pattern: &str) -> Result<(), CacheError> {
         Err(CacheError::ConnectionError(
             "Valkey feature is not enabled".to_string(),
         ))
