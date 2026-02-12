@@ -3207,10 +3207,12 @@ function findArticleByTitle(title) {
   console.log('当前文章数据:', articlesData);
   
   // 标准化标题函数（用于模糊匹配）
+  // 必须与 sanitizeTitle 函数的逻辑一致
   const normalizeTitle = (t) => t.toLowerCase()
     .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '');
+    .replace(/\s+/g, '-')  // 空格转换为连字符
+    .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '')  // 移除特殊字符
+    .replace(/-+/g, '-');  // 合并多个连字符为一个
 
   const normalizedInput = normalizeTitle(title);
   console.log('标准化后的输入标题:', normalizedInput);
@@ -3310,6 +3312,13 @@ async function loadCurrentArticleFromPath() {
           // 渲染文章内容
           renderArticle(articleData);
 
+          // 将文章添加到 articlesData 以保持缓存一致性
+          const organizedArticle = organizeArticlesByFolder([article]);
+          if (organizedArticle.folders && organizedArticle.folders.length > 0) {
+            articlesData = mergeArticlesData(articlesData, organizedArticle);
+            renderFileTree();
+          }
+
           // 更新活动文章
           appState.activeArticleId = `article-${article.id}`;
           if (!appState.openTabs.includes(`article-${article.id}`)) {
@@ -3359,22 +3368,28 @@ async function fetchArticlesData() {
     const result = await response.json();
     
     if (result.success && result.data) {
-      // 如果是第一页，重新组织数据
+      const newArticles = organizeArticlesByFolder(result.data);
+
+      // 如果是第一页，需要合并已有数据（可能包含 loadCurrentArticleFromPath 添加的文章）
       if (currentPage === 1) {
-        articlesData = organizeArticlesByFolder(result.data);
+        // 如果 articlesData 中已有文章，先提取出来再合并
+        if (articlesData.folders && articlesData.folders.length > 0) {
+          articlesData = mergeArticlesData(articlesData, newArticles);
+        } else {
+          articlesData = newArticles;
+        }
         renderFileTree();
       } else {
         // 否则追加数据
-        const newArticles = organizeArticlesByFolder(result.data);
         articlesData = mergeArticlesData(articlesData, newArticles);
         renderFileTree();
       }
-      
+
       // 更新分页状态
       if (result.pagination) {
         hasMoreArticles = result.pagination.has_more;
       }
-      
+
       currentPage++;
     }
   } catch (error) {

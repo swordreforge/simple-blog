@@ -78,7 +78,7 @@ pub async fn list(
     let offset = (page - 1) * limit;
     
     // 生成缓存键
-    let cache_key = format!("passage:list:page: {}:limit:{}", page, limit);
+    let cache_key = format!("passage:list:page:{}:limit:{}", page, limit);
     
     // 尝试从缓存获取
     if let Some(manager) = app_cache.manager() {
@@ -177,17 +177,31 @@ pub async fn get(
         .map(|r| r.0.clone())
         .unwrap_or_else(|| String::new());
     
-    // 智能识别：如果是纯数字，则按 ID 查询；否则按 UUID 查询
+    // 智能识别：如果是纯数字且较小（< 1000000），则按 ID 查询；否则按 UUID 查询
     let passage = if let Ok(id) = param.parse::<i64>() {
-        // 数字 ID 查询
-        match passage_repo.get_by_id(id).await {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("获取文章失败: {}", e);
-                return HttpResponse::NotFound().json(serde_json::json!({
+        // 只对较小的数字 ID 进行 ID 查询（避免将 Snowflake UUID 误识别为 ID）
+        if id < 1_000_000 {
+            match passage_repo.get_by_id(id).await {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("获取文章失败: {}", e);
+                    return HttpResponse::NotFound().json(serde_json::json!({
                     "success": false,
                     "message": "文章不存在"
                 }));
+                }
+            }
+        } else {
+            // 数字太大，视为 UUID
+            match passage_repo.get_by_uuid(&param).await {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("获取文章失败: {}", e);
+                    return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "文章不存在"
+                }));
+                }
             }
         }
     } else {
@@ -352,6 +366,7 @@ pub async fn get(
 pub async fn create(
     repo: web::Data<Arc<dyn Repository>>,
     req: web::Json<CreatePassageRequest>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
@@ -445,12 +460,26 @@ pub async fn create(
             // 获取刚创建的文章信息
             match passage_repo.get_by_id(id).await {
                 Ok(created_passage) => {
+                    let uuid = created_passage.uuid.unwrap_or_else(|| String::new());
+
+                    // 清除列表缓存
+                    let cache_keys = vec![
+                        "passage:list:page:1:limit:10".to_string(),
+                        "passage:list:page:1:limit:20".to_string(),
+                    ];
+
+                    if let Some(manager) = app_cache.manager() {
+                        for key in cache_keys {
+                            let _ = manager.delete(&key).await;
+                        }
+                    }
+
                     HttpResponse::Ok().json(serde_json::json!({
                         "success": true,
                         "message": "文章创建成功",
                         "data": {
                             "id": id,
-                            "uuid": created_passage.uuid.unwrap_or_else(|| String::new())
+                            "uuid": uuid
                         }
                     }))
                 }
@@ -630,6 +659,7 @@ pub async fn update(
 pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<String>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let uuid = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
@@ -679,9 +709,25 @@ pub async fn delete(
     // 5. 删除文章记录
     match passage_repo.delete_by_uuid(&uuid).await {
         Ok(_) => {
+            // 清除缓存
+            let cache_keys = vec![
+                format!("passage:get:{}", uuid),
+                if let Some(id) = passage.id { format!("passage:get:{}", id) } else { String::new() },
+                "passage:list:page:1:limit:10".to_string(),
+                "passage:list:page:1:limit:20".to_string(),
+            ];
+
+            if let Some(manager) = app_cache.manager() {
+                for key in cache_keys {
+                    if !key.is_empty() {
+                        let _ = manager.delete(&key).await;
+                    }
+                }
+            }
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
-                "message": format!("文章删除成功，删除了 {} 个 Markdown 文件，{} 个附件文件", 
+                "message": format!("文章删除成功，删除了 {} 个 Markdown 文件，{} 个附件文件",
                     if deleted_markdown { 1 } else { 0 }, deleted_files)
             }))
         }
@@ -705,6 +751,7 @@ pub struct BatchDeleteRequest {
 pub async fn delete_batch(
     repo: web::Data<Arc<dyn Repository>>,
     req: web::Json<BatchDeleteRequest>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     if req.ids.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -769,6 +816,26 @@ pub async fn delete_batch(
     // 5. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
     match passage_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
+            // 清除所有相关缓存
+            let mut cache_keys = vec![
+                "passage:list:page:1:limit:10".to_string(),
+                "passage:list:page:1:limit:20".to_string(),
+            ];
+
+            // 清除每个文章的缓存
+            for uuid in &uuids {
+                cache_keys.push(format!("passage:get:{}", uuid));
+            }
+            for id in &req.ids {
+                cache_keys.push(format!("passage:get:{}", id));
+            }
+
+            if let Some(manager) = app_cache.manager() {
+                for key in cache_keys {
+                    let _ = manager.delete(&key).await;
+                }
+            }
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": format!("成功删除 {} 篇文章，{} 个 Markdown 文件，{} 个附件文件", count, deleted_markdown_files, deleted_files),

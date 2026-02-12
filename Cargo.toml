@@ -9,6 +9,7 @@ actix-files = "0.6.9"
 actix-multipart = { version = "0.7.2", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
+simd-json = { version = "0.17", default-features = false, features = ["serde_impl"], optional = true }
 lazy_static = "1.5"
 md-5 = { version = "0.10", default-features = false, features = ["std"] }
 tokio = { version = "1.49", default-features = false, features = ["rt-multi-thread", "net", "io-util", "fs", "sync", "macros"] }
@@ -90,6 +91,7 @@ pprof = { version = "0.14", features = ["flamegraph", "criterion", "protobuf-cod
 default = []
 valkey = ["redis"]
 profiling = ["pprof"]
+simd = ["simd-json"]
 
 [profile.release]
 opt-level = "z"
