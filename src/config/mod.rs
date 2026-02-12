@@ -185,6 +185,10 @@ pub struct CliArgs {
     #[arg(long, default_value = "true")]
     pub cache_fallback: bool,
 
+    /// Clear all cache on startup
+    #[arg(long)]
+    pub clear_cache: bool,
+
     /// Enable performance profiling (requires --features profiling)
     #[arg(long)]
     pub enable_profiling: bool,
@@ -215,6 +219,7 @@ impl Default for CliArgs {
             valkey_url: None,
             cache_ttl: 3600,
             cache_fallback: true,
+            clear_cache: false,
             enable_profiling: false,
             base_dir: PathBuf::from("."),
         }

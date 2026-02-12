@@ -461,16 +461,13 @@ pub async fn create(
             match passage_repo.get_by_id(id).await {
                 Ok(created_passage) => {
                     let uuid = created_passage.uuid.unwrap_or_else(|| String::new());
+                    let status = created_passage.status.clone();
 
-                    // 清除列表缓存
-                    let cache_keys = vec![
-                        "passage:list:page:1:limit:10".to_string(),
-                        "passage:list:page:1:limit:20".to_string(),
-                    ];
-
+                    // 清除缓存
                     if let Some(manager) = app_cache.manager() {
-                        for key in cache_keys {
-                            let _ = manager.delete(&key).await;
+                        // 如果创建的是已发布状态的文章，清除所有列表缓存
+                        if status == "published" {
+                            let _ = manager.delete_pattern("passage:list:*").await;
                         }
                     }
 
@@ -816,24 +813,19 @@ pub async fn delete_batch(
     // 5. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
     match passage_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
-            // 清除所有相关缓存
-            let mut cache_keys = vec![
-                "passage:list:page:1:limit:10".to_string(),
-                "passage:list:page:1:limit:20".to_string(),
-            ];
-
-            // 清除每个文章的缓存
-            for uuid in &uuids {
-                cache_keys.push(format!("passage:get:{}", uuid));
-            }
-            for id in &req.ids {
-                cache_keys.push(format!("passage:get:{}", id));
-            }
-
+            // 清除缓存
             if let Some(manager) = app_cache.manager() {
-                for key in cache_keys {
-                    let _ = manager.delete(&key).await;
+                // 清除每个文章的详情缓存
+                for uuid in &uuids {
+                    let detail_key = format!("passage:get:{}", uuid);
+                    let _ = manager.delete(&detail_key).await;
                 }
+                for id in &req.ids {
+                    let detail_key = format!("passage:get:{}", id);
+                    let _ = manager.delete(&detail_key).await;
+                }
+                // 清除所有文章列表缓存（批量删除会影响所有分页）
+                let _ = manager.delete_pattern("passage:list:*").await;
             }
 
             HttpResponse::Ok().json(serde_json::json!({
@@ -1037,6 +1029,7 @@ fn update_markdown_file_name(old_path: &str, new_title: &str, content: &str) -> 
 /// 通过查询参数更新文章（用于管理后台）
 pub async fn update_by_query(
     repo: web::Data<Arc<dyn Repository>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     query: web::Query<std::collections::HashMap<String, String>>,
     req_json: web::Json<UpdatePassageRequest>,
     http_req: actix_web::HttpRequest,
@@ -1074,11 +1067,19 @@ pub async fn update_by_query(
         }
     };
     
+    // 记录原始值用于检测变化
+    let original_status = passage.status.clone();
+    let original_visibility = passage.visibility.clone();
+    let original_tags = passage.tags.clone();
+    let original_category = passage.category.clone();
+    
     // 更新字段
     let mut file_updated = false;
+    let mut title_updated = false;
     if let Some(ref title) = req_json.title {
         passage.title = title.clone();
         file_updated = true;
+        title_updated = true;
     }
     if let Some(ref content) = req_json.content {
         // 转换 Markdown 为 HTML
@@ -1170,6 +1171,49 @@ pub async fn update_by_query(
     
     match passage_repo.update(&passage).await {
         Ok(_) => {
+            let uuid = passage.uuid.clone().unwrap_or_default();
+            
+            // 清除文章详情缓存（任何更新都需要）
+            if let Some(manager) = app_cache.manager() {
+                let detail_key = format!("passage:get:{}", uuid);
+                let _ = manager.delete(&detail_key).await;
+            }
+            
+            // 检测是否需要清除列表缓存
+            let mut should_clear_list_cache = false;
+            
+            // 状态变更（draft ↔ publish）
+            if req_json.status.is_some() && passage.status != original_status {
+                should_clear_list_cache = true;
+            }
+            
+            // 可见性变更
+            if req_json.visibility.is_some() && passage.visibility != original_visibility {
+                should_clear_list_cache = true;
+            }
+            
+            // 定时发布状态变更
+            if req_json.is_scheduled.is_some() {
+                should_clear_list_cache = true;
+            }
+            
+            // 标签变更（可能影响过滤）
+            if req_json.tags.is_some() && passage.tags != original_tags {
+                should_clear_list_cache = true;
+            }
+            
+            // 分类变更（可能影响过滤）
+            if req_json.category.is_some() && passage.category != original_category {
+                should_clear_list_cache = true;
+            }
+            
+            // 清除列表缓存（如果需要）
+            if should_clear_list_cache {
+                if let Some(manager) = app_cache.manager() {
+                    let _ = manager.delete_pattern("passage:list:*").await;
+                }
+            }
+            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "文章更新成功"
@@ -1188,6 +1232,7 @@ pub async fn update_by_query(
 // 通过查询参数删除文章（用于管理后台）
 pub async fn delete_by_query(
     repo: web::Data<Arc<dyn Repository>>,
+    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     query: web::Query<std::collections::HashMap<String, String>>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -1262,6 +1307,16 @@ pub async fn delete_by_query(
     // 删除文章记录
     match passage_repo.delete_by_uuid(&uuid).await {
         Ok(_) => {
+            // 清除文章详情缓存
+            if let Some(manager) = app_cache.manager() {
+                let detail_key = format!("passage:get:{}", uuid);
+                let _ = manager.delete(&detail_key).await;
+            }
+            // 清除所有文章列表缓存（删除会影响分页）
+            if let Some(manager) = app_cache.manager() {
+                let _ = manager.delete_pattern("passage:list:*").await;
+            }
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": format!("文章删除成功，删除了 {} 个附件文件", deleted_files)

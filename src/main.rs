@@ -210,6 +210,12 @@ async fn main() -> std::io::Result<()> {
                     println!("🔄 自动降级已启用");
                 }
             }
+            
+            // 如果设置了清除缓存，清除所有缓存
+            if args.clear_cache {
+                println!("🧹 正在清除旧缓存...");
+                app_cache.clear_all().await;
+            }
         }
     } else {
         println!("⚠️  缓存未启用");
