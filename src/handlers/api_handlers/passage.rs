@@ -71,23 +71,41 @@ pub async fn list(
     app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+
     // 解析并验证分页参数
     let limit: i64 = query.get("limit")
         .and_then(|l| l.parse::<i64>().ok())
         .filter(|&l| l > 0 && l <= 1000) // 限制范围：1-1000
         .unwrap_or(10);
-    
+
     let page: i64 = query.get("page")
         .and_then(|p| p.parse::<i64>().ok())
         .filter(|&p| p > 0)
         .unwrap_or(1);
-    
+
     let offset = (page - 1) * limit;
-    
-    // 生成缓存键
-    let cache_key = format!("passage:list:page:{}:limit:{}", page, limit);
-    
+
+    // 解析日期筛选参数
+    let year: Option<i32> = query.get("year")
+        .and_then(|y| y.parse::<i32>().ok());
+
+    let month: Option<i32> = query.get("month")
+        .and_then(|m| m.parse::<i32>().ok())
+        .filter(|&m| m >= 1 && m <= 12);
+
+    let day: Option<i32> = query.get("day")
+        .and_then(|d| d.parse::<i32>().ok())
+        .filter(|&d| d >= 1 && d <= 31);
+
+    // 生成缓存键（包含日期参数）
+    let date_part = match (year, month, day) {
+        (Some(y), Some(m), Some(d)) => format!("{}-{:02}-{:02}", y, m, d),
+        (Some(y), Some(m), None) => format!("{}-{:02}", y, m),
+        (Some(y), None, None) => format!("{}", y),
+        _ => "all".to_string(),
+    };
+    let cache_key = format!("passage:list:{}:page:{}:limit:{}", date_part, page, limit);
+
     // 尝试从缓存获取
     if let Some(manager) = app_cache.manager() {
         if let Some(cached_data) = manager.get(&cache_key).await {
@@ -99,18 +117,31 @@ pub async fn list(
             }
         }
     }
-    
+
     // 缓存未命中，从数据库获取
-    
-    // 获取已发布的文章（不包含完整内容，只返回摘要）
-    match passage_repo.get_published(limit, offset).await {
+    let result = if year.is_some() || month.is_some() || day.is_some() {
+        // 按日期查询
+        passage_repo.get_published_by_date(year, month, day, limit, offset).await
+    } else {
+        // 普通查询
+        passage_repo.get_published(limit, offset).await
+    };
+
+    match result {
         Ok(passages) => {
             // 获取总数
-            let total = match passage_repo.count_published().await {
-                Ok(c) => c,
-                Err(_) => passages.len() as i64,
+            let total = if year.is_some() || month.is_some() || day.is_some() {
+                match passage_repo.count_published_by_date(year, month, day).await {
+                    Ok(c) => c,
+                    Err(_) => passages.len() as i64,
+                }
+            } else {
+                match passage_repo.count_published().await {
+                    Ok(c) => c,
+                    Err(_) => passages.len() as i64,
+                }
             };
-            
+
             let data: Vec<PassageResponse> = passages.into_iter()
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
@@ -132,7 +163,7 @@ pub async fn list(
                     updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 })
                 .collect();
-            
+
             let total_pages = (total + limit - 1) / limit;
 
             let response = serde_json::json!({
@@ -146,14 +177,14 @@ pub async fn list(
                     "has_more": page < total_pages
                 }
             });
-            
+
             // 存储到缓存（TTL 5 分钟）
             if let Some(manager) = app_cache.manager() {
                 if let Ok(json_str) = serde_json::to_string(&response) {
                     let _ = manager.set(&cache_key, &json_str).await;
                 }
             }
-            
+
             HttpResponse::Ok()
                 .insert_header(("Cache-Control", "public, max-age=60"))
                 .insert_header(("X-Cache", "MISS"))
@@ -1414,6 +1445,8 @@ pub async fn get_by_query(
                     Ok(c) => c,
                     Err(_) => passages.len() as i64,
                 };
+                let total_pages = (total + limit - 1) / limit;
+                let has_more = page < total_pages;
                 
                 let data: Vec<PassageResponse> = passages.into_iter()
                     .map(|p| PassageResponse {
@@ -1440,9 +1473,13 @@ pub async fn get_by_query(
                 HttpResponse::Ok().json(serde_json::json!({
                     "success": true,
                     "data": data,
-                    "total": total,
-                    "page": page,
-                    "limit": limit
+                    "pagination": {
+                        "page": page,
+                        "limit": limit,
+                        "total": total,
+                        "total_pages": total_pages,
+                        "has_more": has_more
+                    }
                 }))
             }
             Err(e) => {
