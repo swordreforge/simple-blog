@@ -3145,9 +3145,6 @@ let articlesData = {
 
 // 初始化应用
 async function initApp() {
-  // 先加载所有文章数据（这样文件树就完整了）
-  await fetchArticlesData();
-
   // 从 URL 路径中提取文章 ID
   const pathParts = window.location.pathname.split('/');
 
@@ -3160,20 +3157,21 @@ async function initApp() {
     currentPassageID = parseInt(pathParts[2]);
   }
 
+  await fetchArticlesData();
   setupEventListeners();
 
   // 检查 URL hash 是否包含要打开的文章标题
   if (window.location.hash) {
     // 解析 hash，格式如: #文章标题1,文章标题2,文章标题3
     const hashTitles = window.location.hash.substring(1).split(',');
-
+    
     // 查找并打开所有指定的文章
     for (const title of hashTitles) {
       // URL 解码标题
       const decodedTitle = decodeURIComponent(title.trim());
       if (decodedTitle) {
-        // 查找匹配的文章（现在是异步的）
-        const article = await findArticleByTitle(decodedTitle);
+        // 查找匹配的文章
+        const article = findArticleByTitle(decodedTitle);
         if (article) {
           await openArticle(article.id);
         } else {
@@ -3181,7 +3179,7 @@ async function initApp() {
         }
       }
     }
-
+    
     // 清空 hash（可选，避免 URL 变长）
     // window.location.hash = '';
   }
@@ -3204,10 +3202,10 @@ async function initApp() {
 }
 
 // 根据标题查找文章
-async function findArticleByTitle(title) {
+function findArticleByTitle(title) {
   console.log('查找文章，输入标题:', title);
   console.log('当前文章数据:', articlesData);
-
+  
   // 标准化标题函数（用于模糊匹配）
   // 必须与 sanitizeTitle 函数的逻辑一致
   const normalizeTitle = (t) => t.toLowerCase()
@@ -3224,14 +3222,14 @@ async function findArticleByTitle(title) {
     if (!folders || folders.length === 0) {
       return null;
     }
-
+    
     for (const folder of folders) {
       console.log('检查文件夹:', folder.name);
       if (folder.files && folder.files.length > 0) {
         console.log('  文件夹中的文章:', folder.files.map(f => f.title));
         // 先尝试精确匹配
         let found = folder.files.find(file => file.title === title);
-
+        
         // 如果精确匹配失败，尝试标准化后的匹配
         if (!found) {
           found = folder.files.find(file => normalizeTitle(file.title) === normalizedInput);
@@ -3241,7 +3239,7 @@ async function findArticleByTitle(title) {
         } else {
           console.log('  通过精确匹配找到:', found.title);
         }
-
+        
         if (found) {
           return found;
         }
@@ -3255,123 +3253,42 @@ async function findArticleByTitle(title) {
     }
     return null;
   }
-
+  
   // articlesData 的结构是 { folders: [...] }
   const folders = articlesData.folders || Object.values(articlesData);
-  let result = searchInFolders(folders);
+  const result = searchInFolders(folders);
   console.log('查找结果:', result);
-
-  // 如果本地找不到，尝试从API按分页加载更多文章查找
-  if (!result && hasMoreArticles) {
-    console.log('本地未找到，尝试从API加载更多文章...');
-    try {
-      // 保存当前分页状态
-      const savedCurrentPage = currentPage;
-      const savedHasMore = hasMoreArticles;
-
-      // 从当前页开始加载，直到找到文章或没有更多数据
-      while (!result && hasMoreArticles && !isLoadingArticles) {
-        isLoadingArticles = true;
-        const response = await fetch(`/api/passages?page=${currentPage}&limit=${pageSize}`);
-        const apiResult = await response.json();
-
-        if (apiResult.success && apiResult.data) {
-          // 组织新文章数据
-          const newArticles = organizeArticlesByFolder(apiResult.data);
-
-          // 合并数据
-          articlesData = mergeArticlesData(articlesData, newArticles);
-
-          // 更新分页状态
-          if (apiResult.pagination) {
-            hasMoreArticles = apiResult.pagination.has_more;
-          }
-
-          currentPage++;
-
-          // 尝试在新加载的数据中查找
-          const updatedFolders = articlesData.folders || Object.values(articlesData);
-          result = searchInFolders(updatedFolders);
-          console.log('从API加载后查找结果:', result);
-        }
-
-        isLoadingArticles = false;
-      }
-
-      // 如果还没找到，恢复分页状态（避免影响后续加载）
-      if (!result) {
-        console.log('所有页面都加载完了，仍未找到文章');
-      }
-
-      // 重新渲染文件树以显示新加载的文章
-      renderFileTree();
-    } catch (error) {
-      console.error('从API加载文章失败:', error);
-      isLoadingArticles = false;
-    }
-  }
   return result;
 }
-
-// 文章列表缓存（用于 loadCurrentArticleFromPath）
-const passagesListCache = {
-  data: null,
-  timestamp: 0,
-  ttl: 5 * 60 * 1000 // 5分钟缓存
-};
 
 // 从路径加载当前文章
 async function loadCurrentArticleFromPath() {
   try {
     const pathParts = window.location.pathname.split('/');
     // 格式: /passage/{year}/{month}/{day}/{title}
-    const yearFromPath = pathParts[1];
-    const monthFromPath = pathParts[2];
-    const dayFromPath = pathParts[3];
     const titleFromPath = decodeURIComponent(pathParts[4]);
 
-    // 从URL中提取日期前缀，用于优化查找
-    const datePrefix = `${yearFromPath}-${monthFromPath}-${dayFromPath}`;
+    // 尝试根据路径查找文章
+    const response = await fetch('/api/passages');
+    const result = await response.json();
 
-    // 检查缓存
-    const now = Date.now();
-    let articles = [];
-    if (passagesListCache.data && now - passagesListCache.timestamp < passagesListCache.ttl) {
-      articles = passagesListCache.data;
-    } else {
-      // 缓存过期或不存在，从API获取（获取500篇文章覆盖大多数场景）
-      const response = await fetch('/api/passages?page=1&limit=500');
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        articles = result.data;
-        passagesListCache.data = articles;
-        passagesListCache.timestamp = now;
-      } else {
-        console.error('获取文章列表失败:', result.message);
-        return;
-      }
-    }
-
-    if (articles.length > 0) {
+    if (result.success && result.data) {
       // 标准化标题进行比较
       const normalizeTitle = (title) => title.toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[\/\?#\[\]@!$&'()*+,;=]/g, '')
         .replace(/-+/g, '-');
 
-      // 优化查找：先通过日期过滤，再匹配标题
-      const article = articles.find(a => {
-        const dateMatch = a.created_at && a.created_at.startsWith(datePrefix);
-        const titleMatch = normalizeTitle(a.title) === normalizeTitle(titleFromPath);
-        return dateMatch && titleMatch;
+      // 查找匹配路径的文章
+      const article = result.data.find(a => {
+        return normalizeTitle(a.title) === normalizeTitle(titleFromPath);
       });
 
       if (article) {
         currentPassageID = article.id;
 
-        // 调用详情接口获取完整的文章内容（包括 html_content），使用UUID
-        const detailResponse = await fetch(`/api/passages/${article.uuid}`);
+        // 调用详情接口获取完整的文章内容（包括 html_content）
+        const detailResponse = await fetch(`/api/passages/${article.id}`);
         const detailResult = await detailResponse.json();
 
         if (detailResult.success && detailResult.data) {
@@ -3395,8 +3312,12 @@ async function loadCurrentArticleFromPath() {
           // 渲染文章内容
           renderArticle(articleData);
 
-          // 注意：不再将文章添加到 articlesData，避免与 fetchArticlesData 重复
-          // 文章已经在 fetchArticlesData 中加载过了
+          // 将文章添加到 articlesData 以保持缓存一致性
+          const organizedArticle = organizeArticlesByFolder([article]);
+          if (organizedArticle.folders && organizedArticle.folders.length > 0) {
+            articlesData = mergeArticlesData(articlesData, organizedArticle);
+            renderFileTree();
+          }
 
           // 更新活动文章
           appState.activeArticleId = `article-${article.id}`;
@@ -3406,14 +3327,14 @@ async function loadCurrentArticleFromPath() {
         } else {
           console.error('获取文章详情失败:', detailResult.message);
         }
-
+        
         // 更新活动文章
         appState.activeArticleId = `article-${article.id}`;
         if (!appState.openTabs.includes(`article-${article.id}`)) {
           appState.openTabs.push(`article-${article.id}`);
         }
       } else {
-        console.warn('未找到匹配的文章:', titleFromPath, '日期:', datePrefix);
+        console.warn('未找到匹配的文章:', titleFromPath);
       }
     }
   } catch (error) {
@@ -3423,11 +3344,9 @@ async function loadCurrentArticleFromPath() {
 
 // 分页状态
 let currentPage = 1;
-const pageSize = 10; // 每页加载 10 篇文章，支持按需分页加载（测试用）
+const pageSize = 1000;
 let hasMoreArticles = true;
 let isLoadingArticles = false;
-let currentCursor = null; // 游标分页：当前游标
-let useCursorPagination = true; // 是否使用游标分页（性能优化）
 
 // 文章内容缓存
 const articleContentCache = new Map(); // key: articleId, value: { content, timestamp }
@@ -3443,267 +3362,93 @@ async function fetchArticlesData() {
 
   try {
     isLoadingArticles = true;
-
-    // 显示加载提示
-    showLoadingIndicator();
-
-    // 构建请求 URL
-    let url;
-    if (useCursorPagination && currentCursor) {
-      // 使用游标分页
-      url = `/api/passages?cursor=${encodeURIComponent(currentCursor)}&limit=${pageSize}`;
-    } else if (useCursorPagination) {
-      // 第一次请求，没有游标
-      url = `/api/passages?limit=${pageSize}`;
-    } else {
-      // 使用传统分页
-      url = `/api/passages?page=${currentPage}&limit=${pageSize}`;
-    }
-
-    // 获取文章列表
-    const response = await fetch(url);
+    
+    // 获取文章列表（带分页）
+    const response = await fetch(`/api/passages?page=${currentPage}&limit=${pageSize}`);
     const result = await response.json();
-
+    
     if (result.success && result.data) {
       const newArticles = organizeArticlesByFolder(result.data);
+
+      // 如果是第一页，需要合并已有数据（可能包含 loadCurrentArticleFromPath 添加的文章）
+      if (currentPage === 1) {
+        // 如果 articlesData 中已有文章，先提取出来再合并
+        if (articlesData.folders && articlesData.folders.length > 0) {
+          articlesData = mergeArticlesData(articlesData, newArticles);
+        } else {
+          articlesData = newArticles;
+        }
+        renderFileTree();
+      } else {
+        // 否则追加数据
+        articlesData = mergeArticlesData(articlesData, newArticles);
+        renderFileTree();
+      }
 
       // 更新分页状态
       if (result.pagination) {
         hasMoreArticles = result.pagination.has_more;
-        // 更新游标
-        if (useCursorPagination && result.pagination.next_cursor) {
-          currentCursor = result.pagination.next_cursor;
-        } else if (useCursorPagination && !result.pagination.next_cursor) {
-          // 没有下一页游标，说明没有更多数据
-          hasMoreArticles = false;
-        } else {
-          // 传统分页
-          currentPage++;
-        }
       }
 
-      // 如果是第一页，直接替换数据而不是合并（避免重复）
-      if (!currentCursor && useCursorPagination) {
-        // 游标分页的第一页
-        articlesData = newArticles;
-        renderFileTree();
-      } else if (!useCursorPagination && currentPage === 1) {
-        // 传统分页的第一页
-        articlesData = newArticles;
-        renderFileTree();
-      } else {
-        // 否则追加数据（增量更新）
-        articlesData = mergeArticlesData(articlesData, newArticles);
-        // 增量渲染：只渲染新增的文件夹和文件
-        renderFileTreeIncremental(newArticles);
-      }
+      currentPage++;
     }
   } catch (error) {
     console.error('获取文章数据失败:', error);
     // 使用默认数据作为fallback
-    if (!currentCursor) {
+    if (currentPage === 1) {
       articlesData = getDefaultArticlesData();
       renderFileTree();
     }
   } finally {
     isLoadingArticles = false;
-    hideLoadingIndicator();
   }
-}
-
-// 按日期加载文章（支持年、月、日筛选）
-async function loadArticlesByDate(year, month, day, page = 1, limit = 50) {
-  try {
-    // 构建查询参数
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString()
-    });
-
-    if (year !== null && year !== undefined) {
-      params.append('year', year.toString());
-    }
-    if (month !== null && month !== undefined) {
-      params.append('month', month.toString());
-    }
-    if (day !== null && day !== undefined) {
-      params.append('day', day.toString());
-    }
-
-    const response = await fetch(`/api/passages?${params.toString()}`);
-    const result = await response.json();
-
-    if (result.success && result.data) {
-      return {
-        articles: result.data,
-        pagination: result.pagination
-      };
-    } else {
-      console.error('按日期加载文章失败:', result.message);
-      return {
-        articles: [],
-        pagination: null
-      };
-    }
-  } catch (error) {
-    console.error('按日期加载文章失败:', error);
-    return {
-      articles: [],
-      pagination: null
-    };
-  }
-}
-
-// 日期文章加载缓存（避免重复加载）
-const dateArticlesCache = new Map(); // key: "year-month-day", value: { articles, pagination, loadedPage }
-
-// 显示加载提示
-function showLoadingIndicator() {
-  let indicator = document.getElementById('fileTreeLoading');
-  if (!indicator) {
-    indicator = document.createElement('div');
-    indicator.id = 'fileTreeLoading';
-    indicator.style.cssText = 'padding: 20px; text-align: center; color: #999; font-size: 0.9em; cursor: pointer;';
-    indicator.innerHTML = '<span class="spin">⟳</span> 加载更多文章...';
-    indicator.addEventListener('click', () => {
-      if (!isLoadingArticles && hasMoreArticles) {
-        fetchArticlesData();
-      }
-    });
-    fileTree.appendChild(indicator);
-  }
-  indicator.style.display = 'block';
-}
-
-// 隐藏加载提示
-function hideLoadingIndicator() {
-  const indicator = document.getElementById('fileTreeLoading');
-  if (indicator) {
-    // 如果还有更多文章，显示提示
-    if (hasMoreArticles) {
-      const remainingArticles = Math.max(0, (currentPage - 1) * pageSize); // 估算
-      indicator.innerHTML = `<span style="cursor: pointer;" onclick="fetchArticlesData()">↓ 向下滚动加载更多文章</span>`;
-      indicator.style.display = 'block';
-    } else {
-      indicator.style.display = 'none';
-    }
-  }
-}
-
-// 增量渲染文件树（只渲染新增的内容）
-function renderFileTreeIncremental(newData) {
-  // 简化实现：重新渲染整个树
-  // 在未来可以优化为只渲染新增的节点
-  renderFileTree();
 }
 
 // 合并文章数据
 function mergeArticlesData(existingData, newData) {
-  // 提取所有文章并使用 Set 去重（基于文章ID）
-  const existingArticles = getAllArticlesFromData(existingData);
-  const newArticles = getAllArticlesFromData(newData);
-
-  // 使用 Map 确保文章ID唯一，新数据优先
-  const articleMap = new Map();
-  existingArticles.forEach(article => {
-    articleMap.set(article.id, article);
-  });
-  newArticles.forEach(article => {
-    articleMap.set(article.id, article);
-  });
-
-  // 重新组织所有去重后的文章
-  const allArticles = Array.from(articleMap.values());
-  const reorganizedData = organizeArticlesByFolder(allArticles);
-
-  // 保留原有的文件夹展开状态
-  function syncFolderState(newFolder, oldFolder) {
-    if (!oldFolder) return;
-
-    // 同步展开状态
-    if (oldFolder.open !== undefined) {
-      newFolder.open = oldFolder.open;
-    }
-
-    // 递归同步子文件夹状态
-    if (newFolder.subfolders && oldFolder.subfolders) {
-      newFolder.subfolders.forEach(newSub => {
-        const oldSub = oldFolder.subfolders.find(s => s.id === newSub.id);
-        if (oldSub) {
-          syncFolderState(newSub, oldSub);
-        }
-      });
-    }
-  }
-
-  // 同步年文件夹状态
-  if (existingData.folders && reorganizedData.folders) {
-    reorganizedData.folders.forEach(newYear => {
-      const oldYear = existingData.folders.find(y => y.id === newYear.id);
-      if (oldYear) {
-        syncFolderState(newYear, oldYear);
-      }
-    });
-  }
-
-  return reorganizedData;
+  // 简单实现：重新组织所有数据
+  // 在实际应用中，可以优化为增量更新
+  const allArticles = [...getAllArticlesFromData(existingData), ...getAllArticlesFromData(newData)];
+  return organizeArticlesByFolder(allArticles);
 }
 
 // 从数据结构中提取所有文章
 function getAllArticlesFromData(data) {
   const articles = [];
-
-  if (!data || !data.folders) {
-    return articles;
-  }
-
-  data.folders.forEach(year => {
-    if (year.subfolders) {
-      Object.values(year.subfolders).forEach(month => {
-        if (month.subfolders) {
-          Object.values(month.subfolders).forEach(day => {
-            if (day.files) {
-              articles.push(...day.files);
-            }
-          });
+  
+  Object.values(data).forEach(year => {
+    Object.values(year.subfolders).forEach(month => {
+      Object.values(month.subfolders).forEach(day => {
+        if (day.files) {
+          articles.push(...day.files);
         }
       });
-    }
+    });
   });
-
+  
   return articles;
 }
 
 // 滚动到底部加载更多
-let scrollDebounceTimer = null;
-
 function setupInfiniteScroll() {
   const fileTree = document.querySelector('.file-tree');
   if (!fileTree) return;
-
+  
   fileTree.addEventListener('scroll', () => {
-    // 防抖：300ms内只触发一次
-    if (scrollDebounceTimer) {
-      clearTimeout(scrollDebounceTimer);
+    const scrollTop = fileTree.scrollTop;
+    const scrollHeight = fileTree.scrollHeight;
+    const clientHeight = fileTree.clientHeight;
+    
+    // 当滚动到距离底部 100px 时加载更多
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      fetchArticlesData();
     }
-
-    scrollDebounceTimer = setTimeout(() => {
-      const scrollTop = fileTree.scrollTop;
-      const scrollHeight = fileTree.scrollHeight;
-      const clientHeight = fileTree.clientHeight;
-
-      // 当滚动到距离底部 300px 时加载更多（增加触发距离，提供更流畅的体验）
-      if (scrollTop + clientHeight >= scrollHeight - 300 && hasMoreArticles && !isLoadingArticles) {
-        fetchArticlesData();
-      }
-    }, 300); // 300ms 防抖
   });
 }
 
 // 初始化分页和无限滚动
 function initPagination() {
   currentPage = 1;
-  currentCursor = null;
   hasMoreArticles = true;
   isLoadingArticles = false;
   articleContentCache.clear(); // 清空旧缓存
@@ -3716,117 +3461,46 @@ function initPagination() {
   }, 5 * 60 * 1000);
 }
 
-// 解析文章日期（支持多种格式）
-function parseArticleDate(createdAt) {
-  // 如果为空，使用当前时间
-  if (!createdAt) {
-    const now = new Date();
-    return {
-      year: now.getFullYear().toString(),
-      month: String(now.getMonth() + 1).padStart(2, '0'),
-      day: String(now.getDate()).padStart(2, '0'),
-      timestamp: now.getTime()
-    };
-  }
-
-  // 如果是 Unix 时间戳（数字）
-  if (typeof createdAt === 'number') {
-    const date = new Date(createdAt * 1000); // Unix时间戳需要乘以1000转换为毫秒
-    return {
-      year: date.getFullYear().toString(),
-      month: String(date.getMonth() + 1).padStart(2, '0'),
-      day: String(date.getDate()).padStart(2, '0'),
-      timestamp: createdAt * 1000
-    };
-  }
-
-  // 如果是字符串形式的 Unix 时间戳（例如 "1707264000"）
-  if (typeof createdAt === 'string' && /^\d+$/.test(createdAt)) {
-    const timestamp = parseInt(createdAt, 10);
-    const date = new Date(timestamp * 1000);
-    return {
-      year: date.getFullYear().toString(),
-      month: String(date.getMonth() + 1).padStart(2, '0'),
-      day: String(date.getDate()).padStart(2, '0'),
-      timestamp: timestamp * 1000
-    };
-  }
-
-  // 如果是 ISO 格式或 "YYYY-MM-DD HH:MM:SS" 格式
-  if (typeof createdAt === 'string') {
-    // 尝试直接解析
-    const date = new Date(createdAt);
-    if (!isNaN(date.getTime())) {
-      return {
-        year: date.getFullYear().toString(),
-        month: String(date.getMonth() + 1).padStart(2, '0'),
-        day: String(date.getDate()).padStart(2, '0'),
-        timestamp: date.getTime()
-      };
-    }
-    
-    // 如果是 "YYYY-MM-DD" 格式
-    const parts = createdAt.split(' ')[0].split('-');
-    if (parts.length === 3) {
-      return {
-        year: parts[0],
-        month: parts[1].padStart(2, '0'),
-        day: parts[2].padStart(2, '0'),
-        timestamp: new Date(parts[0], parts[1] - 1, parts[2]).getTime()
-      };
-    }
-  }
-
-  // 如果所有解析都失败，使用当前时间
-  const now = new Date();
-  return {
-    year: now.getFullYear().toString(),
-    month: String(now.getMonth() + 1).padStart(2, '0'),
-    day: String(now.getDate()).padStart(2, '0'),
-    timestamp: now.getTime()
-  };
-}
-
 // 将文章按文件夹组织（年-月-日-文章名）
 function organizeArticlesByFolder(articles) {
   const years = {};
-
+  
   articles.forEach(article => {
     // 从日期中提取年月日
-    // 支持多种日期格式: "2026-01-28 03:11:43", Unix时间戳等
-    const dateObj = parseArticleDate(article.created_at);
-    const year = dateObj.year;
-    const month = dateObj.month;
-    const day = dateObj.day;
+    // created_at 格式: "2026-01-28 03:11:43"
+    const dateParts = article.created_at.split(' ')[0].split('-');
+    const year = dateParts[0];
+    const month = dateParts[1];
+    const day = dateParts[2];
     
     // 创建年份层级
     if (!years[year]) {
       years[year] = {
         name: `${year}年`,
         id: `year-${year}`,
-        open: false, // 默认折叠
+        open: true,
         subfolders: {}
       };
     }
-
+    
     // 创建月份层级
     const monthKey = `${year}-${month}`;
     if (!years[year].subfolders[monthKey]) {
       years[year].subfolders[monthKey] = {
         name: `${month}月`,
         id: monthKey,
-        open: false, // 默认折叠
+        open: true,
         subfolders: {}
       };
     }
-
+    
     // 创建日期层级
     const dayKey = `${year}-${month}-${day}`;
     if (!years[year].subfolders[monthKey].subfolders[dayKey]) {
       years[year].subfolders[monthKey].subfolders[dayKey] = {
         name: `${day}日`,
         id: dayKey,
-        open: true, // 日期层级默认展开
+        open: true,
         files: []
       };
     }
@@ -3839,11 +3513,10 @@ function organizeArticlesByFolder(articles) {
     const readTime = Math.ceil(summary.length / 400) || 1;
     
     // 添加文章到日期文件夹（不包含完整内容）
-    // 使用格式化后的日期：YYYY-MM-DD
-    const dateOnly = `${year}-${month}-${day}`;
+    // 简化日期格式：只显示日期部分（YYYY-MM-DD）
+    const dateOnly = (article.created_at || '2024-01-01').split(' ')[0];
     years[year].subfolders[monthKey].subfolders[dayKey].files.push({
       id: `article-${article.id}`,
-      uuid: article.uuid || article.id.toString(), // 保存UUID用于获取详情
       title: article.title,
       date: dateOnly,
       readtime: `${readTime}分钟`,
@@ -3855,8 +3528,7 @@ function organizeArticlesByFolder(articles) {
       markdownPath: markdownPath,
       status: article.status || 'published',
       isScheduled: article.is_scheduled || false,
-      publishedAt: article.published_at || null,
-      created_at: article.created_at // 保留原始的 created_at，用于合并时重新解析日期
+      publishedAt: article.published_at || null
     });
   });
   
@@ -4407,15 +4079,6 @@ function renderFileTree() {
     const folderEl = createFolderElement(folder);
     fileTree.appendChild(folderEl);
   });
-
-  // 如果还有更多文章，添加提示
-  if (hasMoreArticles) {
-    const moreIndicator = document.createElement('div');
-    moreIndicator.id = 'fileTreeMoreIndicator';
-    moreIndicator.style.cssText = 'padding: 15px 20px; text-align: center; color: #666; font-size: 0.85em; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 10px;';
-    moreIndicator.innerHTML = `<span style="cursor: pointer; color: #007bff;" onclick="fetchArticlesData()">↓ 还有更多文章，点击加载</span>`;
-    fileTree.appendChild(moreIndicator);
-  }
 }
 
 // 递归创建文件夹元素
@@ -4424,30 +4087,36 @@ function createFolderElement(folder) {
   folderEl.className = `folder ${folder.open ? 'open' : ''}`;
   folderEl.dataset.folderId = folder.id;
 
+  
+
   // 计算文件总数（包括子文件夹中的文件）
+
   const totalFiles = countFilesInFolder(folder);
 
-  // 根据展开状态决定显示方式
-  let displayCount;
-  if (folder.open) {
-    // 展开时显示递归总数
-    displayCount = totalFiles;
-  } else {
-    // 折叠时显示"总数+"
-    displayCount = totalFiles + '+';
-  }
+  
 
   // 创建文件夹头部
+
   const folderHeader = document.createElement('div');
+
   folderHeader.className = 'folder-header';
+
   folderHeader.innerHTML = `
+
     <span class="folder-icon">
+
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+
       </svg>
+
     </span>
+
     <span class="folder-name">${folder.name}</span>
-    <span class="file-count">${displayCount}</span>
+
+    <span class="file-count">${totalFiles}</span>
+
   `;
 
   folderEl.appendChild(folderHeader);
@@ -4706,24 +4375,47 @@ function createFolderElement(folder) {
 
   folderEl.appendChild(folderContent);
 
+  
+
   // 文件夹点击事件
+
   folderHeader.addEventListener('click', () => {
+
     folder.open = !folder.open;
+
     folderEl.classList.toggle('open');
 
-    // 更新显示的数量
-    const totalFiles = countFilesInFolder(folder);
-    const fileCountEl = folderHeader.querySelector('.file-count');
-    if (fileCountEl) {
-      if (folder.open) {
-        // 展开时显示递归总数（不加+）
-        fileCountEl.textContent = totalFiles;
-      } else {
-        // 折叠时显示"总数+"
-        fileCountEl.textContent = totalFiles + '+';
-      }
-    }
   });
+
+  
+
+  // 递归绑定子文件夹的事件
+
+  if (folder.subfolders) {
+
+    folderEl.querySelectorAll('.folder').forEach(subfolderEl => {
+
+      const subfolderId = subfolderEl.dataset.folderId;
+
+      const subfolder = findFolderById(folder, subfolderId);
+
+      if (subfolder) {
+
+        const subfolderHeader = subfolderEl.querySelector('.folder-header');
+
+        subfolderHeader.addEventListener('click', () => {
+
+          subfolder.open = !subfolder.open;
+
+          subfolderEl.classList.toggle('open');
+
+        });
+
+      }
+
+    });
+
+  }
 
   
 
@@ -4731,7 +4423,7 @@ function createFolderElement(folder) {
   return folderEl;
 }
 
-// 递归计算文件夹中的文件总数（包括子文件夹中的文件）
+// 递归计算文件夹中的文件总数
 function countFilesInFolder(folder) {
   let count = folder.files ? folder.files.length : 0;
   if (folder.subfolders) {
@@ -4816,7 +4508,7 @@ async function loadArticleContent(articleId) {
     // 检查缓存
     if (articleContentCache.has(articleId)) {
       const cached = articleContentCache.get(articleId);
-
+      
       // 更新文章数据
       const articleData = findArticleById(articleId);
       if (articleData) {
@@ -4825,17 +4517,12 @@ async function loadArticleContent(articleId) {
       }
       return;
     }
+    
+    // 提取文章 ID
+    const numericId = articleId.replace('article-', '');
 
-    // 先查找文章数据获取UUID
-    const articleData = findArticleById(articleId);
-    if (!articleData) {
-      console.error('未找到文章数据:', articleId);
-      return;
-    }
-
-    // 使用UUID获取文章详情
-    const uuid = articleData.uuid || articleId.replace('article-', '');
-    const response = await fetch(`/api/passages/${uuid}`);
+    // 从 API 获取文章详情
+    const response = await fetch(`/api/passages/${numericId}`);
     const result = await response.json();
     
     if (result.success && result.data) {

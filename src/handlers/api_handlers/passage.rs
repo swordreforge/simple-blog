@@ -150,15 +150,14 @@ pub async fn list(
                     .collect();
 
                 let response = serde_json::json!({
-                "success": true,
-                "data": data,
-                "pagination": {
-                    "has_more": next_cursor.is_some(),
-                    "next_cursor": next_cursor,
-                    "limit": limit
-                }
-            });
-
+                                    "success": true,
+                                    "data": data,
+                                    "pagination": {
+                                        "has_more": next_cursor.is_some() && data.len() >= limit as usize,
+                                        "next_cursor": next_cursor,
+                                        "limit": limit
+                                    }
+                                });
             // 存储到缓存（TTL 5 分钟）
             if let Some(manager) = app_cache.manager() {
                 if let Ok(json_str) = serde_json::to_string(&response) {
