@@ -172,7 +172,9 @@ pub async fn list(
                                         "limit": limit
                                     }
                                 });
-            // 存储到缓存（TTL 5 分钟）
+                
+                            eprintln!("游标分页响应: 数据数量={}, next_cursor={:?}, has_more={}",
+                                     data.len(), next_cursor, next_cursor.is_some() && data.len() >= limit as usize);            // 存储到缓存（TTL 5 分钟）
             if let Some(manager) = app_cache.manager() {
                 if let Ok(json_str) = serde_json::to_string(&response) {
                     let _ = manager.set(&cache_key, &json_str).await;

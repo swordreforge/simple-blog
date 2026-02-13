@@ -3469,13 +3469,30 @@ async function fetchArticlesData() {
 
       // 更新分页状态
       if (result.pagination) {
+        console.log('收到分页信息:', result.pagination);
+        // 先使用后端返回的 has_more
         hasMoreArticles = result.pagination.has_more;
+        console.log('设置 hasMoreArticles (初始):', hasMoreArticles);
+
         // 更新游标
-        if (useCursorPagination && result.pagination.next_cursor) {
-          currentCursor = result.pagination.next_cursor;
-        } else if (useCursorPagination && !result.pagination.next_cursor) {
-          // 没有下一页游标，说明没有更多数据
-          hasMoreArticles = false;
+        if (useCursorPagination) {
+          if (result.pagination.next_cursor) {
+            currentCursor = result.pagination.next_cursor;
+            console.log('更新游标:', currentCursor);
+          } else {
+            // 没有 next_cursor，可能是：
+            // 1. 第一次请求（currentCursor 为 null）- 需要检查返回的数据数量
+            // 2. 之后的请求 - 确实没有更多数据
+            if (currentCursor === null) {
+              // 第一次请求，如果返回的数据少于 pageSize，说明没有更多数据
+              hasMoreArticles = result.data.length >= pageSize;
+              console.log('第一次请求，根据数据数量设置 hasMoreArticles:', hasMoreArticles);
+            } else {
+              // 之后的请求，没有 next_cursor 表示没有更多数据
+              hasMoreArticles = false;
+              console.log('之后的请求，没有 next_cursor，设置 hasMoreArticles 为 false');
+            }
+          }
         } else {
           // 传统分页
           currentPage++;
