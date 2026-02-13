@@ -220,10 +220,10 @@ impl PassageRepository {
     pub async fn get_published(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
              FROM passages WHERE status = 'published' ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
-        
+
         let passages = stmt.query_map(params![limit, offset], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
@@ -245,8 +245,202 @@ impl PassageRepository {
                 updated_at: row.get(16)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
-        
+
         Ok(passages)
+    }
+
+    /// 使用游标分页获取已发布的文章（性能优化）
+    /// cursor: (created_at, id) 格式为 "created_at:id"
+    pub async fn get_published_cursor(&self, cursor: Option<String>, limit: i64) -> Result<(Vec<Passage>, Option<String>), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+
+        if let Some(cursor_str) = cursor {
+            // 解析游标
+            let parts: Vec<&str> = cursor_str.split(':').collect();
+            if parts.len() != 2 {
+                return Err("Invalid cursor format".into());
+            }
+            let created_at_str = parts[0].to_string();
+            let id_str = parts[1].to_string();
+            
+            let query = r#"
+                SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                FROM passages 
+                WHERE status = 'published' AND (created_at < ? OR (created_at = ? AND id < ?))
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+            "#;
+            
+            let mut stmt = conn.prepare(query)?;
+            let passages = stmt.query_map(params![created_at_str, created_at_str, id_str, limit], |row| {
+                Ok(Passage {
+                    id: Some(row.get(0)?),
+                    uuid: Some(row.get(1)?),
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    original_content: row.get(4)?,
+                    summary: row.get(5)?,
+                    author: row.get(6)?,
+                    tags: row.get(7)?,
+                    category: row.get(8)?,
+                    status: row.get(9)?,
+                    file_path: row.get(10)?,
+                    visibility: row.get(11)?,
+                    is_scheduled: row.get(12)?,
+                    published_at: row.get(13)?,
+                    cover_image: row.get(14)?,
+                    created_at: row.get(15)?,
+                    updated_at: row.get(16)?,
+                })
+            })?.collect::<Result<Vec<_>, _>>()?;
+
+            // 计算下一页游标（使用最后一条记录）
+            let next_cursor = passages.last().map(|p| {
+                format!("{}:{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+            });
+
+            Ok((passages, next_cursor))
+        } else {
+            // 第一页，没有游标
+            let query = r#"
+                SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                FROM passages 
+                WHERE status = 'published'
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+            "#;
+            
+            let mut stmt = conn.prepare(query)?;
+            let passages = stmt.query_map(params![limit], |row| {
+                Ok(Passage {
+                    id: Some(row.get(0)?),
+                    uuid: Some(row.get(1)?),
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    original_content: row.get(4)?,
+                    summary: row.get(5)?,
+                    author: row.get(6)?,
+                    tags: row.get(7)?,
+                    category: row.get(8)?,
+                    status: row.get(9)?,
+                    file_path: row.get(10)?,
+                    visibility: row.get(11)?,
+                    is_scheduled: row.get(12)?,
+                    published_at: row.get(13)?,
+                    cover_image: row.get(14)?,
+                    created_at: row.get(15)?,
+                    updated_at: row.get(16)?,
+                })
+            })?.collect::<Result<Vec<_>, _>>()?;
+
+            // 计算下一页游标（使用最后一条记录）
+            let next_cursor = passages.last().map(|p| {
+                format!("{}:{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+            });
+
+            Ok((passages, next_cursor))
+        }
+    }
+
+    /// 按日期获取已发布的文章（支持年、月、日筛选）
+    pub async fn get_published_by_date(
+        &self,
+        year: Option<i32>,
+        month: Option<i32>,
+        day: Option<i32>,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+
+        // 构建 WHERE 条件
+        let mut conditions = vec!["status = 'published'".to_string()];
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+        if let Some(y) = year {
+            conditions.push("strftime('%Y', created_at) = ?".to_string());
+            params.push(Box::new(y));
+        }
+        if let Some(m) = month {
+            conditions.push("strftime('%m', created_at) = ?".to_string());
+            params.push(Box::new(format!("{:02}", m)));
+        }
+        if let Some(d) = day {
+            conditions.push("strftime('%d', created_at) = ?".to_string());
+            params.push(Box::new(format!("{:02}", d)));
+        }
+
+        let where_clause = conditions.join(" AND ");
+        let sql = format!(
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+             FROM passages WHERE {} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            where_clause
+        );
+
+        // 转换参数为 rusqlite::Params
+        let mut sql_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        sql_params.push(&limit);
+        sql_params.push(&offset);
+
+        let mut stmt = conn.prepare(&sql)?;
+        let passages = stmt.query_map(sql_params.as_slice(), |row| {
+            Ok(Passage {
+                id: Some(row.get(0)?),
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                cover_image: row.get(14)?,
+                created_at: row.get(15)?,
+                updated_at: row.get(16)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+
+        Ok(passages)
+    }
+
+    /// 统计指定日期的文章数量
+    pub async fn count_published_by_date(
+        &self,
+        year: Option<i32>,
+        month: Option<i32>,
+        day: Option<i32>,
+    ) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+
+        // 构建 WHERE 条件
+        let mut conditions = vec!["status = 'published'".to_string()];
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+        if let Some(y) = year {
+            conditions.push("strftime('%Y', created_at) = ?".to_string());
+            params.push(Box::new(y));
+        }
+        if let Some(m) = month {
+            conditions.push("strftime('%m', created_at) = ?".to_string());
+            params.push(Box::new(format!("{:02}", m)));
+        }
+        if let Some(d) = day {
+            conditions.push("strftime('%d', created_at) = ?".to_string());
+            params.push(Box::new(format!("{:02}", d)));
+        }
+
+        let where_clause = conditions.join(" AND ");
+        let sql = format!("SELECT COUNT(*) FROM passages WHERE {}", where_clause);
+
+        let sql_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        let count: i64 = conn.query_row(&sql, sql_params.as_slice(), |row| row.get(0))?;
+
+        Ok(count)
     }
 
     /// 更新文章

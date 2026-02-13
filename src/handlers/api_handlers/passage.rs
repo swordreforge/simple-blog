@@ -119,18 +119,79 @@ pub async fn list(
     }
 
     // 缓存未命中，从数据库获取
-    let result = if year.is_some() || month.is_some() || day.is_some() {
-        // 按日期查询
-        passage_repo.get_published_by_date(year, month, day, limit, offset).await
-    } else {
-        // 普通查询
-        passage_repo.get_published(limit, offset).await
-    };
+    // 检查是否使用游标分页
+    let use_cursor = query.get("cursor").is_some();
 
-    match result {
-        Ok(passages) => {
+    if use_cursor {
+        // 游标分页
+        let cursor = query.get("cursor").map(|s| s.to_string());
+        match passage_repo.get_published_cursor(cursor, limit).await {
+            Ok((passages, next_cursor)) => {
+                let data: Vec<PassageResponse> = passages.into_iter()
+                    .map(|p| PassageResponse {
+                        id: p.id.unwrap_or(0),
+                        uuid: p.uuid.unwrap_or_default(),
+                        title: p.title,
+                        content: p.original_content.unwrap_or_default(),
+                        html_content: None,
+                        summary: p.summary,
+                        author: p.author,
+                        tags: p.tags,
+                        category: p.category,
+                        status: p.status,
+                        file_path: p.file_path,
+                        visibility: p.visibility,
+                        is_scheduled: p.is_scheduled,
+                        published_at: p.published_at.map(|d: chrono::DateTime<chrono::Utc>| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                        cover_image: p.cover_image,
+                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    })
+                    .collect();
+
+                let response = serde_json::json!({
+                "success": true,
+                "data": data,
+                "pagination": {
+                    "has_more": next_cursor.is_some(),
+                    "next_cursor": next_cursor,
+                    "limit": limit
+                }
+            });
+
+            // 存储到缓存（TTL 5 分钟）
+            if let Some(manager) = app_cache.manager() {
+                if let Ok(json_str) = serde_json::to_string(&response) {
+                    let _ = manager.set(&cache_key, &json_str).await;
+                }
+            }
+
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "public, max-age=60"))
+                .insert_header(("X-Cache", "MISS"))
+                .json(response)
+            }
+            Err(e) => {
+                eprintln!("获取文章列表失败: {}", e);
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": "获取文章列表失败"
+                }))
+            }
+        }
+    } else {
+        // 传统分页
+        let result = if year.is_some() || month.is_some() || day.is_some() {
+            passage_repo.get_published_by_date(year, month, day, limit, offset).await
+        } else {
+            passage_repo.get_published(limit, offset).await
+        };
+
+        match result {
+            Ok(passages) => {
+            // 传统分页响应
             // 获取总数（总是实时查询，不使用缓存）
-            let total = if year.is_some() || month.is_some() || day.is_some() {
+            let total: i64 = if year.is_some() || month.is_some() || day.is_some() {
                 match passage_repo.count_published_by_date(year, month, day).await {
                     Ok(c) => c,
                     Err(_) => passages.len() as i64,
@@ -212,6 +273,7 @@ pub async fn list(
                 "success": false,
                 "message": "获取文章列表失败"
             }))
+        }
         }
     }
 }

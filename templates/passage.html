@@ -3426,6 +3426,8 @@ let currentPage = 1;
 const pageSize = 10; // 每页加载 10 篇文章，支持按需分页加载（测试用）
 let hasMoreArticles = true;
 let isLoadingArticles = false;
+let currentCursor = null; // 游标分页：当前游标
+let useCursorPagination = true; // 是否使用游标分页（性能优化）
 
 // 文章内容缓存
 const articleContentCache = new Map(); // key: articleId, value: { content, timestamp }
@@ -3445,15 +3447,28 @@ async function fetchArticlesData() {
     // 显示加载提示
     showLoadingIndicator();
 
-    // 获取文章列表（带分页）
-    const response = await fetch(`/api/passages?page=${currentPage}&limit=${pageSize}`);
+    // 构建请求 URL
+    let url;
+    if (useCursorPagination && currentCursor) {
+      // 使用游标分页
+      url = `/api/passages?cursor=${encodeURIComponent(currentCursor)}&limit=${pageSize}`;
+    } else if (useCursorPagination) {
+      // 第一次请求，没有游标
+      url = `/api/passages?limit=${pageSize}`;
+    } else {
+      // 使用传统分页
+      url = `/api/passages?page=${currentPage}&limit=${pageSize}`;
+    }
+
+    // 获取文章列表
+    const response = await fetch(url);
     const result = await response.json();
 
     if (result.success && result.data) {
       const newArticles = organizeArticlesByFolder(result.data);
 
       // 如果是第一页，直接替换数据而不是合并（避免重复）
-      if (currentPage === 1) {
+      if (!currentCursor) {
         articlesData = newArticles;
         renderFileTree();
       } else {
@@ -3466,14 +3481,22 @@ async function fetchArticlesData() {
       // 更新分页状态
       if (result.pagination) {
         hasMoreArticles = result.pagination.has_more;
+        // 更新游标
+        if (useCursorPagination && result.pagination.next_cursor) {
+          currentCursor = result.pagination.next_cursor;
+        } else if (useCursorPagination && !result.pagination.next_cursor) {
+          // 没有下一页游标，说明没有更多数据
+          hasMoreArticles = false;
+        } else {
+          // 传统分页
+          currentPage++;
+        }
       }
-
-      currentPage++;
     }
   } catch (error) {
     console.error('获取文章数据失败:', error);
     // 使用默认数据作为fallback
-    if (currentPage === 1) {
+    if (!currentCursor) {
       articlesData = getDefaultArticlesData();
       renderFileTree();
     }
@@ -3675,6 +3698,7 @@ function setupInfiniteScroll() {
 // 初始化分页和无限滚动
 function initPagination() {
   currentPage = 1;
+  currentCursor = null;
   hasMoreArticles = true;
   isLoadingArticles = false;
   articleContentCache.clear(); // 清空旧缓存
