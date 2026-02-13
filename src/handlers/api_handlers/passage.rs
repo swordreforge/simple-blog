@@ -234,6 +234,11 @@ pub async fn list(
                 }));
             }
 
+            // 计算下一页游标（使用最后一条记录）
+            let next_cursor = passages.last().map(|p| {
+                format!("{}:{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+            });
+
             let data: Vec<PassageResponse> = passages.into_iter()
                 .map(|p| PassageResponse {
                     id: p.id.unwrap_or(0),
@@ -266,7 +271,8 @@ pub async fn list(
                     "limit": limit,
                     "total": total,
                     "total_pages": total_pages,
-                    "has_more": page < total_pages
+                    "has_more": page < total_pages,
+                    "next_cursor": next_cursor
                 }
             });
 

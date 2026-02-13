@@ -3449,15 +3449,19 @@ async function fetchArticlesData() {
 
     // 构建请求 URL
     let url;
+    console.log('构建请求 URL - useCursorPagination:', useCursorPagination, 'currentCursor:', currentCursor);
     if (useCursorPagination && currentCursor) {
       // 使用游标分页
       url = `/api/passages?cursor=${encodeURIComponent(currentCursor)}&limit=${pageSize}`;
+      console.log('使用游标分页:', url);
     } else if (useCursorPagination) {
       // 第一次请求，没有游标
       url = `/api/passages?limit=${pageSize}`;
+      console.log('第一次请求，使用游标分页:', url);
     } else {
       // 使用传统分页
       url = `/api/passages?page=${currentPage}&limit=${pageSize}`;
+      console.log('使用传统分页:', url);
     }
 
     // 获取文章列表
