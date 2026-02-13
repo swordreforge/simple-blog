@@ -256,7 +256,7 @@ impl PassageRepository {
 
         if let Some(cursor_str) = cursor {
             // 解析游标
-            let parts: Vec<&str> = cursor_str.split(':').collect();
+            let parts: Vec<&str> = cursor_str.split('|').collect();
             if parts.len() != 2 {
                 return Err("Invalid cursor format".into());
             }
@@ -296,7 +296,7 @@ impl PassageRepository {
 
             // 计算下一页游标（使用最后一条记录）
             let next_cursor = passages.last().map(|p| {
-                format!("{}:{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
             });
 
             Ok((passages, next_cursor))
@@ -335,7 +335,7 @@ impl PassageRepository {
 
             // 计算下一页游标（使用最后一条记录）
             let next_cursor = passages.last().map(|p| {
-                format!("{}:{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
             });
 
             Ok((passages, next_cursor))
