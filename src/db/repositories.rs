@@ -221,7 +221,7 @@ impl PassageRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
-             FROM passages WHERE status = 'published' ORDER BY created_at DESC LIMIT ? OFFSET ?"
+             FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
         )?;
 
         let passages = stmt.query_map(params![limit, offset], |row| {
