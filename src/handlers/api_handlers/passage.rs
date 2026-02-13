@@ -104,7 +104,21 @@ pub async fn list(
         (Some(y), None, None) => format!("{}", y),
         _ => "all".to_string(),
     };
-    let cache_key = format!("passage:list:{}:page:{}:limit:{}", date_part, page, limit);
+
+    // 检查是否使用游标分页
+    let cursor_param = query.get("cursor");
+    let use_cursor = cursor_param.is_some();
+
+    // 生成缓存键（包含日期和游标参数）
+    let cache_key = if use_cursor {
+        if let Some(cursor) = cursor_param {
+            format!("passage:list:{}:cursor:{}:limit:{}", date_part, cursor, limit)
+        } else {
+            format!("passage:list:{}:cursor:first:limit:{}", date_part, limit)
+        }
+    } else {
+        format!("passage:list:{}:page:{}:limit:{}", date_part, page, limit)
+    };
 
     // 尝试从缓存获取
     if let Some(manager) = app_cache.manager() {
