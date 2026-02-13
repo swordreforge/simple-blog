@@ -129,7 +129,7 @@ pub async fn list(
 
     match result {
         Ok(passages) => {
-            // 获取总数
+            // 获取总数（总是实时查询，不使用缓存）
             let total = if year.is_some() || month.is_some() || day.is_some() {
                 match passage_repo.count_published_by_date(year, month, day).await {
                     Ok(c) => c,
@@ -141,6 +141,22 @@ pub async fn list(
                     Err(_) => passages.len() as i64,
                 }
             };
+
+            // 如果当前页超出了实际页数，返回空数据
+            let total_pages = (total + limit - 1) / limit;
+            if page > total_pages && total_pages > 0 {
+                return HttpResponse::Ok().json(serde_json::json!({
+                    "success": true,
+                    "data": [],
+                    "pagination": {
+                        "page": page,
+                        "limit": limit,
+                        "total": total,
+                        "total_pages": total_pages,
+                        "has_more": false
+                    }
+                }));
+            }
 
             let data: Vec<PassageResponse> = passages.into_iter()
                 .map(|p| PassageResponse {
