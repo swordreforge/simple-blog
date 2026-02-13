@@ -255,13 +255,21 @@ impl PassageRepository {
         let conn = self.pool.get()?;
 
         if let Some(cursor_str) = cursor {
-            // 解析游标
-            let parts: Vec<&str> = cursor_str.split('|').collect();
-            if parts.len() != 2 {
-                return Err("Invalid cursor format".into());
-            }
-            let created_at_str = parts[0].to_string();
-            let id_str = parts[1].to_string();
+            // 解析游标（支持新旧两种格式：'|' 和 ':'）
+            // 优先使用 '|' 分隔符（新格式），如果不成功则尝试 ':'（旧格式，向后兼容）
+            let (created_at_str, id_str) = if let Some(pos) = cursor_str.find('|') {
+                // 新格式：created_at|id
+                (cursor_str[..pos].to_string(), cursor_str[pos + 1..].to_string())
+            } else {
+                // 旧格式：created_at:id
+                // 时间戳格式为 "YYYY-MM-DD HH:MM:SS"，包含冒号
+                // 需要从右向左查找最后一个冒号作为分隔符
+                if let Some(pos) = cursor_str.rfind(':') {
+                    (cursor_str[..pos].to_string(), cursor_str[pos + 1..].to_string())
+                } else {
+                    return Err("Invalid cursor format".into());
+                }
+            };
             
             let query = r#"
                 SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
@@ -295,8 +303,9 @@ impl PassageRepository {
             })?.collect::<Result<Vec<_>, _>>()?;
 
             // 计算下一页游标（使用最后一条记录）
+            // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
             let next_cursor = passages.last().map(|p| {
-                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
             });
 
             Ok((passages, next_cursor))
@@ -334,8 +343,9 @@ impl PassageRepository {
             })?.collect::<Result<Vec<_>, _>>()?;
 
             // 计算下一页游标（使用最后一条记录）
+            // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
             let next_cursor = passages.last().map(|p| {
-                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
             });
 
             Ok((passages, next_cursor))

@@ -235,8 +235,10 @@ pub async fn list(
             }
 
             // 计算下一页游标（使用最后一条记录）
+            // 使用 `|` 分隔符避免与时间戳中的 `:` 冲突
+            // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
             let next_cursor = passages.last().map(|p| {
-                format!("{}:{}", p.created_at.format("%Y-%m-%d %H:%M:%S"), p.id.unwrap_or(0))
+                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
             });
 
             let data: Vec<PassageResponse> = passages.into_iter()
