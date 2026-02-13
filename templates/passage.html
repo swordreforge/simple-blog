@@ -3261,25 +3261,53 @@ async function findArticleByTitle(title) {
   let result = searchInFolders(folders);
   console.log('查找结果:', result);
 
-  // 如果本地找不到，尝试从API加载更多文章
-  if (!result) {
+  // 如果本地找不到，尝试从API按分页加载更多文章查找
+  if (!result && hasMoreArticles) {
     console.log('本地未找到，尝试从API加载更多文章...');
     try {
-      const response = await fetch('/api/passages?page=1&limit=500');
-      const apiResult = await response.json();
+      // 保存当前分页状态
+      const savedCurrentPage = currentPage;
+      const savedHasMore = hasMoreArticles;
 
-      if (apiResult.success && apiResult.data) {
-        // 将API返回的文章组织到articlesData中
-        const newArticles = organizeArticlesByFolder(apiResult.data);
-        articlesData = mergeArticlesData(articlesData, newArticles);
+      // 从当前页开始加载，直到找到文章或没有更多数据
+      while (!result && hasMoreArticles && !isLoadingArticles) {
+        isLoadingArticles = true;
+        const response = await fetch(`/api/passages?page=${currentPage}&limit=${pageSize}`);
+        const apiResult = await response.json();
 
-        // 再次尝试查找
-        const updatedFolders = articlesData.folders || Object.values(articlesData);
-        result = searchInFolders(updatedFolders);
-        console.log('从API加载后查找结果:', result);
+        if (apiResult.success && apiResult.data) {
+          // 组织新文章数据
+          const newArticles = organizeArticlesByFolder(apiResult.data);
+
+          // 合并数据
+          articlesData = mergeArticlesData(articlesData, newArticles);
+
+          // 更新分页状态
+          if (apiResult.pagination) {
+            hasMoreArticles = apiResult.pagination.has_more;
+          }
+
+          currentPage++;
+
+          // 尝试在新加载的数据中查找
+          const updatedFolders = articlesData.folders || Object.values(articlesData);
+          result = searchInFolders(updatedFolders);
+          console.log('从API加载后查找结果:', result);
+        }
+
+        isLoadingArticles = false;
       }
+
+      // 如果还没找到，恢复分页状态（避免影响后续加载）
+      if (!result) {
+        console.log('所有页面都加载完了，仍未找到文章');
+      }
+
+      // 重新渲染文件树以显示新加载的文章
+      renderFileTree();
     } catch (error) {
       console.error('从API加载文章失败:', error);
+      isLoadingArticles = false;
     }
   }
   return result;
@@ -3558,7 +3586,39 @@ function mergeArticlesData(existingData, newData) {
 
   // 重新组织所有去重后的文章
   const allArticles = Array.from(articleMap.values());
-  return organizeArticlesByFolder(allArticles);
+  const reorganizedData = organizeArticlesByFolder(allArticles);
+
+  // 保留原有的文件夹展开状态
+  function syncFolderState(newFolder, oldFolder) {
+    if (!oldFolder) return;
+
+    // 同步展开状态
+    if (oldFolder.open !== undefined) {
+      newFolder.open = oldFolder.open;
+    }
+
+    // 递归同步子文件夹状态
+    if (newFolder.subfolders && oldFolder.subfolders) {
+      newFolder.subfolders.forEach(newSub => {
+        const oldSub = oldFolder.subfolders.find(s => s.id === newSub.id);
+        if (oldSub) {
+          syncFolderState(newSub, oldSub);
+        }
+      });
+    }
+  }
+
+  // 同步年文件夹状态
+  if (existingData.folders && reorganizedData.folders) {
+    reorganizedData.folders.forEach(newYear => {
+      const oldYear = existingData.folders.find(y => y.id === newYear.id);
+      if (oldYear) {
+        syncFolderState(newYear, oldYear);
+      }
+    });
+  }
+
+  return reorganizedData;
 }
 
 // 从数据结构中提取所有文章
@@ -3766,7 +3826,8 @@ function organizeArticlesByFolder(articles) {
       markdownPath: markdownPath,
       status: article.status || 'published',
       isScheduled: article.is_scheduled || false,
-      publishedAt: article.published_at || null
+      publishedAt: article.published_at || null,
+      created_at: article.created_at // 保留原始的 created_at，用于合并时重新解析日期
     });
   });
   
