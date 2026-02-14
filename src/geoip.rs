@@ -90,7 +90,7 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
                     let country = if !city.country.is_empty() {
                         if !city.country.names.is_empty() {
                             city.country.names.simplified_chinese
-                                .or_else(|| city.country.names.english)
+                                .or(city.country.names.english)
                                 .map(|s| s.to_string())
                                 .unwrap_or_else(|| "unknown".to_string())
                         } else {
@@ -104,7 +104,7 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
                     let city_name = if !city.city.is_empty() {
                         if !city.city.names.is_empty() {
                             city.city.names.simplified_chinese
-                                .or_else(|| city.city.names.english)
+                                .or(city.city.names.english)
                                 .map(|s| s.to_string())
                                 .unwrap_or_else(|| "unknown".to_string())
                         } else {
@@ -119,7 +119,7 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
                         if let Some(sub) = city.subdivisions.first() {
                             if !sub.names.is_empty() {
                                 sub.names.simplified_chinese
-                                    .or_else(|| sub.names.english)
+                                    .or(sub.names.english)
                                     .map(|s| s.to_string())
                                     .unwrap_or_else(|| "unknown".to_string())
                             } else {

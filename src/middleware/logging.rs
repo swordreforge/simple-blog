@@ -113,8 +113,6 @@ where
             // 根据状态码选择日志级别
             if status_code >= 500 {
                 eprintln!("{}", log_message);
-            } else if status_code >= 400 {
-                println!("{}", log_message);
             } else {
                 println!("{}", log_message);
             }

@@ -1,8 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{CategoryRepository, PassageRepository, Repository};
 use crate::db::models::Category;
-use std::sync::Arc;
 use chrono::Utc;
 
 /// 分类响应
@@ -40,7 +38,7 @@ pub struct UpdateCategoryRequest {
 
 /// 获取所有分类（管理员）
 pub async fn admin_list(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -51,12 +49,12 @@ pub async fn admin_list(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let category_repo = CategoryRepository::new(repo.get_pool().clone());
-    
+    let category_repo = state.category_repository();
+
     // 解析分页参数
     let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(100);
     let offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
-    
+
     // 获取所有分类
     let categories = match category_repo.get_all(limit, offset).await {
         Ok(c) => c,
@@ -68,13 +66,13 @@ pub async fn admin_list(
             }));
         }
     };
-    
+
     // 获取总数
     let total = match category_repo.count().await {
         Ok(c) => c,
         Err(_) => categories.len() as i64,
     };
-    
+
     // 转换为响应格式
     let data: Vec<CategoryResponse> = categories.into_iter()
         .map(|cat| CategoryResponse {
@@ -88,7 +86,7 @@ pub async fn admin_list(
             updated_at: cat.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
         })
         .collect();
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "data": data,
@@ -97,9 +95,9 @@ pub async fn admin_list(
 }
 
 /// 获取所有分类（公开）
-pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+pub async fn list(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
+    let passage_repo = state.passage_repository();
+
     // 从数据库获取所有分类
     match passage_repo.get_all_categories().await {
         Ok(categories) => {
@@ -117,7 +115,7 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
                     updated_at: Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
                 })
                 .collect();
-            
+
             HttpResponse::Ok()
                 .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
                 .insert_header(("Pragma", "no-cache"))
@@ -139,7 +137,7 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
 
 /// 根据 ID 获取分类
 pub async fn get(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -151,8 +149,8 @@ pub async fn get(
         return crate::middleware::auth::forbidden_response();
     }
     let id = path.into_inner();
-    let category_repo = CategoryRepository::new(repo.get_pool().clone());
-    
+    let category_repo = state.category_repository();
+
     match category_repo.get_by_id(id).await {
         Ok(category) => {
             let response = CategoryResponse {
@@ -181,7 +179,7 @@ pub async fn get(
 
 /// 创建分类
 pub async fn create(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<CreateCategoryRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -192,8 +190,8 @@ pub async fn create(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let category_repo = CategoryRepository::new(repo.get_pool().clone());
-    
+    let category_repo = state.category_repository();
+
     let now = Utc::now();
     let category = Category {
         id: None,
@@ -205,7 +203,7 @@ pub async fn create(
         created_at: now,
         updated_at: now,
     };
-    
+
     match category_repo.create(&category).await {
         Ok(id) => {
             HttpResponse::Ok().json(serde_json::json!({
@@ -226,8 +224,7 @@ pub async fn create(
 
 /// 更新分类
 pub async fn update(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req: web::Json<UpdateCategoryRequest>,
     http_req: actix_web::HttpRequest,
@@ -240,8 +237,8 @@ pub async fn update(
         return crate::middleware::auth::forbidden_response();
     }
     let id = path.into_inner();
-    let category_repo = CategoryRepository::new(repo.get_pool().clone());
-    
+    let category_repo = state.category_repository();
+
     // 先获取现有分类
     let mut category = match category_repo.get_by_id(id).await {
         Ok(c) => c,
@@ -252,7 +249,7 @@ pub async fn update(
             }));
         }
     };
-    
+
     // 更新字段
     if let Some(ref name) = req.name {
         category.name = name.clone();
@@ -270,11 +267,11 @@ pub async fn update(
         category.is_enabled = is_enabled;
     }
     category.updated_at = Utc::now();
-    
-            match category_repo.update(&category).await {
-            Ok(_) => {
-                // 清除所有文章列表和详情缓存
-                crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;            
+
+    match category_repo.update(&category).await {
+        Ok(_) => {
+            // 清除所有文章列表和详情缓存
+            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "分类更新成功"
@@ -292,8 +289,7 @@ pub async fn update(
 
 /// 删除分类
 pub async fn delete(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -305,13 +301,13 @@ pub async fn delete(
         return crate::middleware::auth::forbidden_response();
     }
     let id = path.into_inner();
-    let category_repo = CategoryRepository::new(repo.get_pool().clone());
-    
+    let category_repo = state.category_repository();
+
     match category_repo.delete(id).await {
         Ok(_) => {
             // 清除所有文章列表和详情缓存
-            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
-            
+            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "分类删除成功"
@@ -335,8 +331,7 @@ pub struct BatchDeleteRequest {
 
 /// 批量删除分类
 pub async fn delete_batch(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<BatchDeleteRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -353,14 +348,14 @@ pub async fn delete_batch(
             "message": "分类ID列表不能为空"
         }));
     }
-    
-    let category_repo = CategoryRepository::new(repo.get_pool().clone());
-    
+
+    let category_repo = state.category_repository();
+
     match category_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             // 清除所有文章列表和详情缓存
-            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
-            
+            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": format!("成功删除 {} 个分类", count),

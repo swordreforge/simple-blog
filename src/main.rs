@@ -211,13 +211,13 @@ async fn main() -> std::io::Result<()> {
     println!("🗄️  初始化数据库...");
     if let Err(e) = db::init_db(&args.db_path) {
         tracing::error!("数据库初始化失败: {}", e);
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
+        return Err(std::io::Error::other(e.to_string()));
     }
 
     // 初始化 JWT 服务
     println!("🔐 初始化 JWT 服务...");
     let jwt_secret = jwt::init_jwt_secret(base_dir, args.jwt_secret.as_deref());
-    jwt::init_jwt_service(&jwt_secret);
+    let _ = jwt::init_jwt_service(&jwt_secret);
 
     // 初始化 GeoIP 数据库
     println!("🌍 加载 GeoIP 数据库...");
@@ -228,7 +228,7 @@ async fn main() -> std::io::Result<()> {
     // 获取数据库连接池
     let db_pool = db::get_db_pool().await.map_err(|e| {
         eprintln!("❌ 获取数据库连接池失败: {}", e);
-        std::io::Error::new(std::io::ErrorKind::Other, e)
+        std::io::Error::other(e)
     })?;
     
     // 创建 Repository 实例

@@ -56,6 +56,7 @@ impl PassageStatus {
     }
 
     /// 检查是否可见（已发布）
+    #[allow(dead_code)]
     pub fn is_visible(&self) -> bool {
         matches!(self, PassageStatus::Published)
     }
@@ -125,6 +126,7 @@ impl PassageVisibility {
     }
 
     /// 检查是否需要认证
+    #[allow(dead_code)]
     pub fn requires_auth(&self) -> bool {
         matches!(self, PassageVisibility::Private | PassageVisibility::Protected)
     }
@@ -189,11 +191,13 @@ impl UserRole {
     }
 
     /// 检查是否为管理员
+    #[allow(dead_code)]
     pub fn is_admin(&self) -> bool {
         matches!(self, UserRole::Admin)
     }
 
     /// 检查是否有编辑权限
+    #[allow(dead_code)]
     pub fn can_edit(&self) -> bool {
         matches!(self, UserRole::Admin | UserRole::Editor)
     }
@@ -258,6 +262,7 @@ impl UserStatus {
     }
 
     /// 检查是否活跃
+    #[allow(dead_code)]
     pub fn is_active(&self) -> bool {
         matches!(self, UserStatus::Active)
     }
@@ -302,6 +307,7 @@ pub struct Passage {
 
 impl Passage {
     /// 创建新的文章实例
+    #[allow(dead_code)]
     pub fn new(title: String, content: String) -> Self {
         Self {
             id: None,
@@ -325,11 +331,13 @@ impl Passage {
     }
 
     /// 检查文章是否可见
+    #[allow(dead_code)]
     pub fn is_visible(&self) -> bool {
         self.status.is_published() && self.visibility.is_public()
     }
 
     /// 检查文章是否需要认证
+    #[allow(dead_code)]
     pub fn requires_auth(&self) -> bool {
         !self.status.is_published() || self.visibility.requires_auth()
     }
@@ -350,6 +358,7 @@ pub struct User {
 
 impl User {
     /// 创建新的用户实例
+    #[allow(dead_code)]
     pub fn new(username: String, password: String, email: String) -> Self {
         Self {
             id: None,
@@ -364,16 +373,19 @@ impl User {
     }
 
     /// 检查用户是否活跃
+    #[allow(dead_code)]
     pub fn is_active(&self) -> bool {
         self.status.is_active()
     }
 
     /// 检查用户是否为管理员
+    #[allow(dead_code)]
     pub fn is_admin(&self) -> bool {
         self.role.is_admin()
     }
 
     /// 检查用户是否有编辑权限
+    #[allow(dead_code)]
     pub fn can_edit(&self) -> bool {
         self.role.can_edit()
     }

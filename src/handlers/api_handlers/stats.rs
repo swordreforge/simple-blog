@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
-use crate::db::repositories::{PassageRepository, CommentRepository, UserRepository, Repository};
-use std::sync::Arc;
 
 /// 统计数据响应
 #[derive(Debug, Serialize)]
@@ -13,7 +11,7 @@ pub struct StatsResponse {
 }
 
 /// 获取统计数据
-pub async fn get_stats(repo: web::Data<Arc<dyn Repository>>, req: actix_web::HttpRequest) -> HttpResponse {
+pub async fn get_stats(state: web::Data<crate::app_state::AppState>, req: actix_web::HttpRequest) -> HttpResponse {
     // 鉴权检查
     if req.cookie("auth_token").is_none() {
         return crate::middleware::auth::missing_token_response();
@@ -22,9 +20,9 @@ pub async fn get_stats(repo: web::Data<Arc<dyn Repository>>, req: actix_web::Htt
         return crate::middleware::auth::forbidden_response();
     }
 
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    let comment_repo = CommentRepository::new(repo.get_pool().clone());
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
+    let comment_repo = state.comment_repository();
+    let user_repo = state.user_repository();
     
     // 获取各项统计
     let passages = passage_repo.count().await.unwrap_or(0);

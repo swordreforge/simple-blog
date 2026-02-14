@@ -1013,7 +1013,7 @@ impl SettingRepository {
     /// 设置值
     pub fn set(conn: &rusqlite::Connection, setting: &Setting) -> Result<(), Box<dyn std::error::Error>> {
         // 使用 query_row 执行 INSERT OR REPLACE，因为它可能返回结果
-        let _ = conn.query_row(
+        conn.query_row(
             "INSERT OR REPLACE INTO settings (key, value, type, description, category, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING 1",
             params![

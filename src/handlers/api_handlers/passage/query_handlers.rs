@@ -1,6 +1,4 @@
 use actix_web::{web, HttpResponse, HttpRequest};
-use crate::db::repositories::{PassageRepository, AttachmentRepository, Repository};
-use std::sync::Arc;
 
 use super::crud::{PassageResponse, UpdatePassageRequest};
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
@@ -8,8 +6,7 @@ use super::validation::{ensure_tags_exist, ensure_category_exist};
 
 /// 通过查询参数更新文章（用于管理后台）
 pub async fn update_by_query(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
     req_json: web::Json<UpdatePassageRequest>,
     http_req: HttpRequest,
@@ -22,7 +19,7 @@ pub async fn update_by_query(
         return crate::middleware::auth::forbidden_response();
     }
 
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
 
     // 从查询参数中获取文章 ID
     let id: i64 = match query.get("id").and_then(|s| s.parse().ok()) {
@@ -48,8 +45,8 @@ pub async fn update_by_query(
     };
 
     // 记录原始值用于检测变化
-    let original_status = passage.status.clone();
-    let original_visibility = passage.visibility.clone();
+    let original_status = passage.status;
+    let original_visibility = passage.visibility;
     let original_tags = passage.tags.clone();
     let original_category = passage.category.clone();
 
@@ -74,7 +71,7 @@ pub async fn update_by_query(
     // 如果内容或标题更新了，同时更新 Markdown 文件
     if file_updated {
         if let Some(ref file_path) = passage.file_path {
-            let content_to_save = passage.original_content.as_ref().unwrap_or_else(|| {
+            let content_to_save = passage.original_content.as_ref().unwrap_or({
                 // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
                 &passage.content
             });
@@ -154,7 +151,7 @@ pub async fn update_by_query(
             let uuid = passage.uuid.clone().unwrap_or_default();
 
             // 清除文章详情缓存（任何更新都需要）
-            if let Some(manager) = app_cache.manager() {
+            if let Some(manager) = state.cache.manager() {
                 let detail_key = format!("passage:get:{}", uuid);
                 let _ = manager.delete(&detail_key).await;
             }
@@ -189,7 +186,7 @@ pub async fn update_by_query(
 
             // 清除列表缓存（如果需要）
             if should_clear_list_cache {
-                crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
+                crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
             }
 
             HttpResponse::Ok().json(serde_json::json!({
@@ -209,8 +206,7 @@ pub async fn update_by_query(
 
 /// 通过查询参数删除文章（用于管理后台）
 pub async fn delete_by_query(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
     http_req: HttpRequest,
 ) -> HttpResponse {
@@ -222,8 +218,8 @@ pub async fn delete_by_query(
         return crate::middleware::auth::forbidden_response();
     }
 
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
+    let attachment_repo = state.attachment_repository();
 
     // 从查询参数中获取文章 ID
     let id: i64 = match query.get("id").and_then(|s| s.parse().ok()) {
@@ -287,12 +283,12 @@ pub async fn delete_by_query(
     match passage_repo.delete_by_uuid(&uuid).await {
         Ok(_) => {
             // 清除文章详情缓存
-            if let Some(manager) = app_cache.manager() {
+            if let Some(manager) = state.cache.manager() {
                 let detail_key = format!("passage:get:{}", uuid);
                 let _ = manager.delete(&detail_key).await;
             }
             // 清除所有文章列表缓存（删除会影响分页）
-            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
+            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
 
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
@@ -311,7 +307,7 @@ pub async fn delete_by_query(
 
 /// 通过查询参数获取单篇文章或文章列表（用于管理后台）
 pub async fn get_by_query(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
     http_req: HttpRequest,
 ) -> HttpResponse {
@@ -323,7 +319,7 @@ pub async fn get_by_query(
         return crate::middleware::auth::forbidden_response();
     }
 
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
 
     // 检查是否有 id 查询参数
     if let Some(id_str) = query.get("id") {

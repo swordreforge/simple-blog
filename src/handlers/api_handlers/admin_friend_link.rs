@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{FriendLinkRepository, Repository};
-use std::sync::Arc;
 
 /// 友链列表请求参数
 #[derive(Debug, Deserialize)]
@@ -66,8 +64,8 @@ pub struct PaginatedResponse<T> {
 
 /// 获取友链列表（Admin）
 pub async fn list(
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<AdminFriendLinkListQuery>,
-    repo: web::Data<Arc<dyn Repository>>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -77,8 +75,7 @@ pub async fn list(
     if crate::middleware::auth::check_admin_auth(&req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let page = query.page.unwrap_or(1);
     let page_size = query.page_size.unwrap_or(20);
@@ -127,22 +124,21 @@ pub async fn list(
     }
 }
 
-/// 获取单个友链（Admin）
+/// 获取单个友链
 pub async fn get(
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
-    repo: web::Data<Arc<dyn Repository>>,
-    req: actix_web::HttpRequest,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
-    if req.cookie("auth_token").is_none() {
+    if http_req.cookie("auth_token").is_none() {
         return crate::middleware::auth::missing_token_response();
     }
-    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-
     let id = path.into_inner();
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     match friend_link_repo.get_by_id(id).await {
         Ok(Some(link)) => HttpResponse::Ok().json(serde_json::json!({
@@ -172,19 +168,19 @@ pub async fn get(
 
 /// 创建友链（Admin）
 pub async fn create(
-    req_json: web::Json<CreateFriendLinkRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
-    req: actix_web::HttpRequest,
+    state: web::Data<crate::app_state::AppState>,
+    req: web::Json<CreateFriendLinkRequest>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
-    if req.cookie("auth_token").is_none() {
+    if http_req.cookie("auth_token").is_none() {
         return crate::middleware::auth::missing_token_response();
     }
-    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
 
-    let req = req_json.into_inner();
+    let req = req.into_inner();
     
     // 验证必填字段
     if req.nickname.is_empty() || req.link_url.is_empty() {
@@ -194,7 +190,7 @@ pub async fn create(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let link = crate::db::models::FriendLink {
         id: None,
@@ -222,9 +218,9 @@ pub async fn create(
 
 /// 更新友链（Admin）
 pub async fn update(
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req_json: web::Json<UpdateFriendLinkRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -246,7 +242,7 @@ pub async fn update(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     // 获取现有友链
     let existing_link = match friend_link_repo.get_by_id(id).await {
@@ -287,15 +283,15 @@ pub async fn update(
 
 /// 删除友链（Admin）
 pub async fn delete(
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
-    repo: web::Data<Arc<dyn Repository>>,
-    req: actix_web::HttpRequest,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
-    if req.cookie("auth_token").is_none() {
+    if http_req.cookie("auth_token").is_none() {
         return crate::middleware::auth::missing_token_response();
     }
-    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
 
@@ -308,7 +304,7 @@ pub async fn delete(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     match friend_link_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(CommonResponse {
@@ -330,8 +326,8 @@ pub struct BatchDeleteRequest {
 
 /// 批量删除友链（Admin）
 pub async fn delete_batch(
+    state: web::Data<crate::app_state::AppState>,
     req_json: web::Json<BatchDeleteRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -349,7 +345,7 @@ pub async fn delete_batch(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let mut deleted_count = 0;
     for id in &req_json.ids {
@@ -374,8 +370,8 @@ pub struct BatchUpdateStatusRequest {
 
 /// 批量更新友链状态（Admin）
 pub async fn batch_update_status(
+    state: web::Data<crate::app_state::AppState>,
     req_json: web::Json<BatchUpdateStatusRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -393,7 +389,7 @@ pub async fn batch_update_status(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let mut updated_count = 0;
     for id in &req_json.ids {

@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{CommentRepository, Repository};
-use std::sync::Arc;
 
 /// 将 Markdown 转换为 HTML
 fn convert_markdown_to_html(markdown: &str) -> String {
@@ -55,9 +53,9 @@ pub struct CommonResponse {
 /// 获取评论列表
 pub async fn list(
     query: web::Query<CommentListQuery>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
-    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    let comment_repo = state.comment_repository();
     
     // 验证并设置默认值
     let page = query.page.filter(|&p| p > 0).unwrap_or(1);
@@ -106,7 +104,7 @@ pub async fn list(
 /// 创建评论
 pub async fn create(
     req: web::Json<CreateCommentRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     // 验证必填字段
     if req.username.is_empty() || req.content.is_empty() || req.passage_uuid.is_empty() {
@@ -116,7 +114,7 @@ pub async fn create(
         });
     }
     
-    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    let comment_repo = state.comment_repository();
 
     // 将 Markdown 转换为 HTML
     let html_content = convert_markdown_to_html(&req.content);
@@ -151,7 +149,7 @@ pub async fn create(
 /// 删除评论
 pub async fn delete(
     path: web::Path<i64>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -171,7 +169,7 @@ pub async fn delete(
         });
     }
     
-    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    let comment_repo = state.comment_repository();
     
     match comment_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(CommonResponse {
@@ -194,7 +192,7 @@ pub struct BatchDeleteRequest {
 /// 批量删除评论
 pub async fn delete_batch(
     req_json: web::Json<BatchDeleteRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -212,7 +210,7 @@ pub async fn delete_batch(
         });
     }
     
-    let comment_repo = CommentRepository::new(repo.get_pool().clone());
+    let comment_repo = state.comment_repository();
 
     match comment_repo.delete_batch(req_json.ids.clone()).await {
         Ok(count) => HttpResponse::Ok().json(serde_json::json!({

@@ -35,7 +35,7 @@ impl ECCSession {
     pub fn new() -> Self {
         // 生成新的 ECC 密钥对
         let signing_key = SigningKey::random(&mut rand::thread_rng());
-        let verifying_key = signing_key.verifying_key().clone();
+        let verifying_key = *signing_key.verifying_key();
 
         ECCSession {
             signing_key,
@@ -74,8 +74,9 @@ impl ECCSession {
     pub fn get_expiry(&self) -> chrono::DateTime<Utc> {
         self.created_at + Duration::hours(1)
     }
-    
+
     /// 混合加密（ECDH + AES-GCM）
+    #[allow(dead_code)]
     pub fn hybrid_encrypt(&self, plaintext: &str, client_public_key_input: &str) -> Result<String, String> {
         use aes_gcm::aead::Aead;
 
@@ -241,7 +242,7 @@ impl SessionManager {
 
         // 每 100 次创建会话时执行一次清理
         let counter = self.cleanup_counter.fetch_add(1, Ordering::Relaxed);
-        if counter % 100 == 0 {
+        if counter.is_multiple_of(100) {
             self.cleanup_expired_sessions();
         }
 

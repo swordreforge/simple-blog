@@ -1,12 +1,13 @@
-/// 缓存键管理模块
-///
-/// 提供结构化、类型安全的缓存键生成和管理
-/// 支持版本控制，便于批量失效缓存
+//! 缓存键管理模块
+//!
+//! 提供结构化、类型安全的缓存键生成和管理
+//! 支持版本控制，便于批量失效缓存
 
 use std::fmt;
 
 /// 缓存命名空间
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
 pub enum CacheNamespace {
     /// 文章相关缓存
     Passage,
@@ -46,6 +47,7 @@ impl fmt::Display for CacheNamespace {
 
 /// 缓存资源类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[allow(dead_code)]
 pub enum CacheResource {
     /// 列表
     List,
@@ -85,6 +87,7 @@ impl fmt::Display for CacheResource {
 ///     .build();
 /// ```
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct CacheKeyBuilder {
     namespace: CacheNamespace,
     resource: CacheResource,
@@ -94,6 +97,7 @@ pub struct CacheKeyBuilder {
 
 impl CacheKeyBuilder {
     /// 创建新的缓存键构建器
+    #[allow(dead_code)]
     pub fn new(namespace: CacheNamespace, resource: CacheResource) -> Self {
         Self {
             namespace,
@@ -104,12 +108,14 @@ impl CacheKeyBuilder {
     }
 
     /// 添加参数
+    #[allow(dead_code)]
     pub fn with_param(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.params.push((key.into(), value.into()));
         self
     }
 
     /// 添加多个参数
+    #[allow(dead_code)]
     pub fn with_params(mut self, params: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>) -> Self {
         for (key, value) in params {
             self.params.push((key.into(), value.into()));
@@ -118,12 +124,14 @@ impl CacheKeyBuilder {
     }
 
     /// 设置版本号
+    #[allow(dead_code)]
     pub fn with_version(mut self, version: u32) -> Self {
         self.version = Some(version);
         self
     }
 
     /// 构建缓存键
+    #[allow(dead_code)]
     pub fn build(self) -> String {
         let mut parts = vec![
             self.namespace.to_string(),
@@ -144,6 +152,7 @@ impl CacheKeyBuilder {
     }
 
     /// 构建模式（用于批量删除）
+    #[allow(dead_code)]
     pub fn build_pattern(self) -> String {
         let mut parts = vec![
             self.namespace.to_string(),
@@ -167,8 +176,10 @@ impl CacheKeyBuilder {
 }
 
 /// 文章缓存键生成器
+#[allow(dead_code)]
 pub struct PassageCacheKeys;
 
+#[allow(dead_code)]
 impl PassageCacheKeys {
     /// 生成文章列表缓存键
     pub fn list(page: i64, limit: i64) -> String {
@@ -242,8 +253,10 @@ impl PassageCacheKeys {
 }
 
 /// 评论缓存键生成器
+#[allow(dead_code)]
 pub struct CommentCacheKeys;
 
+#[allow(dead_code)]
 impl CommentCacheKeys {
     /// 生成评论列表缓存键
     pub fn list(passage_uuid: Option<&str>, page: i64, limit: i64) -> String {
@@ -266,8 +279,10 @@ impl CommentCacheKeys {
 }
 
 /// 分类缓存键生成器
+#[allow(dead_code)]
 pub struct CategoryCacheKeys;
 
+#[allow(dead_code)]
 impl CategoryCacheKeys {
     /// 生成分类列表缓存键
     pub fn list() -> String {
@@ -286,8 +301,10 @@ impl CategoryCacheKeys {
 }
 
 /// 标签缓存键生成器
+#[allow(dead_code)]
 pub struct TagCacheKeys;
 
+#[allow(dead_code)]
 impl TagCacheKeys {
     /// 生成标签列表缓存键
     pub fn list() -> String {
@@ -306,8 +323,10 @@ impl TagCacheKeys {
 }
 
 /// 设置缓存键生成器
+#[allow(dead_code)]
 pub struct SettingsCacheKeys;
 
+#[allow(dead_code)]
 impl SettingsCacheKeys {
     /// 生成所有设置缓存键
     pub fn all() -> String {
@@ -334,8 +353,10 @@ impl SettingsCacheKeys {
 }
 
 /// 统计缓存键生成器
+#[allow(dead_code)]
 pub struct StatsCacheKeys;
 
+#[allow(dead_code)]
 impl StatsCacheKeys {
     /// 生成统计信息缓存键
     pub fn general() -> String {

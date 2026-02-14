@@ -23,7 +23,7 @@ impl IdGenerator {
     /// 从字节数组创建 ID 生成器
     pub fn from_bytes(machine_id_bytes: [u8; 6]) -> Self {
         let raw_worker_id = u16::from_be_bytes([machine_id_bytes[0], machine_id_bytes[1]]);
-        let worker_id = (raw_worker_id % 1024) as u16;
+        let worker_id = raw_worker_id % 1024;
         Self {
             worker_id,
             sequence: AtomicU64::new(0),

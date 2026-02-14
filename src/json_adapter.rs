@@ -48,7 +48,7 @@ mod simd_impl {
     /// # Safety
     /// 参考 `from_str` 的安全性说明。
     #[allow(dead_code)]
-    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(buf: &mut String) -> Result<T, simd_json::Error> {
+    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(buf: &mut str) -> Result<T, simd_json::Error> {
         unsafe {
             simd_json::serde::from_str(buf)
         }
@@ -91,7 +91,7 @@ mod std_impl {
 
     /// 使用复用缓冲区的反序列化（与标准实现相同，但保持 API 一致）
     #[allow(dead_code)]
-    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(buf: &mut String) -> Result<T, serde_json::Error> {
+    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(buf: &mut str) -> Result<T, serde_json::Error> {
         serde_json::from_str(buf)
     }
 

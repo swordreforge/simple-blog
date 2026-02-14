@@ -57,8 +57,8 @@ pub async fn markdown_editor() -> HttpResponse {
 pub async fn keyboard_test() -> HttpResponse {
     match NamedFile::open_async("templates/keyboard-test.html").await {
         Ok(file) => {
-            let mut req = actix_web::test::TestRequest::default().to_http_request();
-            file.into_response(&mut req)
+            let req = actix_web::test::TestRequest::default().to_http_request();
+            file.into_response(&req)
         },
         Err(_) => HttpResponse::NotFound().body("Keyboard test page not found"),
     }

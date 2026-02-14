@@ -14,12 +14,15 @@ pub enum AppError {
     /// JWT 错误
     Jwt(String),
     /// 认证错误
+    #[allow(dead_code)]
     Auth(String),
     /// 验证错误
     Validation(String),
     /// 未找到资源
+    #[allow(dead_code)]
     NotFound(String),
     /// 权限不足
+    #[allow(dead_code)]
     Forbidden(String),
     /// IO 错误
     Io(String),
@@ -28,6 +31,7 @@ pub enum AppError {
     /// 内部服务器错误
     Internal(String),
     /// 缓存错误
+    #[allow(dead_code)]
     Cache(String),
 }
 

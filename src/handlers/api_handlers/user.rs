@@ -1,8 +1,6 @@
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{UserRepository, Repository};
 use crate::db::models::User;
-use std::sync::Arc;
 use chrono::Utc;
 
 /// 用户信息响应
@@ -84,7 +82,7 @@ pub async fn info(req: HttpRequest) -> HttpResponse {
 
 /// 获取所有用户（管理员）
 pub async fn admin_list(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
     req: HttpRequest,
 ) -> HttpResponse {
@@ -96,7 +94,7 @@ pub async fn admin_list(
         return crate::middleware::auth::forbidden_response();
     }
 
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let user_repo = state.user_repository();
     
     // 解析分页参数
     let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
@@ -256,12 +254,12 @@ pub async fn create(
 
 /// 更新用户
 pub async fn update(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req: web::Json<UpdateUserRequest>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let user_repo = state.user_repository();
     
     // 先获取现有用户
     let mut user = match user_repo.get_by_id(id).await {
@@ -341,11 +339,11 @@ pub async fn update(
 
 /// 删除用户
 pub async fn delete(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let user_repo = state.user_repository();
     
     match user_repo.delete(id).await {
         Ok(_) => {
@@ -372,7 +370,7 @@ pub struct BatchDeleteRequest {
 
 /// 批量删除用户
 pub async fn delete_batch(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<BatchDeleteRequest>,
 ) -> HttpResponse {
     if req.ids.is_empty() {
@@ -382,7 +380,7 @@ pub async fn delete_batch(
         }));
     }
 
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let user_repo = state.user_repository();
 
     match user_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {

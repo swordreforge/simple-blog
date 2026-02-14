@@ -82,26 +82,24 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     
     let mut files: Vec<FileInfo> = Vec::new();
     
-    for entry in entries {
-        if let Ok(entry) = entry {
-            let entry_path = entry.path();
-            let metadata = entry_path.metadata().ok();
-            
-            let file_info = FileInfo {
-                name: entry.file_name().to_string_lossy().to_string(),
-                path: entry_path.to_string_lossy().to_string(),
-                is_dir: metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false),
-                size: metadata.as_ref().map(|m| m.len() as i64),
-                modified: metadata.as_ref()
-                    .and_then(|m| m.modified().ok())
-                    .map(|t| {
-                        let datetime: chrono::DateTime<chrono::Utc> = t.into();
-                        datetime.format("%Y-%m-%d %H:%M:%S").to_string()
-                    }),
-            };
-            
-            files.push(file_info);
-        }
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
+        let metadata = entry_path.metadata().ok();
+        
+        let file_info = FileInfo {
+            name: entry.file_name().to_string_lossy().to_string(),
+            path: entry_path.to_string_lossy().to_string(),
+            is_dir: metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false),
+            size: metadata.as_ref().map(|m| m.len() as i64),
+            modified: metadata.as_ref()
+                .and_then(|m| m.modified().ok())
+                .map(|t| {
+                    let datetime: chrono::DateTime<chrono::Utc> = t.into();
+                    datetime.format("%Y-%m-%d %H:%M:%S").to_string()
+                }),
+        };
+        
+        files.push(file_info);
     }
     
     // 排序：目录在前，文件在后
@@ -146,12 +144,10 @@ fn validate_path(user_path: &str) -> Result<String, String> {
     
     // 检查路径是否在工作目录或允许的子目录中
     // 允许的根目录: ./img, ./markdown, ./attachments 和 ./music
-    let allowed_dirs = vec![
-        cwd.join("img"),
+    let allowed_dirs = [cwd.join("img"),
         cwd.join("markdown"),
         cwd.join("attachments"),
-        cwd.join("music"),
-    ];
+        cwd.join("music")];
     
     let is_allowed = allowed_dirs.iter().any(|allowed_dir| {
         full_path.starts_with(allowed_dir) || full_path == *allowed_dir

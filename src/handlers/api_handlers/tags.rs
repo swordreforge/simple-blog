@@ -1,8 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{TagRepository, PassageRepository, Repository};
 use crate::db::models::Tag;
-use std::sync::Arc;
 use chrono::Utc;
 
 /// 标签响应
@@ -50,9 +48,9 @@ pub struct UpdateTagRequest {
 }
 
 /// 获取所有标签及使用次数（公开）
-pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+pub async fn list(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
+    let passage_repo = state.passage_repository();
+
     // 使用聚合查询获取标签统计（优化：避免加载所有文章）
     match passage_repo.get_tag_stats().await {
         Ok(stats) => {
@@ -64,7 +62,7 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
                     count: stat.count,
                 })
                 .collect();
-            
+
             HttpResponse::Ok()
                 .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
                 .insert_header(("Pragma", "no-cache"))
@@ -86,7 +84,7 @@ pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
 
 /// 获取所有标签（管理员）
 pub async fn admin_list(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -97,12 +95,12 @@ pub async fn admin_list(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let tag_repo = TagRepository::new(repo.get_pool().clone());
-    
+    let tag_repo = state.tag_repository();
+
     // 解析分页参数
     let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(100);
     let offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
-    
+
     // 获取所有标签
     let tags = match tag_repo.get_all(limit, offset).await {
         Ok(t) => t,
@@ -114,13 +112,13 @@ pub async fn admin_list(
             }));
         }
     };
-    
+
     // 获取总数
     let total = match tag_repo.count().await {
         Ok(c) => c,
         Err(_) => tags.len() as i64,
     };
-    
+
     // 转换为响应格式
     let data: Vec<TagResponse> = tags.into_iter()
         .map(|tag| TagResponse {
@@ -135,7 +133,7 @@ pub async fn admin_list(
             updated_at: tag.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
         })
         .collect();
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "data": data,
@@ -145,7 +143,7 @@ pub async fn admin_list(
 
 /// 根据 ID 获取标签
 pub async fn get(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -157,8 +155,8 @@ pub async fn get(
         return crate::middleware::auth::forbidden_response();
     }
     let id = path.into_inner();
-    let tag_repo = TagRepository::new(repo.get_pool().clone());
-    
+    let tag_repo = state.tag_repository();
+
     match tag_repo.get_by_id(id).await {
         Ok(tag) => {
             let response = TagResponse {
@@ -188,7 +186,7 @@ pub async fn get(
 
 /// 创建标签
 pub async fn create(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<CreateTagRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -199,8 +197,8 @@ pub async fn create(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let tag_repo = TagRepository::new(repo.get_pool().clone());
-    
+    let tag_repo = state.tag_repository();
+
     let now = Utc::now();
     let tag = Tag {
         id: None,
@@ -213,7 +211,7 @@ pub async fn create(
         created_at: now,
         updated_at: now,
     };
-    
+
     match tag_repo.create(&tag).await {
         Ok(id) => {
             HttpResponse::Ok().json(serde_json::json!({
@@ -234,8 +232,7 @@ pub async fn create(
 
 /// 更新标签
 pub async fn update(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req: web::Json<UpdateTagRequest>,
     http_req: actix_web::HttpRequest,
@@ -248,8 +245,8 @@ pub async fn update(
         return crate::middleware::auth::forbidden_response();
     }
     let id = path.into_inner();
-    let tag_repo = TagRepository::new(repo.get_pool().clone());
-    
+    let tag_repo = state.tag_repository();
+
     // 先获取现有标签
     let mut tag = match tag_repo.get_by_id(id).await {
         Ok(t) => t,
@@ -260,7 +257,7 @@ pub async fn update(
             }));
         }
     };
-    
+
     // 更新字段
     if let Some(ref name) = req.name {
         tag.name = name.clone();
@@ -281,15 +278,15 @@ pub async fn update(
         tag.is_enabled = is_enabled;
     }
     tag.updated_at = Utc::now();
-    
+
     match tag_repo.update(&tag).await {
         Ok(_) => {
             // 清除所有文章列表和详情缓存
-            if let Some(manager) = app_cache.manager() {
+            if let Some(manager) = state.cache.manager() {
                 let _ = manager.delete_pattern("passage:list:*").await;
                 let _ = manager.delete_pattern("passage:get:*").await;
             }
-            
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "标签更新成功"
@@ -307,8 +304,7 @@ pub async fn update(
 
 /// 删除标签
 pub async fn delete(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -320,13 +316,13 @@ pub async fn delete(
         return crate::middleware::auth::forbidden_response();
     }
     let id = path.into_inner();
-    let tag_repo = TagRepository::new(repo.get_pool().clone());
-    
+    let tag_repo = state.tag_repository();
+
     match tag_repo.delete(id).await {
         Ok(_) => {
             // 清除所有文章列表和详情缓存
-            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
-            
+            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "标签删除成功"
@@ -350,8 +346,7 @@ pub struct BatchDeleteRequest {
 
 /// 批量删除标签
 pub async fn delete_batch(
-    repo: web::Data<Arc<dyn Repository>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<BatchDeleteRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -368,14 +363,14 @@ pub async fn delete_batch(
             "message": "标签ID列表不能为空"
         }));
     }
-    
-    let tag_repo = TagRepository::new(repo.get_pool().clone());
-    
+
+    let tag_repo = state.tag_repository();
+
     match tag_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             // 清除所有文章列表和详情缓存
-            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
-            
+            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": format!("成功删除 {} 个标签", count),
@@ -393,6 +388,7 @@ pub async fn delete_batch(
 }
 
 /// 解析标签 JSON 字符串
+#[allow(dead_code)]
 fn parse_tags(tags_str: &str) -> Vec<String> {
     if tags_str.is_empty() || tags_str == "[]" {
         return Vec::new();

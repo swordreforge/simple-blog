@@ -72,6 +72,7 @@ impl AuditLogger {
     }
 
     /// 记录登录事件
+    #[allow(dead_code)]
     pub fn log_login(
         &self,
         user_id: i64,
@@ -172,6 +173,8 @@ impl AuditLogger {
     }
 
     /// 记录权限变更事件
+    #[allow(dead_code)]
+    #[allow(clippy::too_many_arguments)]
     pub fn log_permission_change(
         &self,
         admin_user_id: i64,

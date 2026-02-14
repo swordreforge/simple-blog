@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{FriendLinkRepository, Repository};
-use std::sync::Arc;
 
 /// 友链列表请求参数
 #[derive(Debug, Deserialize)]
@@ -55,9 +53,9 @@ pub struct CommonResponse {
 /// 获取友链列表
 pub async fn list(
     query: web::Query<FriendLinkListQuery>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let links = if query.include_disabled.unwrap_or(false) {
         friend_link_repo.get_all_including_disabled().await
@@ -94,10 +92,10 @@ pub async fn list(
 /// 获取单个友链
 pub async fn get(
     path: web::Path<i64>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     match friend_link_repo.get_by_id(id).await {
         Ok(Some(link)) => HttpResponse::Ok().json(serde_json::json!({
@@ -128,7 +126,7 @@ pub async fn get(
 /// 创建友链
 pub async fn create(
     req: web::Json<CreateFriendLinkRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     // 验证必填字段
     if req.nickname.is_empty() || req.link_url.is_empty() {
@@ -138,7 +136,7 @@ pub async fn create(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let link = crate::db::models::FriendLink {
         id: None,
@@ -168,7 +166,7 @@ pub async fn create(
 pub async fn update(
     path: web::Path<i64>,
     req: web::Json<UpdateFriendLinkRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     let id = path.into_inner();
     
@@ -180,7 +178,7 @@ pub async fn update(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     // 获取现有友链
     let existing_link = match friend_link_repo.get_by_id(id).await {
@@ -222,7 +220,7 @@ pub async fn update(
 /// 删除友链
 pub async fn delete(
     path: web::Path<i64>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -242,7 +240,7 @@ pub async fn delete(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     match friend_link_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(CommonResponse {
@@ -267,7 +265,7 @@ pub struct BatchDeleteRequest {
 #[allow(dead_code)]
 pub async fn delete_batch(
     req_json: web::Json<BatchDeleteRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -285,7 +283,7 @@ pub async fn delete_batch(
         });
     }
     
-    let friend_link_repo = FriendLinkRepository::new(repo.get_pool().clone());
+    let friend_link_repo = state.friend_link_repository();
     
     let mut deleted_count = 0;
     for id in &req_json.ids {

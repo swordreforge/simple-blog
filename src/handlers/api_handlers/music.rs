@@ -1,9 +1,7 @@
 use actix_web::{web, HttpResponse};
 use actix_multipart::Multipart;
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{MusicTrackRepository, Repository};
 use crate::audio_metadata::{extract_metadata, fallback_metadata};
-use std::sync::Arc;
 use futures_util::stream::StreamExt;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
@@ -36,9 +34,9 @@ pub async fn list() -> HttpResponse {
 }
 
 /// 获取音乐播放列表
-pub async fn playlist(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
-    let music_repo = MusicTrackRepository::new(repo.get_pool().clone());
-    
+pub async fn playlist(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
+    let music_repo = state.music_track_repository();
+
     match music_repo.get_all_without_pagination().await {
         Ok(tracks) => {
             let data: Vec<MusicTrackResponse> = tracks.into_iter()
@@ -52,7 +50,7 @@ pub async fn playlist(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
                     cover_image: track.cover_image,
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(data)
         }
         Err(e) => {
@@ -79,11 +77,11 @@ pub async fn update(
     path: web::Path<i64>,
     query: web::Query<std::collections::HashMap<String, String>>,
     payload: Option<web::Json<UpdateMusicRequest>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     let id = path.into_inner();
     let action = query.get("action").map(|s| s.as_str());
-    let music_repo = MusicTrackRepository::new(repo.get_pool().clone());
+    let music_repo = state.music_track_repository();
 
     if action == Some("title") {
         // 更新标题
@@ -139,10 +137,10 @@ pub async fn update(
 pub async fn upload_cover(
     path: web::Path<i64>,
     mut payload: Multipart,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let music_repo = MusicTrackRepository::new(repo.get_pool().clone());
+    let music_repo = state.music_track_repository();
 
     // 允许的图片文件类型
     let allowed_extensions = ["jpg", "jpeg", "png", "gif", "webp"];
@@ -276,10 +274,10 @@ pub async fn upload_cover(
 /// 删除音乐
 pub async fn delete(
     path: web::Path<i64>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let music_repo = MusicTrackRepository::new(repo.get_pool().clone());
+    let music_repo = state.music_track_repository();
 
     // 先获取音乐信息，以便删除相关文件
     let track_info = match music_repo.get_by_id(id).await {
@@ -353,9 +351,9 @@ pub async fn delete(
 /// 上传音乐
 pub async fn upload(
     mut payload: Multipart,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
-    let music_repo = MusicTrackRepository::new(repo.get_pool().clone());
+    let music_repo = state.music_track_repository();
 
     // 允许的音频文件类型
     let allowed_extensions = ["mp3", "wav", "ogg", "flac", "m4a"];

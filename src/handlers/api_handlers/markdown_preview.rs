@@ -41,9 +41,9 @@ fn validate_markdown_path(path: &str) -> Result<PathBuf, String> {
     
     // 构建完整路径
     let full_path = cwd.join("markdown").join(&normalized_path);
-    
+
     // 确保文件以 .md 结尾
-    if !full_path.extension().map_or(false, |ext| ext == "md") {
+    if full_path.extension().is_none_or(|ext| ext != "md") {
         return Err(format!("文件必须是 .md 格式，当前扩展名: {:?}", full_path.extension()));
     }
     
@@ -65,8 +65,8 @@ fn extract_markdown_title(content: &str) -> String {
     // 查找第一个 H1 标题
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("# ") {
-            return trimmed[2..].trim().to_string();
+        if let Some(stripped) = trimmed.strip_prefix("# ") {
+            return stripped.trim().to_string();
         }
     }
     

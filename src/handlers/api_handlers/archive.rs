@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
-use crate::db::repositories::{PassageRepository, Repository};
-use std::sync::Arc;
 
 /// 归档响应
 #[derive(Debug, Serialize)]
@@ -11,9 +9,9 @@ pub struct ArchiveResponse {
     pub count: i32,
 }
 
-/// 获取文章归档（按年月分组）
-pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+/// 获取文章归档列表
+pub async fn list(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
+    let passage_repo = state.passage_repository();
     
     // 使用聚合查询获取归档统计（优化：避免加载所有文章）
     match passage_repo.get_archive_stats().await {

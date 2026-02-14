@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{AboutMainCardRepository, AboutSubCardRepository, Repository};
-use std::sync::Arc;
 
 /// 主卡片响应
 #[derive(Debug, Serialize)]
@@ -71,9 +69,9 @@ pub async fn update() -> HttpResponse {
     }))
 }
 
-/// 获取所有主卡片（公开）
-pub async fn get_main_cards(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
-    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+/// 获取主卡片列表（管理员）
+pub async fn get_main_cards(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
+    let main_card_repo = state.about_main_card_repository();
     
     match main_card_repo.get_all().await {
         Ok(cards) => {
@@ -105,7 +103,7 @@ pub async fn get_main_cards(repo: web::Data<Arc<dyn Repository>>) -> HttpRespons
 
 /// 获取所有主卡片（管理员）
 pub async fn get_main_cards_admin(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -115,7 +113,7 @@ pub async fn get_main_cards_admin(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    let main_card_repo = state.about_main_card_repository();
     
     match main_card_repo.get_all().await {
         Ok(cards) => {
@@ -143,12 +141,12 @@ pub async fn get_main_cards_admin(
     }
 }
 
-/// 获取所有次卡片（公开）
+/// 获取次卡片列表（管理员）
 pub async fn get_sub_cards(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
-    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let sub_card_repo = state.about_sub_card_repository();
     
     match sub_card_repo.get_all().await {
         Ok(cards) => {
@@ -191,7 +189,7 @@ pub async fn get_sub_cards(
 
 /// 获取所有次卡片（管理员）
 pub async fn get_sub_cards_admin(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -201,7 +199,7 @@ pub async fn get_sub_cards_admin(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let sub_card_repo = state.about_sub_card_repository();
     
     match sub_card_repo.get_all().await {
         Ok(cards) => {
@@ -234,10 +232,10 @@ pub async fn get_sub_cards_admin(
 
 /// 创建主卡片
 pub async fn create_main_card(
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<MainCardRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
 ) -> HttpResponse {
-    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    let main_card_repo = state.about_main_card_repository();
     let card = crate::db::models::AboutMainCard {
         id: None,
         title: req.title.clone(),
@@ -267,22 +265,20 @@ pub async fn create_main_card(
 
 /// 更新主卡片
 pub async fn update_main_card(
-    query: web::Query<std::collections::HashMap<String, String>>,
+    state: web::Data<crate::app_state::AppState>,
+    path: web::Path<i64>,
     req: web::Json<MainCardRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    let id_str = query.get("id").cloned().unwrap_or_default();
-    let id: i64 = match id_str.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "success": false,
-                "message": "无效的主卡片ID"
-            }));
-        }
-    };
-    
-    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+    let id = path.into_inner();
+    let main_card_repo = state.about_main_card_repository();
     let mut card = match main_card_repo.get_by_id(id).await {
         Ok(c) => c,
         Err(_) => {
@@ -318,21 +314,19 @@ pub async fn update_main_card(
 
 /// 删除主卡片
 pub async fn delete_main_card(
-    query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
+    path: web::Path<i64>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    let id_str = query.get("id").cloned().unwrap_or_default();
-    let id: i64 = match id_str.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "success": false,
-                "message": "无效的主卡片ID"
-            }));
-        }
-    };
-    
-    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+    let id = path.into_inner();
+    let main_card_repo = state.about_main_card_repository();
     
     match main_card_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
@@ -351,10 +345,18 @@ pub async fn delete_main_card(
 
 /// 创建次卡片
 pub async fn create_sub_card(
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<SubCardRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+    let sub_card_repo = state.about_sub_card_repository();
     let card = crate::db::models::AboutSubCard {
         id: None,
         main_card_id: req.main_card_id,
@@ -387,22 +389,20 @@ pub async fn create_sub_card(
 
 /// 更新次卡片
 pub async fn update_sub_card(
-    query: web::Query<std::collections::HashMap<String, String>>,
+    state: web::Data<crate::app_state::AppState>,
+    path: web::Path<i64>,
     req: web::Json<SubCardRequest>,
-    repo: web::Data<Arc<dyn Repository>>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    let id_str = query.get("id").cloned().unwrap_or_default();
-    let id: i64 = match id_str.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "success": false,
-                "message": "无效的次卡片ID"
-            }));
-        }
-    };
-    
-    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+    let id = path.into_inner();
+    let sub_card_repo = state.about_sub_card_repository();
     let mut card = match sub_card_repo.get_by_id(id).await {
         Ok(c) => c,
         Err(_) => {
@@ -412,7 +412,7 @@ pub async fn update_sub_card(
             }));
         }
     };
-    
+
     card.main_card_id = req.main_card_id;
     card.title = req.title.clone();
     card.description = req.description.clone();
@@ -423,7 +423,7 @@ pub async fn update_sub_card(
     card.sort_order = req.sort_order;
     card.is_enabled = req.is_enabled;
     card.updated_at = chrono::Utc::now();
-    
+
     match sub_card_repo.update(&card).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -441,8 +441,8 @@ pub async fn update_sub_card(
 
 /// 删除次卡片
 pub async fn delete_sub_card(
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
 ) -> HttpResponse {
     let id_str = query.get("id").cloned().unwrap_or_default();
     let id: i64 = match id_str.parse() {
@@ -455,7 +455,7 @@ pub async fn delete_sub_card(
         }
     };
     
-    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let sub_card_repo = state.about_sub_card_repository();
     
     match sub_card_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
@@ -472,10 +472,10 @@ pub async fn delete_sub_card(
     }
 }
 
-/// 切换主卡片启用/禁用状态
+/// 切换主卡片启用状态
 pub async fn toggle_main_card_enabled(
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
 ) -> HttpResponse {
     let id_str = query.get("id").cloned().unwrap_or_default();
     let id: i64 = match id_str.parse() {
@@ -488,7 +488,7 @@ pub async fn toggle_main_card_enabled(
         }
     };
     
-    let main_card_repo = AboutMainCardRepository::new(repo.get_pool().clone());
+    let main_card_repo = state.about_main_card_repository();
     let mut card = match main_card_repo.get_by_id(id).await {
         Ok(c) => c,
         Err(_) => {
@@ -525,21 +525,11 @@ pub async fn toggle_main_card_enabled(
 
 /// 切换次卡片启用/禁用状态
 pub async fn toggle_sub_card_enabled(
-    query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
+    path: web::Path<i64>,
 ) -> HttpResponse {
-    let id_str = query.get("id").cloned().unwrap_or_default();
-    let id: i64 = match id_str.parse() {
-        Ok(i) => i,
-        Err(_) => {
-            return HttpResponse::BadRequest().json(serde_json::json!({
-                "success": false,
-                "message": "无效的次卡片ID"
-            }));
-        }
-    };
-    
-    let sub_card_repo = AboutSubCardRepository::new(repo.get_pool().clone());
+    let id = path.into_inner();
+    let sub_card_repo = state.about_sub_card_repository();
     let mut card = match sub_card_repo.get_by_id(id).await {
         Ok(c) => c,
         Err(_) => {

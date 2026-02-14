@@ -1,7 +1,7 @@
-/// 阅读记录批量处理模块
-/// 
-/// 使用 tokio::sync::mpsc 通道批量写入阅读记录
-/// 预期效果：数据库写入减少 80-90%
+//! 阅读记录批量处理模块
+//! 
+//! 使用 tokio::sync::mpsc 通道批量写入阅读记录
+//! 预期效果：数据库写入减少 80-90%
 
 use tokio::sync::mpsc;
 use std::sync::Arc;
@@ -61,8 +61,10 @@ pub struct ViewBatchProcessor {
 #[derive(Debug)]
 pub(crate) struct AdaptiveState {
     current_batch_size: usize,
+    #[allow(dead_code)]
     last_adjustment: chrono::DateTime<chrono::Utc>,
     records_received: usize,
+    #[allow(dead_code)]
     records_last_interval: usize,
 }
 
@@ -82,8 +84,8 @@ impl ViewBatchProcessor {
     }
 
     /// 记录阅读（异步发送）
-    pub fn record_view(&self, record: ViewRecord) -> Result<(), mpsc::error::SendError<ViewRecord>> {
-        self.tx.send(record)
+    pub fn record_view(&self, record: ViewRecord) -> Result<(), Box<mpsc::error::SendError<ViewRecord>>> {
+        self.tx.send(record).map_err(Box::new)
     }
 
     /// 批量处理器主循环
@@ -192,7 +194,7 @@ impl ViewBatchProcessor {
     pub(crate) fn adjust_batch_size(
         config: &BatchConfig,
         state: &mut AdaptiveState,
-        batch: &mut Vec<ViewRecord>,
+        batch: &mut [ViewRecord],
     ) {
         if !config.adaptive {
             return;

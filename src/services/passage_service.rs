@@ -10,10 +10,12 @@ use crate::error::Result;
 
 /// 文章服务
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct PassageService {
     passage_repo: Arc<PassageRepository>,
 }
 
+#[allow(dead_code)]
 impl PassageService {
     /// 创建新的文章服务
     pub fn new(passage_repo: Arc<PassageRepository>) -> Self {
@@ -35,6 +37,7 @@ impl PassageService {
     ///
     /// # 返回
     /// 返回新创建的文章 ID
+    #[allow(clippy::too_many_arguments)]
     pub async fn create_passage(
         &self,
         title: String,

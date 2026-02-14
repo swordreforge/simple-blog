@@ -45,7 +45,7 @@ pub async fn save(
     // 检查用户权限（需要管理员权限）
     let role: String = http_req.extensions().get::<crate::middleware::auth::RoleKey>()
         .map(|r| r.0.clone())
-        .unwrap_or_else(|| String::new());
+        .unwrap_or_default();
     
     if role != "admin" {
         return HttpResponse::Ok().json(SaveArticleResponse {

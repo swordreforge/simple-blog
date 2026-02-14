@@ -1,5 +1,5 @@
-/// 缓存工具模块
-/// 提供统一的缓存失效操作，消除代码重复
+//! 缓存工具模块
+//! 提供统一的缓存失效操作，消除代码重复
 
 use super::PassageCacheKeys;
 
@@ -74,6 +74,7 @@ pub async fn invalidate_all_passage_cache(
 ///     "abc-123-def-456"
 /// ).await;
 /// ```
+#[allow(dead_code)]
 pub async fn invalidate_passage_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
     passage_id: i64,
@@ -110,6 +111,7 @@ pub async fn invalidate_passage_cache(
 ///     "abc-123-def-456"
 /// ).await;
 /// ```
+#[allow(dead_code)]
 pub async fn invalidate_passage_and_list_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
     passage_id: i64,
@@ -140,6 +142,7 @@ pub async fn invalidate_passage_and_list_cache(
 ///
 /// invalidate_category_cache(app_cache.manager()).await;
 /// ```
+#[allow(dead_code)]
 pub async fn invalidate_category_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
 ) {
@@ -159,6 +162,7 @@ pub async fn invalidate_category_cache(
 ///
 /// invalidate_tag_cache(app_cache.manager()).await;
 /// ```
+#[allow(dead_code)]
 pub async fn invalidate_tag_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
 ) {
@@ -179,6 +183,7 @@ pub async fn invalidate_tag_cache(
 ///
 /// invalidate_comment_cache(app_cache.manager(), Some("abc-123")).await;
 /// ```
+#[allow(dead_code)]
 pub async fn invalidate_comment_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
     passage_uuid: Option<&str>,

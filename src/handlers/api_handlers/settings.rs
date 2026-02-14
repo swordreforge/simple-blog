@@ -481,10 +481,6 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
             "success": false,
             "message": "Key is required"
         })));
-    
-    if key.is_err() {
-        return key.unwrap_err();
-    }
 
     // 使用 match 替代 unwrap()
     let key = match key {
@@ -498,10 +494,6 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
             "success": false,
             "message": "Value is required"
         })));
-
-    if value.is_err() {
-        return value.unwrap_err();
-    }
 
     // 使用 match 替代 unwrap()
     let value = match value {

@@ -67,6 +67,7 @@ pub fn init_logging(log_dir: Option<&Path>, log_level: &str) {
 }
 
 /// 获取默认日志级别
+#[allow(dead_code)]
 pub fn default_log_level() -> &'static str {
     if cfg!(debug_assertions) {
         "debug"

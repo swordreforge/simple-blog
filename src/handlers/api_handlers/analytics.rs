@@ -1,7 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::Serialize;
-use crate::db::repositories::{ArticleViewRepository, PassageRepository, Repository};
-use std::sync::Arc;
 
 /// 热门文章响应
 #[derive(Debug, Serialize)]
@@ -69,7 +67,7 @@ pub struct AnalyticsResponse<T> {
 /// 获取最多阅读的文章
 pub async fn most_viewed(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -85,30 +83,30 @@ pub async fn most_viewed(
         // 这些函数都需要鉴权，但鉴权已在 most_viewed 入口处完成
         // 这些实现函数不需要再次鉴权
         match action.as_str() {
-            "most-viewed" => return most_viewed_impl(query, repo, req).await,
-            "view-sources" => return view_sources(query, repo, req).await,
-            "view-trend" => return view_trend(query, repo, req).await,
-            "view-by-city" => return view_by_city(query, repo, req).await,
-            "view-by-ip" => return view_by_ip(query, repo, req).await,
+            "most-viewed" => return most_viewed_impl(query, state, req).await,
+            "view-sources" => return view_sources(query, state, req).await,
+            "view-trend" => return view_trend(query, state, req).await,
+            "view-by-city" => return view_by_city(query, state, req).await,
+            "view-by-ip" => return view_by_ip(query, state, req).await,
             _ => {}
         }
     }
     
     // 默认行为：获取热门文章
-    most_viewed_impl(query, repo, req).await
+    most_viewed_impl(query, state, req).await
 }
 
 /// 获取最多阅读文章的实现
 async fn most_viewed_impl(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     _req: actix_web::HttpRequest,
 ) -> HttpResponse {
     let limit: i64 = query.get("limit")
         .and_then(|l| l.parse().ok())
         .unwrap_or(10);
     
-    let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
+    let view_repo = state.article_view_repository();
     
     match view_repo.get_most_viewed_articles(limit).await {
         Ok(articles) => {
@@ -136,7 +134,7 @@ async fn most_viewed_impl(
 /// 获取阅读来源（按国家统计）
 pub async fn view_sources(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -150,7 +148,7 @@ pub async fn view_sources(
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
     
-    let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
+    let view_repo = state.article_view_repository();
     
     match view_repo.get_view_sources(days).await {
         Ok(sources) => {
@@ -176,7 +174,7 @@ pub async fn view_sources(
 /// 获取阅读趋势
 pub async fn view_trend(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -190,7 +188,7 @@ pub async fn view_trend(
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
     
-    let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
+    let view_repo = state.article_view_repository();
     
     match view_repo.get_view_trend(days).await {
         Ok(trend) => {
@@ -216,7 +214,7 @@ pub async fn view_trend(
 /// 获取单篇文章的统计信息
 pub async fn article_stats(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -250,10 +248,10 @@ pub async fn article_stats(
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
     
-    let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
+    let view_repo = state.article_view_repository();
     
     // 先通过 ID 获取文章的 UUID
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
     let passage = match passage_repo.get_by_id(id).await {
         Ok(p) => p,
         Err(_) => {
@@ -303,7 +301,7 @@ pub async fn article_stats(
 /// 获取按城市统计的阅读数据
 pub async fn view_by_city(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -317,7 +315,7 @@ pub async fn view_by_city(
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
     
-    let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
+    let view_repo = state.article_view_repository();
     
     match view_repo.get_view_by_city(days).await {
         Ok(cities) => {
@@ -344,7 +342,7 @@ pub async fn view_by_city(
 /// 获取按IP统计的访问数据
 pub async fn view_by_ip(
     query: web::Query<std::collections::HashMap<String, String>>,
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -358,7 +356,7 @@ pub async fn view_by_ip(
         .and_then(|d| d.parse().ok())
         .unwrap_or(30);
     
-    let view_repo = ArticleViewRepository::new(repo.get_pool().clone());
+    let view_repo = state.article_view_repository();
     
     match view_repo.get_view_by_ip(days).await {
         Ok(ips) => {

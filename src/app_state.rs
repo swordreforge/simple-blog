@@ -1,12 +1,12 @@
-/// 应用状态和依赖注入容器
-/// 
-/// 统一管理应用的所有依赖项，包括：
-/// - 数据库 Repository
-/// - 缓存服务
-/// - 批量处理器
-/// - 各种服务实例
-/// 
-/// 使用依赖注入模式，便于测试和维护
+//! 应用状态和依赖注入容器
+//! 
+//! 统一管理应用的所有依赖项，包括：
+//! - 数据库 Repository
+//! - 缓存服务
+//! - 批量处理器
+//! - 各种服务实例
+//! 
+//! 使用依赖注入模式，便于测试和维护
 
 use std::sync::Arc;
 use r2d2::Pool;
@@ -76,6 +76,7 @@ impl AppState {
     }
 
     /// 获取设置 Repository
+    #[allow(dead_code)]
     pub fn settings_repository(&self) -> repositories::SettingRepository {
         repositories::SettingRepository
     }

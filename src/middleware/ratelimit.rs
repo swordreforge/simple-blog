@@ -101,10 +101,10 @@ impl RateLimiter {
 
         // DashMap 支持并发迭代和删除
         self.second_windows.retain(|_, window| {
-            window.timestamps.last().map_or(false, |&t| t > second_cutoff)
+            window.timestamps.last().is_some_and(|&t| t > second_cutoff)
         });
         self.minute_windows.retain(|_, window| {
-            window.timestamps.last().map_or(false, |&t| t > minute_cutoff)
+            window.timestamps.last().is_some_and(|&t| t > minute_cutoff)
         });
 
         // 检查条目数是否超过限制，如果超过则使用 LRU 策略删除最久未使用的条目
@@ -199,14 +199,14 @@ impl FromRequest for RateLimitCheck {
         let ip = req
             .connection_info()
             .peer_addr()
-            .unwrap_or_else(|| "unknown")
+            .unwrap_or("unknown")
             .to_string();
-        let key = format!("{}", ip);
+        let key = ip.to_string();
 
         // 定期清理过期窗口（每 100 次请求清理一次）
         static CLEANUP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let counter = CLEANUP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        if counter % 100 == 0 {
+        if counter.is_multiple_of(100) {
             RATE_LIMITER.cleanup();
         }
 

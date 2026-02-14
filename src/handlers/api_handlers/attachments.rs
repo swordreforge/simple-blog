@@ -1,9 +1,7 @@
 use actix_web::{web, HttpResponse};
 use actix_multipart::Multipart;
 use serde::Serialize;
-use crate::db::repositories::{AttachmentRepository, Repository};
 use crate::db::models::Attachment;
-use std::sync::Arc;
 use chrono::Utc;
 
 /// 附件响应
@@ -40,10 +38,10 @@ pub struct AttachmentData {
 
 /// 获取附件列表
 pub async fn list(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let attachment_repo = state.attachment_repository();
     
     // 解析并验证分页参数
     let limit: i64 = query.get("limit")
@@ -64,7 +62,7 @@ pub async fn list(
             let filtered: Vec<Attachment> = if let Some(pid) = passage_id {
                 // 按 passage_id 过滤
                 attachments.into_iter()
-                    .filter(|a| a.passage_uuid.as_ref().map_or(false, |uuid| uuid == pid))
+                    .filter(|a| a.passage_uuid.as_ref() == Some(pid))
                     .collect()
             } else {
                 // 不分页，返回所有附件
@@ -112,11 +110,11 @@ pub async fn list(
 
 /// 获取单个附件
 pub async fn get(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let attachment_repo = state.attachment_repository();
     
     match attachment_repo.get_by_id(id).await {
         Ok(attachment) => {
@@ -150,12 +148,12 @@ pub async fn get(
 
 /// 上传附件
 pub async fn upload(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     mut payload: Multipart,
 ) -> HttpResponse {
     use futures_util::stream::StreamExt;
-    
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+
+    let attachment_repo = state.attachment_repository();
     
     // 先收集所有字段，获取 passage_id
     let mut passage_uuid: Option<String> = None;
@@ -187,8 +185,7 @@ pub async fn upload(
 
             // 根据 passage_id 查找 passage_uuid
             if !passage_id_str.is_empty() {
-                use crate::db::repositories::PassageRepository;
-                let passage_repo = PassageRepository::new(repo.get_pool().clone());
+                let passage_repo = state.passage_repository();
 
                 if let Ok(id) = passage_id_str.parse::<i64>() {
                     if let Ok(passage) = passage_repo.get_by_id(id).await {
@@ -300,7 +297,7 @@ pub async fn upload(
 
 /// 删除附件
 pub async fn delete(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -313,7 +310,7 @@ pub async fn delete(
     }
 
     let id = path.into_inner();
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let attachment_repo = state.attachment_repository();
     
     // 先获取附件信息
     let attachment = match attachment_repo.get_by_id(id).await {
@@ -351,7 +348,7 @@ pub async fn delete(
 
 /// 更新附件
 pub async fn update(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     query: web::Query<std::collections::HashMap<String, String>>,
     body: Option<web::Json<serde_json::Value>>,
@@ -367,8 +364,8 @@ pub async fn update(
 
     let id = path.into_inner();
     let action = query.get("action").map(|s| s.as_str());
-    
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+
+    let attachment_repo = state.attachment_repository();
     
     // 先获取现有附件
     let mut attachment = match attachment_repo.get_by_id(id).await {
@@ -464,10 +461,10 @@ fn determine_file_type(filename: &str, content_type: &str) -> String {
 
 /// 按日期获取附件列表
 pub async fn list_by_date(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let attachment_repo = state.attachment_repository();
     
     let year = query.get("year");
     let month = query.get("month");
@@ -519,11 +516,11 @@ pub async fn list_by_date(
 
 /// 下载附件
 pub async fn download(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let attachment_repo = state.attachment_repository();
     
     match attachment_repo.get_by_id(id).await {
         Ok(attachment) => {

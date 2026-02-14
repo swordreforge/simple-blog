@@ -6,11 +6,7 @@ mod utils;
 mod valkey;
 
 pub use backend::{CacheConfig, CacheError};
-pub use keys::{
-    CacheKeyBuilder, CacheNamespace, CacheResource,
-    PassageCacheKeys, CommentCacheKeys, CategoryCacheKeys,
-    TagCacheKeys, SettingsCacheKeys, StatsCacheKeys,
-};
+pub use keys::{PassageCacheKeys};
 pub use manager::CacheManager;
 pub use utils::*;
 

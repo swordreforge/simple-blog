@@ -28,6 +28,7 @@ pub enum CacheError {
     ConnectionError(String),
 
     #[error("超时错误: {0}")]
+    #[allow(dead_code)]
     TimeoutError(String),
 
     #[error("未知错误: {0}")]

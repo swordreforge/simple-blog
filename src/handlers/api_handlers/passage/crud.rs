@@ -1,9 +1,7 @@
 use actix_web::{web, HttpResponse, HttpRequest, HttpMessage};
 use serde::{Deserialize, Serialize};
-use crate::db::repositories::{PassageRepository, AttachmentRepository, Repository};
 use crate::db::models::Passage;
-use crate::view_batch::{ViewBatchProcessor, ViewRecord, is_local_ip};
-use std::sync::Arc;
+use crate::view_batch::{ViewRecord, is_local_ip};
 use chrono::Utc;
 
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name, extract_summary};
@@ -69,11 +67,10 @@ pub struct UpdatePassageRequest {
 
 /// 获取文章列表（公开）
 pub async fn list(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     query: web::Query<std::collections::HashMap<String, String>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
 
     // 解析并验证分页参数
     let limit: i64 = query.get("limit")
@@ -94,11 +91,11 @@ pub async fn list(
 
     let month: Option<i32> = query.get("month")
         .and_then(|m| m.parse::<i32>().ok())
-        .filter(|&m| m >= 1 && m <= 12);
+        .filter(|&m| (1..=12).contains(&m));
 
     let day: Option<i32> = query.get("day")
         .and_then(|d| d.parse::<i32>().ok())
-        .filter(|&d| d >= 1 && d <= 31);
+        .filter(|&d| (1..=31).contains(&d));
 
     // 生成缓存键（包含日期参数）
     let date_part = match (year, month, day) {
@@ -124,7 +121,7 @@ pub async fn list(
     };
 
     // 尝试从缓存获取
-    if let Some(manager) = app_cache.manager() {
+    if let Some(manager) = state.cache.manager() {
         if let Some(cached_data) = manager.get(&cache_key).await {
             if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
                 return HttpResponse::Ok()
@@ -177,7 +174,7 @@ pub async fn list(
                     data.len(), next_cursor, next_cursor.is_some() && data.len() >= limit as usize);
 
                 // 存储到缓存（TTL 5 分钟）
-                if let Some(manager) = app_cache.manager() {
+                if let Some(manager) = state.cache.manager() {
                     if let Ok(json_str) = serde_json::to_string(&response) {
                         let _ = manager.set(&cache_key, &json_str).await;
                     }
@@ -277,7 +274,7 @@ pub async fn list(
                 });
 
                 // 存储到缓存（TTL 5 分钟）
-                if let Some(manager) = app_cache.manager() {
+                if let Some(manager) = state.cache.manager() {
                     if let Ok(json_str) = serde_json::to_string(&response) {
                         let _ = manager.set(&cache_key, &json_str).await;
                     }
@@ -301,19 +298,17 @@ pub async fn list(
 
 /// 获取单篇文章
 pub async fn get(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<String>,
     req: HttpRequest,
-    view_batch_processor: web::Data<Arc<ViewBatchProcessor>>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
 ) -> HttpResponse {
     let param = path.into_inner();
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
 
     // 获取用户角色
     let role: String = req.extensions().get::<crate::middleware::auth::RoleKey>()
         .map(|r| r.0.clone())
-        .unwrap_or_else(|| String::new());
+        .unwrap_or_default();
 
     // 智能识别：如果是纯数字且较小（< 1000000），则按 ID 查询；否则按 UUID 查询
     let passage = if let Ok(id) = param.parse::<i64>() {
@@ -357,24 +352,24 @@ pub async fn get(
     };
 
     // 检查文章状态和可见性
-    if passage.status != crate::db::models::PassageStatus::Published {
-        if role != "admin" || role.is_empty() {
-            return HttpResponse::Ok().json(serde_json::json!({
-                "success": false,
-                "message": "文章未发布",
-                "status": passage.status
-            }));
-        }
+    if passage.status != crate::db::models::PassageStatus::Published
+        && (role != "admin" || role.is_empty())
+    {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "success": false,
+            "message": "文章未发布",
+            "status": passage.status
+        }));
     }
 
-    if passage.visibility != crate::db::models::PassageVisibility::Public {
-        if role != "admin" || role.is_empty() {
-            return HttpResponse::Ok().json(serde_json::json!({
-                "success": false,
-                "message": "文章不可见",
-                "visibility": passage.visibility
-            }));
-        }
+    if passage.visibility != crate::db::models::PassageVisibility::Public
+        && (role != "admin" || role.is_empty())
+    {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "success": false,
+            "message": "文章不可见",
+            "visibility": passage.visibility
+        }));
     }
 
     if passage.is_scheduled {
@@ -395,7 +390,7 @@ pub async fn get(
 
     // 尝试从缓存获取（仅对公开文章缓存）
     if passage.status.is_published() && passage.visibility.is_public() {
-        if let Some(manager) = app_cache.manager() {
+        if let Some(manager) = state.cache.manager() {
             if let Some(cached_data) = manager.get(&cache_key).await {
                 if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
                     return HttpResponse::Ok()
@@ -438,7 +433,7 @@ pub async fn get(
             view_time: Utc::now(),
         };
 
-        if let Err(e) = view_batch_processor.record_view(view_record) {
+        if let Err(e) = state.view_batch_processor.record_view(view_record) {
             eprintln!("发送阅读记录到批量处理器失败: {}", e);
         }
     }
@@ -453,9 +448,9 @@ pub async fn get(
         author: passage.author,
         tags: passage.tags,
         category: passage.category,
-        status: passage.status.clone(),
+        status: passage.status,
         file_path: passage.file_path,
-        visibility: passage.visibility.clone(),
+        visibility: passage.visibility,
         is_scheduled: passage.is_scheduled,
         published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
         cover_image: passage.cover_image,
@@ -486,7 +481,7 @@ pub async fn get(
 
     // 存储到缓存（仅对公开文章，TTL 10 分钟）
     if passage.status.is_published() && passage.visibility.is_public() {
-        if let Some(manager) = app_cache.manager() {
+        if let Some(manager) = state.cache.manager() {
             if let Ok(json_str) = serde_json::to_string(&response_json) {
                 let _ = manager.set(&cache_key, &json_str).await;
             }
@@ -502,12 +497,11 @@ pub async fn get(
 
 /// 创建文章
 pub async fn create(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req_json: web::Json<CreatePassageRequest>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     req: HttpRequest,
 ) -> HttpResponse {
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
 
     // 获取用户信息用于审计日志
     let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
@@ -590,7 +584,7 @@ pub async fn create(
         title: req_json.title.clone(),
         content: html_content,
         original_content: Some(req_json.content.clone()),
-        summary: summary,
+        summary,
         author: req_json.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
         tags: tags_json,
         category: req_json.category.clone().unwrap_or_else(|| "未分类".to_string()),
@@ -613,13 +607,13 @@ pub async fn create(
             // 获取刚创建的文章信息
             match passage_repo.get_by_id(id).await {
                 Ok(created_passage) => {
-                    let uuid = created_passage.uuid.unwrap_or_else(|| String::new());
-                    let status = created_passage.status.clone();
+                    let uuid = created_passage.uuid.unwrap_or_default();
+                    let status = created_passage.status;
                     let title = created_passage.title.clone();
 
                     // 清除缓存
                     if status.is_published() {
-                        crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
+                        crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
                     }
 
                     // 记录审计日志
@@ -662,14 +656,13 @@ pub async fn create(
 
 /// 更新文章
 pub async fn update(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req_json: web::Json<UpdatePassageRequest>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     req: HttpRequest,
 ) -> HttpResponse {
     let id = path.into_inner();
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
 
     // 获取用户信息用于审计日志
     let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
@@ -717,7 +710,7 @@ pub async fn update(
     // 如果内容或标题更新了，同时更新 Markdown 文件
     if file_updated {
         if let Some(ref file_path) = passage.file_path {
-            let content_to_save = passage.original_content.as_ref().unwrap_or_else(|| {
+            let content_to_save = passage.original_content.as_ref().unwrap_or({
                 // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
                 &passage.content
             });
@@ -804,7 +797,7 @@ pub async fn update(
                     "passage:list:page:1:limit:20".to_string(),
                 ];
 
-                if let Some(manager) = app_cache.manager() {
+                if let Some(manager) = state.cache.manager() {
                     for key in cache_keys {
                         let _ = manager.delete(&key).await;
                     }
@@ -839,14 +832,13 @@ pub async fn update(
 
 /// 删除文章
 pub async fn delete(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<String>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
     req: HttpRequest,
 ) -> HttpResponse {
     let uuid = path.into_inner();
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+    let passage_repo = state.passage_repository();
+    let attachment_repo = state.attachment_repository();
 
     // 获取用户信息用于审计日志
     let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
@@ -910,7 +902,7 @@ pub async fn delete(
                 "passage:list:page:1:limit:20".to_string(),
             ];
 
-            if let Some(manager) = app_cache.manager() {
+            if let Some(manager) = state.cache.manager() {
                 for key in cache_keys {
                     if !key.is_empty() {
                         let _ = manager.delete(&key).await;
@@ -945,28 +937,48 @@ pub async fn delete(
 
 /// 批量删除文章请求
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct BatchDeleteRequest {
     pub ids: Vec<i64>,
 }
 
 /// 批量删除文章
 pub async fn delete_batch(
-    repo: web::Data<Arc<dyn Repository>>,
-    req: web::Json<BatchDeleteRequest>,
-    app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    state: web::Data<crate::app_state::AppState>,
+    req: web::Json<serde_json::Value>,
+    http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    if req.ids.is_empty() {
+    // 鉴权检查
+    if http_req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
+    let passage_repo = state.passage_repository();
+    let attachment_repo = state.attachment_repository();
+
+    // 解析请求中的 IDs
+    let ids: Vec<i64> = match req.get("ids").and_then(|v| v.as_array()) {
+        Some(arr) => arr.iter().filter_map(|v| v.as_i64()).collect(),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "缺少文章 ID 列表"
+            }));
+        }
+    };
+
+    if ids.is_empty() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "success": false,
-            "message": "文章ID列表不能为空"
+            "message": "文章 ID 列表不能为空"
         }));
     }
 
-    let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
-
     // 1. 批量获取文章信息（修复 N+1 查询问题）
-    let passages = match passage_repo.get_by_ids(&req.ids).await {
+    let passages = match passage_repo.get_by_ids(&ids).await {
         Ok(p) => p,
         Err(e) => {
             eprintln!("批量获取文章信息失败: {}", e);
@@ -1016,16 +1028,16 @@ pub async fn delete_batch(
     }
 
     // 5. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
-    match passage_repo.delete_batch(req.ids.clone()).await {
+    match passage_repo.delete_batch(ids.clone()).await {
         Ok(count) => {
             // 清除缓存（优化：使用批量删除）
-            if let Some(manager) = app_cache.manager() {
+            if let Some(manager) = state.cache.manager() {
                 // 构造批量删除的键列表
                 let mut cache_keys = Vec::new();
                 for uuid in &uuids {
                     cache_keys.push(format!("passage:get:{}", uuid));
                 }
-                for id in &req.ids {
+                for id in &ids {
                     cache_keys.push(format!("passage:get:{}", id));
                 }
 
@@ -1039,7 +1051,7 @@ pub async fn delete_batch(
                 }
 
                 // 清除所有文章列表缓存（批量删除会影响所有分页）
-                crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
+                crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
             }
 
             HttpResponse::Ok().json(serde_json::json!({

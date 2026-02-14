@@ -1,5 +1,5 @@
-/// 锁监控模块
-/// 用于检测和监控锁的使用情况，帮助发现死锁和性能问题
+//! 锁监控模块
+//! 用于检测和监控锁的使用情况，帮助发现死锁和性能问题
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -23,6 +23,7 @@ pub struct LockStats {
 }
 
 /// 锁监控器
+#[allow(dead_code)]
 pub struct LockMonitor {
     name: String,
     acquire_count: Arc<AtomicUsize>,
@@ -32,6 +33,7 @@ pub struct LockMonitor {
     current_waiters: Arc<AtomicUsize>,
 }
 
+#[allow(dead_code)]
 impl LockMonitor {
     /// 创建新的锁监控器
     pub fn new(name: String) -> Self {
@@ -83,11 +85,7 @@ impl LockMonitor {
         let acquire_count = self.acquire_count.load(Ordering::Relaxed);
         let wait_count = self.wait_count.load(Ordering::Relaxed);
         let total_wait_time_us = self.total_wait_time_us.load(Ordering::Relaxed);
-        let avg_wait_time_us = if wait_count > 0 {
-            total_wait_time_us / wait_count
-        } else {
-            0
-        };
+        let avg_wait_time_us = total_wait_time_us.checked_div(wait_count).unwrap_or(0);
         let max_wait_time_us = self.max_wait_time_us.load(Ordering::Relaxed);
         let current_waiters = self.current_waiters.load(Ordering::Relaxed);
 
@@ -145,11 +143,13 @@ impl Clone for LockMonitor {
 }
 
 /// 锁等待守卫
+#[allow(dead_code)]
 pub struct LockWaitGuard {
     monitor: LockMonitor,
     start_time: Instant,
 }
 
+#[allow(dead_code)]
 impl LockWaitGuard {
     /// 完成等待，获取到锁
     pub fn done(self) {
@@ -167,10 +167,12 @@ impl Drop for LockWaitGuard {
 }
 
 /// 全局锁监控器管理
+#[allow(dead_code)]
 pub struct GlobalLockMonitor {
     monitors: std::sync::RwLock<Vec<LockMonitor>>,
 }
 
+#[allow(dead_code)]
 impl GlobalLockMonitor {
     /// 创建新的全局监控器
     pub fn new() -> Self {
@@ -253,6 +255,7 @@ impl Default for GlobalLockMonitor {
 }
 
 /// 全局锁监控器实例
+#[allow(dead_code)]
 pub static GLOBAL_LOCK_MONITOR: Lazy<GlobalLockMonitor> = Lazy::new(GlobalLockMonitor::new);
 
 use once_cell::sync::Lazy;

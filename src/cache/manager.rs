@@ -184,7 +184,7 @@ impl CacheManager {
         // 如果主缓存当前不健康，尝试先检查是否恢复
         if self.valkey_backend.is_some() && !self.primary_healthy.load(Ordering::Relaxed) {
             eprintln!("🔍 Valkey 当前不健康，尝试检查恢复状态...");
-            if let Err(_) = self.check_health().await {
+            if self.check_health().await.is_err() {
                 eprintln!("⚠️  Valkey 仍然不健康，使用备用缓存");
                 // 仍然不健康，使用备用缓存
                 if self.fallback_enabled.load(Ordering::Relaxed) {
@@ -262,7 +262,7 @@ impl CacheManager {
         // 如果主缓存当前不健康，尝试先检查是否恢复
         if self.valkey_backend.is_some() && !self.primary_healthy.load(Ordering::Relaxed) {
             eprintln!("🔍 Valkey 当前不健康，尝试检查恢复状态...");
-            if let Ok(_) = self.check_health().await {
+            if self.check_health().await.is_ok() {
                 println!("✅ Valkey 已恢复健康状态");
                 // 恢复了，继续尝试主缓存
             } else {

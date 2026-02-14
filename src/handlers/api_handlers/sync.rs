@@ -99,7 +99,7 @@ async fn sync_directory_async(
             
             if path.is_dir() {
                 dir_stack.push(path);
-            } else if path.extension().map_or(false, |ext| ext == "md") {
+            } else if path.extension().is_some_and(|ext| ext == "md") {
                 md_files.push(path);
             }
         }
@@ -321,16 +321,14 @@ async fn cleanup_orphaned_passages(
         ))
     }).map_err(|e| format!("查询失败: {}", e))?;
     
-    for row in passage_rows {
-        if let Ok((id, file_path)) = row {
-            if let Some(fp) = file_path {
-                let full_path = Path::new(&fp);
-                if !full_path.exists() {
-                    conn.execute("DELETE FROM passages WHERE id = ?", params![id])
-                        .map_err(|e| format!("删除失败: {}", e))?;
-                    *deleted_count += 1;
-                    println!("🗑️  已删除不存在的文章记录: {}", fp);
-                }
+    for (id, file_path) in passage_rows.flatten() {
+        if let Some(fp) = file_path {
+            let full_path = Path::new(&fp);
+            if !full_path.exists() {
+                conn.execute("DELETE FROM passages WHERE id = ?", params![id])
+                    .map_err(|e| format!("删除失败: {}", e))?;
+                *deleted_count += 1;
+                println!("🗑️  已删除不存在的文章记录: {}", fp);
             }
         }
     }

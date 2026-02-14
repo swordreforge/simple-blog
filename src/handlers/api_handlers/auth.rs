@@ -1,6 +1,5 @@
 use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use crate::jwt::generate_token;
 
 #[derive(Debug, Deserialize)]

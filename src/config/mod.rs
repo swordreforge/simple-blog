@@ -4,7 +4,7 @@ use std::fs;
 use clap::Parser;
 
 /// 配置文件结构
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ConfigFile {
     #[serde(default)]
     pub server: Option<ServerConfigFile>,
@@ -24,22 +24,6 @@ pub struct ConfigFile {
     pub jwt: Option<JwtConfigFile>,
     #[serde(default)]
     pub cache: Option<CacheConfigFile>,
-}
-
-impl Default for ConfigFile {
-    fn default() -> Self {
-        Self {
-            server: None,
-            database: None,
-            templates: None,
-            static_files: None,
-            geoip: None,
-            tls: None,
-            logging: None,
-            jwt: None,
-            cache: None,
-        }
-    }
 }
 
 /// 服务器配置（配置文件）
@@ -441,7 +425,7 @@ impl CliArgs {
     }
 
     /// 将路径转换为绝对路径
-    fn make_absolute(base: &PathBuf, path: &str) -> String {
+    fn make_absolute(base: &Path, path: &str) -> String {
         let path_buf = PathBuf::from(path);
         let is_relative = path.starts_with('.') || !path_buf.is_absolute();
 
@@ -462,21 +446,11 @@ impl CliArgs {
 }
 
 /// 应用配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AppConfig {
     pub server: ServerConfig,
     pub templates: TemplateConfig,
     pub static_files: StaticConfig,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            templates: TemplateConfig::default(),
-            static_files: StaticConfig::default(),
-        }
-    }
 }
 
 impl AppConfig {
@@ -570,6 +544,7 @@ impl Default for StaticConfig {
 
 /// 配置验证错误
 #[derive(Debug, thiserror::Error)]
+#[allow(dead_code)]
 pub enum ConfigValidationError {
     #[error("端口 {0} 无效，必须在 1-65535 范围内")]
     InvalidPort(u16),
@@ -658,9 +633,9 @@ impl CliArgs {
     /// 验证配置
     pub fn validate(&self) -> ValidationResult {
         let mut result = ValidationResult::new();
-        
-        // 验证端口
-        if self.port < 1 || self.port > 65535 {
+
+        // 验证端口 (u16 max is 65535, so only need to check lower bound)
+        if self.port < 1 {
             result.add_error(ConfigValidationError::InvalidPort(self.port));
         }
         
@@ -677,7 +652,7 @@ impl CliArgs {
         }
         
         // 验证数据库路径
-        if !Path::new(&self.db_path).parent().map_or(false, |p| p.exists()) {
+        if !Path::new(&self.db_path).parent().is_some_and(|p| p.exists()) {
             // 检查父目录是否存在
             let parent = Path::new(&self.db_path).parent().unwrap_or(Path::new("."));
             if !parent.exists() {
@@ -738,10 +713,10 @@ impl CliArgs {
                 result.add_error(ConfigValidationError::InvalidCacheBackend(self.cache_backend.clone()));
             }
             
-            if self.cache_backend == "valkey" || (self.cache_backend == "auto" && self.valkey_url.is_some()) {
-                if self.valkey_url.is_none() {
-                    result.add_error(ConfigValidationError::ValkeyUrlMissing);
-                }
+            if (self.cache_backend == "valkey" || (self.cache_backend == "auto" && self.valkey_url.is_some()))
+                && self.valkey_url.is_none()
+            {
+                result.add_error(ConfigValidationError::ValkeyUrlMissing);
             }
             
             if self.cache_ttl < 1 {
