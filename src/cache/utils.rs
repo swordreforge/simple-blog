@@ -1,6 +1,8 @@
 /// 缓存工具模块
 /// 提供统一的缓存失效操作，消除代码重复
 
+use super::PassageCacheKeys;
+
 /// 失效指定的缓存模式
 ///
 /// # 参数
@@ -13,7 +15,7 @@
 ///
 /// invalidate_cache_patterns(
 ///     app_cache.manager(),
-///     &["passage:list:*", "passage:get:*"]
+///     &[PassageCacheKeys::list_pattern(), PassageCacheKeys::get_pattern()]
 /// ).await;
 /// ```
 pub async fn invalidate_cache_patterns(
@@ -47,8 +49,8 @@ pub async fn invalidate_all_passage_cache(
     invalidate_cache_patterns(
         manager,
         &[
-            "passage:list:*",
-            "passage:get:*",
+            &PassageCacheKeys::list_pattern(),
+            &PassageCacheKeys::get_pattern(),
         ]
     ).await;
 }
@@ -78,8 +80,8 @@ pub async fn invalidate_passage_cache(
     passage_uuid: &str,
 ) {
     let cache_keys = vec![
-        format!("passage:get:{}", passage_uuid),
-        format!("passage:get:{}", passage_id),
+        PassageCacheKeys::get_by_uuid(passage_uuid),
+        PassageCacheKeys::get_by_id(passage_id),
     ];
 
     if let Some(mgr) = manager {
@@ -120,8 +122,7 @@ pub async fn invalidate_passage_and_list_cache(
     invalidate_cache_patterns(
         manager,
         &[
-            "passage:list:page:1:limit:10",
-            "passage:list:page:1:limit:20",
+            &PassageCacheKeys::list_pattern(),
         ]
     ).await;
 }
@@ -184,16 +185,16 @@ pub async fn invalidate_comment_cache(
 ) {
     if let Some(uuid) = passage_uuid {
         // 失效关联文章的缓存
-        invalidate_cache_patterns(
-            manager,
-            &[&format!("passage:get:{}", uuid)]
-        ).await;
+        let key = PassageCacheKeys::get_by_uuid(uuid);
+        if let Some(mgr) = manager {
+            let _ = mgr.delete(&key).await;
+        }
     }
 
     // 失效评论列表缓存
     invalidate_cache_patterns(
         manager,
-        &["comments:*"]
+        &["comment:*"]
     ).await;
 }
 
@@ -207,17 +208,19 @@ mod tests {
         let passage_id = 123;
         let passage_uuid = "abc-123-def-456";
 
-        let key1 = format!("passage:get:{}", passage_uuid);
-        let key2 = format!("passage:get:{}", passage_id);
+        let key1 = PassageCacheKeys::get_by_uuid(passage_uuid);
+        let key2 = PassageCacheKeys::get_by_id(passage_id);
 
-        assert_eq!(key1, "passage:get:abc-123-def-456");
-        assert_eq!(key2, "passage:get:123");
+        assert_eq!(key1, "passage:get:uuid:abc-123-def-456:v1");
+        assert_eq!(key2, "passage:get:id:123:v1");
     }
 
     #[test]
     fn test_invalidate_all_passage_cache_patterns() {
         // 测试缓存模式字符串是否正确
-        let patterns = ["passage:list:*", "passage:get:*"];
+        let patterns = [PassageCacheKeys::list_pattern(), PassageCacheKeys::get_pattern()];
         assert_eq!(patterns.len(), 2);
+        assert_eq!(patterns[0], "passage:list:*");
+        assert_eq!(patterns[1], "passage:get:*");
     }
 }
