@@ -14,6 +14,8 @@ pub struct UsernameKey(pub String);
 pub struct RoleKey(pub String);
 
 // 实现 FromRequest trait 以便从请求中提取这些键
+// 注意：如果请求中没有认证信息，这些提取器会返回默认值
+// 具体的权限检查应该在 handler 中进行
 impl FromRequest for UserIDKey {
     type Error = Error;
     type Future = Ready<Result<UserIDKey, Error>>;
@@ -22,6 +24,7 @@ impl FromRequest for UserIDKey {
         if let Some(user_id) = req.extensions().get::<UserIDKey>() {
             ready(Ok(user_id.clone()))
         } else {
+            // 返回 0 表示未认证，handler 应该检查并拒绝
             ready(Ok(UserIDKey(0)))
         }
     }
@@ -35,6 +38,7 @@ impl FromRequest for UsernameKey {
         if let Some(username) = req.extensions().get::<UsernameKey>() {
             ready(Ok(username.clone()))
         } else {
+            // 返回空字符串表示未认证，handler 应该检查并拒绝
             ready(Ok(UsernameKey(String::new())))
         }
     }
@@ -48,6 +52,7 @@ impl FromRequest for RoleKey {
         if let Some(role) = req.extensions().get::<RoleKey>() {
             ready(Ok(role.clone()))
         } else {
+            // 返回空字符串表示未认证，handler 应该检查并拒绝
             ready(Ok(RoleKey(String::new())))
         }
     }

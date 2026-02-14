@@ -1,74 +1,97 @@
-use snowflake_id_generator::multi_thread::sync_generator::SnowflakeGenerator;
+use std::sync::atomic::{AtomicU64, Ordering};
 use once_cell::sync::Lazy;
 
-/// ID 生成器，使用 snowflake-id-generator 库生成 Snowflake 风格的唯一 ID
+/// 无锁 ID 生成器，使用原子操作和 Snowflake 算法
 pub struct IdGenerator {
-    generator: SnowflakeGenerator,
+    worker_id: u16,
+    sequence: AtomicU64,
+    last_timestamp: AtomicU64,
 }
 
 impl IdGenerator {
     /// 创建新的 ID 生成器
-    /// 
-    /// # 参数
-    /// * `machine_id` - 机器 ID，用于分布式环境下的唯一性标识
     #[cfg(test)]
     pub fn new(machine_id: u64) -> Self {
-        // 参数：epoch (通常为0表示从1970-01-01开始), worker_id
-        // worker_id 是 u16 类型，但 Snowflake 中实际只使用 10 位 (0-1023)
         let worker_id = (machine_id % 1024) as u16;
-        let generator = SnowflakeGenerator::new(0, worker_id)
-            .expect("Failed to create SnowflakeGenerator");
-        
-        Self { generator }
-    }
-    
-    /// 从字节数组创建 ID 生成器
-    /// 
-    /// # 参数
-    /// * `machine_id_bytes` - 机器 ID 字节数组（如 MAC 地址）
-    pub fn from_bytes(machine_id_bytes: [u8; 6]) -> Self {
-        // 直接使用字节数组的前2个字节作为 worker_id
-        // Snowflake 中 worker_id 使用 10 位 (0-1023)
-        let raw_worker_id = u16::from_be_bytes([machine_id_bytes[0], machine_id_bytes[1]]);
-        let worker_id = (raw_worker_id % 1024) as u16;
-        
-        let generator = SnowflakeGenerator::new(0, worker_id)
-            .expect("Failed to create SnowflakeGenerator");
-        
-        Self { generator }
-    }
-    
-    /// 生成下一个唯一 ID
-    /// 
-    /// # 返回
-    /// 返回生成的 ID 的字符串表示
-    pub fn generate_id(&mut self) -> String {
-        self.generator.generate_id().to_string()
-    }
-}
-
-/// 全局 ID 生成器实例
-static ID_GENERATOR: Lazy<LazyIdGenerator> = Lazy::new(|| {
-    LazyIdGenerator::new()
-});
-
-/// 线程安全的全局 ID 生成器包装器
-struct LazyIdGenerator {
-    generator: std::sync::Mutex<IdGenerator>,
-}
-
-impl LazyIdGenerator {
-    fn new() -> Self {
-        let machine_id_bytes = crate::db::repositories::get_machine_id();
         Self {
-            generator: std::sync::Mutex::new(IdGenerator::from_bytes(machine_id_bytes)),
+            worker_id,
+            sequence: AtomicU64::new(0),
+            last_timestamp: AtomicU64::new(0),
         }
     }
-    
-    fn generate_id(&self) -> String {
-        self.generator.lock().unwrap().generate_id()
+
+    /// 从字节数组创建 ID 生成器
+    pub fn from_bytes(machine_id_bytes: [u8; 6]) -> Self {
+        let raw_worker_id = u16::from_be_bytes([machine_id_bytes[0], machine_id_bytes[1]]);
+        let worker_id = (raw_worker_id % 1024) as u16;
+        Self {
+            worker_id,
+            sequence: AtomicU64::new(0),
+            last_timestamp: AtomicU64::new(0),
+        }
+    }
+
+    /// 生成下一个唯一 ID（无锁实现）
+    pub fn generate_id(&self) -> String {
+        loop {
+            // 获取当前时间戳（毫秒）
+            let current_timestamp = Self::get_timestamp();
+
+            // 尝试获取上一次的时间戳
+            let last_timestamp = self.last_timestamp.load(Ordering::Acquire);
+
+            if current_timestamp == last_timestamp {
+                // 同一毫秒内，序列号递增
+                let seq = self.sequence.fetch_add(1, Ordering::AcqRel);
+                if seq >= 4095 {
+                    // 序列号溢出，等待下一毫秒
+                    self.wait_for_next_millis(last_timestamp);
+                    continue; // 重试
+                }
+                return self.compose_id(current_timestamp, seq);
+            } else if current_timestamp < last_timestamp {
+                // 时钟回拨，等待
+                self.wait_for_next_millis(last_timestamp);
+                continue; // 重试
+            } else {
+                // 新的毫秒，重置序列号
+                self.sequence.store(0, Ordering::Release);
+                self.last_timestamp.store(current_timestamp, Ordering::Release);
+                return self.compose_id(current_timestamp, 0);
+            }
+        }
+    }
+
+    fn compose_id(&self, timestamp: u64, sequence: u64) -> String {
+        // Snowflake ID 格式: 41位时间戳 + 10位worker_id + 12位序列号
+        let id = (timestamp << 22) | ((self.worker_id as u64) << 12) | sequence;
+        id.to_string()
+    }
+
+    fn get_timestamp() -> u64 {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let duration = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        duration.as_millis() as u64
+    }
+
+    fn wait_for_next_millis(&self, last_timestamp: u64) {
+        let mut current = Self::get_timestamp();
+        while current <= last_timestamp {
+            std::hint::spin_loop();
+            current = Self::get_timestamp();
+        }
+        self.sequence.store(0, Ordering::Release);
+        self.last_timestamp.store(current, Ordering::Release);
     }
 }
+
+/// 全局 ID 生成器实例（无锁）
+static ID_GENERATOR: Lazy<IdGenerator> = Lazy::new(|| {
+    let machine_id_bytes = crate::db::repositories::get_machine_id();
+    IdGenerator::from_bytes(machine_id_bytes)
+});
 
 /// 生成全局唯一 ID 的便捷函数
 /// 

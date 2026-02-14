@@ -2,8 +2,6 @@ use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use chrono::{Utc, Duration};
 use base64::{Engine as _, engine::general_purpose};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use rand::RngCore;
 use p256::ecdsa::{SigningKey, VerifyingKey};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
@@ -174,27 +172,75 @@ impl ECCSession {
     }
 }
 
-/// 全局会话管理器
+/// 全局会话管理器（使用 DashMap 无锁并发 HashMap）
+use dashmap::DashMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 pub struct SessionManager {
-    pub sessions: Arc<Mutex<HashMap<String, ECCSession>>>,
+    pub sessions: DashMap<String, ECCSession>,
+    max_sessions: usize,  // 最大会话数限制
+    cleanup_counter: AtomicUsize,  // 清理计数器
 }
 
 impl SessionManager {
     pub fn new() -> Self {
         SessionManager {
-            sessions: Arc::new(Mutex::new(HashMap::new())),
+            sessions: DashMap::new(),
+            max_sessions: 10000,  // 限制最多 10000 个会话
+            cleanup_counter: AtomicUsize::new(0),
         }
     }
 
     pub fn create_session(&self, session_id: String) -> ECCSession {
         let session = ECCSession::new();
-        self.sessions.lock().unwrap().insert(session_id.clone(), session.clone());
+        self.sessions.insert(session_id.clone(), session.clone());
+
+        // 每 100 次创建会话时执行一次清理
+        let counter = self.cleanup_counter.fetch_add(1, Ordering::Relaxed);
+        if counter % 100 == 0 {
+            self.cleanup_expired_sessions();
+        }
+
         session
     }
-    
+
     pub fn get_session(&self, session_id: &str) -> Option<ECCSession> {
-        let sessions = self.sessions.lock().unwrap();
-        sessions.get(session_id).cloned()
+        self.sessions.get(session_id).map(|v| v.value().clone())
+    }
+
+    /// 清理过期的会话
+    fn cleanup_expired_sessions(&self) {
+        let now = chrono::Utc::now();
+        let mut expired_keys: Vec<String> = Vec::new();
+
+        // 查找所有过期的会话
+        for entry in self.sessions.iter() {
+            let (session_id, session) = entry.pair();
+            if session.get_expiry() < now {
+                expired_keys.push(session_id.clone());
+            }
+        }
+
+        // 批量删除过期会话
+        if !expired_keys.is_empty() {
+            for key in &expired_keys {
+                self.sessions.remove(key);
+            }
+            eprintln!("✅ 清理了 {} 个过期的 ECC 会话", expired_keys.len());
+        }
+
+        // 如果会话数仍然超过限制，随机删除部分会话
+        if self.sessions.len() > self.max_sessions {
+            let remove_count = self.max_sessions / 10;  // 删除 10%
+            let keys_to_remove: Vec<String> = self.sessions.iter()
+                .take(remove_count)
+                .map(|entry| entry.key().clone())
+                .collect();
+            for key in &keys_to_remove {
+                self.sessions.remove(key);
+            }
+            eprintln!("⚠️  会话数超过限制（{}），已清理 {} 条", self.sessions.len(), remove_count);
+        }
     }
 }
 

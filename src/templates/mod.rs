@@ -1,10 +1,9 @@
 use actix_web::HttpResponse;
 use tera::{Tera, Context as TeraContext};
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 lazy_static::lazy_static! {
-    static ref TERA: Arc<RwLock<Tera>> = {
+    static ref TERA: Arc<Tera> = {
         // 优先使用内嵌的文件系统
         let tera = match create_embedded_tera() {
             Ok(t) => t,
@@ -22,7 +21,7 @@ lazy_static::lazy_static! {
         };
         // 不启用自动转义，避免 CSS URL 中的字符被转义
         // 如需转义，在模板中使用 | escape 过滤器
-        Arc::new(RwLock::new(tera))
+        Arc::new(tera)
     };
 }
 
@@ -420,12 +419,10 @@ pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> Templ
     }
 }
 
-/// 渲染模板
+/// 渲染模板（无锁，因为 Tera 只在启动时加载，运行时只读）
 pub async fn render_template(template_name: &str, context: &TeraContext) -> HttpResponse {
-    // 使用静态的 TERA 实例（内嵌的模板）
-    let tera = TERA.read().await;
-    
-    match tera.render(template_name, context) {
+    // 使用静态的 TERA 实例（内嵌的模板），无需加锁
+    match TERA.render(template_name, context) {
         Ok(html) => HttpResponse::Ok()
             .content_type("text/html; charset=utf-8")
             .insert_header(("Cache-Control", "no-cache"))

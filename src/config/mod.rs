@@ -47,6 +47,13 @@ impl Default for ConfigFile {
 pub struct ServerConfigFile {
     pub host: Option<String>,
     pub port: Option<u16>,
+    pub workers: Option<usize>,
+    pub keep_alive: Option<u64>,
+    pub keep_alive_timeout: Option<u64>,
+    pub client_timeout: Option<u64>,
+    pub client_disconnect_timeout: Option<u64>,
+    pub max_connections: Option<usize>,
+    pub max_connection_rate: Option<usize>,
 }
 
 /// 数据库配置（配置文件）
@@ -124,6 +131,34 @@ pub struct CliArgs {
     /// Host to bind to
     #[arg(long, default_value = "0.0.0.0")]
     pub host: String,
+
+    /// Number of worker threads (default: number of CPU cores)
+    #[arg(long)]
+    pub workers: Option<usize>,
+
+    /// Keep-alive timeout in seconds (default: 75)
+    #[arg(long)]
+    pub keep_alive: Option<u64>,
+
+    /// Keep-alive connection timeout in seconds (default: 30)
+    #[arg(long)]
+    pub keep_alive_timeout: Option<u64>,
+
+    /// Client request timeout in seconds (default: 30)
+    #[arg(long)]
+    pub client_timeout: Option<u64>,
+
+    /// Client disconnect timeout in seconds (default: 5)
+    #[arg(long)]
+    pub client_disconnect_timeout: Option<u64>,
+
+    /// Maximum number of concurrent connections (default: 10000)
+    #[arg(long)]
+    pub max_connections: Option<usize>,
+
+    /// Maximum connection rate per second (default: 256)
+    #[arg(long)]
+    pub max_connection_rate: Option<usize>,
 
     /// Database file path (SQLite)
     #[arg(short = 'd', long, default_value = "./data/blog.db")]
@@ -204,6 +239,13 @@ impl Default for CliArgs {
             config: None,
             port: 8080,
             host: "0.0.0.0".to_string(),
+            workers: None,
+            keep_alive: None,
+            keep_alive_timeout: None,
+            client_timeout: None,
+            client_disconnect_timeout: None,
+            max_connections: None,
+            max_connection_rate: None,
             db_path: "./data/blog.db".to_string(),
             templates_dir: "templates".to_string(),
             static_dir: "static".to_string(),
@@ -243,6 +285,27 @@ impl CliArgs {
             }
             if let Some(port) = server.port {
                 self.port = port;
+            }
+            if let Some(workers) = server.workers {
+                self.workers = Some(workers);
+            }
+            if let Some(keep_alive) = server.keep_alive {
+                self.keep_alive = Some(keep_alive);
+            }
+            if let Some(keep_alive_timeout) = server.keep_alive_timeout {
+                self.keep_alive_timeout = Some(keep_alive_timeout);
+            }
+            if let Some(client_timeout) = server.client_timeout {
+                self.client_timeout = Some(client_timeout);
+            }
+            if let Some(client_disconnect_timeout) = server.client_disconnect_timeout {
+                self.client_disconnect_timeout = Some(client_disconnect_timeout);
+            }
+            if let Some(max_connections) = server.max_connections {
+                self.max_connections = Some(max_connections);
+            }
+            if let Some(max_connection_rate) = server.max_connection_rate {
+                self.max_connection_rate = Some(max_connection_rate);
             }
         }
 
@@ -421,8 +484,15 @@ impl AppConfig {
     pub fn from_cli(args: CliArgs) -> Self {
         Self {
             server: ServerConfig {
-                host: args.host,
+                host: args.host.clone(),
                 port: args.port,
+                workers: args.workers,
+                keep_alive: args.keep_alive,
+                keep_alive_timeout: args.keep_alive_timeout,
+                client_timeout: args.client_timeout,
+                client_disconnect_timeout: args.client_disconnect_timeout,
+                max_connections: args.max_connections,
+                max_connection_rate: args.max_connection_rate,
             },
             templates: TemplateConfig {
                 dir: args.templates_dir,
@@ -441,6 +511,13 @@ impl AppConfig {
 pub struct ServerConfig {
     pub host: String,
     pub port: u16,
+    pub workers: Option<usize>,
+    pub keep_alive: Option<u64>,
+    pub keep_alive_timeout: Option<u64>,
+    pub client_timeout: Option<u64>,
+    pub client_disconnect_timeout: Option<u64>,
+    pub max_connections: Option<usize>,
+    pub max_connection_rate: Option<usize>,
 }
 
 impl Default for ServerConfig {
@@ -448,6 +525,13 @@ impl Default for ServerConfig {
         Self {
             host: "0.0.0.0".to_string(),
             port: 8080,
+            workers: None,
+            keep_alive: None,
+            keep_alive_timeout: None,
+            client_timeout: None,
+            client_disconnect_timeout: None,
+            max_connections: None,
+            max_connection_rate: None,
         }
     }
 }

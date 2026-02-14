@@ -1004,29 +1004,29 @@ fn extract_summary(html_content: &str) -> String {
     }
 }
 
-/// 将 Markdown 转换为 HTML（带缓存）
+/// 将 Markdown 转换为 HTML（带缓存，使用 moka 无锁缓存）
 fn convert_markdown_to_html(markdown: &str) -> String {
     use pulldown_cmark::{Parser, html, Options};
-    use std::collections::HashMap;
-    use std::sync::Mutex;
     use once_cell::sync::Lazy;
+    use std::time::Duration;
+    use moka::sync::Cache;
 
     // 使用内容哈希作为缓存键
     let mut hasher = md5::Md5::default();
     md5::Digest::update(&mut hasher, markdown.as_bytes());
     let content_hash = format!("{:x}", md5::Digest::finalize(hasher));
 
-    // 静态缓存：内容哈希 -> HTML
-    static RENDER_CACHE: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
-        Mutex::new(HashMap::new())
+    // 静态缓存：使用 moka::sync::Cache（无锁、高性能、内置 LRU 和 TTL）
+    static RENDER_CACHE: Lazy<Cache<String, String>> = Lazy::new(|| {
+        Cache::builder()
+            .max_capacity(1000)
+            .time_to_live(Duration::from_secs(3600)) // 1小时 TTL
+            .build()
     });
 
-    // 检查缓存
-    {
-        let cache = RENDER_CACHE.lock().unwrap();
-        if let Some(cached_html) = cache.get(&content_hash) {
-            return cached_html.clone();
-        }
+    // 无锁获取缓存
+    if let Some(cached_html) = RENDER_CACHE.get(&content_hash) {
+        return cached_html;
     }
 
     // 缓存未命中，执行渲染
@@ -1039,19 +1039,8 @@ fn convert_markdown_to_html(markdown: &str) -> String {
     let mut html_output = String::new();
     html::push_html(&mut html_output, parser);
 
-    // 存入缓存
-    {
-        let mut cache = RENDER_CACHE.lock().unwrap();
-        // 限制缓存大小为 1000 条
-        if cache.len() >= 1000 {
-            // 简单策略：清空一半缓存
-            let keys_to_remove: Vec<_> = cache.keys().take(500).cloned().collect();
-            for key in keys_to_remove {
-                cache.remove(&key);
-            }
-        }
-        cache.insert(content_hash, html_output.clone());
-    }
+    // 无锁插入缓存
+    RENDER_CACHE.insert(content_hash, html_output.clone());
 
     html_output
 }

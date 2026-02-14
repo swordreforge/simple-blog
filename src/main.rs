@@ -15,8 +15,9 @@ mod jwt;
 mod id_generator;
 mod profiling;
 mod json_adapter;
+mod lock_monitor;
 
-use actix_web::{App, HttpServer, middleware as actix_middleware, web};
+use actix_web::{App, HttpServer, middleware as actix_middleware, web, http::KeepAlive};
 use clap::Parser;
 use config::{AppConfig, CliArgs};
 use routes::configure_routes;
@@ -132,6 +133,17 @@ async fn main() -> std::io::Result<()> {
     println!("🔒 TLS: {}", if args.enable_tls { "启用" } else { "禁用" });
     println!("📊 日志级别: {}", args.log_level);
     println!("💾 应用缓存: {}", if args.enable_cache { "启用" } else { "禁用" });
+
+    // 显示服务器性能配置
+    let cpu_count = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+    let workers = config.server.workers.unwrap_or(cpu_count);
+    let keep_alive = config.server.keep_alive.unwrap_or(75);
+    let max_connections = config.server.max_connections.unwrap_or(10000);
+    println!("⚡ Worker 线程数: {} (CPU 核心: {})", workers, cpu_count);
+    println!("🔄 Keep-alive 超时: {} 秒", keep_alive);
+    println!("🔗 最大并发连接: {}", max_connections);
 
     // 检查首次运行
     check_first_run(&args);
@@ -256,7 +268,7 @@ async fn main() -> std::io::Result<()> {
     }
     
     // 启动 HTTP/1.1/HTTP/2 服务器
-    let server_result = HttpServer::new(move || {
+    let mut server = HttpServer::new(move || {
         App::new()
             // 注入数据库连接池
             .app_data(web::Data::new(repository.clone()))
@@ -271,10 +283,31 @@ async fn main() -> std::io::Result<()> {
             // 优化的压缩中间件（已压缩内容不会再次压缩）
             // 支持 Gzip、Deflate、Brotli，优先使用 Brotli
             .wrap(actix_middleware::Compress::default())
-    })
-    .bind((config.server.host.as_str(), config.server.port))?
-    .run()
-    .await;
+    });
+
+    // 应用 keep-alive 和性能优化配置
+    if let Some(workers) = config.server.workers {
+        server = server.workers(workers);
+    }
+
+    if let Some(keep_alive) = config.server.keep_alive {
+        // 使用 KeepAlive::Timeout 设置具体的超时时间（秒）
+        server = server.keep_alive(KeepAlive::Timeout(std::time::Duration::from_secs(keep_alive)));
+    }
+
+    if let Some(max_connections) = config.server.max_connections {
+        server = server.max_connections(max_connections);
+    }
+
+    if let Some(max_connection_rate) = config.server.max_connection_rate {
+        server = server.max_connection_rate(max_connection_rate);
+    }
+
+    // 绑定地址并运行
+    let server_result = server
+        .bind((config.server.host.as_str(), config.server.port))?
+        .run()
+        .await;
 
     // 程序结束时生成性能分析报告
     #[cfg(feature = "profiling")]

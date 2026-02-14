@@ -17,3 +17,65 @@ string
    - **第一次修复 (2026-02-13)**: 修改 `mergeArticlesData` 函数，在重新组织数据时保留原有的文件夹展开状态，避免合并后文件夹状态丢失导致文章显示混乱的问题。
    - **问题未完全解决**: 原来只显示10条（13号2篇+12号8篇），点击加载更多后全显示13号了
    - **第二次修复 (2026-02-13)**: 修改 `organizeArticlesByFolder` 函数，在创建文章对象时保留原始的 `created_at` 属性。这样当 `mergeArticlesData` 提取文章并重新组织时，能正确解析每篇文章的原始日期，避免所有文章被归类到当前日期的问题。
+
+
+
+
+
+
+
+
+
+
+
+# 完整 Nginx 配置文件
+# 适用于 Ubuntu/Debian 等系统，包含你的三层结构及常用优化
+
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections 1024;        # 每个 worker 最大连接数
+    multi_accept on;                # 尽可能接受更多连接
+    use epoll;                      # Linux 高性能事件模型
+}
+
+http {
+    ##
+    # 基础设置
+    ##
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    server_tokens off;               # 隐藏 Nginx 版本号
+
+    # MIME 类型
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    
+    ##
+    # 日志格式与位置
+    ##
+    access_log /var/log/nginx/access.log combined buffer=32k flush=5s;
+    error_log /var/log/nginx/error.log warn;
+    
+    ##
+    # Gzip 压缩（可根据需要启用）
+    ##
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/xml+rss application/atom+xml image/svg+xml;
+    
+    ##
+    # Brotli 压缩（需安装 ngx_brotli 模块，若无则注释掉）
+    ##
+    # brotli on;
+    # brotli_comp_level 6;
+    # brotli_types text/plain text/css text/xml application/json application/javascript application/xml+rss application/atom+xml image/svg+xml;
+}

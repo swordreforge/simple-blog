@@ -270,6 +270,51 @@ nav a.current {
   padding: 15px;
 }
 
+/* 虚拟滚动样式 */
+.file-tree > div[style*="position: relative"] {
+  height: 100% !important;
+  overflow: auto !important;
+}
+
+.file-tree > div[style*="position: relative"] > div[style*="position: absolute"] {
+  will-change: transform;
+}
+
+/* 虚拟滚动文件夹项 */
+.virtual-folder-item {
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.virtual-folder-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* 虚拟滚动文件项 */
+.virtual-file-item {
+  border-radius: 6px;
+  margin-bottom: 2px;
+  border-left: 3px solid transparent;
+}
+
+.virtual-file-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.virtual-file-item.active {
+  background-color: rgba(0, 123, 255, 0.2) !important;
+  border-left: 3px solid #007bff !important;
+}
+
+.virtual-file-item.file-unpublished {
+  border-left-color: #ff9800;
+}
+
+.virtual-file-item.file-unpublished.active {
+  background-color: rgba(255, 152, 0, 0.2) !important;
+  border-left-color: #ff9800 !important;
+}
+
 /* 本文索引目录样式 */
 .toc-container {
   flex: 1;
@@ -2943,7 +2988,7 @@ body.focus-mode-right .sidebar {
       <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
     </svg>
   </button>
-  <button id="sidebarToggleFixed" title="切换导航栏">
+  <button id="sidebarToggleFixed" title="切换顶栏和底栏">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M4 6h16M4 12h16M4 18h16"></path>
     </svg>
@@ -4205,6 +4250,9 @@ const tocContainer = document.getElementById('tocContainer');
 const sidebarTitle = document.getElementById('sidebarTitle');
 const fileTreeControls = document.getElementById('fileTreeControls');
 
+// 虚拟滚动实例
+let sidebarVirtualScroll = null;
+
 // 页面加载时初始化 - 已在文件末尾注册
 
 // 加载附件列表
@@ -4414,7 +4462,88 @@ function formatFileSize(bytes) {
 
 // 渲染文件树
 function renderFileTree() {
+  // 计算总文章数量
+  const totalItems = countTotalItems(articlesData.folders);
+
+  // 如果文章数量较多（超过100项），使用虚拟滚动
+  if (totalItems > 100) {
+    renderFileTreeVirtual();
+  } else {
+    renderFileTreeTraditional();
+  }
+}
+
+// 计算总项目数（文件夹+文件）
+function countTotalItems(folders) {
+  let count = 0;
+  folders.forEach(folder => {
+    count += 1; // 文件夹本身
+    if (folder.open) {
+      if (folder.subfolders) {
+        count += countTotalItems(folder.subfolders);
+      }
+      if (folder.files) {
+        count += folder.files.length;
+      }
+    }
+  });
+  return count;
+}
+
+// 使用虚拟滚动渲染文件树
+function renderFileTreeVirtual() {
+  // 清空文件树
   fileTree.innerHTML = '';
+
+  // 如果虚拟滚动实例不存在，创建它
+  if (!sidebarVirtualScroll) {
+    sidebarVirtualScroll = new SidebarVirtualScroll({
+      container: fileTree,
+      itemHeight: 42,
+      bufferSize: 5,
+      onRenderItem: (element, item, index) => {
+        if (item.type === 'folder') {
+          renderVirtualFolderItem(element, item, index);
+        } else if (item.type === 'file') {
+          renderVirtualFileItem(element, item, index);
+        }
+      },
+      onFolderToggle: (folderId, isOpen) => {
+        // 文件夹展开/折叠时的回调
+      },
+      onFileClick: (file, openInNewTab = false) => {
+        if (openInNewTab) {
+          openArticleInNewTab(file.id);
+        } else {
+          openArticle(file.id);
+        }
+      }
+    });
+  }
+
+  // 设置文件夹数据
+  sidebarVirtualScroll.setFolders(articlesData.folders);
+
+  // 如果还有更多文章，添加加载更多按钮（固定在底部）
+  if (hasMoreArticles) {
+    const moreIndicator = document.createElement('div');
+    moreIndicator.id = 'fileTreeMoreIndicator';
+    moreIndicator.style.cssText = 'position: sticky; bottom: 0; z-index: 10; padding: 15px 20px; text-align: center; color: #666; font-size: 0.85em; border-top: 1px dashed rgba(255,255,255,0.1); background: #1a1a1a;';
+    moreIndicator.innerHTML = `<span style="cursor: pointer; color: #007bff;" onclick="fetchArticlesData()">↓ 还有更多文章，点击加载</span>`;
+    fileTree.appendChild(moreIndicator);
+  }
+}
+
+// 使用传统方式渲染文件树
+function renderFileTreeTraditional() {
+  fileTree.innerHTML = '';
+
+  // 如果存在虚拟滚动实例，销毁它
+  if (sidebarVirtualScroll) {
+    sidebarVirtualScroll.destroy();
+    sidebarVirtualScroll = null;
+  }
+
   articlesData.folders.forEach((folder, index) => {
     const folderEl = createFolderElement(folder);
     fileTree.appendChild(folderEl);
@@ -4428,6 +4557,114 @@ function renderFileTree() {
     moreIndicator.innerHTML = `<span style="cursor: pointer; color: #007bff;" onclick="fetchArticlesData()">↓ 还有更多文章，点击加载</span>`;
     fileTree.appendChild(moreIndicator);
   }
+}
+
+// 渲染虚拟滚动中的文件夹项
+function renderVirtualFolderItem(element, item, index) {
+  const paddingLeft = 10 + item.level * 15;
+  const iconRotation = item.open ? '90deg' : '0deg';
+  const fileCountText = item.open ? item.fileCount : `${item.fileCount}+`;
+
+  element.className = 'virtual-folder-item';
+  element.style.cssText = `
+    position: absolute;
+    top: ${index * 42}px;
+    left: 0;
+    right: 0;
+    height: 42px;
+    padding-left: ${paddingLeft}px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  `;
+
+  element.innerHTML = `
+    <span class="folder-icon" style="transform: rotate(${iconRotation}); transition: transform 0.3s; margin-right: 8px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+      </svg>
+    </span>
+    <span class="folder-name" style="flex: 1; font-weight: 500; color: #f0f0f0; font-size: 0.9em;">${item.name}</span>
+    <span class="file-count" style="background-color: rgba(255, 255, 255, 0.1); color: #aaa; font-size: 0.8em; padding: 2px 8px; border-radius: 10px;">${fileCountText}</span>
+  `;
+
+  // 添加悬停效果
+  element.addEventListener('mouseenter', () => {
+    element.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+  });
+  element.addEventListener('mouseleave', () => {
+    element.style.backgroundColor = 'transparent';
+  });
+
+  // 添加点击事件
+  element.addEventListener('click', () => {
+    sidebarVirtualScroll.toggleFolder(item.id);
+  });
+}
+
+// 渲染虚拟滚动中的文件项
+function renderVirtualFileItem(element, item, index) {
+  const paddingLeft = 10 + item.level * 15;
+  const isUnpublished = item.file.status !== 'published';
+  const isActive = item.file.id === appState.activeArticleId;
+
+  element.className = 'virtual-file-item' + (isUnpublished ? ' file-unpublished' : '') + (isActive ? ' active' : '');
+  element.style.cssText = `
+    position: absolute;
+    top: ${index * 42}px;
+    left: 0;
+    right: 0;
+    height: 42px;
+    padding-left: ${paddingLeft}px;
+    padding-right: 10px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    ${isUnpublished ? 'opacity: 0.7;' : ''}
+    ${isActive ? 'background-color: rgba(0, 123, 255, 0.2); border-left: 3px solid #007bff;' : ''}
+  `;
+
+  const icon = isUnpublished
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>`
+    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+        <polyline points="13 2 13 9 20 9"></polyline>
+      </svg>`;
+
+  const dateOnly = item.file.date ? item.file.date.split(' ')[0] : '';
+
+  element.innerHTML = `
+    <span class="file-icon" style="margin-right: 8px; color: ${isUnpublished ? '#ff9800' : '#007bff'};">${icon}</span>
+    <span class="file-name" data-file-id="${item.file.id}" style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ffffff; font-size: 0.95em; ${isUnpublished ? 'color: #ff9800; font-style: italic;' : ''}">${item.name}</span>
+    <span class="file-date" style="font-size: 0.8em; color: #aaa; margin-left: 8px;">${dateOnly}</span>
+  `;
+
+  // 添加悬停效果
+  element.addEventListener('mouseenter', () => {
+    if (!isActive) {
+      element.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+    }
+  });
+  element.addEventListener('mouseleave', () => {
+    if (!isActive) {
+      element.style.backgroundColor = 'transparent';
+    }
+  });
+
+  // 添加点击事件
+  element.addEventListener('click', () => {
+    openArticle(item.file.id);
+  });
+
+  // 添加双击事件（在新标签页打开）
+  element.addEventListener('dblclick', () => {
+    openArticleInNewTab(item.file.id);
+  });
 }
 
 // 递归创建文件夹元素
@@ -5327,16 +5564,37 @@ async function submitArticleComment(articleId, usernameInput, contentTextarea, c
 // 更新UI状态
 function updateUI() {
   // 更新文件树中的活动文件
-  document.querySelectorAll('.file-item').forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.fileId === appState.activeArticleId) {
-      item.classList.add('active');
-    }
-  });
-  
+  if (sidebarVirtualScroll) {
+    // 虚拟滚动模式：更新虚拟滚动中的活动文件
+    document.querySelectorAll('.virtual-file-item').forEach(item => {
+      item.classList.remove('active');
+      item.style.backgroundColor = '';
+      item.style.borderLeft = '';
+    });
+
+    // 查找当前活动的文件项并添加选中样式
+    const activeFileElements = document.querySelectorAll('.virtual-file-item');
+    activeFileElements.forEach(item => {
+      const fileId = item.querySelector('.file-name')?.getAttribute('data-file-id');
+      if (fileId === appState.activeArticleId) {
+        item.classList.add('active');
+        item.style.backgroundColor = 'rgba(0, 123, 255, 0.2)';
+        item.style.borderLeft = '3px solid #007bff';
+      }
+    });
+  } else {
+    // 传统模式：更新文件树中的活动文件
+    document.querySelectorAll('.file-item').forEach(item => {
+      item.classList.remove('active');
+      if (item.dataset.fileId === appState.activeArticleId) {
+        item.classList.add('active');
+      }
+    });
+  }
+
   // 更新标签栏
   updateTabBar();
-  
+
   // 更新侧边栏宽度
   sidebar.style.width = `${appState.sidebarWidth}px`;
 }
@@ -5639,13 +5897,16 @@ function setupEventListeners() {
   sidebarToggleFixed.addEventListener('click', (event) => {
     event.stopPropagation();
     const nav = document.querySelector('nav');
+    const footer = document.querySelector('footer');
     const mainContainer = document.querySelector('.main-container');
-    
+
     if (nav.style.display === 'none') {
       nav.style.display = 'flex';
+      footer.style.display = 'block';
       mainContainer.style.height = 'calc(100vh - var(--header-height))';
     } else {
       nav.style.display = 'none';
+      footer.style.display = 'none';
       mainContainer.style.height = '100vh';
     }
   });
@@ -5655,34 +5916,64 @@ function setupEventListeners() {
   
   // 折叠/展开所有文件夹
   collapseAllBtn.addEventListener('click', () => {
-    articlesData.folders.forEach(folder => {
-      folder.open = false;
-    });
-    renderFileTree();
+    // 递归折叠所有文件夹
+    collapseAllFoldersRecursive(articlesData.folders);
+
+    // 如果使用虚拟滚动，调用虚拟滚动的方法
+    if (sidebarVirtualScroll) {
+      sidebarVirtualScroll.collapseAll();
+    } else {
+      renderFileTree();
+    }
   });
-  
+
   expandAllBtn.addEventListener('click', () => {
-    articlesData.folders.forEach(folder => {
-      folder.open = true;
-    });
-    renderFileTree();
+    // 递归展开所有文件夹
+    expandAllFoldersRecursive(articlesData.folders);
+
+    // 如果使用虚拟滚动，调用虚拟滚动的方法
+    if (sidebarVirtualScroll) {
+      sidebarVirtualScroll.expandAll();
+    } else {
+      renderFileTree();
+    }
   });
-  
+
   // 侧边栏宽度调整
   resizer.addEventListener('mousedown', startResize);
-  
+
   // 全局鼠标事件
   document.addEventListener('mousemove', handleResize);
   document.addEventListener('mouseup', stopResize);
-  
+
   // 全屏变化监听
   document.addEventListener('fullscreenchange', handleFullscreenChange);
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
   document.addEventListener('mozfullscreenchange', handleFullscreenChange);
   document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-  
+
   // 窗口大小变化
   window.addEventListener('resize', handleWindowResize);
+}
+
+// 递归折叠所有文件夹
+function collapseAllFoldersRecursive(folders) {
+  folders.forEach(folder => {
+    folder.open = false;
+    if (folder.subfolders) {
+      collapseAllFoldersRecursive(folder.subfolders);
+    }
+  });
+}
+
+// 递归展开所有文件夹
+function expandAllFoldersRecursive(folders) {
+  folders.forEach(folder => {
+    folder.open = true;
+    if (folder.subfolders) {
+      expandAllFoldersRecursive(folder.subfolders);
+    }
+  });
 }
 
 // 开始调整大小
@@ -7399,6 +7690,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+
+<!-- 虚拟滚动 JS -->
+<script src="/js/virtual-scroll.js" defer></script>
 
 <!-- 飘字效果 JS -->
 {% if settings.floating_text_enabled %}

@@ -27,8 +27,18 @@ pub enum CacheError {
     #[error("连接错误: {0}")]
     ConnectionError(String),
 
+    #[error("超时错误: {0}")]
+    TimeoutError(String),
+
     #[error("未知错误: {0}")]
     Unknown(String),
+}
+
+impl CacheError {
+    /// 判断是否为需要触发降级的严重错误（超时或连接错误）
+    pub fn is_degradation_trigger(&self) -> bool {
+        matches!(self, CacheError::ConnectionError(_) | CacheError::TimeoutError(_))
+    }
 }
 
 /// 缓存配置

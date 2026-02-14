@@ -1,9 +1,9 @@
 use actix_web::{dev::Payload, Error, FromRequest, HttpRequest, HttpResponse};
 use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::{Duration, Instant},
 };
+use dashmap::DashMap;
 
 /// 滑动窗口计数器
 #[derive(Debug, Clone)]
@@ -52,30 +52,29 @@ impl Default for RateLimitConfig {
     }
 }
 
-/// 限流器
+/// 限流器（使用 DashMap 实现无锁并发）
 #[derive(Debug)]
 struct RateLimiter {
-    second_windows: HashMap<String, SlidingWindow>,
-    minute_windows: HashMap<String, SlidingWindow>,
+    second_windows: DashMap<String, SlidingWindow>,
+    minute_windows: DashMap<String, SlidingWindow>,
+    max_entries: usize,  // 最大条目数限制，防止内存无限增长
 }
 
 impl RateLimiter {
     fn new() -> Self {
         Self {
-            second_windows: HashMap::new(),
-            minute_windows: HashMap::new(),
+            second_windows: DashMap::new(),
+            minute_windows: DashMap::new(),
+            max_entries: 10000,  // 限制最多 10000 个不同的 IP 地址
         }
     }
 
-    fn check(&mut self, key: &str, config: &RateLimitConfig) -> Result<(), RateLimitError> {
-        let second_window = self
-            .second_windows
-            .entry(key.to_string())
+    fn check(&self, key: &str, config: &RateLimitConfig) -> Result<(), RateLimitError> {
+        // DashMap 的 entry API 内部使用细粒度锁，支持高并发
+        let mut second_window = self.second_windows.entry(key.to_string())
             .or_insert_with(|| SlidingWindow::new(Duration::from_secs(1), config.per_second));
 
-        let minute_window = self
-            .minute_windows
-            .entry(key.to_string())
+        let mut minute_window = self.minute_windows.entry(key.to_string())
             .or_insert_with(|| SlidingWindow::new(Duration::from_secs(60), config.per_minute));
 
         if !second_window.check_and_record() {
@@ -83,26 +82,41 @@ impl RateLimiter {
         }
 
         if !minute_window.check_and_record() {
-            if let Some(_) = second_window.timestamps.last() {
-                second_window.timestamps.pop();
-            }
+            // 不弹出秒级窗口的时间戳，保持计数准确
+            // 秒级和分钟级是独立的限流，应该分别统计
             return Err(RateLimitError::TooManyRequestsPerMinute);
         }
 
         Ok(())
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&self) {
         let now = Instant::now();
         let second_cutoff = now - Duration::from_secs(2);
         let minute_cutoff = now - Duration::from_secs(120);
 
+        // DashMap 支持并发迭代和删除
         self.second_windows.retain(|_, window| {
             window.timestamps.last().map_or(false, |&t| t > second_cutoff)
         });
         self.minute_windows.retain(|_, window| {
             window.timestamps.last().map_or(false, |&t| t > minute_cutoff)
         });
+
+        // 检查条目数是否超过限制，如果超过则随机删除部分条目
+        if self.second_windows.len() > self.max_entries {
+            // 随机删除 10% 的条目以释放内存
+            let remove_count = self.max_entries / 10;
+            let keys_to_remove: Vec<String> = self.second_windows.iter()
+                .take(remove_count)
+                .map(|entry| entry.key().clone())
+                .collect();
+            for key in keys_to_remove {
+                self.second_windows.remove(&key);
+                self.minute_windows.remove(&key);
+            }
+            eprintln!("⚠️  限流器条目数超过限制（{}），已清理 {} 条", self.second_windows.len(), remove_count);
+        }
     }
 }
 
@@ -146,11 +160,11 @@ impl actix_web::ResponseError for RateLimitError {
     }
 }
 
-/// 全局限流器实例
+/// 全局限流器实例（使用 DashMap，无需锁）
 use once_cell::sync::Lazy;
 
-static RATE_LIMITER: Lazy<Arc<Mutex<RateLimiter>>> = Lazy::new(|| {
-    Arc::new(Mutex::new(RateLimiter::new()))
+static RATE_LIMITER: Lazy<Arc<RateLimiter>> = Lazy::new(|| {
+    Arc::new(RateLimiter::new())
 });
 
 static RATE_LIMIT_CONFIG: Lazy<RateLimitConfig> = Lazy::new(RateLimitConfig::default);
@@ -172,12 +186,16 @@ impl FromRequest for RateLimitCheck {
             .to_string();
         let key = format!("{}", ip);
 
-        // 检查限流
-        if let Ok(mut limiter) = RATE_LIMITER.lock() {
-            limiter.cleanup();
-            if let Err(e) = limiter.check(&key, &RATE_LIMIT_CONFIG) {
-                return std::future::ready(Err(actix_web::error::ErrorBadRequest(e)));
-            }
+        // 定期清理过期窗口（每 100 次请求清理一次）
+        static CLEANUP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let counter = CLEANUP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if counter % 100 == 0 {
+            RATE_LIMITER.cleanup();
+        }
+
+        // 检查限流（DashMap 内部使用细粒度锁，无需 try_write）
+        if let Err(e) = RATE_LIMITER.check(&key, &RATE_LIMIT_CONFIG) {
+            return std::future::ready(Err(actix_web::error::ErrorBadRequest(e)));
         }
 
         std::future::ready(Ok(RateLimitCheck))
