@@ -21,9 +21,9 @@ pub struct PassageResponse {
     pub author: String,
     pub tags: String,
     pub category: String,
-    pub status: String,
+    pub status: crate::db::models::PassageStatus,
     pub file_path: Option<String>,
-    pub visibility: String,
+    pub visibility: crate::db::models::PassageVisibility,
     pub is_scheduled: bool,
     pub published_at: Option<String>,
     pub cover_image: Option<String>,
@@ -357,7 +357,7 @@ pub async fn get(
     };
 
     // 检查文章状态和可见性
-    if passage.status != "published" {
+    if passage.status != crate::db::models::PassageStatus::Published {
         if role != "admin" || role.is_empty() {
             return HttpResponse::Ok().json(serde_json::json!({
                 "success": false,
@@ -367,7 +367,7 @@ pub async fn get(
         }
     }
 
-    if passage.visibility != "public" {
+    if passage.visibility != crate::db::models::PassageVisibility::Public {
         if role != "admin" || role.is_empty() {
             return HttpResponse::Ok().json(serde_json::json!({
                 "success": false,
@@ -394,7 +394,7 @@ pub async fn get(
     let cache_key = format!("passage:get:{}", param);
 
     // 尝试从缓存获取（仅对公开文章缓存）
-    if passage.status == "published" && passage.visibility == "public" {
+    if passage.status.is_published() && passage.visibility.is_public() {
         if let Some(manager) = app_cache.manager() {
             if let Some(cached_data) = manager.get(&cache_key).await {
                 if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
@@ -485,7 +485,7 @@ pub async fn get(
     });
 
     // 存储到缓存（仅对公开文章，TTL 10 分钟）
-    if passage.status == "published" && passage.visibility == "public" {
+    if passage.status.is_published() && passage.visibility.is_public() {
         if let Some(manager) = app_cache.manager() {
             if let Ok(json_str) = serde_json::to_string(&response_json) {
                 let _ = manager.set(&cache_key, &json_str).await;
@@ -594,9 +594,13 @@ pub async fn create(
         author: req_json.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
         tags: tags_json,
         category: req_json.category.clone().unwrap_or_else(|| "未分类".to_string()),
-        status: req_json.status.clone().unwrap_or_else(|| "draft".to_string()),
+        status: req_json.status.clone()
+            .and_then(|s| crate::db::models::PassageStatus::from_str(&s))
+            .unwrap_or(crate::db::models::PassageStatus::Draft),
         file_path: Some(file_path),
-        visibility: req_json.visibility.clone().unwrap_or_else(|| "public".to_string()),
+        visibility: req_json.visibility.clone()
+            .and_then(|s| crate::db::models::PassageVisibility::from_str(&s))
+            .unwrap_or(crate::db::models::PassageVisibility::Public),
         is_scheduled: req_json.is_scheduled.unwrap_or(false),
         published_at: req_json.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
         cover_image: req_json.cover_image.clone().or_else(|| Some("/img/passage-cover.webp".to_string())),
@@ -614,7 +618,7 @@ pub async fn create(
                     let title = created_passage.title.clone();
 
                     // 清除缓存
-                    if status == "published" {
+                    if status.is_published() {
                         crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
                     }
 
@@ -765,13 +769,15 @@ pub async fn update(
         passage.tags = serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string());
     }
     if let Some(ref status) = req_json.status {
-        passage.status = status.clone();
+        passage.status = crate::db::models::PassageStatus::from_str(status)
+            .unwrap_or(passage.status);
     }
     if let Some(ref file_path) = req_json.file_path {
         passage.file_path = Some(file_path.clone());
     }
     if let Some(ref visibility) = req_json.visibility {
-        passage.visibility = visibility.clone();
+        passage.visibility = crate::db::models::PassageVisibility::from_str(visibility)
+            .unwrap_or(passage.visibility);
     }
     if let Some(is_scheduled) = req_json.is_scheduled {
         passage.is_scheduled = is_scheduled;

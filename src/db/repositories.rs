@@ -2100,9 +2100,9 @@ mod tests {
             author: "Test Author".to_string(),
             tags: "[\"tag1\", \"tag2\"]".to_string(),
             category: "Test Category".to_string(),
-            status: "published".to_string(),
+            status: crate::db::models::PassageStatus::Published,
             file_path: Some("markdown/test.md".to_string()),
-            visibility: "public".to_string(),
+            visibility: crate::db::models::PassageVisibility::Public,
             is_scheduled: false,
             published_at: Some(now),
             cover_image: None,
@@ -2111,8 +2111,8 @@ mod tests {
         };
 
         assert_eq!(passage.title, "Test Article");
-        assert_eq!(passage.status, "published");
-        assert_eq!(passage.visibility, "public");
+        assert_eq!(passage.status, crate::db::models::PassageStatus::Published);
+        assert_eq!(passage.visibility, crate::db::models::PassageVisibility::Public);
     }
 
     #[test]

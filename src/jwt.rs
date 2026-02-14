@@ -167,12 +167,12 @@ pub fn get_jwt_service() -> crate::error::Result<&'static JwtService> {
 }
 
 /// 生成 token（使用全局服务）
-pub fn generate_token(user_id: i64, username: &str, role: &str) -> crate::error::Result<String> {
+pub fn generate_token(user_id: i64, username: &str, role: crate::db::models::UserRole) -> crate::error::Result<String> {
     use crate::error::AppError;
 
     let service = get_jwt_service()
         .map_err(|e| AppError::Jwt(format!("Failed to get JWT service: {}", e)))?;
-    service.generate_token(user_id, username, role)
+    service.generate_token(user_id, username, role.as_ref())
 }
 
 /// 验证 token（使用全局服务）

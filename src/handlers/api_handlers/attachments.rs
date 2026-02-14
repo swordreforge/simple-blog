@@ -16,7 +16,7 @@ pub struct AttachmentResponse {
     pub file_type: String,
     pub file_size: i64,
     pub passage_id: Option<String>,
-    pub visibility: String,
+    pub visibility: crate::db::models::PassageVisibility,
     pub show_in_passage: bool,
     pub uploaded_at: String,
 }
@@ -268,7 +268,7 @@ pub async fn upload(
         content_type,
         file_size,
         passage_uuid,
-        visibility: "public".to_string(),
+        visibility: crate::db::models::PassageVisibility::Public,
         show_in_passage: false,
         uploaded_at: now,
     };
@@ -393,14 +393,16 @@ pub async fn update(
         Some("visibility") => {
             // 更新可见性
             if let Some(visibility) = query.get("visibility") {
-                attachment.visibility = visibility.clone();
+                attachment.visibility = crate::db::models::PassageVisibility::from_str(visibility)
+                    .unwrap_or(attachment.visibility);
             }
         }
         _ => {
             // 如果没有 action 参数，尝试从 JSON 请求体获取
             if let Some(json_body) = body {
                 if let Some(visibility) = json_body.get("visibility").and_then(|v| v.as_str()) {
-                    attachment.visibility = visibility.to_string();
+                    attachment.visibility = crate::db::models::PassageVisibility::from_str(visibility)
+                        .unwrap_or(attachment.visibility);
                 }
                 if let Some(show_in_passage) = json_body.get("show_in_passage").and_then(|v| v.as_bool()) {
                     attachment.show_in_passage = show_in_passage;

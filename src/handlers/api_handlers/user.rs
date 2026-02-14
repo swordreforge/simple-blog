@@ -20,8 +20,8 @@ pub struct UserResponse {
     pub id: i64,
     pub username: String,
     pub email: String,
-    pub role: String,
-    pub status: String,
+    pub role: crate::db::models::UserRole,
+    pub status: crate::db::models::UserStatus,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -209,8 +209,12 @@ pub async fn create(
         username: req.username.clone(),
         password: hashed_password,
         email: req.email.clone(),
-        role: req.role.clone().unwrap_or_else(|| "user".to_string()),
-        status: req.status.clone().unwrap_or_else(|| "active".to_string()),
+        role: req.role.clone()
+            .and_then(|s| crate::db::models::UserRole::from_str(&s))
+            .unwrap_or(crate::db::models::UserRole::Subscriber),
+        status: req.status.clone()
+            .and_then(|s| crate::db::models::UserStatus::from_str(&s))
+            .unwrap_or(crate::db::models::UserStatus::Active),
         created_at: now,
         updated_at: now,
     };
@@ -292,10 +296,12 @@ pub async fn update(
         user.email = email.clone();
     }
     if let Some(ref role) = req.role {
-        user.role = role.clone();
+        user.role = crate::db::models::UserRole::from_str(role)
+            .unwrap_or(user.role);
     }
     if let Some(ref status) = req.status {
-        user.status = status.clone();
+        user.status = crate::db::models::UserStatus::from_str(status)
+            .unwrap_or(user.status);
     }
     user.updated_at = Utc::now();
     

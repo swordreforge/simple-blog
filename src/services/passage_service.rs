@@ -55,6 +55,12 @@ impl PassageService {
 
         let now = Utc::now();
 
+        // 解析枚举
+        let passage_status = crate::db::models::PassageStatus::from_str(&status)
+            .unwrap_or(crate::db::models::PassageStatus::Draft);
+        let passage_visibility = crate::db::models::PassageVisibility::from_str(&visibility)
+            .unwrap_or(crate::db::models::PassageVisibility::Public);
+
         let passage = Passage {
             id: None,
             uuid: None,
@@ -65,9 +71,9 @@ impl PassageService {
             author,
             tags,
             category,
-            status,
+            status: passage_status,
             file_path,
-            visibility,
+            visibility: passage_visibility,
             is_scheduled: false,
             published_at: None,
             cover_image: cover_image.or_else(|| Some("/img/passage-cover.webp".to_string())),

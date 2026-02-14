@@ -45,8 +45,8 @@ pub struct UserDTO {
     pub id: i64,
     pub username: String,
     pub email: String,
-    pub role: String,
-    pub status: String,
+    pub role: crate::db::models::UserRole,
+    pub status: crate::db::models::UserStatus,
 }
 
 /// 用户登录
@@ -104,7 +104,7 @@ pub async fn login(
         Ok(true) => {
             // 密码验证成功，生成 JWT token
             let user_id = user.id.unwrap_or(0);
-            let token = match generate_token(user_id, &user.username, &user.role) {
+            let token = match generate_token(user_id, &user.username, user.role) {
                 Ok(t) => t,
                 Err(e) => {
                     return HttpResponse::InternalServerError().json(AuthResponse {
@@ -231,13 +231,19 @@ pub async fn register(
     };
 
     // 创建用户
+    let user_role = match role.as_str() {
+        "admin" => crate::db::models::UserRole::Admin,
+        "editor" => crate::db::models::UserRole::Editor,
+        _ => crate::db::models::UserRole::Subscriber,
+    };
+
     let new_user = crate::db::models::User {
         id: None,
         username: username.clone(),
         email: email.clone(),
         password: hashed_password,
-        role: role.clone(),
-        status: "active".to_string(),
+        role: user_role,
+        status: crate::db::models::UserStatus::Active,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
@@ -250,7 +256,7 @@ pub async fn register(
                 Ok(u) => {
                     // 生成 JWT token
                     let user_id = u.id.unwrap_or(0);
-                    let token = match generate_token(user_id, &u.username, &u.role) {
+                    let token = match generate_token(user_id, &u.username, u.role) {
                         Ok(t) => t,
                         Err(e) => {
                             return HttpResponse::InternalServerError().json(AuthResponse {

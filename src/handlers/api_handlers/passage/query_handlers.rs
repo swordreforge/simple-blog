@@ -126,13 +126,15 @@ pub async fn update_by_query(
         passage.category = category.clone();
     }
     if let Some(ref status) = req_json.status {
-        passage.status = status.clone();
+        passage.status = crate::db::models::PassageStatus::from_str(status)
+            .unwrap_or(passage.status);
     }
     if let Some(ref file_path) = req_json.file_path {
         passage.file_path = Some(file_path.clone());
     }
     if let Some(ref visibility) = req_json.visibility {
-        passage.visibility = visibility.clone();
+        passage.visibility = crate::db::models::PassageVisibility::from_str(visibility)
+            .unwrap_or(passage.visibility);
     }
     if let Some(is_scheduled) = req_json.is_scheduled {
         passage.is_scheduled = is_scheduled;
