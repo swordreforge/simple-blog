@@ -53,45 +53,35 @@ pub struct UpdateTagRequest {
 pub async fn list(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
-    // 从数据库获取所有文章的标签
-    let passages = match passage_repo.get_all(1000, 0).await {
-        Ok(p) => p,
+    // 使用聚合查询获取标签统计（优化：避免加载所有文章）
+    match passage_repo.get_tag_stats().await {
+        Ok(stats) => {
+            // 转换为API响应格式
+            let data: Vec<TagCountResponse> = stats.into_iter()
+                .map(|stat| TagCountResponse {
+                    id: stat.id as i32,
+                    name: stat.name,
+                    count: stat.count,
+                })
+                .collect();
+            
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
+                .insert_header(("Pragma", "no-cache"))
+                .insert_header(("Expires", "0"))
+                .json(serde_json::json!({
+                    "success": true,
+                    "data": data
+                }))
+        }
         Err(e) => {
-            eprintln!("获取标签失败: {}", e);
-            return HttpResponse::InternalServerError().json(serde_json::json!({
+            eprintln!("获取标签统计失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": "获取标签失败"
-            }));
-        }
-    };
-    
-    // 统计标签使用次数
-    let mut tag_count: std::collections::HashMap<String, i32> = std::collections::HashMap::new();
-    for passage in passages {
-        let tags = parse_tags(&passage.tags);
-        for tag in tags {
-            *tag_count.entry(tag).or_insert(0) += 1;
+            }))
         }
     }
-    
-    // 转换为API响应格式
-    let data: Vec<TagCountResponse> = tag_count.into_iter()
-        .enumerate()
-        .map(|(i, (name, count))| TagCountResponse {
-            id: (i + 1) as i32,
-            name,
-            count,
-        })
-        .collect();
-    
-    HttpResponse::Ok()
-        .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
-        .insert_header(("Pragma", "no-cache"))
-        .insert_header(("Expires", "0"))
-        .json(serde_json::json!({
-            "success": true,
-            "data": data
-        }))
 }
 
 /// 获取所有标签（管理员）

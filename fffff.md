@@ -1,25 +1,25 @@
    - 🔴 高优先级优化
 
-       1. N+1 查询问题 (src/handlers/api_handlers/analytics.rs:257)
+       1. ✅N+1 查询问题 (src/handlers/api_handlers/analytics.rs:257)
          问题: 先查询文章信息再查询统计数据，存在潜在性能问题
          优化: 使用 JOIN 查询一次性获取所有数据，减少数据库往返
 
-       2. 代码重复 - 缓存失效逻辑
+       2. ✅代码重复 - 缓存失效逻辑
          问题:
          多个文件中重复的缓存失效代码（passage.rs、categories.rs、tags.rs）
          优化: 创建统一的缓存失效工具函数
 
-       3. 缺少测试
+       3. ✅缺少测试
          问题: 代码库几乎没有测试文件
          优化: 添加单元测试和集成测试，确保代码质量
 
-       4. API 文档缺失
+       4. ✅API 文档缺失
          问题: API 端点缺少详细文档说明
          优化: 添加 OpenAPI/Swagger 文档和注释说明
 
        🟡 中优先级优化
 
-       5. COUNT(*) 查询频繁 (src/db/repositories.rs:507)
+       5. ✅COUNT(*) 查询频繁 (src/db/repositories.rs:507)
          问题: 每次分页请求都执行 COUNT 查询，大数据量时影响性能
          优化: 使用计数器表或缓存，通过触发器维护计数
 
@@ -35,7 +35,7 @@
          问题: 混用 eprintln! 和缺少日志
          优化: 统一使用结构化日志（tracing crate）
 
-       9. 限流器内存管理 (src/middleware/ratelimit.rs:95)
+       9. ✅限流器内存管理 (src/middleware/ratelimit.rs:95)
          问题: DashMap 存储所有 IP 记录，大量不同 IP 时占用过多内存
          优化: 使用 LRU 缓存替代
 

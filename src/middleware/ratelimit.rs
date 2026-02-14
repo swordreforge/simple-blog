@@ -11,19 +11,23 @@ struct SlidingWindow {
     timestamps: Vec<Instant>,
     window_size: Duration,
     max_requests: usize,
+    last_accessed: Instant,  // 添加最后访问时间，用于 LRU 清理
 }
 
 impl SlidingWindow {
     fn new(window_size: Duration, max_requests: usize) -> Self {
+        let now = Instant::now();
         Self {
             timestamps: Vec::with_capacity(max_requests),
             window_size,
             max_requests,
+            last_accessed: now,
         }
     }
 
     fn check_and_record(&mut self) -> bool {
         let now = Instant::now();
+        self.last_accessed = now;  // 更新访问时间
         let cutoff = now - self.window_size;
         self.timestamps.retain(|&t| t > cutoff);
 
@@ -52,7 +56,7 @@ impl Default for RateLimitConfig {
     }
 }
 
-/// 限流器（使用 DashMap 实现无锁并发）
+/// 限流器（使用 DashMap 实现无锁并发 + LRU 清理）
 #[derive(Debug)]
 struct RateLimiter {
     second_windows: DashMap<String, SlidingWindow>,
@@ -103,19 +107,32 @@ impl RateLimiter {
             window.timestamps.last().map_or(false, |&t| t > minute_cutoff)
         });
 
-        // 检查条目数是否超过限制，如果超过则随机删除部分条目
+        // 检查条目数是否超过限制，如果超过则使用 LRU 策略删除最久未使用的条目
         if self.second_windows.len() > self.max_entries {
-            // 随机删除 10% 的条目以释放内存
-            let remove_count = self.max_entries / 10;
-            let keys_to_remove: Vec<String> = self.second_windows.iter()
-                .take(remove_count)
-                .map(|entry| entry.key().clone())
+            // 删除 20% 的条目以释放内存（使用 LRU 策略）
+            let remove_count = self.max_entries / 5;
+
+            // 收集所有键及其最后访问时间
+            let mut access_times: Vec<(String, Instant)> = self.second_windows.iter()
+                .map(|entry| (entry.key().clone(), entry.value().last_accessed))
                 .collect();
+
+            // 按访问时间排序（最久未使用的在前）
+            access_times.sort_by_key(|(_, time)| *time);
+
+            // 删除最久未使用的条目
+            let keys_to_remove: Vec<String> = access_times
+                .into_iter()
+                .take(remove_count)
+                .map(|(key, _)| key)
+                .collect();
+
             for key in keys_to_remove {
                 self.second_windows.remove(&key);
                 self.minute_windows.remove(&key);
             }
-            eprintln!("⚠️  限流器条目数超过限制（{}），已清理 {} 条", self.second_windows.len(), remove_count);
+            eprintln!("⚠️  限流器条目数超过限制（{}），已使用 LRU 策略清理 {} 条",
+                      self.second_windows.len(), remove_count);
         }
     }
 }

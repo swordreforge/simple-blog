@@ -159,3 +159,19 @@ pub struct FriendLink {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// 归档统计数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArchiveStats {
+    pub year: String,
+    pub month: String,
+    pub count: i32,
+}
+
+/// 标签统计数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TagStats {
+    pub id: i64,
+    pub name: String,
+    pub count: i32,
+}

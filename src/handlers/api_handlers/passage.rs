@@ -1204,25 +1204,25 @@ pub async fn delete_batch(
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
 
-    // 1. 获取文章 UUID 列表和文件路径
-    let mut uuids = Vec::new();
-    let mut file_paths = Vec::new();
-    
-    for id in &req.ids {
-        match passage_repo.get_by_id(*id).await {
-            Ok(passage) => {
-                if let Some(uuid) = &passage.uuid {
-                    uuids.push(uuid.clone());
-                }
-                if let Some(file_path) = &passage.file_path {
-                    file_paths.push(file_path.clone());
-                }
-            }
-            Err(e) => {
-                eprintln!("获取文章信息失败 ID={}: {}", id, e);
-            }
+    // 1. 批量获取文章信息（修复 N+1 查询问题）
+    let passages = match passage_repo.get_by_ids(&req.ids).await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("批量获取文章信息失败: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取文章信息失败"
+            }));
         }
-    }
+    };
+
+    // 一次性收集所有 uuid 和 file_path
+    let uuids: Vec<String> = passages.iter()
+        .filter_map(|p| p.uuid.clone())
+        .collect();
+    let file_paths: Vec<String> = passages.iter()
+        .filter_map(|p| p.file_path.clone())
+        .collect();
 
     // 2. 删除 Markdown 文件
     let mut deleted_markdown_files = 0;
@@ -1257,17 +1257,26 @@ pub async fn delete_batch(
     // 5. 删除文章记录（会自动删除关联的数据库记录，通过 CASCADE）
     match passage_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
-            // 清除缓存
+            // 清除缓存（优化：使用批量删除）
             if let Some(manager) = app_cache.manager() {
-                // 清除每个文章的详情缓存
+                // 构造批量删除的键列表
+                let mut cache_keys = Vec::new();
                 for uuid in &uuids {
-                    let detail_key = format!("passage:get:{}", uuid);
-                    let _ = manager.delete(&detail_key).await;
+                    cache_keys.push(format!("passage:get:{}", uuid));
                 }
                 for id in &req.ids {
-                    let detail_key = format!("passage:get:{}", id);
-                    let _ = manager.delete(&detail_key).await;
+                    cache_keys.push(format!("passage:get:{}", id));
                 }
+
+                // 使用批量删除方法（性能优化：N 次删除 → 1 次批量删除）
+                if let Err(e) = manager.delete_many(&cache_keys).await {
+                    eprintln!("批量删除缓存失败，尝试逐个删除: {}", e);
+                    // 回退到逐个删除
+                    for key in &cache_keys {
+                        let _ = manager.delete(key).await;
+                    }
+                }
+
                 // 清除所有文章列表缓存（批量删除会影响所有分页）
                 crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             }

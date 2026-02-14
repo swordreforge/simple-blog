@@ -38,6 +38,9 @@ pub fn create_repository(pool: Pool<SqliteConnectionManager>) -> Arc<dyn Reposit
 /// 文章仓库
 pub struct PassageRepository {
     pool: Arc<Pool<SqliteConnectionManager>>,
+    count_cache: Arc<std::sync::RwLock<Option<i64>>>,
+    count_published_cache: Arc<std::sync::RwLock<Option<i64>>>,
+    cache_valid: Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[async_trait::async_trait]
@@ -49,7 +52,12 @@ impl Repository for PassageRepository {
 
 impl PassageRepository {
     pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
-        Self { pool }
+        Self {
+            pool,
+            count_cache: Arc::new(std::sync::RwLock::new(None)),
+            count_published_cache: Arc::new(std::sync::RwLock::new(None)),
+            cache_valid: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        }
     }
 
     /// 创建文章
@@ -81,6 +89,8 @@ impl PassageRepository {
                 &passage.updated_at,
             ],
         )?;
+        // 使缓存失效
+        self.invalidate_cache();
         Ok(conn.last_insert_rowid())
     }
 
@@ -478,6 +488,8 @@ impl PassageRepository {
                 id,
             ],
         )?;
+        // 使缓存失效
+        self.invalidate_cache();
         Ok(())
     }
 
@@ -485,6 +497,8 @@ impl PassageRepository {
     pub async fn delete_by_uuid(&self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute("DELETE FROM passages WHERE uuid = ?", params![uuid])?;
+        // 使缓存失效
+        self.invalidate_cache();
         Ok(())
     }
 
@@ -498,21 +512,62 @@ impl PassageRepository {
         let sql = format!("DELETE FROM passages WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
+        // 使缓存失效
+        self.invalidate_cache();
         Ok(affected as i64)
     }
 
-    /// 获取文章总数
+    /// 获取文章总数（使用缓存优化）
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
+        // 尝试从缓存读取
+        if self.cache_valid.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Ok(count_opt) = self.count_cache.read() {
+                if let Some(count) = *count_opt {
+                    return Ok(count);
+                }
+            }
+        }
+
+        // 缓存未命中，查询数据库
         let conn = self.pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
+
+        // 更新缓存
+        if let Ok(mut cache) = self.count_cache.write() {
+            *cache = Some(count);
+        }
+        self.cache_valid.store(true, std::sync::atomic::Ordering::Relaxed);
+
         Ok(count)
     }
 
-    /// 获取已发布文章总数
+    /// 获取已发布文章总数（使用缓存优化）
     pub async fn count_published(&self) -> Result<i64, Box<dyn std::error::Error>> {
+        // 尝试从缓存读取
+        if self.cache_valid.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Ok(count_opt) = self.count_published_cache.read() {
+                if let Some(count) = *count_opt {
+                    return Ok(count);
+                }
+            }
+        }
+
+        // 缓存未命中，查询数据库
         let conn = self.pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages WHERE status = 'published'", [], |row| row.get(0))?;
+
+        // 更新缓存
+        if let Ok(mut cache) = self.count_published_cache.write() {
+            *cache = Some(count);
+        }
+        self.cache_valid.store(true, std::sync::atomic::Ordering::Relaxed);
+
         Ok(count)
+    }
+
+    /// 使缓存失效（在创建、更新、删除文章时调用）
+    pub fn invalidate_cache(&self) {
+        self.cache_valid.store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// 获取所有分类
@@ -521,6 +576,105 @@ impl PassageRepository {
         let mut stmt = conn.prepare("SELECT DISTINCT category FROM passages WHERE category IS NOT NULL AND category != '' ORDER BY category")?;
         let categories = stmt.query_map([], |row| row.get(0))?.collect::<Result<Vec<_>, _>>()?;
         Ok(categories)
+    }
+
+    /// 批量获取文章（修复 N+1 查询问题）
+    pub async fn get_by_ids(&self, ids: &[i64]) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+             FROM passages WHERE id IN ({})",
+            placeholders
+        );
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let passages = stmt.query_map(params.as_slice(), |row| {
+            Ok(Passage {
+                id: Some(row.get(0)?),
+                uuid: Some(row.get(1)?),
+                title: row.get(2)?,
+                content: row.get(3)?,
+                original_content: row.get(4)?,
+                summary: row.get(5)?,
+                author: row.get(6)?,
+                tags: row.get(7)?,
+                category: row.get(8)?,
+                status: row.get(9)?,
+                file_path: row.get(10)?,
+                visibility: row.get(11)?,
+                is_scheduled: row.get(12)?,
+                published_at: row.get(13)?,
+                cover_image: row.get(14)?,
+                created_at: row.get(15)?,
+                updated_at: row.get(16)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+        Ok(passages)
+    }
+
+    /// 获取归档统计（优化归档页面查询）
+    pub async fn get_archive_stats(&self) -> Result<Vec<ArchiveStats>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT 
+                strftime('%Y', created_at) as year,
+                strftime('%m', created_at) as month,
+                COUNT(*) as count
+            FROM passages 
+            WHERE status = 'published'
+            GROUP BY year, month
+            ORDER BY year DESC, month DESC
+            "#
+        )?;
+
+        let stats = stmt.query_map([], |row| {
+            Ok(ArchiveStats {
+                year: row.get(0)?,
+                month: row.get(1)?,
+                count: row.get(2)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+
+        Ok(stats)
+    }
+
+    /// 获取标签统计（优化标签统计查询）
+    pub async fn get_tag_stats(&self) -> Result<Vec<TagStats>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            r#"
+            WITH tag_counts AS (
+                SELECT 
+                    json_each.value as tag_name,
+                    COUNT(*) as count
+                FROM passages
+                CROSS JOIN json_each(tags)
+                WHERE status = 'published'
+                GROUP BY tag_name
+            )
+            SELECT 
+                ROW_NUMBER() OVER (ORDER BY count DESC) as id,
+                tag_name as name,
+                count
+            FROM tag_counts
+            ORDER BY count DESC
+            "#
+        )?;
+
+        let stats = stmt.query_map([], |row| {
+            Ok(TagStats {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                count: row.get(2)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+
+        Ok(stats)
     }
 }
 
