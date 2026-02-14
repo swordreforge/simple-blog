@@ -42,12 +42,14 @@ impl IdGenerator {
 
             if current_timestamp == last_timestamp {
                 // 同一毫秒内，序列号递增
-                let seq = self.sequence.fetch_add(1, Ordering::AcqRel);
+                // fetch_add 返回的是递增前的值，所以需要加 1
+                let seq = self.sequence.fetch_add(1, Ordering::AcqRel) + 1;
                 if seq >= 4095 {
                     // 序列号溢出，等待下一毫秒
                     self.wait_for_next_millis(last_timestamp);
                     continue; // 重试
                 }
+                // 使用递增后的序列号
                 return self.compose_id(current_timestamp, seq);
             } else if current_timestamp < last_timestamp {
                 // 时钟回拨，等待
@@ -111,7 +113,7 @@ mod tests {
     
     #[test]
     fn test_id_generation() {
-        let mut generator = IdGenerator::new(1);
+        let generator = IdGenerator::new(1);
         let id1 = generator.generate_id();
         let id2 = generator.generate_id();
         
