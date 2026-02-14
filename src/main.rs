@@ -20,6 +20,7 @@ mod audit;
 mod error;
 mod logging;
 mod services;
+mod app_state;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web, http::KeepAlive};
 use clap::Parser;
@@ -276,14 +277,17 @@ async fn main() -> std::io::Result<()> {
     }
     
     // 启动 HTTP/1.1/HTTP/2 服务器
+    // 创建应用状态（依赖注入容器）
+    let app_state = app_state::AppState::new(
+        repository.clone(),
+        app_cache.clone(),
+        view_batch_processor.clone(),
+    );
+
     let mut server = HttpServer::new(move || {
         App::new()
-            // 注入数据库连接池
-            .app_data(web::Data::new(repository.clone()))
-            // 注入应用缓存
-            .app_data(web::Data::new(app_cache.clone()))
-            // 注入阅读记录批量处理器
-            .app_data(web::Data::new(view_batch_processor.clone()))
+            // 注入应用状态（依赖注入容器）
+            .app_data(web::Data::new(app_state.clone()))
             // 配置所有路由
             .configure(configure_routes)
             // 添加中间件

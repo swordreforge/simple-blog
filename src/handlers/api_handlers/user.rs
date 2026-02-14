@@ -144,7 +144,7 @@ pub async fn admin_list(
 
 /// 根据 ID 获取用户
 pub async fn get(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     path: web::Path<i64>,
     req: HttpRequest,
 ) -> HttpResponse {
@@ -157,7 +157,7 @@ pub async fn get(
     }
 
     let id = path.into_inner();
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let user_repo = state.user_repository(); // 使用依赖注入
     
     match user_repo.get_by_id(id).await {
         Ok(user) => {
@@ -187,10 +187,10 @@ pub async fn get(
 
 /// 创建用户
 pub async fn create(
-    repo: web::Data<Arc<dyn Repository>>,
+    state: web::Data<crate::app_state::AppState>,
     req: web::Json<CreateUserRequest>,
 ) -> HttpResponse {
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    let user_repo = state.user_repository(); // 使用依赖注入
 
     // 使用 Argon2id 哈希密码
     let hashed_password = match hash_password(&req.password) {

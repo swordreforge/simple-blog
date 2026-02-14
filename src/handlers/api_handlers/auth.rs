@@ -53,10 +53,8 @@ pub struct UserDTO {
 pub async fn login(
     _rate_limit: crate::middleware::ratelimit::RateLimitCheck,
     req: web::Json<LoginRequest>,
-    repo: web::Data<Arc<dyn crate::db::repositories::Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> impl Responder {
-    use crate::db::repositories::UserRepository;
-    
     let username = &req.username;
 
     // 获取密码（支持明文和加密两种方式）
@@ -85,8 +83,8 @@ pub async fn login(
         });
     };
 
-    // 从数据库获取用户
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    // 从数据库获取用户 - 使用依赖注入
+    let user_repo = state.user_repository();
     let user = match user_repo.get_by_username(username).await {
         Ok(u) => u,
         Err(_e) => {
@@ -162,9 +160,8 @@ pub async fn login(
 pub async fn register(
     _rate_limit: crate::middleware::ratelimit::RateLimitCheck,
     req: web::Json<RegisterRequest>,
-    repo: web::Data<Arc<dyn crate::db::repositories::Repository>>,
+    state: web::Data<crate::app_state::AppState>,
 ) -> impl Responder {
-    use crate::db::repositories::UserRepository;
     use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
 
     let username = &req.username;
@@ -197,8 +194,8 @@ pub async fn register(
         });
     };
 
-    // 检查用户名是否已存在
-    let user_repo = UserRepository::new(repo.get_pool().clone());
+    // 检查用户名是否已存在 - 使用依赖注入
+    let user_repo = state.user_repository();
     match user_repo.get_by_username(username).await {
         Ok(_) => {
             return HttpResponse::BadRequest().json(AuthResponse {
