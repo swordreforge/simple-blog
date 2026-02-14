@@ -129,6 +129,30 @@ async fn main() -> std::io::Result<()> {
     // 解析路径
     args.resolve_paths();
 
+    // 验证配置
+    println!("🔍 验证配置...");
+    let validation_result = args.validate();
+    
+    // 输出验证警告
+    if !validation_result.warnings.is_empty() {
+        println!("⚠️  配置警告:");
+        for warning in &validation_result.warnings {
+            println!("    - {}", warning);
+        }
+    }
+    
+    // 检查验证错误
+    if !validation_result.is_valid() {
+        println!("❌ 配置验证失败:");
+        for error in &validation_result.errors {
+            println!("    - {}", error);
+        }
+        println!("\n💡 请修复上述配置错误后重试");
+        std::process::exit(1);
+    }
+    
+    println!("✅ 配置验证通过");
+
     // 从命令行参数创建配置
     let config = AppConfig::from_cli(args.clone());
 

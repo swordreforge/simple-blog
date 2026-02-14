@@ -567,3 +567,380 @@ impl Default for StaticConfig {
         }
     }
 }
+
+/// 配置验证错误
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigValidationError {
+    #[error("端口 {0} 无效，必须在 1-65535 范围内")]
+    InvalidPort(u16),
+    
+    #[error("主机地址 '{0}' 无效")]
+    InvalidHost(String),
+    
+    #[error("Worker 数量 {0} 无效，必须 >= 1")]
+    InvalidWorkers(usize),
+    
+    #[error("数据库路径 '{0}' 不存在或无法访问")]
+    DatabasePathNotFound(String),
+    
+    #[error("模板目录 '{0}' 不存在或无法访问")]
+    TemplateDirNotFound(String),
+    
+    #[error("静态文件目录 '{0}' 不存在或无法访问")]
+    StaticDirNotFound(String),
+    
+    #[error("GeoIP 数据库 '{0}' 不存在或无法访问")]
+    GeoIpDatabaseNotFound(String),
+    
+    #[error("TLS 证书 '{0}' 不存在")]
+    TlsCertNotFound(String),
+    
+    #[error("TLS 私钥 '{0}' 不存在")]
+    TlsKeyNotFound(String),
+    
+    #[error("启用 TLS 但未提供证书和私钥")]
+    TlsMissingCredentials,
+    
+    #[error("日志级别 '{0}' 无效，必须是 debug, info, warn, 或 error")]
+    InvalidLogLevel(String),
+    
+    #[error("JWT 密钥太短，至少需要 32 字符")]
+    JwtSecretTooShort,
+    
+    #[error("缓存后端 '{0}' 无效，必须是 valkey, local, 或 auto")]
+    InvalidCacheBackend(String),
+    
+    #[error("启用 Valkey 缓存但未提供连接 URL")]
+    ValkeyUrlMissing,
+    
+    #[error("缓存 TTL {0} 无效，必须 >= 1")]
+    InvalidCacheTtl(u64),
+    
+    #[error("配置文件 '{0}' 不存在或无法读取")]
+    ConfigFileNotFound(String),
+    
+    #[error("配置文件格式错误: {0}")]
+    ConfigFileFormatError(String),
+}
+
+/// 配置验证结果
+#[derive(Debug)]
+pub struct ValidationResult {
+    pub is_valid: bool,
+    pub errors: Vec<ConfigValidationError>,
+    pub warnings: Vec<String>,
+}
+
+impl ValidationResult {
+    pub fn new() -> Self {
+        Self {
+            is_valid: true,
+            errors: Vec::new(),
+            warnings: Vec::new(),
+        }
+    }
+    
+    pub fn add_error(&mut self, error: ConfigValidationError) {
+        self.is_valid = false;
+        self.errors.push(error);
+    }
+    
+    pub fn add_warning(&mut self, warning: String) {
+        self.warnings.push(warning);
+    }
+    
+    pub fn is_valid(&self) -> bool {
+        self.is_valid
+    }
+}
+
+impl CliArgs {
+    /// 验证配置
+    pub fn validate(&self) -> ValidationResult {
+        let mut result = ValidationResult::new();
+        
+        // 验证端口
+        if self.port < 1 || self.port > 65535 {
+            result.add_error(ConfigValidationError::InvalidPort(self.port));
+        }
+        
+        // 验证主机地址
+        if !self.is_valid_host(&self.host) {
+            result.add_error(ConfigValidationError::InvalidHost(self.host.clone()));
+        }
+        
+        // 验证 Worker 数量
+        if let Some(workers) = self.workers {
+            if workers < 1 {
+                result.add_error(ConfigValidationError::InvalidWorkers(workers));
+            }
+        }
+        
+        // 验证数据库路径
+        if !Path::new(&self.db_path).parent().map_or(false, |p| p.exists()) {
+            // 检查父目录是否存在
+            let parent = Path::new(&self.db_path).parent().unwrap_or(Path::new("."));
+            if !parent.exists() {
+                result.add_error(ConfigValidationError::DatabasePathNotFound(
+                    parent.to_string_lossy().to_string()
+                ));
+            }
+        }
+        
+        // 验证模板目录
+        if !Path::new(&self.templates_dir).exists() {
+            result.add_warning(format!("模板目录 '{}' 不存在，将使用嵌入的模板", self.templates_dir));
+        }
+        
+        // 验证静态文件目录
+        if !Path::new(&self.static_dir).exists() {
+            result.add_warning(format!("静态文件目录 '{}' 不存在，将使用嵌入的静态文件", self.static_dir));
+        }
+        
+        // 验证 GeoIP 数据库
+        if !Path::new(&self.geoip_db_path).exists() {
+            result.add_warning(format!("GeoIP 数据库 '{}' 不存在，地理位置查询将返回 'unknown'", self.geoip_db_path));
+        }
+        
+        // 验证 TLS 配置
+        if self.enable_tls {
+            if self.tls_cert.is_none() || self.tls_key.is_none() {
+                result.add_error(ConfigValidationError::TlsMissingCredentials);
+            } else {
+                if let Some(ref cert) = self.tls_cert {
+                    if !Path::new(cert).exists() {
+                        result.add_error(ConfigValidationError::TlsCertNotFound(cert.clone()));
+                    }
+                }
+                if let Some(ref key) = self.tls_key {
+                    if !Path::new(key).exists() {
+                        result.add_error(ConfigValidationError::TlsKeyNotFound(key.clone()));
+                    }
+                }
+            }
+        }
+        
+        // 验证日志级别
+        if !matches!(self.log_level.as_str(), "debug" | "info" | "warn" | "error") {
+            result.add_error(ConfigValidationError::InvalidLogLevel(self.log_level.clone()));
+        }
+        
+        // 验证 JWT 密钥
+        if let Some(ref secret) = self.jwt_secret {
+            if secret.len() < 32 {
+                result.add_error(ConfigValidationError::JwtSecretTooShort);
+            }
+        }
+        
+        // 验证缓存配置
+        if self.enable_cache {
+            if !matches!(self.cache_backend.as_str(), "valkey" | "local" | "auto") {
+                result.add_error(ConfigValidationError::InvalidCacheBackend(self.cache_backend.clone()));
+            }
+            
+            if self.cache_backend == "valkey" || (self.cache_backend == "auto" && self.valkey_url.is_some()) {
+                if self.valkey_url.is_none() {
+                    result.add_error(ConfigValidationError::ValkeyUrlMissing);
+                }
+            }
+            
+            if self.cache_ttl < 1 {
+                result.add_error(ConfigValidationError::InvalidCacheTtl(self.cache_ttl));
+            }
+        }
+        
+        // 验证超时配置
+        if let Some(keep_alive) = self.keep_alive {
+            if keep_alive < 1 {
+                result.add_warning("Keep-alive 超时值过小，建议至少 30 秒".to_string());
+            }
+        }
+        
+        if let Some(keep_alive_timeout) = self.keep_alive_timeout {
+            if keep_alive_timeout < 1 {
+                result.add_warning("Keep-alive 连接超时值过小，建议至少 30 秒".to_string());
+            }
+        }
+        
+        if let Some(client_timeout) = self.client_timeout {
+            if client_timeout < 1 {
+                result.add_warning("客户端请求超时值过小，建议至少 30 秒".to_string());
+            }
+        }
+        
+        // 验证最大连接数
+        if let Some(max_connections) = self.max_connections {
+            if max_connections < 10 {
+                result.add_warning("最大连接数过小，建议至少 100".to_string());
+            }
+        }
+        
+        result
+    }
+    
+    /// 验证主机地址
+    fn is_valid_host(&self, host: &str) -> bool {
+        if host.is_empty() {
+            return false;
+        }
+        
+        // 检查是否是 "0.0.0.0"
+        if host == "0.0.0.0" {
+            return true;
+        }
+        
+        // 检查是否是 "::"
+        if host == "::" {
+            return true;
+        }
+        
+        // 检查是否是 localhost
+        if host == "localhost" {
+            return true;
+        }
+        
+        // 检查是否是有效的 IPv4 地址
+        if host.parse::<std::net::Ipv4Addr>().is_ok() {
+            return true;
+        }
+        
+        // 检查是否是有效的 IPv6 地址
+        if host.parse::<std::net::Ipv6Addr>().is_ok() {
+            return true;
+        }
+        
+        // 检查是否是有效的域名
+        if host.contains('.') {
+            let parts: Vec<&str> = host.split('.').collect();
+            if parts.len() >= 2 && parts.iter().all(|p| !p.is_empty()) {
+                return true;
+            }
+        }
+        
+        false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_config_validation_valid() {
+        let args = CliArgs {
+            port: 8080,
+            host: "0.0.0.0".to_string(),
+            workers: Some(4),
+            log_level: "info".to_string(),
+            enable_cache: true,
+            cache_backend: "local".to_string(),
+            cache_ttl: 3600,
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(result.is_valid());
+        assert!(result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_invalid_port() {
+        let args = CliArgs {
+            port: 0,
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_invalid_host() {
+        let args = CliArgs {
+            host: "".to_string(),
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_invalid_workers() {
+        let args = CliArgs {
+            workers: Some(0),
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_tls_missing_credentials() {
+        let args = CliArgs {
+            enable_tls: true,
+            tls_cert: None,
+            tls_key: None,
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_invalid_log_level() {
+        let args = CliArgs {
+            log_level: "invalid".to_string(),
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_jwt_secret_too_short() {
+        let args = CliArgs {
+            jwt_secret: Some("short".to_string()),
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_invalid_cache_backend() {
+        let args = CliArgs {
+            enable_cache: true,
+            cache_backend: "invalid".to_string(),
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+    
+    #[test]
+    fn test_config_validation_valkey_url_missing() {
+        let args = CliArgs {
+            enable_cache: true,
+            cache_backend: "valkey".to_string(),
+            valkey_url: None,
+            ..Default::default()
+        };
+        
+        let result = args.validate();
+        assert!(!result.is_valid());
+        assert!(!result.errors.is_empty());
+    }
+}
