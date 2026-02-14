@@ -72,7 +72,11 @@ impl IdGenerator {
         use std::time::{SystemTime, UNIX_EPOCH};
         let duration = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards");
+            .unwrap_or_else(|_| {
+                // 如果时间倒流（极不可能的情况），返回一个安全的默认值
+                // 在实际生产环境中，这种情况应该被记录日志
+                std::time::Duration::from_secs(0)
+            });
         duration.as_millis() as u64
     }
 

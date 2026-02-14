@@ -229,29 +229,38 @@ fn extract_date_from_path(file_path: &str) -> Option<DateTime<Utc>> {
         let year = parts[0].parse::<i32>().ok()?;
         let month = parts[1].parse::<u32>().ok()?;
         let day = parts[2].parse::<u32>().ok()?;
-        
+
         if let Some(naive_date) = NaiveDate::from_ymd_opt(year, month, day) {
-            return Some(DateTime::<Utc>::from_naive_utc_and_offset(
-                naive_date.and_hms_opt(0, 0, 0).unwrap(),
-                Utc,
-            ));
+            // and_hms_opt 返回 Option<NaiveDateTime>
+            if let Some(naive_datetime) = naive_date.and_hms_opt(0, 0, 0) {
+                return Some(DateTime::<Utc>::from_naive_utc_and_offset(
+                    naive_datetime,
+                    Utc,
+                ));
+            }
         }
     }
-    
+
     None
 }
 
 /// 提取摘要
 fn extract_summary(html_content: &str) -> Option<String> {
     use regex::Regex;
-    
+
     // 移除 HTML 标签
-    let re = Regex::new(r"<[^>]*>").unwrap();
+    let re = match Regex::new(r"<[^>]*>") {
+        Ok(r) => r,
+        Err(_) => {
+            // 如果正则表达式创建失败，直接返回原文
+            return Some(html_content.chars().take(200).collect());
+        }
+    };
     let text = re.replace_all(html_content, "");
-    
+
     // 移除多余的空白
     let text: String = text.split_whitespace().collect::<Vec<&str>>().join(" ");
-    
+
     // 截取前 200 个字符
     if text.chars().count() > 200 {
         Some(text.chars().take(200).collect::<String>() + "...")

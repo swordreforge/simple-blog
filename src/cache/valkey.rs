@@ -58,7 +58,7 @@ impl ValkeyCacheBackend {
 
         // 使用 tokio::time::timeout 防止连接初始化时阻塞
         let client = Client::open(url).map_err(|e| {
-            eprintln!("❌ 创建 Redis 客户端失败: {}", e);
+            tracing::error!("创建 Redis 客户端失败: {}", e);
             CacheError::ConnectionError(format!("Failed to create Redis client: {}", e))
         })?;
 
@@ -69,13 +69,13 @@ impl ValkeyCacheBackend {
         )
         .await
         .map_err(|_| {
-            eprintln!("❌ Valkey 连接超时（15秒）");
+            tracing::error!("❌ Valkey 连接超时（15秒）");
             CacheError::ConnectionError(
                 "Connection to Valkey timed out after 15 seconds. Please check:".to_string()
             )
         })?
         .map_err(|e| {
-            eprintln!("❌ 创建连接管理器失败: {}", e);
+            tracing::error!("创建连接管理器失败: {}", e);
             CacheError::ConnectionError(format!("Failed to create connection manager: {}", e))
         })?;
 
@@ -134,7 +134,7 @@ impl ValkeyCacheBackend {
                             _ => "未知错误",
                         };
 
-                        eprintln!("⚠️  Valkey 操作失败 (尝试 {}/{}, 错误类型: {}): {}",
+                        tracing::warn!("Valkey 操作失败 (尝试 {}/{}, 错误类型: {}): {}",
                                   attempt + 1, self.max_retries + 1, error_type, e);
                         last_error = Some(e);
                     }
@@ -143,7 +143,7 @@ impl ValkeyCacheBackend {
                 // 如果还有重试机会，等待一段时间后重试
                 if attempt < self.max_retries {
                     let delay = self.base_retry_delay * 2_u32.pow(attempt as u32);
-                    eprintln!("⏳ {:?} 后进行第 {} 次重试...",
+                    tracing::info!("{:?} 后进行第 {} 次重试...",
                               delay, attempt + 2);
                     tokio::time::sleep(delay).await;
                 }
@@ -171,11 +171,11 @@ impl ValkeyCacheBackend {
         })
         .await
         .map_err(|_| {
-            eprintln!("❌ Valkey 健康检查超时（{:?}）", health_check_timeout);
+            tracing::error!("Valkey 健康检查超时（{:?}）", health_check_timeout);
             CacheError::TimeoutError(format!("Health check timed out after {:?}", health_check_timeout))
         })?
         .map_err(|e: redis::RedisError| {
-            eprintln!("❌ Valkey 健康检查失败: {}", e);
+            tracing::error!("Valkey 健康检查失败: {}", e);
             CacheError::ConnectionError(format!("Health check failed: {}", e))
         })
     }
@@ -274,7 +274,7 @@ impl CacheBackend for ValkeyCacheBackend {
         let prefixed_pattern = self.prefixed_key(pattern);
         let conn = self.manager.clone();
 
-        eprintln!("🔍 delete_pattern: 开始扫描匹配 '{}' 的键", pattern);
+        tracing::debug!("delete_pattern: 开始扫描匹配 '{}' 的键", pattern);
         let start_time = std::time::Instant::now();
 
         // 使用 SCAN 命令找到所有匹配的键，然后删除
@@ -289,7 +289,7 @@ impl CacheBackend for ValkeyCacheBackend {
         loop {
             iteration_count += 1;
             if iteration_count > MAX_ITERATIONS {
-                eprintln!("⚠️  delete_pattern: 超过最大迭代次数 {}, 停止扫描", MAX_ITERATIONS);
+                tracing::warn!("delete_pattern: 超过最大迭代次数 {}, 停止扫描", MAX_ITERATIONS);
                 return Err(CacheError::ConnectionError(
                     format!("SCAN iteration exceeded maximum limit of {}", MAX_ITERATIONS)
                 ));
@@ -322,7 +322,7 @@ impl CacheBackend for ValkeyCacheBackend {
             total_keys_scanned += keys.len();
 
             if !keys.is_empty() {
-                eprintln!("📋 delete_pattern: 迭代 {} 找到 {} 个键 (累计: {})",
+                tracing::debug!("delete_pattern: 迭代 {} 找到 {} 个键 (累计: {})",
                          iteration_count, keys.len(), total_keys_scanned);
             }
 
@@ -348,7 +348,7 @@ impl CacheBackend for ValkeyCacheBackend {
 
         // 删除剩余的键
         if !keys_to_delete.is_empty() {
-            eprintln!("🗑️  delete_pattern: 删除剩余的 {} 个键", keys_to_delete.len());
+            tracing::debug!("delete_pattern: 删除剩余的 {} 个键", keys_to_delete.len());
             self.batch_delete_keys(&conn, keys_to_delete).await?;
         }
 

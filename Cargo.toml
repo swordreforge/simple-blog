@@ -86,6 +86,11 @@ moka = { version = "0.12", features = ["sync"] }
 thiserror = "2.0"
 glob = "0.3"
 
+# 结构化日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
 # 性能分析
 pprof = { version = "0.14", features = ["flamegraph", "criterion", "protobuf-codec"], optional = true }
 parking_lot = "0.12.5"

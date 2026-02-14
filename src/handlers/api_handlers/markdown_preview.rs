@@ -113,9 +113,10 @@ pub async fn preview(query: web::Query<std::collections::HashMap<String, String>
         .and_then(|n| n.to_str())
         .unwrap_or("unknown.md")
         .to_string();
-    
+
     // 获取相对路径
-    let cwd = std::env::current_dir().unwrap();
+    let cwd = std::env::current_dir()
+        .unwrap_or_else(|_| std::path::PathBuf::from("."));
     let markdown_base = cwd.join("markdown");
     let file_path = full_path
         .strip_prefix(&markdown_base)

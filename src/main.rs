@@ -17,6 +17,9 @@ mod profiling;
 mod json_adapter;
 mod lock_monitor;
 mod audit;
+mod error;
+mod logging;
+mod services;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web, http::KeepAlive};
 use clap::Parser;
@@ -103,6 +106,10 @@ async fn main() -> std::io::Result<()> {
     // 解析命令行参数
     let mut args = CliArgs::parse();
 
+    // 初始化日志系统
+    let log_dir = Path::new(&args.db_path).parent().map(|p| p.join("logs"));
+    logging::init_logging(log_dir.as_deref(), &args.log_level);
+
     // 如果指定了配置文件，则加载配置文件
     if let Some(ref config_path) = args.config {
         println!("📄 加载配置文件: {}", config_path);
@@ -112,7 +119,7 @@ async fn main() -> std::io::Result<()> {
                 println!("✅ 配置文件加载成功");
             }
             Err(e) => {
-                eprintln!("❌ 加载配置文件失败: {}", e);
+                tracing::error!("加载配置文件失败: {}", e);
                 std::process::exit(1);
             }
         }
@@ -156,12 +163,12 @@ async fn main() -> std::io::Result<()> {
         #[cfg(feature = "profiling")]
         {
             if let Err(e) = profiling_manager.enable() {
-                eprintln!("⚠️  启用性能分析失败: {}", e);
+                tracing::warn!("启用性能分析失败: {}", e);
             }
         }
         #[cfg(not(feature = "profiling"))]
         {
-            eprintln!("⚠️  性能分析功能未启用，请使用 --features profiling 编译");
+            tracing::warn!("性能分析功能未启用，请使用 --features profiling 编译");
         }
     }
 
@@ -169,7 +176,7 @@ async fn main() -> std::io::Result<()> {
     println!("📦 资源初始化...");
     let base_dir = args.get_base_dir();
     if let Err(e) = embedded::extract_embedded_resources(base_dir) {
-        eprintln!("⚠️  资源释放失败: {}", e);
+        tracing::warn!("资源释放失败: {}", e);
     }
 
     // 创建必要的目录
@@ -178,7 +185,7 @@ async fn main() -> std::io::Result<()> {
     // 初始化数据库
     println!("🗄️  初始化数据库...");
     if let Err(e) = db::init_db(&args.db_path) {
-        eprintln!("❌ 数据库初始化失败: {}", e);
+        tracing::error!("数据库初始化失败: {}", e);
         return Err(std::io::Error::new(std::io::ErrorKind::Other, e.to_string()));
     }
 
@@ -190,7 +197,7 @@ async fn main() -> std::io::Result<()> {
     // 初始化 GeoIP 数据库
     println!("🌍 加载 GeoIP 数据库...");
     if !geoip::is_database_loaded() {
-        eprintln!("⚠️  警告: GeoIP 数据库未找到，地理位置查询将返回 'unknown'");
+        tracing::warn!("GeoIP 数据库未找到，地理位置查询将返回 'unknown'");
     }
     
     // 获取数据库连接池

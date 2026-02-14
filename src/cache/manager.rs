@@ -84,7 +84,7 @@ impl CacheManager {
 
                         // 执行健康检查
                         if let Err(e) = valkey.health_check().await {
-                            eprintln!("⚠️  Valkey 健康检查失败: {}, 降级到本地缓存", e);
+                            tracing::warn!("Valkey 健康检查失败: {}, 降级到本地缓存", e);
                             let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                             (local.clone(), None, None)
                         } else {
@@ -94,7 +94,7 @@ impl CacheManager {
                         }
                     }
                     Err(e) => {
-                        eprintln!("⚠️  Valkey 连接失败: {}, 使用本地缓存降级", e);
+                        tracing::warn!("Valkey 连接失败: {}, 使用本地缓存降级", e);
                         let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                         (local.clone(), None, None)
                     }
@@ -152,11 +152,14 @@ impl CacheManager {
             let consecutive_failures_clone = Arc::clone(&consecutive_failures);
 
             Some(Arc::new(tokio::spawn(async move {
-                Self::health_check_loop(
-                    valkey_backend_clone.unwrap(),
-                    primary_healthy_clone,
-                    consecutive_failures_clone,
-                ).await;
+                // 安全地获取 valkey_backend，如果为 None 则不执行健康检查
+                if let Some(backend) = valkey_backend_clone {
+                    Self::health_check_loop(
+                        backend,
+                        primary_healthy_clone,
+                        consecutive_failures_clone,
+                    ).await;
+                }
             })))
         } else {
             None

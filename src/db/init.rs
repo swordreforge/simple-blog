@@ -809,11 +809,11 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ) {
                 Ok(rows_affected) => {
                     if rows_affected == 0 {
-                        eprintln!("⏭️  跳过已存在的文章: {}", title);
+                        tracing::info!("跳过已存在的文章: {}", title);
                     }
                 },
                 Err(e) => {
-                    eprintln!("❌ 插入文章 '{}' 失败: {}", title, e);
+                    tracing::error!("插入文章 '{}' 失败: {}", title, e);
                     return Err(e.into());
                 }
             }
@@ -851,7 +851,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                     main_card_ids.insert(title.to_string(), id);
                 },
                 Err(e) => {
-                    eprintln!("❌ 插入主卡片 '{}' 失败: {}", title, e);
+                    tracing::error!("插入主卡片 '{}' 失败: {}", title, e);
                     return Err(e.into());
                 }
             }
@@ -896,7 +896,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                 ) {
                     Ok(_) => {},
                     Err(e) => {
-                        eprintln!("❌ 插入次卡片 '{}' 失败: {}", title, e);
+                        tracing::error!("插入次卡片 '{}' 失败: {}", title, e);
                         return Err(e.into());
                     }
                 }

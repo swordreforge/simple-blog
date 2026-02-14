@@ -17,26 +17,6 @@ pub struct Claims {
     pub iss: String,
 }
 
-/// JWT 错误类型
-#[derive(Debug)]
-pub enum JwtError {
-    EncodingError(String),
-    DecodingError(String),
-    ExpiredToken,
-}
-
-impl std::fmt::Display for JwtError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            JwtError::EncodingError(msg) => write!(f, "Encoding error: {}", msg),
-            JwtError::DecodingError(msg) => write!(f, "Decoding error: {}", msg),
-            JwtError::ExpiredToken => write!(f, "Token has expired"),
-        }
-    }
-}
-
-impl std::error::Error for JwtError {}
-
 /// JWT 服务
 #[derive(Debug)]
 pub struct JwtService {
@@ -54,7 +34,9 @@ impl JwtService {
     }
 
     /// 生成 JWT token
-    pub fn generate_token(&self, user_id: i64, username: &str, role: &str) -> Result<String, JwtError> {
+    pub fn generate_token(&self, user_id: i64, username: &str, role: &str) -> crate::error::Result<String> {
+        use crate::error::AppError;
+
         let now = Utc::now();
         let exp = now + self.token_expiration;
 
@@ -73,23 +55,25 @@ impl JwtService {
             &claims,
             &EncodingKey::from_secret(self.secret.as_ref()),
         )
-        .map_err(|e| JwtError::EncodingError(e.to_string()))
+        .map_err(|e| AppError::Jwt(format!("Token encoding failed: {}", e)))
     }
 
     /// 验证 JWT token
-    pub fn validate_token(&self, token: &str) -> Result<Claims, JwtError> {
+    pub fn validate_token(&self, token: &str) -> crate::error::Result<Claims> {
+        use crate::error::AppError;
+
         let token_data = decode::<Claims>(
             token,
             &DecodingKey::from_secret(self.secret.as_ref()),
             &Validation::new(Algorithm::HS256),
         )
-        .map_err(|e| JwtError::DecodingError(e.to_string()))?;
+        .map_err(|e| AppError::Jwt(format!("Token decoding failed: {}", e)))?;
 
         let claims = token_data.claims;
 
         // 检查 token 是否过期
         if Utc::now().timestamp() > claims.exp {
-            return Err(JwtError::ExpiredToken);
+            return Err(AppError::Jwt("Token has expired".to_string()));
         }
 
         Ok(claims)
@@ -122,13 +106,13 @@ pub fn init_jwt_secret(base_dir: &Path, jwt_secret: Option<&str>) -> String {
             Ok(secret) => {
                 let secret = secret.trim();
                 if !secret.is_empty() {
-                    eprintln!("✅ JWT密钥已从文件加载: {}", jwt_secret_file.display());
+                    tracing::info!("JWT密钥已从文件加载: {}", jwt_secret_file.display());
                     return secret.to_string();
                 }
-                eprintln!("⚠️  JWT密钥文件为空，将生成新密钥");
+                tracing::warn!("JWT密钥文件为空，将生成新密钥");
             }
             Err(e) => {
-                eprintln!("⚠️  读取JWT密钥文件失败: {}, 将生成新密钥", e);
+                tracing::warn!("读取JWT密钥文件失败: {}, 将生成新密钥", e);
             }
         }
     }
@@ -144,10 +128,10 @@ pub fn init_jwt_secret(base_dir: &Path, jwt_secret: Option<&str>) -> String {
     // 保存密钥文件
     match fs::write(&jwt_secret_file, &new_secret) {
         Ok(()) => {
-            eprintln!("✅ JWT密钥已生成并保存到: {}", jwt_secret_file.display());
+            tracing::info!("JWT密钥已生成并保存到: {}", jwt_secret_file.display());
         }
         Err(e) => {
-            eprintln!("⚠️  保存JWT密钥文件失败: {}", e);
+            tracing::warn!("保存JWT密钥文件失败: {}", e);
         }
     }
 
@@ -160,22 +144,42 @@ use once_cell::sync::OnceCell;
 static JWT_SERVICE: OnceCell<JwtService> = OnceCell::new();
 
 /// 初始化全局 JWT 服务
-pub fn init_jwt_service(secret: &str) {
+///
+/// # 错误处理
+/// 如果 JWT 服务已经初始化，将返回错误
+pub fn init_jwt_service(secret: &str) -> crate::error::Result<()> {
+    use crate::error::AppError;
+
     let service = JwtService::new(secret);
-    JWT_SERVICE.set(service).expect("JWT service already initialized");
+    JWT_SERVICE.set(service)
+        .map_err(|_| AppError::Internal("JWT service already initialized".to_string()))
 }
 
 /// 获取全局 JWT 服务
-pub fn get_jwt_service() -> &'static JwtService {
-    JWT_SERVICE.get().expect("JWT service not initialized")
+///
+/// # 返回值
+/// 如果服务未初始化，返回错误
+pub fn get_jwt_service() -> crate::error::Result<&'static JwtService> {
+    use crate::error::AppError;
+
+    JWT_SERVICE.get()
+        .ok_or_else(|| AppError::Internal("JWT service not initialized".to_string()))
 }
 
 /// 生成 token（使用全局服务）
-pub fn generate_token(user_id: i64, username: &str, role: &str) -> Result<String, JwtError> {
-    get_jwt_service().generate_token(user_id, username, role)
+pub fn generate_token(user_id: i64, username: &str, role: &str) -> crate::error::Result<String> {
+    use crate::error::AppError;
+
+    let service = get_jwt_service()
+        .map_err(|e| AppError::Jwt(format!("Failed to get JWT service: {}", e)))?;
+    service.generate_token(user_id, username, role)
 }
 
 /// 验证 token（使用全局服务）
-pub fn validate_token(token: &str) -> Result<Claims, JwtError> {
-    get_jwt_service().validate_token(token)
+pub fn validate_token(token: &str) -> crate::error::Result<Claims> {
+    use crate::error::AppError;
+
+    let service = get_jwt_service()
+        .map_err(|e| AppError::Jwt(format!("Failed to get JWT service: {}", e)))?;
+    service.validate_token(token)
 }

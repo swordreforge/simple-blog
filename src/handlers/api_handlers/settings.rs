@@ -485,21 +485,29 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
     if key.is_err() {
         return key.unwrap_err();
     }
-    
-    let key = key.unwrap();
-    
+
+    // 使用 match 替代 unwrap()
+    let key = match key {
+        Ok(k) => k,
+        Err(e) => return e,
+    };
+
     let value = updates.get("value")
         .and_then(|v| v.as_str())
         .ok_or_else(|| HttpResponse::BadRequest().json(serde_json::json!({
             "success": false,
             "message": "Value is required"
         })));
-    
+
     if value.is_err() {
         return value.unwrap_err();
     }
-    
-    let value = value.unwrap();
+
+    // 使用 match 替代 unwrap()
+    let value = match value {
+        Ok(v) => v,
+        Err(e) => return e,
+    };
     
     // 获取数据库连接池
     let pool = match crate::db::get_db_pool().await {
