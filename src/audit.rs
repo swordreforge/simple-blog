@@ -210,3 +210,59 @@ impl Default for AuditLogger {
 lazy_static::lazy_static! {
     pub static ref AUDIT_LOGGER: AuditLogger = AuditLogger::new();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_audit_log_creation() {
+        let log = AuditLog {
+            timestamp: Utc::now(),
+            user_id: Some(1),
+            username: Some("test_user".to_string()),
+            action: "LOGIN".to_string(),
+            resource: "AUTH".to_string(),
+            resource_id: None,
+            ip: Some("127.0.0.1".to_string()),
+            user_agent: Some("Mozilla/5.0".to_string()),
+            success: true,
+            details: None,
+        };
+
+        assert_eq!(log.action, "LOGIN");
+        assert_eq!(log.user_id, Some(1));
+        assert_eq!(log.success, true);
+    }
+
+    #[test]
+    fn test_audit_log_serialization() {
+        let log = AuditLog {
+            timestamp: Utc::now(),
+            user_id: Some(1),
+            username: Some("test_user".to_string()),
+            action: "CREATE".to_string(),
+            resource: "PASSAGE".to_string(),
+            resource_id: Some("test-uuid".to_string()),
+            ip: Some("127.0.0.1".to_string()),
+            user_agent: None,
+            success: true,
+            details: Some(serde_json::json!({"title": "Test"})),
+        };
+
+        // 测试序列化
+        let json = serde_json::to_string(&log);
+        assert!(json.is_ok());
+
+        // 测试反序列化
+        let deserialized: Result<AuditLog, _> = serde_json::from_str(&json.unwrap());
+        assert!(deserialized.is_ok());
+    }
+
+    #[test]
+    fn test_audit_logger_default() {
+        let logger = AuditLogger::default();
+        // 测试 logger 可以创建
+        // 实际的日志写入测试需要文件系统
+    }
+}

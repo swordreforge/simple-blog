@@ -335,10 +335,7 @@ pub async fn delete(
     match tag_repo.delete(id).await {
         Ok(_) => {
             // 清除所有文章列表和详情缓存
-            if let Some(manager) = app_cache.manager() {
-                let _ = manager.delete_pattern("passage:list:*").await;
-                let _ = manager.delete_pattern("passage:get:*").await;
-            }
+            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
@@ -387,10 +384,7 @@ pub async fn delete_batch(
     match tag_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             // 清除所有文章列表和详情缓存
-            if let Some(manager) = app_cache.manager() {
-                let _ = manager.delete_pattern("passage:list:*").await;
-                let _ = manager.delete_pattern("passage:get:*").await;
-            }
+            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,

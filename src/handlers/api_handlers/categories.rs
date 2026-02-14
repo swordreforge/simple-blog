@@ -271,14 +271,10 @@ pub async fn update(
     }
     category.updated_at = Utc::now();
     
-    match category_repo.update(&category).await {
-        Ok(_) => {
-            // 清除所有文章列表和详情缓存
-            if let Some(manager) = app_cache.manager() {
-                let _ = manager.delete_pattern("passage:list:*").await;
-                let _ = manager.delete_pattern("passage:get:*").await;
-            }
-            
+            match category_repo.update(&category).await {
+            Ok(_) => {
+                // 清除所有文章列表和详情缓存
+                crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;            
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "分类更新成功"
@@ -314,10 +310,7 @@ pub async fn delete(
     match category_repo.delete(id).await {
         Ok(_) => {
             // 清除所有文章列表和详情缓存
-            if let Some(manager) = app_cache.manager() {
-                let _ = manager.delete_pattern("passage:list:*").await;
-                let _ = manager.delete_pattern("passage:get:*").await;
-            }
+            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
@@ -366,10 +359,7 @@ pub async fn delete_batch(
     match category_repo.delete_batch(req.ids.clone()).await {
         Ok(count) => {
             // 清除所有文章列表和详情缓存
-            if let Some(manager) = app_cache.manager() {
-                let _ = manager.delete_pattern("passage:list:*").await;
-                let _ = manager.delete_pattern("passage:get:*").await;
-            }
+            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,

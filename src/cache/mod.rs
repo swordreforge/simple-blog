@@ -2,9 +2,11 @@ mod backend;
 mod manager;
 mod local;
 mod valkey;
+mod utils;
 
 pub use backend::{CacheConfig, CacheError};
 pub use manager::CacheManager;
+pub use utils::*;
 
 /// 应用缓存（兼容旧接口）
 pub struct AppCache {

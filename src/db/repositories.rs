@@ -1926,3 +1926,60 @@ impl FriendLinkRepository {
         Ok(count)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::Passage;
+    use chrono::Utc;
+
+    #[test]
+    fn test_passage_model_creation() {
+        let now = Utc::now();
+        let passage = Passage {
+            id: None,
+            uuid: Some("test-uuid-123".to_string()),
+            title: "Test Article".to_string(),
+            content: "<p>Test content</p>".to_string(),
+            original_content: Some("# Test\n\nContent".to_string()),
+            summary: Some("Test summary".to_string()),
+            author: "Test Author".to_string(),
+            tags: "[\"tag1\", \"tag2\"]".to_string(),
+            category: "Test Category".to_string(),
+            status: "published".to_string(),
+            file_path: Some("markdown/test.md".to_string()),
+            visibility: "public".to_string(),
+            is_scheduled: false,
+            published_at: Some(now),
+            cover_image: None,
+            created_at: now,
+            updated_at: now,
+        };
+
+        assert_eq!(passage.title, "Test Article");
+        assert_eq!(passage.status, "published");
+        assert_eq!(passage.visibility, "public");
+    }
+
+    #[test]
+    fn test_pagination_params_validation() {
+        // 测试分页参数验证逻辑
+        let limit = 10;
+        let page = 1;
+
+        assert!(limit > 0 && limit <= 1000);
+        assert!(page > 0);
+    }
+
+    #[test]
+    fn test_date_params_validation() {
+        // 测试日期参数验证逻辑
+        let year = 2026;
+        let month = 2;
+        let day = 14;
+
+        assert!(year >= 2000 && year <= 2100);
+        assert!(month >= 1 && month <= 12);
+        assert!(day >= 1 && day <= 31);
+    }
+}

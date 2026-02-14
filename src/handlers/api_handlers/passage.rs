@@ -65,6 +65,63 @@ pub struct UpdatePassageRequest {
 }
 
 /// 获取文章列表（公开）
+///
+/// 支持传统分页和游标分页两种方式，优先使用游标分页。
+///
+/// # 查询参数
+/// - `limit`: 每页文章数量，范围 1-1000，默认 10
+/// - `page`: 页码（传统分页），从 1 开始，默认 1
+/// - `cursor`: 游标标识（游标分页），格式为 "时间戳|文章ID"
+/// - `year`: 年份筛选，例如 2026
+/// - `month`: 月份筛选，范围 1-12
+/// - `day`: 日期筛选，范围 1-31
+///
+/// # 返回格式
+/// ```json
+/// {
+///   "success": true,
+///   "data": [
+///     {
+///       "id": 1,
+///       "uuid": "abc-123-def-456",
+///       "title": "文章标题",
+///       "content": "Markdown 内容",
+///       "summary": "摘要",
+///       "author": "作者",
+///       "tags": "[\"标签1\", \"标签2\"]",
+///       "category": "分类",
+///       "status": "published",
+///       "visibility": "public",
+///       "created_at": "2026-02-14 10:00:00",
+///       "updated_at": "2026-02-14 10:00:00"
+///     }
+///   ],
+///   "pagination": {
+///     "has_more": true,
+///     "next_cursor": "2026-02-14 10:00:00+00:00|123",
+///     "limit": 10,
+///     "page": 1,
+///     "total": 100,
+///     "total_pages": 10
+///   }
+/// }
+/// ```
+///
+/// # 示例
+/// ```bash
+/// # 传统分页
+/// GET /api/passages?limit=10&page=1
+///
+/// # 游标分页（推荐）
+/// GET /api/passages?cursor=2026-02-14%2010%3A00%3A00%2B00%3A00%7C123&limit=10
+///
+/// # 日期筛选
+/// GET /api/passages?year=2026&month=2
+/// ```
+///
+/// # 缓存
+/// - 响应会被缓存 60 秒
+/// - 使用 X-Cache 响应头标识缓存状态（HIT/MISS）
 pub async fn list(
     repo: web::Data<Arc<dyn Repository>>,
     query: web::Query<std::collections::HashMap<String, String>>,
@@ -302,6 +359,55 @@ pub async fn list(
 }
 
 /// 获取单篇文章
+///
+/// 支持 ID 或 UUID 查询。对于小于 1,000,000 的数字按 ID 查询，否则按 UUID 查询。
+///
+/// # 路径参数
+/// - `id_or_uuid`: 文章 ID（数字）或 UUID（字符串）
+///
+/// # 权限要求
+/// - 公开文章：无需认证
+/// - 未发布/私有/定时发布文章：需要管理员权限
+///
+/// # 返回格式
+/// ```json
+/// {
+///   "success": true,
+///   "data": {
+///     "id": 1,
+///     "uuid": "abc-123-def-456",
+///     "title": "文章标题",
+///     "content": "Markdown 内容",
+///     "html_content": "<p>渲染后的 HTML</p>",
+///     "summary": "摘要",
+///     "author": "作者",
+///     "tags": "[\"标签1\", \"标签2\"]",
+///     "category": "分类",
+///     "status": "published",
+///     "visibility": "public",
+///     "created_at": "2026-02-14 10:00:00",
+///     "updated_at": "2026-02-14 10:00:00"
+///   }
+/// }
+/// ```
+///
+/// # 示例
+/// ```bash
+/// # 按 ID 查询
+/// GET /api/passage/1
+///
+/// # 按 UUID 查询
+/// GET /api/passage/abc-123-def-456
+/// ```
+///
+/// # 缓存
+/// - 公开文章响应缓存 300 秒（5 分钟）
+/// - 使用 ETag 支持条件请求
+/// - 使用 X-Cache 响应头标识缓存状态（HIT/MISS）
+///
+/// # 错误响应
+/// - `404 Not Found`: 文章不存在
+/// - `200 OK`（success: false）: 文章未发布或不可见
 pub async fn get(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<String>,
@@ -503,6 +609,62 @@ pub async fn get(
 }
 
 /// 创建文章
+///
+/// 创建新文章，自动生成 Markdown 文件和 UUID。
+///
+/// # 权限要求
+/// - 需要有效的认证令牌
+/// - 建议使用管理员权限
+///
+/// # 请求体
+/// ```json
+/// {
+///   "title": "文章标题",
+///   "content": "Markdown 内容",
+///   "summary": "摘要（可选）",
+///   "author": "作者（可选，默认 Anonymous）",
+///   "tags": "[\"标签1\", \"标签2\"] 或 标签1,标签2",
+///   "category": "分类（可选，默认 未分类）",
+///   "status": "published|draft|archived（可选，默认 draft）",
+///   "visibility": "public|private|protected（可选，默认 public）",
+///   "is_scheduled": false,
+///   "published_at": "2026-02-14T10:00:00Z（可选）",
+///   "cover_image": "/img/cover.webp（可选）",
+///   "created_at": "2026-02-14T10:00:00Z（可选，用于导入老文章）"
+/// }
+/// ```
+///
+/// # 返回格式
+/// ```json
+/// {
+///   "success": true,
+///   "message": "文章创建成功",
+///   "data": {
+///     "id": 1,
+///     "uuid": "abc-123-def-456"
+///   }
+/// }
+/// ```
+///
+/// # 自动处理
+/// - 自动生成 Markdown 文件路径：`markdown/YYYY/MM/DD/title.md`
+/// - 自动生成摘要（如果未提供）
+/// - 确保分类和标签存在
+/// - 自动转换为 HTML 内容
+/// - 清除相关缓存（如果状态为 published）
+/// - 记录审计日志
+///
+/// # 示例
+/// ```bash
+/// curl -X POST http://localhost:8080/api/passage \
+///   -H "Content-Type: application/json" \
+///   -H "Cookie: auth_token=xxx" \
+///   -d '{
+///     "title": "我的第一篇文章",
+///     "content": "# Hello\n\n这是我的第一篇文章。",
+///     "status": "published"
+///   }'
+/// ```
 pub async fn create(
     repo: web::Data<Arc<dyn Repository>>,
     req_json: web::Json<CreatePassageRequest>,
@@ -615,11 +777,8 @@ pub async fn create(
                     let title = created_passage.title.clone();
 
                     // 清除缓存
-                    if let Some(manager) = app_cache.manager() {
-                        // 如果创建的是已发布状态的文章，清除所有列表缓存
-                        if status == "published" {
-                            let _ = manager.delete_pattern("passage:list:*").await;
-                        }
+                    if status == "published" {
+                        crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
                     }
 
                     // 记录审计日志
@@ -661,6 +820,58 @@ pub async fn create(
 }
 
 /// 更新文章
+///
+/// 更新现有文章，支持部分更新。
+///
+/// # 权限要求
+/// - 需要有效的认证令牌
+/// - 建议使用管理员权限
+///
+/// # 路径参数
+/// - `id`: 文章 ID
+///
+/// # 请求体（所有字段可选）
+/// ```json
+/// {
+///   "title": "新标题",
+///   "content": "新内容",
+///   "summary": "新摘要",
+///   "author": "新作者",
+///   "tags": "[\"新标签\"]",
+///   "category": "新分类",
+///   "status": "published",
+///   "visibility": "public",
+///   "is_scheduled": false,
+///   "published_at": "2026-02-14T10:00:00Z",
+///   "cover_image": "/img/new-cover.webp"
+/// }
+/// ```
+///
+/// # 返回格式
+/// ```json
+/// {
+///   "success": true,
+///   "message": "文章更新成功"
+/// }
+/// ```
+///
+/// # 自动处理
+/// - 更新 Markdown 文件（如果内容或标题改变）
+/// - 确保分类和标签存在
+/// - 自动转换为 HTML 内容
+/// - 失效相关缓存
+/// - 记录审计日志
+///
+/// # 示例
+/// ```bash
+/// curl -X PUT http://localhost:8080/api/passage/1 \
+///   -H "Content-Type: application/json" \
+///   -H "Cookie: auth_token=xxx" \
+///   -d '{
+///     "title": "更新后的标题",
+///     "status": "published"
+///   }'
+/// ```
 pub async fn update(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
@@ -836,6 +1047,36 @@ pub async fn update(
 }
 
 /// 删除文章
+///
+/// 删除文章及其关联的 Markdown 文件和附件。
+///
+/// # 权限要求
+/// - 需要有效的认证令牌
+/// - 建议使用管理员权限
+///
+/// # 路径参数
+/// - `uuid`: 文章 UUID
+///
+/// # 返回格式
+/// ```json
+/// {
+///   "success": true,
+///   "message": "文章删除成功，删除了 0 个 Markdown 文件，2 个附件文件"
+/// }
+/// ```
+///
+/// # 自动处理
+/// - 删除 Markdown 文件
+/// - 删除所有关联的附件文件
+/// - 删除数据库记录
+/// - 失效相关缓存
+/// - 记录审计日志
+///
+/// # 示例
+/// ```bash
+/// curl -X DELETE http://localhost:8080/api/passage/abc-123-def-456 \
+///   -H "Cookie: auth_token=xxx"
+/// ```
 pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<String>,
@@ -1028,7 +1269,7 @@ pub async fn delete_batch(
                     let _ = manager.delete(&detail_key).await;
                 }
                 // 清除所有文章列表缓存（批量删除会影响所有分页）
-                let _ = manager.delete_pattern("passage:list:*").await;
+                crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             }
 
             HttpResponse::Ok().json(serde_json::json!({
@@ -1399,9 +1640,7 @@ pub async fn update_by_query(
             
             // 清除列表缓存（如果需要）
             if should_clear_list_cache {
-                if let Some(manager) = app_cache.manager() {
-                    let _ = manager.delete_pattern("passage:list:*").await;
-                }
+                crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
             }
             
             HttpResponse::Ok().json(serde_json::json!({
@@ -1503,9 +1742,7 @@ pub async fn delete_by_query(
                 let _ = manager.delete(&detail_key).await;
             }
             // 清除所有文章列表缓存（删除会影响分页）
-            if let Some(manager) = app_cache.manager() {
-                let _ = manager.delete_pattern("passage:list:*").await;
-            }
+            crate::cache::invalidate_all_passage_cache(app_cache.manager()).await;
 
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
