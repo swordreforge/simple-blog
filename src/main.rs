@@ -16,6 +16,7 @@ mod id_generator;
 mod profiling;
 mod json_adapter;
 mod lock_monitor;
+mod audit;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web, http::KeepAlive};
 use clap::Parser;

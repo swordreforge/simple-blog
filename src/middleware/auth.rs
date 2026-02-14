@@ -24,8 +24,10 @@ impl FromRequest for UserIDKey {
         if let Some(user_id) = req.extensions().get::<UserIDKey>() {
             ready(Ok(user_id.clone()))
         } else {
-            // 返回 0 表示未认证，handler 应该检查并拒绝
-            ready(Ok(UserIDKey(0)))
+            // 修复：拒绝未认证请求
+            ready(Err(actix_web::error::ErrorUnauthorized(
+                "Authentication required"
+            )))
         }
     }
 }
@@ -38,8 +40,10 @@ impl FromRequest for UsernameKey {
         if let Some(username) = req.extensions().get::<UsernameKey>() {
             ready(Ok(username.clone()))
         } else {
-            // 返回空字符串表示未认证，handler 应该检查并拒绝
-            ready(Ok(UsernameKey(String::new())))
+            // 修复：拒绝未认证请求
+            ready(Err(actix_web::error::ErrorUnauthorized(
+                "Authentication required"
+            )))
         }
     }
 }
@@ -52,8 +56,10 @@ impl FromRequest for RoleKey {
         if let Some(role) = req.extensions().get::<RoleKey>() {
             ready(Ok(role.clone()))
         } else {
-            // 返回空字符串表示未认证，handler 应该检查并拒绝
-            ready(Ok(RoleKey(String::new())))
+            // 修复：拒绝未认证请求
+            ready(Err(actix_web::error::ErrorUnauthorized(
+                "Authentication required"
+            )))
         }
     }
 }

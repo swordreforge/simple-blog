@@ -75,6 +75,50 @@ impl ECCSession {
         self.created_at + Duration::hours(1)
     }
     
+    /// 混合加密（ECDH + AES-GCM）
+    pub fn hybrid_encrypt(&self, plaintext: &str, client_public_key_input: &str) -> Result<String, String> {
+        use aes_gcm::aead::Aead;
+
+        // 解析客户端公钥（支持PEM格式）
+        let client_public_key_bytes = if client_public_key_input.contains("-----BEGIN PUBLIC KEY-----") {
+            parse_pem_public_key(client_public_key_input)?
+        } else if client_public_key_input.contains('-') {
+            match base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(client_public_key_input) {
+                Ok(data) => data,
+                Err(_) => {
+                    general_purpose::STANDARD.decode(client_public_key_input)
+                        .map_err(|e| format!("Failed to decode client public key: {}", e))?
+                }
+            }
+        } else {
+            general_purpose::STANDARD.decode(client_public_key_input)
+                .map_err(|e| format!("Failed to decode client public key: {}", e))?
+        };
+
+        // 派生共享密钥
+        let shared_key = self.derive_shared_secret(&client_public_key_bytes)?;
+
+        // 创建AES-GCM加密器
+        let cipher = Aes256Gcm::new(&shared_key.into());
+
+        // 生成随机 Nonce（12字节）
+        let mut nonce_bytes = [0u8; 12];
+        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::from_slice(&nonce_bytes);
+
+        // 加密
+        let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())
+            .map_err(|e| format!("Encryption failed: {}", e))?;
+
+        // 组合：Nonce + Ciphertext
+        let mut result = Vec::with_capacity(12 + ciphertext.len());
+        result.extend_from_slice(&nonce_bytes);
+        result.extend_from_slice(&ciphertext);
+
+        // Base64 编码
+        Ok(general_purpose::STANDARD.encode(&result))
+    }
+
     /// 派生共享密钥（ECDH）
     pub fn derive_shared_secret(&self, client_public_key_bytes: &[u8]) -> Result<[u8; 32], String> {
         use p256::PublicKey;

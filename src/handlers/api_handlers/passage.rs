@@ -316,7 +316,7 @@ pub async fn get(
     let role: String = req.extensions().get::<crate::middleware::auth::RoleKey>()
         .map(|r| r.0.clone())
         .unwrap_or_else(|| String::new());
-    
+
     // 智能识别：如果是纯数字且较小（< 1000000），则按 ID 查询；否则按 UUID 查询
     let passage = if let Ok(id) = param.parse::<i64>() {
         // 只对较小的数字 ID 进行 ID 查询（避免将 Snowflake UUID 误识别为 ID）
@@ -360,7 +360,7 @@ pub async fn get(
     
     // 检查文章状态和可见性
     if passage.status != "published" {
-        if role != "admin" {
+        if role != "admin" || role.is_empty() {
             return HttpResponse::Ok().json(serde_json::json!({
                 "success": false,
                 "message": "文章未发布",
@@ -368,9 +368,9 @@ pub async fn get(
             }));
         }
     }
-    
+
     if passage.visibility != "public" {
-        if role != "admin" {
+        if role != "admin" || role.is_empty() {
             return HttpResponse::Ok().json(serde_json::json!({
                 "success": false,
                 "message": "文章不可见",
@@ -378,10 +378,10 @@ pub async fn get(
             }));
         }
     }
-    
+
     if passage.is_scheduled {
         if let Some(published_at) = passage.published_at {
-            if published_at > Utc::now() && role != "admin" {
+            if published_at > Utc::now() && (role != "admin" || role.is_empty()) {
                 return HttpResponse::Ok().json(serde_json::json!({
                     "success": false,
                     "message": "文章尚未发布",
@@ -505,20 +505,31 @@ pub async fn get(
 /// 创建文章
 pub async fn create(
     repo: web::Data<Arc<dyn Repository>>,
-    req: web::Json<CreatePassageRequest>,
+    req_json: web::Json<CreatePassageRequest>,
     app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    req: HttpRequest,
 ) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+
+    // 获取用户信息用于审计日志
+    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
+        .map(|u| u.0)
+        .unwrap_or(0);
+    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>()
+        .map(|u| u.0.clone())
+        .unwrap_or_else(|| "unknown".to_string());
+    let client_ip = req.connection_info().realip_remote_addr()
+        .map(|addr| addr.to_string());
+
     // 转换 Markdown 为 HTML
-    let html_content = convert_markdown_to_html(&req.content);
+    let html_content = convert_markdown_to_html(&req_json.content);
 
     // 处理分类，确保分类存在
-    let category_name = req.category.as_deref().unwrap_or("未分类");
+    let category_name = req_json.category.as_deref().unwrap_or("未分类");
     let _ = ensure_category_exist(category_name).await;
 
     // 处理标签
-    let tags_json = if let Some(ref tags) = req.tags {
+    let tags_json = if let Some(ref tags) = req_json.tags {
         // 解析标签：支持 JSON 数组和逗号分隔的字符串
         let tag_list: Vec<String> = if tags.trim().starts_with('[') {
             // JSON 格式
@@ -545,21 +556,20 @@ pub async fn create(
     let now = Utc::now();
     
     // 如果没有提供 file_path，则自动生成
-    let file_path = if let Some(ref path) = req.file_path {
+    let file_path = if let Some(ref path) = req_json.file_path {
         path.clone()
     } else {
         // 自动生成文件路径：markdown/YYYY/MM/DD/title.md
-        let date = now.format("%Y/%m/%d").to_string();
-        let safe_title = req.title.chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '_' })
-            .collect::<String>()
-            .replace(' ', "-");
-        format!("markdown/{}/{}.md", date, safe_title)
-    };
-    
-    // 创建 Markdown 文件
-    if let Err(e) = update_markdown_file(&file_path, &req.content) {
-        eprintln!("创建 Markdown 文件失败: {}", e);
+            let date = now.format("%Y/%m/%d").to_string();
+            let safe_title = req_json.title.chars()
+                .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '_' })
+                .collect::<String>()
+                .replace(' ', "-");
+            format!("markdown/{}/{}.md", date, safe_title)
+            };
+        
+            // 创建 Markdown 文件
+            if let Err(e) = update_markdown_file(&file_path, &req_json.content) {        eprintln!("创建 Markdown 文件失败: {}", e);
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "success": false,
             "message": format!("创建 Markdown 文件失败: {}", e)
@@ -567,30 +577,30 @@ pub async fn create(
     }
     
     // 如果没有提供摘要，则自动生成
-    let summary = req.summary.clone().or_else(|| Some(extract_summary(&html_content)));
-    
+    let summary = req_json.summary.clone().or_else(|| Some(extract_summary(&html_content)));
+
     // 如果提供了创建时间，使用指定的；否则使用当前时间
-    let created_at = req.created_at.as_ref()
+    let created_at = req_json.created_at.as_ref()
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
         .map(|dt| dt.with_timezone(&Utc))
         .unwrap_or(now);
-    
+
     let passage = Passage {
         id: None,
         uuid: None,  // UUID 将在 Repository 中生成
-        title: req.title.clone(),
+        title: req_json.title.clone(),
         content: html_content,
-        original_content: Some(req.content.clone()),
+        original_content: Some(req_json.content.clone()),
         summary: summary,
-        author: req.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
+        author: req_json.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
         tags: tags_json,
-        category: req.category.clone().unwrap_or_else(|| "未分类".to_string()),
-        status: req.status.clone().unwrap_or_else(|| "draft".to_string()),
+        category: req_json.category.clone().unwrap_or_else(|| "未分类".to_string()),
+        status: req_json.status.clone().unwrap_or_else(|| "draft".to_string()),
         file_path: Some(file_path),
-        visibility: req.visibility.clone().unwrap_or_else(|| "public".to_string()),
-        is_scheduled: req.is_scheduled.unwrap_or(false),
-        published_at: req.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
-        cover_image: req.cover_image.clone().or_else(|| Some("/img/passage-cover.webp".to_string())),
+        visibility: req_json.visibility.clone().unwrap_or_else(|| "public".to_string()),
+        is_scheduled: req_json.is_scheduled.unwrap_or(false),
+        published_at: req_json.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
+        cover_image: req_json.cover_image.clone().or_else(|| Some("/img/passage-cover.webp".to_string())),
         created_at,
         updated_at: now,
     };
@@ -602,6 +612,7 @@ pub async fn create(
                 Ok(created_passage) => {
                     let uuid = created_passage.uuid.unwrap_or_else(|| String::new());
                     let status = created_passage.status.clone();
+                    let title = created_passage.title.clone();
 
                     // 清除缓存
                     if let Some(manager) = app_cache.manager() {
@@ -610,6 +621,16 @@ pub async fn create(
                             let _ = manager.delete_pattern("passage:list:*").await;
                         }
                     }
+
+                    // 记录审计日志
+                    crate::audit::AUDIT_LOGGER.log_passage_create(
+                        user_id,
+                        &username,
+                        id,
+                        &uuid,
+                        &title,
+                        client_ip,
+                    );
 
                     HttpResponse::Ok().json(serde_json::json!({
                         "success": true,
@@ -643,12 +664,23 @@ pub async fn create(
 pub async fn update(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<i64>,
-    req: web::Json<UpdatePassageRequest>,
+    req_json: web::Json<UpdatePassageRequest>,
     app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    req: HttpRequest,
 ) -> HttpResponse {
     let id = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+
+    // 获取用户信息用于审计日志
+    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
+        .map(|u| u.0)
+        .unwrap_or(0);
+    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>()
+        .map(|u| u.0.clone())
+        .unwrap_or_else(|| "unknown".to_string());
+    let client_ip = req.connection_info().realip_remote_addr()
+        .map(|addr| addr.to_string());
+
     // 先获取现有文章
     let mut passage = match passage_repo.get_by_id(id).await {
         Ok(p) => p,
@@ -666,22 +698,22 @@ pub async fn update(
     
     // 更新字段
     let mut file_updated = false;
-    if let Some(ref title) = req.title {
+    if let Some(ref title) = req_json.title {
         passage.title = title.clone();
         file_updated = true;
     }
-    if let Some(ref content) = req.content {
+    if let Some(ref content) = req_json.content {
         // 转换 Markdown 为 HTML
         let html_content = convert_markdown_to_html(content);
         passage.content = html_content;
         passage.original_content = Some(content.clone());
         file_updated = true;
     }
-    if let Some(ref original_content) = req.original_content {
+    if let Some(ref original_content) = req_json.original_content {
         passage.original_content = Some(original_content.clone());
         file_updated = true;
     }
-    
+
     // 如果内容或标题更新了，同时更新 Markdown 文件
     if file_updated {
         if let Some(ref file_path) = passage.file_path {
@@ -689,9 +721,9 @@ pub async fn update(
                 // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
                 &passage.content
             });
-            
+
             // 更新文件名（如果标题改变了）
-            if let Some(ref title) = req.title {
+            if let Some(ref title) = req_json.title {
                 let new_file_path = update_markdown_file_name(file_path, title, content_to_save);
                 if new_file_path != *file_path {
                     passage.file_path = Some(new_file_path);
@@ -704,18 +736,18 @@ pub async fn update(
             }
         }
     }
-    if let Some(ref summary) = req.summary {
+    if let Some(ref summary) = req_json.summary {
         passage.summary = Some(summary.clone());
     }
-    if let Some(ref author) = req.author {
+    if let Some(ref author) = req_json.author {
         passage.author = author.clone();
     }
-    if let Some(ref category) = req.category {
+    if let Some(ref category) = req_json.category {
         // 确保分类存在
         let _ = ensure_category_exist(category).await;
         passage.category = category.clone();
     }
-    if let Some(ref tags) = req.tags {
+    if let Some(ref tags) = req_json.tags {
         // 解析标签：支持 JSON 数组和逗号分隔的字符串
         let tag_list: Vec<String> = if tags.trim().starts_with('[') {
             // JSON 格式
@@ -736,24 +768,24 @@ pub async fn update(
         // 保存为 JSON 格式
         passage.tags = serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string());
     }
-    if let Some(ref status) = req.status {
+    if let Some(ref status) = req_json.status {
         passage.status = status.clone();
     }
-    if let Some(ref file_path) = req.file_path {
+    if let Some(ref file_path) = req_json.file_path {
         passage.file_path = Some(file_path.clone());
     }
-    if let Some(ref visibility) = req.visibility {
+    if let Some(ref visibility) = req_json.visibility {
         passage.visibility = visibility.clone();
     }
-    if let Some(is_scheduled) = req.is_scheduled {
+    if let Some(is_scheduled) = req_json.is_scheduled {
         passage.is_scheduled = is_scheduled;
     }
-    if let Some(ref published_at) = req.published_at {
+    if let Some(ref published_at) = req_json.published_at {
         passage.published_at = chrono::DateTime::parse_from_rfc3339(published_at)
             .ok()
             .map(|dt| dt.with_timezone(&chrono::Utc));
     }
-    if let Some(ref cover_image) = req.cover_image {
+    if let Some(ref cover_image) = req_json.cover_image {
         passage.cover_image = Some(cover_image.clone());
     }
     passage.updated_at = chrono::Utc::now();
@@ -761,7 +793,7 @@ pub async fn update(
     match passage_repo.update(&passage).await {
         Ok(_) => {
             // 失效相关缓存
-            if let Some(uuid) = passage_uuid {
+            if let Some(uuid) = passage_uuid.clone() {
                 let cache_keys = vec![
                     format!("passage:get:{}", uuid),
                     format!("passage:get:{}", id),
@@ -769,14 +801,25 @@ pub async fn update(
                     "passage:list:page:1:limit:10".to_string(),
                     "passage:list:page:1:limit:20".to_string(),
                 ];
-                
+
                 if let Some(manager) = app_cache.manager() {
                     for key in cache_keys {
                         let _ = manager.delete(&key).await;
                     }
                 }
             }
-            
+
+            // 记录审计日志
+            if let Some(uuid) = passage_uuid {
+                crate::audit::AUDIT_LOGGER.log_passage_update(
+                    user_id,
+                    &username,
+                    id,
+                    &uuid,
+                    client_ip,
+                );
+            }
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "文章更新成功"
@@ -797,10 +840,21 @@ pub async fn delete(
     repo: web::Data<Arc<dyn Repository>>,
     path: web::Path<String>,
     app_cache: web::Data<Arc<crate::cache::AppCache>>,
+    req: HttpRequest,
 ) -> HttpResponse {
     let uuid = path.into_inner();
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     let attachment_repo = AttachmentRepository::new(repo.get_pool().clone());
+
+    // 获取用户信息用于审计日志
+    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
+        .map(|u| u.0)
+        .unwrap_or(0);
+    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>()
+        .map(|u| u.0.clone())
+        .unwrap_or_else(|| "unknown".to_string());
+    let client_ip = req.connection_info().realip_remote_addr()
+        .map(|addr| addr.to_string());
 
     // 1. 获取文章信息以获取文件路径
     let passage = match passage_repo.get_by_uuid(&uuid).await {
@@ -861,6 +915,15 @@ pub async fn delete(
                     }
                 }
             }
+
+            // 记录审计日志
+            crate::audit::AUDIT_LOGGER.log_passage_delete(
+                user_id,
+                &username,
+                &uuid,
+                &passage.title,
+                client_ip,
+            );
 
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
