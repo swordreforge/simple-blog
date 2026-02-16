@@ -1,4 +1,4 @@
-function showToast(e, t = 'success') {
+window.showToast = function showToast(e, t = 'success') {
   const n = document.getElementById('toastContainer');
   if (!n) return void console.error('Toast container not found');
   const a = document.createElement('div');
@@ -20,7 +20,7 @@ function showToast(e, t = 'success') {
     setTimeout(() => {
       a.parentElement && a.remove();
     }, 3e3));
-}
+};
 async function fetchCategories() {
   try {
     const e = localStorage.getItem('auth_token'),
@@ -1464,18 +1464,18 @@ const nav = document.getElementById('mainNav'),
     });
   }));
 const mainTitle = document.getElementById('main-title');
-function openModal(e) {
+window.openModal = function openModal(e) {
   const t = document.getElementById(e);
   t && (t.classList.add('active'), (document.body.style.overflow = 'hidden'));
-}
-function closeModal(e) {
+};
+window.closeModal = function closeModal(e) {
   const t = document.getElementById(e);
   t &&
     (t.classList.add('closing'),
     setTimeout(() => {
       (t.classList.remove('active', 'closing'), (document.body.style.overflow = 'auto'));
     }, 300));
-}
+};
 (mainTitle &&
   (mainTitle.addEventListener('mouseenter', function () {
     this.style.animationPlayState = 'paused';

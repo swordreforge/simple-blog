@@ -2,12 +2,18 @@ let originalAppearanceSettings = {};
 async function loadSettings() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
-    const n = await fetch('/api/settings/appearance', { headers: t });
+    const n = await fetch('/api/settings/appearance', {
+      headers: t,
+    });
     if (n.ok) {
       const e = await n.json();
-      ((originalAppearanceSettings = { ...e }),
+      ((originalAppearanceSettings = {
+        ...e,
+      }),
         (document.getElementById('backgroundImage').value = e.background_image || '/img/test.webp'),
         (document.getElementById('mobileBackgroundImage').value =
           e.mobile_background_image || '/img/mobile-test.webp'),
@@ -45,7 +51,9 @@ async function loadSettings() {
 async function saveSettings() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
     const n = {
         background_image: document.getElementById('backgroundImage').value,
@@ -106,6 +114,7 @@ async function saveSettings() {
     (console.error('保存设置失败:', e), showToast('保存失败，请稍后重试', 'error'));
   }
 }
+
 function resetSettings() {
   confirm('确定要重置为默认设置吗？') &&
     ((document.getElementById('backgroundImage').value = '/img/test.webp'),
@@ -134,6 +143,7 @@ function resetSettings() {
     ),
     updatePreview());
 }
+
 function updatePreview() {
   const e = document.getElementById('previewBox');
   if (!e) return;
@@ -160,11 +170,13 @@ function updatePreview() {
   const m = document.getElementById('preview-style');
   (m && m.remove(), (u.id = 'preview-style'), document.head.appendChild(u));
 }
+
 function applyDarkMode(e) {
   e
     ? document.documentElement.classList.add('dark-mode')
     : document.documentElement.classList.remove('dark-mode');
 }
+
 function updateColorPickers() {
   const e = document.getElementById('navbarGlassColor').value,
     t = document.getElementById('navbarTextColor').value,
@@ -188,17 +200,25 @@ function updateColorPickers() {
     e && (document.getElementById('footerGlassColorPicker').value = rgbaToHex(e.r, e.g, e.b));
   }
 }
+
 function applyGlassColors(e, t, n) {
   (document.documentElement.style.setProperty('--navbar-glass-color', e),
     document.documentElement.style.setProperty('--card-glass-color', t),
     document.documentElement.style.setProperty('--footer-glass-color', n));
 }
+
 function parseRgba(e) {
   const t = e.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
   return t
-    ? { r: parseInt(t[1]), g: parseInt(t[2]), b: parseInt(t[3]), a: t[4] ? parseFloat(t[4]) : 1 }
+    ? {
+        r: parseInt(t[1]),
+        g: parseInt(t[2]),
+        b: parseInt(t[3]),
+        a: t[4] ? parseFloat(t[4]) : 1,
+      }
     : null;
 }
+
 function rgbaToHex(e, t, n) {
   const o = e => {
     const t = e.toString(16);
@@ -248,10 +268,22 @@ document.addEventListener('DOMContentLoaded', async function () {
   const s = document.getElementById('resetSettingsBtn');
   s && s.addEventListener('click', resetSettings);
   [
-    { picker: 'navbarGlassColorPicker', input: 'navbarGlassColor' },
-    { picker: 'navbarTextColorPicker', input: 'navbarTextColor' },
-    { picker: 'cardGlassColorPicker', input: 'cardGlassColor' },
-    { picker: 'footerGlassColorPicker', input: 'footerGlassColor' },
+    {
+      picker: 'navbarGlassColorPicker',
+      input: 'navbarGlassColor',
+    },
+    {
+      picker: 'navbarTextColorPicker',
+      input: 'navbarTextColor',
+    },
+    {
+      picker: 'cardGlassColorPicker',
+      input: 'cardGlassColor',
+    },
+    {
+      picker: 'footerGlassColorPicker',
+      input: 'footerGlassColor',
+    },
   ].forEach(({ picker: e, input: t }) => {
     const n = document.getElementById(e),
       o = document.getElementById(t);
@@ -298,12 +330,19 @@ let originalTemplateSettings = {};
 async function loadTemplateSettings() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
-    const n = await fetch('/api/settings/template', { method: 'GET', headers: t });
+    const n = await fetch('/api/settings/template', {
+      method: 'GET',
+      headers: t,
+    });
     if (n.ok) {
       const e = await n.json();
-      ((originalTemplateSettings = { ...e }),
+      ((originalTemplateSettings = {
+        ...e,
+      }),
         (document.getElementById('templateName').value = e.name || ''),
         (document.getElementById('templateGreting').value = e.greting || ''),
         (document.getElementById('templateYear').value = e.year || ''),
@@ -353,7 +392,9 @@ async function loadTemplateSettings() {
 async function saveTemplateSettings() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
     const n = {
         name: document.getElementById('templateName').value,
@@ -413,12 +454,19 @@ let originalMusicSettings = {};
 async function loadMusicSettings() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
-    const n = await fetch('/api/settings/music', { method: 'GET', headers: t });
+    const n = await fetch('/api/settings/music', {
+      method: 'GET',
+      headers: t,
+    });
     if (n.ok) {
       const e = await n.json();
-      ((originalMusicSettings = { ...e }),
+      ((originalMusicSettings = {
+        ...e,
+      }),
         (document.getElementById('musicEnabled').checked = e.enabled || !1),
         (document.getElementById('musicAutoPlay').checked = e.auto_play || !1),
         (document.getElementById('musicControlSize').value = e.control_size || 'medium'),
@@ -436,7 +484,9 @@ async function loadMusicSettings() {
 async function saveMusicSettings() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
     const n = {
         enabled: document.getElementById('musicEnabled').checked,
@@ -467,11 +517,13 @@ async function saveMusicSettings() {
 let musicUploadQueue = [],
   isUploading = !1,
   uploadAbortController = null;
+
 function initMusicDragDrop() {
   const e = document.getElementById('musicDropZone'),
     t = document.getElementById('musicFileUpload'),
     n = document.querySelector('.browse-link');
   if (!e || !t) return;
+
   function o(e) {
     (e.preventDefault(), e.stopPropagation());
   }
@@ -524,6 +576,7 @@ function initMusicDragDrop() {
   const i = document.getElementById('cancelUploadBtn');
   i && i.addEventListener('click', cancelBatchUpload);
 }
+
 function handleFileSelect(e) {
   if (!e || 0 === e.length) return;
   const t = Array.from(e).filter(e => {
@@ -554,6 +607,7 @@ function handleFileSelect(e) {
       updateUploadListUI())
     : showToast('没有有效的音频文件', 'warning');
 }
+
 function updateUploadListUI() {
   const e = document.getElementById('musicUploadList'),
     t = document.getElementById('musicUploadItems');
@@ -564,30 +618,40 @@ function updateUploadListUI() {
         (t.innerHTML = musicUploadQueue
           .map(
             (e, t) =>
-              `\n    <div class="upload-item" data-id="${e.id}">\n      <div class="upload-item-cover">\n        <div class="cover-preview ${e.coverFile ? 'has-cover' : ''}" onclick="triggerCoverSelect('${e.id}')">\n          ${e.coverFile ? `<img src="${e.coverPreview}" alt="封面">\n             <div class="cover-remove-btn" onclick="event.stopPropagation(); removeCover('${e.id}')">×</div>` : '<span class="cover-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>️</span>'}\n          <div class="cover-upload-hint">点击上传封面</div>\n        </div>\n        <input type="file" class="cover-input" id="coverInput-${e.id}" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="handleCoverSelect('${e.id}', this)">\n      </div>\n      <div class="upload-item-icon" style="display: none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>\n      <div class="upload-item-info">\n        <div class="upload-item-name">${e.file.name}</div>\n        <div class="upload-item-meta">\n          <span>${formatFileSize(e.file.size)}</span>\n          <span>${e.file.type || 'audio/*'}</span>\n        </div>\n      </div>\n      <div class="upload-item-progress">\n        <div class="progress-bar">\n          <div class="progress-fill" style="width: ${e.progress}%"></div>\n        </div>\n        <div class="progress-text">${e.progress}%</div>\n      </div>\n      <div class="upload-item-status ${e.status}">\n        ${getStatusText(e.status)}\n      </div>\n      <div class="upload-item-action">\n        <button class="remove-upload-btn" onclick="removeUploadItem('${e.id}')" ${'uploading' === e.status ? 'disabled' : ''}>×</button>\n      </div>\n    </div>\n  `
+              `\n    <div class="upload-item" data-id="${e.id}">\n      <div class="upload-item-cover">\n        <div class="cover-preview ${e.coverFile ? 'has-cover' : ''}" onclick="triggerCoverSelect('${e.id}')">\n          ${e.coverFile ? `<img src="${e.coverPreview}" alt="封面">\n             <div class="cover-remove-btn" onclick="event.stopPropagation(); removeCover('${e.id}')">×</div>` : '<span class="cover-placeholder">🖼️</span>'}\n          <div class="cover-upload-hint">点击上传封面</div>\n        </div>\n        <input type="file" class="cover-input" id="coverInput-${e.id}" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="handleCoverSelect('${e.id}', this)">\n      </div>\n      <div class="upload-item-icon" style="display: none;">🎵</div>\n      <div class="upload-item-info">\n        <div class="upload-item-name">${e.file.name}</div>\n        <div class="upload-item-meta">\n          <span>${formatFileSize(e.file.size)}</span>\n          <span>${e.file.type || 'audio/*'}</span>\n        </div>\n      </div>\n      <div class="upload-item-progress">\n        <div class="progress-bar">\n          <div class="progress-fill" style="width: ${e.progress}%"></div>\n        </div>\n        <div class="progress-text">${e.progress}%</div>\n      </div>\n      <div class="upload-item-status ${e.status}">\n        ${getStatusText(e.status)}\n      </div>\n      <div class="upload-item-action">\n        <button class="remove-upload-btn" onclick="removeUploadItem('${e.id}')" ${'uploading' === e.status ? 'disabled' : ''}>×</button>\n      </div>\n    </div>\n  `
           )
           .join('')))
       : (e.style.display = 'none'));
 }
+
 function formatFileSize(e) {
   if (0 === e) return '0 B';
   const t = Math.floor(Math.log(e) / Math.log(1024));
   return Math.round((e / Math.pow(1024, t)) * 100) / 100 + ' ' + ['B', 'KB', 'MB', 'GB'][t];
 }
+
 function getStatusText(e) {
   return (
-    { pending: '等待上传', uploading: '上传中', success: '上传成功', error: '上传失败' }[e] || e
+    {
+      pending: '等待上传',
+      uploading: '上传中',
+      success: '上传成功',
+      error: '上传失败',
+    }[e] || e
   );
 }
+
 function removeUploadItem(e) {
   isUploading
     ? showToast('正在上传中，请先取消上传', 'warning')
     : ((musicUploadQueue = musicUploadQueue.filter(t => t.id != e)), updateUploadListUI());
 }
+
 function triggerCoverSelect(e) {
   const t = document.getElementById(`coverInput-${e}`);
   t && t.click();
 }
+
 function handleCoverSelect(e, t) {
   const n = t.files[0];
   if (!n) return;
@@ -602,6 +666,7 @@ function handleCoverSelect(e, t) {
   }),
     o.readAsDataURL(n));
 }
+
 function removeCover(e) {
   const t = musicUploadQueue.find(t => t.id == e);
   if (t) {
@@ -647,6 +712,7 @@ async function startBatchUpload() {
         updateUploadListUI());
     }, 2e3));
 }
+
 function uploadSingleMusicFile(e, t) {
   return new Promise((n, o) => {
     const a = new FormData();
@@ -687,6 +753,7 @@ function uploadSingleMusicFile(e, t) {
       r.send(a));
   });
 }
+
 function cancelBatchUpload() {
   if (!isUploading) return;
   (uploadAbortController && uploadAbortController.abort(),
@@ -710,9 +777,14 @@ async function uploadMusicFile() {
 async function loadMusicPlaylist() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
-    const n = await fetch('/api/music/playlist', { method: 'GET', headers: t });
+    const n = await fetch('/api/music/playlist', {
+      method: 'GET',
+      headers: t,
+    });
     if (n.ok) {
       updateMusicPlaylistUI(await n.json());
     } else console.error('加载播放列表失败');
@@ -720,6 +792,7 @@ async function loadMusicPlaylist() {
     console.error('加载播放列表失败:', e);
   }
 }
+
 function updateMusicPlaylistUI(e) {
   const t = document.getElementById('musicPlaylistContainer');
   t &&
@@ -730,21 +803,25 @@ function updateMusicPlaylistUI(e) {
             const o = n.match(/^\d+_/);
             return (
               o && (n = n.substring(o[0].length)),
-              `\n    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">\n      <div style="width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center;">\n        ${e.cover_image ? `<img src="${e.cover_image}" alt="${e.title}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>'}\n      </div>\n      <div style="flex: 1;">\n        <div style="font-weight: 500;">${n}</div>\n        <div style="font-size: 0.85em; color: #666;">${e.artist}</div>\n      </div>\n      <div style="font-size: 0.85em; color: #999;">${e.duration}</div>\n      <div style="display: flex; gap: 5px;">\n        <button onclick="editMusicTitle(${e.id}, '${n.replace(/'/g, "\\'")}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">编辑标题</button>\n        <button onclick="changeMusicCover(${e.id})" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">更换封面</button>\n        <button onclick="deleteMusicTrack(${e.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">删除</button>\n      </div>\n    </div>\n    `
+              `\n    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">\n      <div style="width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center;">\n        ${e.cover_image ? `<img src="${e.cover_image}" alt="${e.title}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 24px;">🎵</span>'}\n      </div>\n      <div style="flex: 1;">\n        <div style="font-weight: 500;">${n}</div>\n        <div style="font-size: 0.85em; color: #666;">${e.artist}</div>\n      </div>\n      <div style="font-size: 0.85em; color: #999;">${e.duration}</div>\n      <div style="display: flex; gap: 5px;">\n        <button onclick="editMusicTitle(${e.id}, '${n.replace(/'/g, "\\'")}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">编辑标题</button>\n        <button onclick="changeMusicCover(${e.id})" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">更换封面</button>\n        <button onclick="deleteMusicTrack(${e.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">删除</button>\n      </div>\n    </div>\n    `
             );
           })
           .join(''))
       : (t.innerHTML =
           '<div style="text-align: center; color: #999; padding: 20px;">暂无音乐文件</div>'));
 }
-// 导出为全局函数，供 HTML onclick 使用
-window.deleteMusicTrack = async function deleteMusicTrack(e) {
+async function deleteMusicTrack(e) {
   if (confirm('确定要删除这首音乐吗？'))
     try {
       const t = localStorage.getItem('auth_token'),
-        n = { 'Content-Type': 'application/json' };
+        n = {
+          'Content-Type': 'application/json',
+        };
       t && (n.Authorization = `Bearer ${t}`);
-      const o = await fetch(`/api/music/${e}`, { method: 'DELETE', headers: n });
+      const o = await fetch(`/api/music/${e}`, {
+        method: 'DELETE',
+        headers: n,
+      });
       if (o.ok) (showToast('删除成功！', 'success'), loadMusicPlaylist());
       else {
         const e = await o.json();
@@ -753,9 +830,8 @@ window.deleteMusicTrack = async function deleteMusicTrack(e) {
     } catch (e) {
       (console.error('删除音乐失败:', e), showToast('删除失败，请稍后重试', 'error'));
     }
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.changeMusicCover = async function changeMusicCover(e) {
+}
+async function changeMusicCover(e) {
   const t = document.createElement('input');
   ((t.type = 'file'),
     (t.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp'),
@@ -771,7 +847,11 @@ window.changeMusicCover = async function changeMusicCover(e) {
         const t = localStorage.getItem('auth_token'),
           n = {};
         t && (n.Authorization = `Bearer ${t}`);
-        const a = await fetch(`/api/music/${e}/cover`, { method: 'POST', body: o, headers: n });
+        const a = await fetch(`/api/music/${e}/cover`, {
+          method: 'POST',
+          body: o,
+          headers: n,
+        });
         if (a.ok) {
           await a.json();
           (showToast('封面更新成功！', 'success'), loadMusicPlaylist());
@@ -784,9 +864,9 @@ window.changeMusicCover = async function changeMusicCover(e) {
       }
     }),
     t.click());
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.editMusicTitle = function editMusicTitle(e, t) {
+}
+
+function editMusicTitle(e, t) {
   const n = document.createElement('div');
   ((n.style.cssText =
     '\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    background: rgba(0, 0, 0, 0.5);\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    z-index: 10000;\n  '),
@@ -803,11 +883,15 @@ window.editMusicTitle = function editMusicTitle(e, t) {
       if (t)
         try {
           const o = localStorage.getItem('auth_token'),
-            a = { 'Content-Type': 'application/json' };
+            a = {
+              'Content-Type': 'application/json',
+            };
           o && (a.Authorization = `Bearer ${o}`);
           const d = await fetch(`/api/music/${e}?action=title`, {
             method: 'PUT',
-            body: JSON.stringify({ title: t }),
+            body: JSON.stringify({
+              title: t,
+            }),
             headers: a,
           });
           if (d.ok) {
@@ -832,15 +916,20 @@ window.editMusicTitle = function editMusicTitle(e, t) {
       (document.body.removeChild(n), document.removeEventListener('keydown', i));
   };
   document.addEventListener('keydown', i);
-};
+}
 let mainCards = [],
   subCards = [];
 async function loadMainCards() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
-    const n = await fetch('/api/about/main-cards/admin', { method: 'GET', headers: t });
+    const n = await fetch('/api/about/main-cards/admin', {
+      method: 'GET',
+      headers: t,
+    });
     n.ok
       ? ((mainCards = await n.json()), updateMainCardsTable(), updateMainCardFilter())
       : showToast('加载主卡片失败', 'error');
@@ -848,6 +937,7 @@ async function loadMainCards() {
     (console.error('加载主卡片失败:', e), showToast('加载主卡片失败', 'error'));
   }
 }
+
 function updateMainCardsTable() {
   const e = document.getElementById('mainCardsTableBody');
   e &&
@@ -861,9 +951,11 @@ function updateMainCardsTable() {
       : (e.innerHTML =
           '<tr><td colspan="7" style="text-align: center; color: #999;">暂无主卡片</td></tr>'));
 }
+
 function getSubCardCount(e) {
   return subCards.filter(t => t.main_card_id === e).length;
 }
+
 function updateMainCardFilter() {
   const e = document.getElementById('subCardMainCardFilter');
   if (!e) return;
@@ -876,9 +968,14 @@ function updateMainCardFilter() {
 async function loadSubCards() {
   try {
     const e = localStorage.getItem('auth_token'),
-      t = { 'Content-Type': 'application/json' };
+      t = {
+        'Content-Type': 'application/json',
+      };
     e && (t.Authorization = `Bearer ${e}`);
-    const n = await fetch('/api/about/sub-cards/admin', { method: 'GET', headers: t });
+    const n = await fetch('/api/about/sub-cards/admin', {
+      method: 'GET',
+      headers: t,
+    });
     n.ok
       ? ((subCards = await n.json()), updateSubCardsTable(), updateMainCardsTable())
       : showToast('加载次卡片失败', 'error');
@@ -886,6 +983,7 @@ async function loadSubCards() {
     (console.error('加载次卡片失败:', e), showToast('加载次卡片失败', 'error'));
   }
 }
+
 function updateSubCardsTable() {
   const e = document.getElementById('subCardsTableBody');
   if (!e) return;
@@ -902,17 +1000,15 @@ function updateSubCardsTable() {
       : (e.innerHTML =
           '<tr><td colspan="7" style="text-align: center; color: #999;">暂无次卡片</td></tr>'));
 }
-// 导出为全局函数，供 HTML onclick 使用
-window.addMainCard = async function addMainCard() {
+async function addMainCard() {
   ((document.getElementById('mainCardModalTitle').textContent = '添加主卡片'),
     document.getElementById('mainCardForm').reset(),
     (document.getElementById('mainCardId').value = ''),
     (document.getElementById('mainCardSortOrder').value = mainCards.length + 1),
     (document.getElementById('mainCardEnabled').checked = !0),
     openModal('mainCardModal'));
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.editMainCard = async function editMainCard(e) {
+}
+async function editMainCard(e) {
   const t = mainCards.find(t => t.id === e);
   t &&
     ((document.getElementById('mainCardModalTitle').textContent = '编辑主卡片'),
@@ -924,24 +1020,27 @@ window.editMainCard = async function editMainCard(e) {
     (document.getElementById('mainCardSortOrder').value = t.sort_order || 0),
     (document.getElementById('mainCardEnabled').checked = t.is_enabled),
     openModal('mainCardModal'));
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.deleteMainCard = async function deleteMainCard(e) {
+}
+async function deleteMainCard(e) {
   ((currentAction = 'delete-main-card'),
     (currentItemId = e),
     (document.getElementById('confirmMessage').textContent =
       '确定要删除这个主卡片吗？所有关联的次卡片也会被删除。此操作不可撤销。'),
     openModal('confirmModal'));
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.toggleMainCardEnabled = async function toggleMainCardEnabled(e, t) {
+}
+async function toggleMainCardEnabled(e, t) {
   try {
     const n = localStorage.getItem('auth_token');
     (
       await fetch(`/api/about/main-cards/enabled?id=${e}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${n}` },
-        body: JSON.stringify({ enabled: !t }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${n}`,
+        },
+        body: JSON.stringify({
+          enabled: !t,
+        }),
       })
     ).ok
       ? loadMainCards()
@@ -949,7 +1048,7 @@ window.toggleMainCardEnabled = async function toggleMainCardEnabled(e, t) {
   } catch (e) {
     (console.error('切换状态失败:', e), showToast('操作失败', 'error'));
   }
-};
+}
 async function addSubCard() {
   const e = document.getElementById('subCardMainCardFilter').value;
   if (!e) return void showToast('请先选择一个主卡片', 'warning');
@@ -966,8 +1065,7 @@ async function addSubCard() {
     (document.getElementById('subCardEnabled').checked = !0),
     openModal('subCardModal'));
 }
-// 导出为全局函数，供 HTML onclick 使用
-window.editSubCard = async function editSubCard(e) {
+async function editSubCard(e) {
   const t = subCards.find(t => t.id === e);
   if (!t) return;
   ((document.getElementById('subCardModalTitle').textContent = '编辑次卡片'),
@@ -985,24 +1083,27 @@ window.editSubCard = async function editSubCard(e) {
     (document.getElementById('subCardSortOrder').value = t.sort_order || 0),
     (document.getElementById('subCardEnabled').checked = t.is_enabled),
     openModal('subCardModal'));
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.deleteSubCard = async function deleteSubCard(e) {
+}
+async function deleteSubCard(e) {
   ((currentAction = 'delete-sub-card'),
     (currentItemId = e),
     (document.getElementById('confirmMessage').textContent =
       '确定要删除这个次卡片吗？此操作不可撤销。'),
     openModal('confirmModal'));
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.toggleSubCardEnabled = async function toggleSubCardEnabled(e, t) {
+}
+async function toggleSubCardEnabled(e, t) {
   try {
     const n = localStorage.getItem('auth_token');
     (
       await fetch(`/api/about/sub-cards/enabled?id=${e}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${n}` },
-        body: JSON.stringify({ enabled: !t }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${n}`,
+        },
+        body: JSON.stringify({
+          enabled: !t,
+        }),
       })
     ).ok
       ? loadSubCards()
@@ -1010,7 +1111,7 @@ window.toggleSubCardEnabled = async function toggleSubCardEnabled(e, t) {
   } catch (e) {
     (console.error('切换状态失败:', e), showToast('操作失败', 'error'));
   }
-};
+}
 document.addEventListener('DOMContentLoaded', function () {
   const e = document.getElementById('addMainCardBtn');
   e && e.addEventListener('click', addMainCard);
@@ -1072,6 +1173,7 @@ mainCardForm &&
     }
   });
 const subCardForm = document.getElementById('subCardForm');
+
 function escapeHtml(e) {
   if (!e) return '';
   const t = document.createElement('div');
@@ -1125,8 +1227,12 @@ let friendLinks = [],
   selectedFriendLinkIds = [];
 async function loadFriendLinks() {
   try {
-    const e = { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
-      t = await fetch('/api/admin/friend-links?include_disabled=true', { headers: e });
+    const e = {
+        Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+      },
+      t = await fetch('/api/admin/friend-links?include_disabled=true', {
+        headers: e,
+      });
     if (t.ok) {
       const e = await t.json();
       e.success
@@ -1137,6 +1243,7 @@ async function loadFriendLinks() {
     (console.error('加载友链列表失败:', e), showToast('加载友链列表失败', 'error'));
   }
 }
+
 function updateFriendLinksTable() {
   const e = document.getElementById('friendLinksTableBody');
   if (0 === friendLinks.length)
@@ -1159,6 +1266,7 @@ function updateFriendLinksTable() {
     updateBatchDeleteButton(),
     updateSelectAllCheckbox());
 }
+
 function toggleFriendLinkSelection(e) {
   (console.log('toggleFriendLinkSelection called with id:', e),
     console.log('Current selectedFriendLinkIds:', selectedFriendLinkIds));
@@ -1170,6 +1278,7 @@ function toggleFriendLinkSelection(e) {
     updateBatchDeleteButton(),
     updateSelectAllCheckbox());
 }
+
 function toggleSelectAllFriendLinks() {
   const e = document.getElementById('selectAllFriendLinks');
   ((selectedFriendLinkIds = e.checked ? friendLinks.map(e => e.id) : []),
@@ -1178,6 +1287,7 @@ function toggleSelectAllFriendLinks() {
     }),
     updateBatchDeleteButton());
 }
+
 function updateSelectAllCheckbox() {
   const e = document.getElementById('selectAllFriendLinks'),
     t = document.querySelectorAll('.friend-link-checkbox');
@@ -1185,6 +1295,7 @@ function updateSelectAllCheckbox() {
   ((e.disabled = !1),
     (e.checked = t.length > 0 && selectedFriendLinkIds.length === friendLinks.length));
 }
+
 function updateBatchDeleteButton() {
   const e = document.getElementById('batchDeleteFriendLinksBtn'),
     t = document.getElementById('friendLinkSelectedCount');
@@ -1199,8 +1310,13 @@ async function batchDeleteFriendLinks() {
         const e = localStorage.getItem('auth_token'),
           t = await fetch('/api/admin/friend-links/batch-delete', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${e}` },
-            body: JSON.stringify({ ids: selectedFriendLinkIds }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${e}`,
+            },
+            body: JSON.stringify({
+              ids: selectedFriendLinkIds,
+            }),
           }),
           n = await t.json();
         n.success
@@ -1214,6 +1330,7 @@ async function batchDeleteFriendLinks() {
       }
   } else showToast('请先选择要删除的友链', 'warning');
 }
+
 function openAddFriendLinkModal() {
   ((document.getElementById('friendLinkModalTitle').textContent = '添加友情链接'),
     (document.getElementById('friendLinkId').value = ''),
@@ -1225,8 +1342,8 @@ function openAddFriendLinkModal() {
     (document.getElementById('friendLinkEnabled').checked = !0),
     openModal('friendLinkModal'));
 }
-// 导出为全局函数，供 HTML onclick 使用
-window.openEditFriendLinkModal = function openEditFriendLinkModal(e) {
+
+function openEditFriendLinkModal(e) {
   const t = friendLinks.find(t => t.id === e);
   t
     ? ((document.getElementById('friendLinkModalTitle').textContent = '编辑友情链接'),
@@ -1239,7 +1356,7 @@ window.openEditFriendLinkModal = function openEditFriendLinkModal(e) {
       (document.getElementById('friendLinkEnabled').checked = t.is_enabled),
       openModal('friendLinkModal'))
     : showToast('友链不存在', 'error');
-};
+}
 async function saveFriendLink(e) {
   e.preventDefault();
   const t = document.getElementById('friendLinkId').value,
@@ -1260,7 +1377,11 @@ async function saveFriendLink(e) {
         },
         a = n ? `/api/admin/friend-links/${t}` : '/api/admin/friend-links',
         d = n ? 'PUT' : 'POST',
-        i = await fetch(a, { method: d, headers: e, body: JSON.stringify(o) }),
+        i = await fetch(a, {
+          method: d,
+          headers: e,
+          body: JSON.stringify(o),
+        }),
         r = await i.json();
       r.success
         ? (showToast(n ? '友链更新成功' : '友链添加成功', 'success'),
@@ -1272,8 +1393,7 @@ async function saveFriendLink(e) {
     }
   else showToast('昵称和链接地址不能为空', 'error');
 }
-// 导出为全局函数，供 HTML onclick 使用
-window.toggleFriendLinkStatus = async function toggleFriendLinkStatus(e) {
+async function toggleFriendLinkStatus(e) {
   const t = friendLinks.find(t => t.id === e);
   if (t)
     try {
@@ -1284,7 +1404,10 @@ window.toggleFriendLinkStatus = async function toggleFriendLinkStatus(e) {
         o = await fetch('/api/admin/friend-links/batch-update-status', {
           method: 'POST',
           headers: n,
-          body: JSON.stringify({ ids: [e], is_enabled: !t.is_enabled }),
+          body: JSON.stringify({
+            ids: [e],
+            is_enabled: !t.is_enabled,
+          }),
         }),
         a = await o.json();
       a.success
@@ -1293,16 +1416,18 @@ window.toggleFriendLinkStatus = async function toggleFriendLinkStatus(e) {
     } catch (e) {
       (console.error('切换状态失败:', e), showToast('操作失败，请重试', 'error'));
     }
-};
-// 导出为全局函数，供 HTML onclick 使用
-window.deleteFriendLink = function deleteFriendLink(e) {
+}
+
+function deleteFriendLink(e) {
   const t = friendLinks.find(t => t.id === e);
   if (!t) return;
   if (!confirm(`确定要删除友链 "${t.nickname}" 吗？\n此操作不可恢复！`)) return;
   const n = localStorage.getItem('auth_token');
   fetch(`/api/admin/friend-links/${e}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${n}` },
+    headers: {
+      Authorization: `Bearer ${n}`,
+    },
   })
     .then(e => e.json())
     .then(e => {
@@ -1313,7 +1438,8 @@ window.deleteFriendLink = function deleteFriendLink(e) {
     .catch(e => {
       (console.error('删除友链失败:', e), showToast('删除失败，请重试', 'error'));
     });
-};
+}
+
 function initializeFriendLinksManagement() {
   const e = document.getElementById('addFriendLinkBtn');
   e && e.addEventListener('click', openAddFriendLinkModal);
@@ -1371,7 +1497,9 @@ const FileManager = {
     async loadSubDirectories(e, t) {
       try {
         const n = await fetch(`/api/files?path=${encodeURIComponent(e)}`, {
-            headers: { Authorization: this.getAuthHeader() },
+            headers: {
+              Authorization: this.getAuthHeader(),
+            },
           }),
           o = await n.json();
         if (o.success && o.data.files) {
@@ -1397,8 +1525,8 @@ const FileManager = {
       const a = document.createElement('span');
       ((a.className = 'fm-tree-icon'),
         (a.innerHTML = t
-          ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
-          : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>`),
+          ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'
+          : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>'),
         o.appendChild(a));
       const d = document.createElement('span');
       ((d.textContent = e), o.appendChild(d));
@@ -1416,7 +1544,9 @@ const FileManager = {
     async loadFiles() {
       try {
         const e = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`, {
-            headers: { Authorization: this.getAuthHeader() },
+            headers: {
+              Authorization: this.getAuthHeader(),
+            },
           }),
           t = await e.json();
         t.success
@@ -1453,13 +1583,12 @@ const FileManager = {
         }));
     },
     createFileItem(e) {
-      let t = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+      let t = '📄';
       e.is_dir
-        ? (t = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`)
+        ? (t = '📁')
         : ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(e.extension)
-          ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>️'">`)
-          : '.md' === e.extension &&
-            (t = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`);
+          ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='🖼️'">`)
+          : '.md' === e.extension && (t = '📝');
       const n = this.formatFileSize(e.size);
       return `\n      <div class="fm-file-item" data-path="${e.path}" data-is-dir="${e.is_dir}">\n        <div class="fm-file-icon">${t}</div>\n        <div class="fm-file-name">${e.name}</div>\n        <div class="fm-file-meta">${e.is_dir ? '文件夹' : n}</div>\n      </div>\n    `;
     },
@@ -1549,7 +1678,9 @@ const FileManager = {
     async downloadFile(e) {
       try {
         const t = await fetch(`/api/files/download?path=${encodeURIComponent(e)}`, {
-          headers: { Authorization: this.getAuthHeader() },
+          headers: {
+            Authorization: this.getAuthHeader(),
+          },
         });
         if (!t.ok) {
           const e = await t.json();
@@ -1570,7 +1701,10 @@ const FileManager = {
       }
     },
     showContextMenu(e, t, n) {
-      this.selectedFile = { path: t, isDir: n };
+      this.selectedFile = {
+        path: t,
+        isDir: n,
+      };
       const o = document.querySelector('.fm-context-menu');
       o && o.remove();
       const a = document.createElement('div');
@@ -1583,14 +1717,23 @@ const FileManager = {
         {
           action: 'open',
           label: '打开',
-          icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>`,
+          icon: '📂',
         },
-        { action: 'download', label: '下载', icon: '⬇️', hide: n },
-        { action: 'rename', label: '重命名', icon: '✏️' },
+        {
+          action: 'download',
+          label: '下载',
+          icon: '⬇️',
+          hide: n,
+        },
+        {
+          action: 'rename',
+          label: '重命名',
+          icon: '✏️',
+        },
         {
           action: 'delete',
           label: '删除',
-          icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>️',
+          icon: '🗑️',
           danger: !0,
         },
       ].forEach(e => {
@@ -1647,7 +1790,9 @@ const FileManager = {
           e.append('file', t);
           const n = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`, {
             method: 'POST',
-            headers: { Authorization: this.getAuthHeader() },
+            headers: {
+              Authorization: this.getAuthHeader(),
+            },
             body: e,
           });
           (await n.json()).success
@@ -1666,8 +1811,14 @@ const FileManager = {
       try {
         const t = await fetch('/api/files/create-dir', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: this.getAuthHeader() },
-            body: JSON.stringify({ path: this.currentPath, dir_name: e }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: this.getAuthHeader(),
+            },
+            body: JSON.stringify({
+              path: this.currentPath,
+              dir_name: e,
+            }),
           }),
           n = await t.json();
         n.success
@@ -1688,8 +1839,14 @@ const FileManager = {
         try {
           const t = await fetch('/api/files', {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json', Authorization: this.getAuthHeader() },
-              body: JSON.stringify({ old_path: this.selectedFile.path, new_name: e }),
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: this.getAuthHeader(),
+              },
+              body: JSON.stringify({
+                old_path: this.selectedFile.path,
+                new_name: e,
+              }),
             }),
             n = await t.json();
           n.success
@@ -1709,7 +1866,9 @@ const FileManager = {
         try {
           const e = await fetch(`/api/files?path=${encodeURIComponent(this.selectedFile.path)}`, {
               method: 'DELETE',
-              headers: { Authorization: this.getAuthHeader() },
+              headers: {
+                Authorization: this.getAuthHeader(),
+              },
             }),
             t = await e.json();
           t.success
@@ -1747,7 +1906,11 @@ const FileManager = {
         const e = localStorage.getItem('auth_token'),
           t = await fetch('/api/admin/attachments', {
             method: 'POST',
-            headers: e ? { Authorization: `Bearer ${e}` } : {},
+            headers: e
+              ? {
+                  Authorization: `Bearer ${e}`,
+                }
+              : {},
             body: l,
           }),
           n = await t.json();
