@@ -6,11 +6,7 @@
   /><meta name="mobile-web-app-capable" content="yes" /><meta
     name="apple-mobile-web-app-status-bar-style"
     content="black-translucent"
-  /><meta
-    name="theme-color"
-    content="#ffffff"
-    media="(prefers-color-scheme: light)"
-  /><meta
+  /><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" /><meta
     name="theme-color"
     content="#000000"
     media="(prefers-color-scheme: dark)"
@@ -37,9 +33,7 @@
     onload="this.media = 'all'"
   />
   <nav id="mainNav">
-    <button id="userCenterToggle">
-      个人中心<span class="shortcut-hint">5</span>
-    </button>
+    <button id="userCenterToggle">个人中心<span class="shortcut-hint">5</span></button>
     <a href="/">主页</a> <a href="/passage">文章</a> <a href="/about">关于</a>
     <a href="/friends">友链<span class="shortcut-hint">f</span></a>
     <a href="/markdown-editor">编辑器<span class="shortcut-hint">6</span></a>
@@ -101,9 +95,7 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path
-                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-              ></path>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="16" y1="13" x2="8" y2="13"></line>
               <line x1="16" y1="17" x2="8" y2="17"></line>
@@ -143,13 +135,11 @@
         <div class="archive-filter">
           <div class="filter-title">筛选归档：</div>
           <div class="filter-options" id="filterOptions">
-            <button class="filter-btn active" data-filter="all">
-              全部文章
-            </button>
+            <button class="filter-btn active" data-filter="all">全部文章</button>
           </div>
         </div>
         <div id="archiveLeft"><div class="loading">加载中...</div></div>
-        <div class="pagination-container" id="paginationContainer" style="display: none;">
+        <div class="pagination-container" id="paginationContainer" style="display: none">
           <button class="pagination-btn" id="prevBtn" disabled>上一页</button>
           <span class="pagination-info" id="paginationInfo">1 / 1</span>
           <button class="pagination-btn" id="nextBtn" disabled>下一页</button>
@@ -165,7 +155,20 @@
           <button
             class="reset-all-btn active"
             id="resetYearBtn"
-            style="background: rgba(0, 0, 0, 0); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 16px; border-radius: 20px; color: rgba(255, 255, 255, 0.9); cursor: pointer; transition: all 0.3s ease; font-size: 0.9em; margin-bottom: 15px; display: inline-block"
+            style="
+              background: rgba(0, 0, 0, 0);
+              backdrop-filter: blur(20px) saturate(180%);
+              -webkit-backdrop-filter: blur(20px) saturate(180%);
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              padding: 8px 16px;
+              border-radius: 20px;
+              color: rgba(255, 255, 255, 0.9);
+              cursor: pointer;
+              transition: all 0.3s ease;
+              font-size: 0.9em;
+              margin-bottom: 15px;
+              display: inline-block;
+            "
           >
             全部年份
           </button>
@@ -178,7 +181,20 @@
           <button
             class="reset-all-btn active"
             id="resetTagBtn"
-            style="background: rgba(0, 0, 0, 0); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.3); padding: 8px 16px; border-radius: 20px; color: rgba(255, 255, 255, 0.9); cursor: pointer; transition: all 0.3s ease; font-size: 0.9em; margin-bottom: 15px; display: inline-block"
+            style="
+              background: rgba(0, 0, 0, 0);
+              backdrop-filter: blur(20px) saturate(180%);
+              -webkit-backdrop-filter: blur(20px) saturate(180%);
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              padding: 8px 16px;
+              border-radius: 20px;
+              color: rgba(255, 255, 255, 0.9);
+              cursor: pointer;
+              transition: all 0.3s ease;
+              font-size: 0.9em;
+              margin-bottom: 15px;
+              display: inline-block;
+            "
           >
             全部标签
           </button>
@@ -191,7 +207,17 @@
   </main>
   <!-- 最新文章通知按钮 -->
   <div id="latest-post-btn" class="float-btn latest-post-btn" title="最新文章">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
     </svg>
     <span id="latest-post-badge" class="latest-post-badge hidden"></span>
@@ -199,7 +225,17 @@
 
   <!-- 回到顶部按钮 -->
   <button class="float-btn back-to-top" id="backToTop" title="回到顶部">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
       <path d="M12 19V5"></path>
       <path d="M5 12l7-7 7 7"></path>
     </svg>
@@ -207,9 +243,21 @@
 
   <!-- 快捷操作按钮 -->
   <div class="quick-actions-btn" id="quickActionsBtn" title="快捷操作">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
       <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+      ></path>
     </svg>
   </div>
 
@@ -217,14 +265,34 @@
   <div class="quick-actions-panel" id="quickActionsPanel">
     <div class="quick-actions-content">
       <a href="/" class="quick-action-item">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
         <span>主页</span>
       </a>
       <a href="/passage" class="quick-action-item">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
           <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -234,13 +302,35 @@
         <span>文章</span>
       </a>
       <a href="/collect" class="quick-action-item">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+          ></path>
         </svg>
         <span>归档</span>
       </a>
       <a href="/about" class="quick-action-item">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="16" x2="12" y2="12"></line>
           <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -248,7 +338,17 @@
         <span>关于</span>
       </a>
       <a href="/friends" class="quick-action-item">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
           <circle cx="9" cy="7" r="4"></circle>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -257,7 +357,17 @@
         <span>友链</span>
       </a>
       <a href="/markdown-editor" class="quick-action-item">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
         </svg>
@@ -270,7 +380,17 @@
   <div id="latest-post-panel" class="latest-post-panel">
     <div class="latest-post-header">
       <div class="latest-post-title">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M4 11a9 9 0 0 1 9 9"></path>
           <path d="M4 4a16 16 0 0 1 16 16"></path>
           <circle cx="5" cy="19" r="1"></circle>
@@ -315,16 +435,16 @@
     async function fetchArchiveData() {
       try {
         // 请求所有文章用于分页（使用较大的 limit）
-        const e = await fetch("/api/passages?page=1&limit=1000"),
+        const e = await fetch('/api/passages?page=1&limit=1000'),
           t = await e.json();
         t.success && (archiveData.passages = t.data || []);
-        const a = await fetch("/api/archive"),
+        const a = await fetch('/api/archive'),
           n = await a.json();
         n.success && (archiveData.archive = n.data || []);
-        const c = await fetch("/api/tags"),
+        const c = await fetch('/api/tags'),
           s = await c.json();
         s.success && (archiveData.tags = s.data || []);
-        const i = await fetch("/api/categories"),
+        const i = await fetch('/api/categories'),
           o = await i.json();
         (o.success && (archiveData.categories = o.data || []),
           renderCategories(),
@@ -333,13 +453,11 @@
           renderTagsCloud(),
           updateTotalCount());
       } catch (e) {
-        (console.error("获取数据失败:", e),
-          (document.querySelector(".archive-left #archiveLeft").innerHTML =
+        (console.error('获取数据失败:', e),
+          (document.querySelector('.archive-left #archiveLeft').innerHTML =
             '<div class="error">加载失败，请刷新页面重试</div>'),
-          (document.getElementById("timeline").innerHTML =
-            '<div class="error">加载失败</div>'),
-          (document.getElementById("tagsCloud").innerHTML =
-            '<div class="error">加载失败</div>'));
+          (document.getElementById('timeline').innerHTML = '<div class="error">加载失败</div>'),
+          (document.getElementById('tagsCloud').innerHTML = '<div class="error">加载失败</div>'));
       }
     }
     // 旧的无限滚动逻辑已被分页控制替代
@@ -347,12 +465,12 @@
 
     // 分页控制函数
     function updatePagination() {
-      const paginationContainer = document.getElementById("paginationContainer");
-      const prevBtn = document.getElementById("prevBtn");
-      const nextBtn = document.getElementById("nextBtn");
-      const paginationInfo = document.getElementById("paginationInfo");
-      const jumpPageInput = document.getElementById("jumpPageInput");
-      const jumpPageBtn = document.getElementById("jumpPageBtn");
+      const paginationContainer = document.getElementById('paginationContainer');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const paginationInfo = document.getElementById('paginationInfo');
+      const jumpPageInput = document.getElementById('jumpPageInput');
+      const jumpPageBtn = document.getElementById('jumpPageBtn');
 
       if (!paginationContainer) return;
 
@@ -361,11 +479,11 @@
 
       // 只有多于 1 页时才显示分页控件
       if (totalPages <= 1) {
-        paginationContainer.style.display = "none";
+        paginationContainer.style.display = 'none';
         return;
       }
 
-      paginationContainer.style.display = "flex";
+      paginationContainer.style.display = 'flex';
 
       // 更新页码信息
       paginationInfo.textContent = `${collectCurrentPage} / ${totalPages}`;
@@ -389,41 +507,41 @@
       renderArchive();
 
       // 滚动到顶部
-      const archiveLeft = document.querySelector(".archive-left #archiveLeft");
+      const archiveLeft = document.querySelector('.archive-left #archiveLeft');
       if (archiveLeft) {
-        archiveLeft.scrollIntoView({ behavior: "smooth", block: "start" });
+        archiveLeft.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
     // 绑定分页事件
     function setupPaginationEvents() {
-      const prevBtn = document.getElementById("prevBtn");
-      const nextBtn = document.getElementById("nextBtn");
-      const jumpPageInput = document.getElementById("jumpPageInput");
-      const jumpPageBtn = document.getElementById("jumpPageBtn");
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const jumpPageInput = document.getElementById('jumpPageInput');
+      const jumpPageBtn = document.getElementById('jumpPageBtn');
 
       if (prevBtn) {
-        prevBtn.addEventListener("click", () => {
+        prevBtn.addEventListener('click', () => {
           changePage(collectCurrentPage - 1);
         });
       }
 
       if (nextBtn) {
-        nextBtn.addEventListener("click", () => {
+        nextBtn.addEventListener('click', () => {
           changePage(collectCurrentPage + 1);
         });
       }
 
       if (jumpPageBtn) {
-        jumpPageBtn.addEventListener("click", () => {
+        jumpPageBtn.addEventListener('click', () => {
           const page = parseInt(jumpPageInput.value);
           changePage(page);
         });
       }
 
       if (jumpPageInput) {
-        jumpPageInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") {
+        jumpPageInput.addEventListener('keypress', e => {
+          if (e.key === 'Enter') {
             const page = parseInt(jumpPageInput.value);
             changePage(page);
           }
@@ -431,19 +549,17 @@
       }
     }
     function renderCategories() {
-      const e = document.getElementById("filterOptions");
-      if (!archiveData.categories || 0 === archiveData.categories.length)
-        return;
-      let t =
-        '<button class="filter-btn active" data-filter="all">全部文章</button>';
-      (archiveData.categories.forEach((e) => {
+      const e = document.getElementById('filterOptions');
+      if (!archiveData.categories || 0 === archiveData.categories.length) return;
+      let t = '<button class="filter-btn active" data-filter="all">全部文章</button>';
+      (archiveData.categories.forEach(e => {
         t += `<button class="filter-btn" data-filter="${e.name}">${e.name}</button>`;
       }),
         (e.innerHTML = t),
         bindFilterEvents());
     }
     function renderArchive() {
-      const e = document.querySelector(".archive-left #archiveLeft");
+      const e = document.querySelector('.archive-left #archiveLeft');
       const dataToRender = filteredData.length > 0 ? filteredData : archiveData.passages;
 
       if (!dataToRender || 0 === dataToRender.length)
@@ -451,7 +567,7 @@
 
       // 按年份分组
       const t = {};
-      dataToRender.forEach((article) => {
+      dataToRender.forEach(article => {
         const year = new Date(article.created_at).getFullYear();
         (t[year] || (t[year] = []), t[year].push(article));
       });
@@ -460,10 +576,10 @@
       const allArticles = [];
       Object.keys(t)
         .sort((e, t) => t - e)
-        .forEach((year) => {
+        .forEach(year => {
           t[year]
             .sort((e, t) => new Date(t.created_at) - new Date(e.created_at))
-            .forEach((article) => {
+            .forEach(article => {
               article._year = year;
               allArticles.push(article);
             });
@@ -483,46 +599,46 @@
 
       // 按年份分组当前页的文章
       const pageByYear = {};
-      pageArticles.forEach((article) => {
+      pageArticles.forEach(article => {
         const year = article._year;
         (pageByYear[year] || (pageByYear[year] = []), pageByYear[year].push(article));
       });
 
       // 渲染文章
-      let n = "";
+      let n = '';
       Object.keys(pageByYear)
         .sort((e, t) => t - e)
-        .forEach((year) => {
+        .forEach(year => {
           n += `<div class="archive-section">\n      <h2>${year}年 文章</h2>`;
-          pageByYear[year].forEach((t) => {
+          pageByYear[year].forEach(t => {
             const a = new Date(t.created_at),
-              c = a.toISOString().split("T")[0];
+              c = a.toISOString().split('T')[0];
             let s = [];
-            if ("string" == typeof t.tags)
+            if ('string' == typeof t.tags)
               try {
                 s = JSON.parse(t.tags);
               } catch (e) {
                 s = [];
               }
             else Array.isArray(t.tags) && (s = t.tags);
-            const i = s.join(", "),
-              o = String(a.getMonth() + 1).padStart(2, "0"),
-              r = String(a.getDate()).padStart(2, "0"),
+            const i = s.join(', '),
+              o = String(a.getMonth() + 1).padStart(2, '0'),
+              r = String(a.getDate()).padStart(2, '0'),
               l = `${year}/${o}/${r}/${sanitizeTitle(t.title)}.md`;
-            let d = "";
-            d = `<img src="${t.cover_image && "" !== t.cover_image.trim() ? t.cover_image : "/img/passage-cover.webp"}" alt="${t.title}" class="document-cover" loading="lazy">`;
-            n += `\n        <div class="document-card has-cover" data-tags="${i}" data-category="${t.category || ""}" data-id="${t.id}" data-markdown-path="${l}">\n          ${d}\n          <div class="document-card-content">\n            <div class="document-header">\n              <h3 class="document-title">\n                <a href="/passage#${encodeURIComponent(t.title)}" class="document-link">${t.title}</a>\n              </h3>\n              <div class="document-date">${c}</div>\n            </div>\n            <p class="document-excerpt">${sanitizeUTF8(t.summary) || "暂无摘要"}</p>\n            <div class="document-tags">\n              ${s.map((e) => `<span class="tag">${e}</span>`).join("")}\n            </div>\n          </div>\n        </div>`;
+            let d = '';
+            d = `<img src="${t.cover_image && '' !== t.cover_image.trim() ? t.cover_image : '/img/passage-cover.webp'}" alt="${t.title}" class="document-cover" loading="lazy">`;
+            n += `\n        <div class="document-card has-cover" data-tags="${i}" data-category="${t.category || ''}" data-id="${t.id}" data-markdown-path="${l}">\n          ${d}\n          <div class="document-card-content">\n            <div class="document-header">\n              <h3 class="document-title">\n                <a href="/passage#${encodeURIComponent(t.title)}" class="document-link">${t.title}</a>\n              </h3>\n              <div class="document-date">${c}</div>\n            </div>\n            <p class="document-excerpt">${sanitizeUTF8(t.summary) || '暂无摘要'}</p>\n            <div class="document-tags">\n              ${s.map(e => `<span class="tag">${e}</span>`).join('')}\n            </div>\n          </div>\n        </div>`;
           });
-          n += "</div>";
+          n += '</div>';
         });
 
       e.innerHTML = n;
 
       // 绑定点击事件
-      document.querySelectorAll(".document-card").forEach((card) => {
-        card.addEventListener("click", function (e) {
-          if (e.target.classList.contains("tag")) return;
-          const link = this.querySelector(".document-link");
+      document.querySelectorAll('.document-card').forEach(card => {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('tag')) return;
+          const link = this.querySelector('.document-link');
           link && (window.location.href = link.href);
         });
       });
@@ -531,38 +647,38 @@
       updatePagination();
     }
     function renderTimeline() {
-      const e = document.getElementById("timeline");
+      const e = document.getElementById('timeline');
       if (!archiveData.archive || 0 === archiveData.archive.length)
         return void (e.innerHTML = '<div class="empty">暂无数据</div>');
       const t = {};
-      archiveData.passages.forEach((e) => {
+      archiveData.passages.forEach(e => {
         const a = new Date(e.created_at).getFullYear();
         t[a] = (t[a] || 0) + 1;
       });
       const a = Math.max(...Object.values(t)),
         n = Object.keys(t).sort((e, t) => t - e);
-      let c = "";
-      (n.forEach((e) => {
+      let c = '';
+      (n.forEach(e => {
         const n = t[e];
         c += `\n      <div class="timeline-item">\n        <div class="timeline-year">${e}年</div>\n        <div class="timeline-count">${n}篇文章</div>\n        <div class="timeline-bar">\n          <div class="timeline-fill" style="width: ${(n / a) * 100}%"></div>\n        </div>\n      </div>`;
       }),
         (e.innerHTML = c),
-        document.querySelectorAll(".timeline-year").forEach((e) => {
-          e.addEventListener("click", function () {
-            const year = this.textContent.trim().replace("年", "");
+        document.querySelectorAll('.timeline-year').forEach(e => {
+          e.addEventListener('click', function () {
+            const year = this.textContent.trim().replace('年', '');
             filterByYear(year);
-            document.querySelectorAll(".timeline-year").forEach((item) => {
-              item.style.color = "rgba(255, 255, 255, 0.9)";
-              item.style.fontWeight = "700";
+            document.querySelectorAll('.timeline-year').forEach(item => {
+              item.style.color = 'rgba(255, 255, 255, 0.9)';
+              item.style.fontWeight = '700';
             });
-            this.style.color = "#007bff";
-            this.style.fontWeight = "900";
-            this.style.animation = "pulse 0.5s ease";
+            this.style.color = '#007bff';
+            this.style.fontWeight = '900';
+            this.style.animation = 'pulse 0.5s ease';
             setTimeout(() => {
-              this.style.animation = "";
+              this.style.animation = '';
             }, 500);
-            const resetYearBtn = document.getElementById("resetYearBtn");
-            resetYearBtn && resetYearBtn.classList.remove("active");
+            const resetYearBtn = document.getElementById('resetYearBtn');
+            resetYearBtn && resetYearBtn.classList.remove('active');
             showToast(`已筛选 ${year} 年文章`);
           });
         }));
@@ -572,7 +688,7 @@
       if (!archiveData.passages) return;
 
       // 过滤指定年份的文章
-      filteredData = archiveData.passages.filter((article) => {
+      filteredData = archiveData.passages.filter(article => {
         const articleYear = new Date(article.created_at).getFullYear().toString();
         return articleYear === year;
       });
@@ -584,59 +700,58 @@
       renderArchive();
     }
     function renderTagsCloud() {
-      const e = document.getElementById("tagsCloud");
+      const e = document.getElementById('tagsCloud');
       if (!archiveData.tags || 0 === archiveData.tags.length)
         return void (e.innerHTML = '<div class="empty">暂无标签</div>');
-      const t = Math.max(...archiveData.tags.map((e) => e.count));
-      let a = "";
-      (archiveData.tags.forEach((e) => {
+      const t = Math.max(...archiveData.tags.map(e => e.count));
+      let a = '';
+      (archiveData.tags.forEach(e => {
         const n = e.count / t;
-        let c = "tag-1";
+        let c = 'tag-1';
         (n >= 0.8
-          ? (c = "tag-5")
+          ? (c = 'tag-5')
           : n >= 0.6
-            ? (c = "tag-4")
+            ? (c = 'tag-4')
             : n >= 0.4
-              ? (c = "tag-3")
-              : n >= 0.2 && (c = "tag-2"),
+              ? (c = 'tag-3')
+              : n >= 0.2 && (c = 'tag-2'),
           (a += `<span class="cloud-tag ${c}" data-tag="${e.name}">${e.name}</span>`));
       }),
         (e.innerHTML = a),
-        document.querySelectorAll(".cloud-tag").forEach((e) => {
-          e.addEventListener("click", function () {
-            filterByTag(this.getAttribute("data-tag"));
+        document.querySelectorAll('.cloud-tag').forEach(e => {
+          e.addEventListener('click', function () {
+            filterByTag(this.getAttribute('data-tag'));
           });
         }));
     }
     function updateTotalCount() {
-      const e = document.querySelector("footer p");
-      e &&
-        (e.textContent = `知识归档 | 版本 2.0.1 | 共收录 ${archiveData.passages.length} 篇文章`);
+      const e = document.querySelector('footer p');
+      e && (e.textContent = `知识归档 | 版本 2.0.1 | 共收录 ${archiveData.passages.length} 篇文章`);
     }
     function sanitizeUTF8(e) {
-      if (!e) return "";
+      if (!e) return '';
       try {
         const t = new TextEncoder(),
           a = new TextDecoder({ fatal: !1 }),
           n = t.encode(e);
         return a.decode(n);
       } catch (t) {
-        return e.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+        return e.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
       }
     }
     function sanitizeTitle(e) {
       return encodeURIComponent(e.toLowerCase())
-        .replace(/\s+/g, "-")
-        .replace(/%20/g, "-")
-        .replace(/%2f/g, "-");
+        .replace(/\s+/g, '-')
+        .replace(/%20/g, '-')
+        .replace(/%2f/g, '-');
     }
     function filterByTag(e) {
       if (!archiveData.passages) return;
 
       // 过滤包含指定标签的文章
-      filteredData = archiveData.passages.filter((article) => {
+      filteredData = archiveData.passages.filter(article => {
         let tags = [];
-        if ("string" == typeof article.tags) {
+        if ('string' == typeof article.tags) {
           try {
             tags = JSON.parse(article.tags);
           } catch (err) {
@@ -655,68 +770,59 @@
       renderArchive();
 
       // 移除"全部标签"按钮的 active 状态
-      const resetTagBtn = document.getElementById("resetTagBtn");
-      resetTagBtn && resetTagBtn.classList.remove("active");
+      const resetTagBtn = document.getElementById('resetTagBtn');
+      resetTagBtn && resetTagBtn.classList.remove('active');
       showToast(`已筛选 "${e}" 标签文章`);
     }
     let lastScrollTop = 0,
       isNavHidden = !1;
-    const nav = document.getElementById("mainNav"),
-      scrollIndicator = document.getElementById("scrollIndicator"),
-      scrollProgress = document.getElementById("scrollProgress");
-    (nav.classList.add("scrolled-top"),
+    const nav = document.getElementById('mainNav'),
+      scrollIndicator = document.getElementById('scrollIndicator'),
+      scrollProgress = document.getElementById('scrollProgress');
+    (nav.classList.add('scrolled-top'),
       window.addEventListener(
-        "scroll",
+        'scroll',
         function () {
           const e = window.pageYOffset || document.documentElement.scrollTop,
-            t =
-              (e /
-                (document.documentElement.scrollHeight - window.innerHeight)) *
-              100;
+            t = (e / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
           (e > 100
-            ? (scrollIndicator.classList.add("active"),
-              (scrollProgress.style.height = `${t}%`))
-            : scrollIndicator.classList.remove("active"),
+            ? (scrollIndicator.classList.add('active'), (scrollProgress.style.height = `${t}%`))
+            : scrollIndicator.classList.remove('active'),
             e > lastScrollTop && e > 100
-              ? isNavHidden || (nav.classList.add("hidden"), (isNavHidden = !0))
-              : (isNavHidden &&
-                  (nav.classList.remove("hidden"), (isNavHidden = !1)),
+              ? isNavHidden || (nav.classList.add('hidden'), (isNavHidden = !0))
+              : (isNavHidden && (nav.classList.remove('hidden'), (isNavHidden = !1)),
                 0 === e
-                  ? (nav.classList.add("scrolled-top"),
-                    nav.classList.remove("scrolled"))
-                  : (nav.classList.remove("scrolled-top"),
-                    nav.classList.add("scrolled"))),
+                  ? (nav.classList.add('scrolled-top'), nav.classList.remove('scrolled'))
+                  : (nav.classList.remove('scrolled-top'), nav.classList.add('scrolled'))),
             (lastScrollTop = e));
         },
-        { passive: !0 },
+        { passive: !0 }
       ),
-      window.addEventListener("load", function () {
-        ((document.body.style.opacity = "0"),
-          (document.body.style.transition = "opacity 0.5s ease"),
+      window.addEventListener('load', function () {
+        ((document.body.style.opacity = '0'),
+          (document.body.style.transition = 'opacity 0.5s ease'),
           setTimeout(() => {
-            document.body.style.opacity = "1";
+            document.body.style.opacity = '1';
           }, 100),
           fetchArchiveData(),
           setTimeout(() => {
             (document
-              .querySelectorAll(".document-card, .timeline-item, .cloud-tag")
+              .querySelectorAll('.document-card, .timeline-item, .cloud-tag')
               .forEach((e, t) => {
-                ((e.style.opacity = "0"),
-                  (e.style.transform = "translateY(20px)"),
-                  (e.style.transition =
-                    "opacity 0.6s ease, transform 0.6s ease"),
+                ((e.style.opacity = '0'),
+                  (e.style.transform = 'translateY(20px)'),
+                  (e.style.transition = 'opacity 0.6s ease, transform 0.6s ease'),
                   setTimeout(
                     () => {
-                      ((e.style.opacity = "1"),
-                        (e.style.transform = "translateY(0)"));
+                      ((e.style.opacity = '1'), (e.style.transform = 'translateY(0)'));
                     },
-                    200 + 50 * t,
+                    200 + 50 * t
                   ));
               }),
               setTimeout(() => {
-                document.querySelectorAll(".timeline-fill").forEach((e) => {
+                document.querySelectorAll('.timeline-fill').forEach(e => {
                   const t = e.style.width;
-                  ((e.style.width = "0"),
+                  ((e.style.width = '0'),
                     setTimeout(() => {
                       e.style.width = t;
                     }, 300));
@@ -724,15 +830,15 @@
               }, 800));
           }, 500));
       }));
-    const mainTitle = document.getElementById("main-title");
+    const mainTitle = document.getElementById('main-title');
     function bindFilterEvents() {
-      document.querySelectorAll(".filter-btn").forEach((e) => {
-        e.addEventListener("click", async function () {
-          (document.querySelectorAll(".filter-btn").forEach((btn) => {
-            btn.classList.remove("active");
+      document.querySelectorAll('.filter-btn').forEach(e => {
+        e.addEventListener('click', async function () {
+          (document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
           }),
-            this.classList.add("active"));
-          const category = this.getAttribute("data-filter");
+            this.classList.add('active'));
+          const category = this.getAttribute('data-filter');
           filterByCategory(category);
         });
       });
@@ -742,11 +848,11 @@
       if (!archiveData.passages) return;
 
       // 过滤指定分类的文章
-      if (category === "all") {
+      if (category === 'all') {
         filteredData = [];
       } else {
         filteredData = archiveData.passages.filter(
-          (article) => (article.category || "") === category
+          article => (article.category || '') === category
         );
       }
 
@@ -756,32 +862,32 @@
       // 重新渲染
       renderArchive();
 
-      if (category !== "all") {
+      if (category !== 'all') {
         showToast(`已筛选 "${category}" 分类文章`);
       }
     }
 
     function showToast(message) {
-      let toast = document.querySelector(".collect-focus-toast");
+      let toast = document.querySelector('.collect-focus-toast');
       if (!toast) {
-        toast = document.createElement("div");
-        toast.className = "collect-focus-toast";
+        toast = document.createElement('div');
+        toast.className = 'collect-focus-toast';
         document.body.appendChild(toast);
       }
       toast.textContent = message;
-      toast.classList.add("show");
+      toast.classList.add('show');
       setTimeout(() => {
-        toast.classList.remove("show");
+        toast.classList.remove('show');
       }, 2000);
     }
 
     // 重置按钮事件
-    document.addEventListener("DOMContentLoaded", function () {
-      const resetYearBtn = document.getElementById("resetYearBtn");
-      const resetTagBtn = document.getElementById("resetTagBtn");
+    document.addEventListener('DOMContentLoaded', function () {
+      const resetYearBtn = document.getElementById('resetYearBtn');
+      const resetTagBtn = document.getElementById('resetTagBtn');
 
       if (resetYearBtn) {
-        resetYearBtn.addEventListener("click", function () {
+        resetYearBtn.addEventListener('click', function () {
           // 清空筛选数据，重置页码
           filteredData = [];
           collectCurrentPage = 1;
@@ -789,17 +895,17 @@
           // 重新渲染
           renderArchive();
 
-          document.querySelectorAll(".timeline-year").forEach((item) => {
-            item.style.color = "rgba(255, 255, 255, 0.9)";
-            item.style.fontWeight = "700";
+          document.querySelectorAll('.timeline-year').forEach(item => {
+            item.style.color = 'rgba(255, 255, 255, 0.9)';
+            item.style.fontWeight = '700';
           });
-          this.classList.add("active");
-          showToast("已显示全部年份文章");
+          this.classList.add('active');
+          showToast('已显示全部年份文章');
         });
       }
 
       if (resetTagBtn) {
-        resetTagBtn.addEventListener("click", function () {
+        resetTagBtn.addEventListener('click', function () {
           // 清空筛选数据，重置页码
           filteredData = [];
           collectCurrentPage = 1;
@@ -807,11 +913,11 @@
           // 重新渲染
           renderArchive();
 
-          document.querySelectorAll(".cloud-tag, .tag").forEach((item) => {
-            item.classList.remove("tag-active");
+          document.querySelectorAll('.cloud-tag, .tag').forEach(item => {
+            item.classList.remove('tag-active');
           });
-          this.classList.add("active");
-          showToast("已显示全部标签文章");
+          this.classList.add('active');
+          showToast('已显示全部标签文章');
         });
       }
 
@@ -819,19 +925,19 @@
       setupPaginationEvents();
 
       // 回到顶部按钮功能
-      const backToTopBtn = document.getElementById("backToTop");
+      const backToTopBtn = document.getElementById('backToTop');
       if (backToTopBtn) {
         // 监听滚动事件
-        window.addEventListener("scroll", function() {
+        window.addEventListener('scroll', function () {
           if (window.pageYOffset > 300) {
-            backToTopBtn.classList.add("visible");
+            backToTopBtn.classList.add('visible');
           } else {
-            backToTopBtn.classList.remove("visible");
+            backToTopBtn.classList.remove('visible');
           }
         });
 
         // 点击回到顶部
-        backToTopBtn.addEventListener("click", function(e) {
+        backToTopBtn.addEventListener('click', function (e) {
           e.preventDefault();
           e.stopPropagation();
           document.documentElement.scrollTop = 0;
@@ -840,11 +946,11 @@
       }
 
       // 最新文章通知功能
-      const latestPostBtn = document.getElementById("latest-post-btn");
-      const latestPostPanel = document.getElementById("latest-post-panel");
-      const latestPostBadge = document.getElementById("latest-post-badge");
-      const latestPostContent = document.getElementById("latest-post-content");
-      const closeLatestPanel = document.getElementById("close-latest-panel");
+      const latestPostBtn = document.getElementById('latest-post-btn');
+      const latestPostPanel = document.getElementById('latest-post-panel');
+      const latestPostBadge = document.getElementById('latest-post-badge');
+      const latestPostContent = document.getElementById('latest-post-content');
+      const closeLatestPanel = document.getElementById('close-latest-panel');
 
       // 检查是否已看过最新文章
       const lastViewedPostId = localStorage.getItem('lastViewedPostId') || '0';
@@ -857,7 +963,7 @@
 
           if (result.success && result.data) {
             const post = result.data;
-            
+
             // 检查是否有新文章
             if (post.id > parseInt(lastViewedPostId)) {
               latestPostBadge.classList.add('show');
@@ -892,9 +998,9 @@
 
       // 点击按钮切换面板
       if (latestPostBtn) {
-        latestPostBtn.addEventListener('click', function() {
+        latestPostBtn.addEventListener('click', function () {
           const isShown = latestPostPanel.classList.contains('show');
-          
+
           if (isShown) {
             latestPostPanel.classList.remove('show');
           } else {
@@ -909,13 +1015,13 @@
 
       // 关闭面板
       if (closeLatestPanel) {
-        closeLatestPanel.addEventListener('click', function() {
+        closeLatestPanel.addEventListener('click', function () {
           latestPostPanel.classList.remove('show');
         });
       }
 
       // 点击其他地方关闭面板
-      document.addEventListener('click', function(e) {
+      document.addEventListener('click', function (e) {
         if (!latestPostBtn.contains(e.target) && !latestPostPanel.contains(e.target)) {
           latestPostPanel.classList.remove('show');
         }
@@ -928,10 +1034,10 @@
 
       // 点击按钮切换面板
       if (quickActionsBtn) {
-        quickActionsBtn.addEventListener('click', function(e) {
+        quickActionsBtn.addEventListener('click', function (e) {
           e.stopPropagation();
           const isShown = quickActionsPanel.classList.contains('show');
-          
+
           if (isShown) {
             // 关闭时先让内容淡出
             quickActionsClosing = true;
@@ -946,7 +1052,7 @@
       }
 
       // 点击其他地方关闭面板
-      document.addEventListener('click', function(e) {
+      document.addEventListener('click', function (e) {
         if (!quickActionsBtn.contains(e.target) && !quickActionsPanel.contains(e.target)) {
           if (quickActionsPanel.classList.contains('show') && !quickActionsClosing) {
             quickActionsClosing = true;
@@ -962,55 +1068,54 @@
       loadLatestPost();
     });
     (mainTitle &&
-      (mainTitle.addEventListener("mouseenter", function () {
-        this.style.animationPlayState = "paused";
+      (mainTitle.addEventListener('mouseenter', function () {
+        this.style.animationPlayState = 'paused';
       }),
-      mainTitle.addEventListener("mouseleave", function () {
-        this.style.animationPlayState = "running";
+      mainTitle.addEventListener('mouseleave', function () {
+        this.style.animationPlayState = 'running';
       })),
-      document.querySelectorAll(".filter-btn").forEach((e) => {
-        e.addEventListener("click", function () {});
+      document.querySelectorAll('.filter-btn').forEach(e => {
+        e.addEventListener('click', function () {});
       }),
-      document.querySelectorAll(".cloud-tag, .tag").forEach((e) => {
-        e.addEventListener("click", function () {
+      document.querySelectorAll('.cloud-tag, .tag').forEach(e => {
+        e.addEventListener('click', function () {
           const e = this.textContent.trim();
-          (document.querySelectorAll(".cloud-tag, .tag").forEach((e) => {
-            e.classList.remove("tag-active");
+          (document.querySelectorAll('.cloud-tag, .tag').forEach(e => {
+            e.classList.remove('tag-active');
           }),
-            this.classList.add("tag-active"));
-          document.querySelectorAll(".document-card").forEach((t) => {
-            const a = t.querySelectorAll(".tag");
+            this.classList.add('tag-active'));
+          document.querySelectorAll('.document-card').forEach(t => {
+            const a = t.querySelectorAll('.tag');
             let n = !1;
-            (a.forEach((t) => {
+            (a.forEach(t => {
               t.textContent.trim() === e && (n = !0);
             }),
               n
-                ? ((t.style.display = "block"),
+                ? ((t.style.display = 'block'),
                   setTimeout(() => {
-                    ((t.style.opacity = "1"),
-                      (t.style.transform = "translateY(0)"));
+                    ((t.style.opacity = '1'), (t.style.transform = 'translateY(0)'));
                   }, 10))
-                : ((t.style.opacity = "0"),
-                  (t.style.transform = "translateY(20px)"),
+                : ((t.style.opacity = '0'),
+                  (t.style.transform = 'translateY(20px)'),
                   setTimeout(() => {
-                    t.style.display = "none";
+                    t.style.display = 'none';
                   }, 300)));
           });
         });
       }),
-      document.querySelectorAll(".timeline-year").forEach((e) => {
-        e.addEventListener("click", function () {
-          const e = this.textContent.trim().replace("年", "");
-          document.querySelectorAll(".archive-section h2").forEach((t) => {
+      document.querySelectorAll('.timeline-year').forEach(e => {
+        e.addEventListener('click', function () {
+          const e = this.textContent.trim().replace('年', '');
+          document.querySelectorAll('.archive-section h2').forEach(t => {
             t.textContent.includes(e) &&
-              (window.scrollTo({ top: t.offsetTop - 120, behavior: "smooth" }),
-              document.querySelectorAll(".timeline-year").forEach((e) => {
-                e.style.color = "#222";
+              (window.scrollTo({ top: t.offsetTop - 120, behavior: 'smooth' }),
+              document.querySelectorAll('.timeline-year').forEach(e => {
+                e.style.color = '#222';
               }),
-              (this.style.color = "#007bff"),
-              (this.style.animation = "pulse 0.5s ease"),
+              (this.style.color = '#007bff'),
+              (this.style.animation = 'pulse 0.5s ease'),
               setTimeout(() => {
-                this.style.animation = "";
+                this.style.animation = '';
               }, 500));
           });
         });
@@ -1050,20 +1155,12 @@
             id="loginError"
             style="display: none; color: #e74c3c; font-size: 0.9em"
           ></div>
-          <button
-            type="submit"
-            id="loginSubmitBtn"
-            class="btn-primary"
-            style="width: 100%"
-          >
+          <button type="submit" id="loginSubmitBtn" class="btn-primary" style="width: 100%">
             登录
           </button>
         </form>
         <div style="margin-top: 20px; text-align: center; font-size: 0.9em">
-          <a
-            href="#"
-            id="openRegisterModal"
-            style="color: #007bff; text-decoration: none"
+          <a href="#" id="openRegisterModal" style="color: #007bff; text-decoration: none"
             >还没有账号？立即注册</a
           >
         </div>
@@ -1115,20 +1212,12 @@
             id="registerError"
             style="display: none; color: #e74c3c; font-size: 0.9em"
           ></div>
-          <button
-            type="submit"
-            id="registerSubmitBtn"
-            class="btn-primary"
-            style="width: 100%"
-          >
+          <button type="submit" id="registerSubmitBtn" class="btn-primary" style="width: 100%">
             注册
           </button>
         </form>
         <div style="margin-top: 20px; text-align: center; font-size: 0.9em">
-          <a
-            href="#"
-            id="openLoginModal"
-            style="color: #007bff; text-decoration: none"
+          <a href="#" id="openLoginModal" style="color: #007bff; text-decoration: none"
             >已有账号？立即登录</a
           >
         </div>
@@ -1167,7 +1256,7 @@
       overflow: hidden;
     }
     .modal-content::after {
-      content: "";
+      content: '';
       position: absolute;
       bottom: 0;
       left: 0;
@@ -1292,17 +1381,12 @@
     href="/css/dark-mode.css"
     media="print"
     onload="this.media = 'all'"
-  /><link
-    rel="stylesheet"
-    href="/css/glass-effect.css"
-    media="print"
-    onload="this.media = 'all'"
-  />
+  /><link rel="stylesheet" href="/css/glass-effect.css" media="print" onload="this.media = 'all'" />
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      fetch("/api/settings/appearance")
-        .then((e) => e.json())
-        .then((e) => {
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/api/settings/appearance')
+        .then(e => e.json())
+        .then(e => {
           function t() {
             const t =
               window.innerWidth <= 768 && e.mobile_background_image
@@ -1310,53 +1394,52 @@
                 : e.background_image;
             t && (document.body.style.backgroundImage = `url('${t}')`);
           }
-          (localStorage.setItem("appearanceSettings", JSON.stringify(e)),
-            e.dark_mode_enabled &&
-              document.documentElement.classList.add("dark-mode"),
+          (localStorage.setItem('appearanceSettings', JSON.stringify(e)),
+            e.dark_mode_enabled && document.documentElement.classList.add('dark-mode'),
             (e.navbar_glass_color ||
               e.card_glass_color ||
               e.footer_glass_color ||
               e.navbar_text_color) &&
               (document.documentElement.style.setProperty(
-                "--navbar-glass-color",
-                e.navbar_glass_color || "rgba(255, 255, 255, 0.85)",
+                '--navbar-glass-color',
+                e.navbar_glass_color || 'rgba(255, 255, 255, 0.85)'
               ),
               document.documentElement.style.setProperty(
-                "--navbar-text-color",
-                e.navbar_text_color || "rgba(255, 255, 255, 0.9)",
+                '--navbar-text-color',
+                e.navbar_text_color || 'rgba(255, 255, 255, 0.9)'
               ),
               document.documentElement.style.setProperty(
-                "--card-glass-color",
-                e.card_glass_color || "rgba(255, 255, 255, 0.75)",
+                '--card-glass-color',
+                e.card_glass_color || 'rgba(255, 255, 255, 0.75)'
               ),
               document.documentElement.style.setProperty(
-                "--footer-glass-color",
-                e.footer_glass_color || "rgba(255, 255, 255, 0.9)",
+                '--footer-glass-color',
+                e.footer_glass_color || 'rgba(255, 255, 255, 0.9)'
               )),
             t(),
-            window.addEventListener("resize", t));
+            window.addEventListener('resize', t));
         })
-        .catch((e) => {
-          console.error("加载外观设置失败:", e);
+        .catch(e => {
+          console.error('加载外观设置失败:', e);
         });
-      const e = document.getElementById("userCenterToggle"),
-        t = document.getElementById("userCenterModal"),
-        o = t ? t.querySelector(".modal-close") : null;
+      const e = document.getElementById('userCenterToggle'),
+        t = document.getElementById('userCenterModal'),
+        o = t ? t.querySelector('.modal-close') : null;
       if (e && t) {
-        (e.addEventListener("click", function (e) {
-          (e.stopPropagation(), t.classList.add("active"));
+        (e.addEventListener('click', function (e) {
+          (e.stopPropagation(), t.classList.add('active'));
         }),
           o &&
-            o.addEventListener("click", function () {
-              t.classList.remove("active");
+            o.addEventListener('click', function () {
+              t.classList.remove('active');
             }));
-        const n = t.querySelector(".modal-content");
+        const n = t.querySelector('.modal-content');
         (n &&
-          n.addEventListener("click", function (e) {
+          n.addEventListener('click', function (e) {
             e.stopPropagation();
           }),
-          t.addEventListener("click", function () {
-            t.classList.remove("active");
+          t.addEventListener('click', function () {
+            t.classList.remove('active');
           }));
       }
     });
@@ -1372,12 +1455,7 @@
   <script>
     !function(){const i= {{ live2d_enabled }},t= {{ live2d_show_on_collect }};if(!i||!t)return;const o={waifuPath:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json",cdnPath:"{{ live2d_cdn_path }}",cubism2Path:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js",cubism5Path:"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",modelId: {{ live2d_model_id }},modelPath:"{{ live2d_model_path }}",tools:["switch-model","switch-texture","photo","info","quit"],drag:!0,logLevel:"error",position:"{{ live2d_position }}",width:"{{ live2d_width }}",height:"{{ live2d_height }}"};window.addEventListener("load",function(){setTimeout(function(){try{if(document.querySelector('script[src*="autoload.js"]'))return;const i=document.createElement("script");i.src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js",i.async=!0,i.onload=function(){if(console.log("Live2D 看板娘加载完成"),"function"==typeof initWidget)try{initWidget(o)}catch(i){console.warn("Live2D 看板娘初始化失败:",i)}},i.onerror=function(){console.warn("Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用")},document.body.appendChild(i)}catch(i){console.warn("Live2D 看板娘初始化错误:",i)}},1e3)})}()
   </script>
-  <link
-    rel="stylesheet"
-    href="/css/music-player.css"
-    media="print"
-    onload="this.media = 'all'"
-  />
+  <link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media = 'all'" />
   <script src="/js/music-player.js" defer></script>
   <script src="/js/collect-focus-mode.js" defer></script>
   <script src="/js/floating-text.js" defer></script>

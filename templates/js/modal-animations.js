@@ -3,9 +3,9 @@
 // 带动画的模态框关闭函数
 function closeModalWithAnimation(modal) {
   if (!modal) return;
-  
+
   modal.classList.add('closing');
-  
+
   setTimeout(() => {
     modal.classList.remove('active', 'closing');
   }, 300);
@@ -21,32 +21,32 @@ function closeAllModals() {
 // 初始化模态框事件监听器
 function initModalAnimations() {
   // ESC键关闭所有模态框
-  document.addEventListener('keydown', function(e) {
+  document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeAllModals();
     }
   });
-  
+
   // 为所有模态框添加点击外部关闭功能
   document.querySelectorAll('.modal').forEach(modal => {
     const modalContent = modal.querySelector('.modal-content');
-    
+
     if (modalContent) {
       // 点击模态框内容区域不关闭
-      modalContent.addEventListener('click', function(e) {
+      modalContent.addEventListener('click', function (e) {
         e.stopPropagation();
       });
     }
-    
+
     // 点击模态框外部关闭
-    modal.addEventListener('click', function() {
+    modal.addEventListener('click', function () {
       closeModalWithAnimation(modal);
     });
   });
-  
+
   // 为所有模态框关闭按钮添加事件
   document.querySelectorAll('.modal-close').forEach(closeBtn => {
-    closeBtn.addEventListener('click', function() {
+    closeBtn.addEventListener('click', function () {
       const modalId = this.getAttribute('data-modal');
       const modal = modalId ? document.getElementById(modalId) : this.closest('.modal');
       if (modal) {

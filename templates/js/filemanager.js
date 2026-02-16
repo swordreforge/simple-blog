@@ -4,13 +4,13 @@ const FileManager = {
   currentRoot: 'img',
   selectedFile: null,
   filesToUpload: [],
-  
+
   // 获取认证头
   getAuthHeader() {
     const token = this.getCookie('auth_token');
     return `Bearer ${token}`;
   },
-  
+
   // 获取Cookie
   getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -18,76 +18,78 @@ const FileManager = {
     if (parts.length === 2) return parts.pop().split(';').shift();
     return '';
   },
-  
+
   // 初始化
   init() {
     this.bindEvents();
     this.loadFiles();
   },
-  
+
   // 绑定事件
   bindEvents() {
     // 返回按钮
     document.getElementById('backBtn').addEventListener('click', () => this.goBack());
-    
+
     // 上传按钮
     document.getElementById('uploadBtn').addEventListener('click', () => this.openUploadModal());
-    
+
     // 新建文件夹按钮
-    document.getElementById('createDirBtn').addEventListener('click', () => this.openCreateDirModal());
-    
+    document
+      .getElementById('createDirBtn')
+      .addEventListener('click', () => this.openCreateDirModal());
+
     // 根目录切换
     document.querySelectorAll('.fm-root-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         const path = e.currentTarget.dataset.path;
         this.switchRoot(path);
       });
     });
-    
+
     // 模态框关闭
     document.querySelectorAll('.modal-close, .fm-modal-close-btn, .fm-modal-close').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', e => {
         const modal = e.target.closest('.modal') || e.target.closest('.fm-modal');
         if (modal) {
           this.closeModal(modal);
         }
       });
     });
-    
+
     // 上传区域
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
 
     if (uploadArea && fileInput) {
       // 点击上传区域触发文件选择
-      uploadArea.addEventListener('click', (e) => {
+      uploadArea.addEventListener('click', e => {
         e.stopPropagation();
         e.preventDefault();
         fileInput.click();
       });
 
       // 文件选择变化事件
-      fileInput.addEventListener('change', (e) => {
+      fileInput.addEventListener('change', e => {
         e.stopPropagation();
         this.handleFileSelect(e);
       });
 
       // 拖拽悬停效果
-      uploadArea.addEventListener('dragover', (e) => {
+      uploadArea.addEventListener('dragover', e => {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.add('dragover');
       });
 
       // 拖拽离开效果
-      uploadArea.addEventListener('dragleave', (e) => {
+      uploadArea.addEventListener('dragleave', e => {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.remove('dragover');
       });
 
       // 拖拽放下事件
-      uploadArea.addEventListener('drop', (e) => {
+      uploadArea.addEventListener('drop', e => {
         e.preventDefault();
         e.stopPropagation();
         uploadArea.classList.remove('dragover');
@@ -96,28 +98,30 @@ const FileManager = {
     } else {
       console.error('上传区域或文件输入框未找到');
     }
-    
+
     // 确认上传
     document.getElementById('confirmUploadBtn').addEventListener('click', () => this.uploadFiles());
-    
+
     // 确认创建目录
-    document.getElementById('confirmCreateDirBtn').addEventListener('click', () => this.createDirectory());
-    
+    document
+      .getElementById('confirmCreateDirBtn')
+      .addEventListener('click', () => this.createDirectory());
+
     // 确认重命名
     document.getElementById('confirmRenameBtn').addEventListener('click', () => this.renameFile());
-    
+
     // 确认删除
     document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.deleteFile());
-    
+
     // 点击外部关闭上下文菜单
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
       if (!e.target.closest('.context-menu') && !e.target.closest('.file-item')) {
         this.hideContextMenu();
       }
     });
-    
+
     // 键盘事件
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         this.hideContextMenu();
         document.querySelectorAll('.modal.active, .fm-modal.active').forEach(modal => {
@@ -126,7 +130,7 @@ const FileManager = {
       }
     });
   },
-  
+
   // 加载文件列表
   async loadFiles() {
     // 如果是附件管理，加载附件列表
@@ -138,8 +142,8 @@ const FileManager = {
     try {
       const response = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`, {
         headers: {
-          'Authorization': this.getAuthHeader()
-        }
+          Authorization: this.getAuthHeader(),
+        },
       });
       const result = await response.json();
 
@@ -162,8 +166,8 @@ const FileManager = {
     try {
       const response = await fetch('/api/admin/attachments', {
         headers: {
-          'Authorization': this.getAuthHeader()
-        }
+          Authorization: this.getAuthHeader(),
+        },
       });
       const result = await response.json();
 
@@ -199,7 +203,7 @@ const FileManager = {
 
     // 绑定附件项事件
     fileGrid.querySelectorAll('.file-item').forEach(item => {
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', e => {
         e.stopPropagation();
         const id = item.dataset.id;
         this.showAttachmentMenu(id, e);
@@ -209,17 +213,19 @@ const FileManager = {
 
   // 创建附件项
   createAttachmentItem(attachment) {
-    const visibilityIcon = {
-      'public': '🌐',
-      'private': '🔒',
-      'protected': '🛡️'
-    }[attachment.visibility] || '🌐';
+    const visibilityIcon =
+      {
+        public: '🌐',
+        private: '🔒',
+        protected: '🛡️',
+      }[attachment.visibility] || '🌐';
 
-    const visibilityLabel = {
-      'public': '公开',
-      'private': '私密',
-      'protected': '受保护'
-    }[attachment.visibility] || '公开';
+    const visibilityLabel =
+      {
+        public: '公开',
+        private: '私密',
+        protected: '受保护',
+      }[attachment.visibility] || '公开';
 
     const showInPassageBadge = attachment.show_in_passage
       ? '<span class="badge badge-success">显示</span>'
@@ -272,7 +278,7 @@ const FileManager = {
 
     // 绑定菜单项事件
     menu.querySelectorAll('.context-menu-item').forEach(item => {
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', e => {
         e.stopPropagation();
         const action = item.dataset.action;
         this.handleAttachmentAction(id, action);
@@ -315,12 +321,12 @@ const FileManager = {
       const response = await fetch(`/api/admin/attachments/${id}`, {
         method: 'PATCH',
         headers: {
-          'Authorization': this.getAuthHeader(),
-          'Content-Type': 'application/json'
+          Authorization: this.getAuthHeader(),
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          visibility: newVisibility
-        })
+          visibility: newVisibility,
+        }),
       });
       const result = await response.json();
 
@@ -345,12 +351,12 @@ const FileManager = {
       const response = await fetch(`/api/admin/attachments?id=${id}`, {
         method: 'PATCH',
         headers: {
-          'Authorization': this.getAuthHeader(),
-          'Content-Type': 'application/json'
+          Authorization: this.getAuthHeader(),
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          show_in_passage: !attachment.show_in_passage
-        })
+          show_in_passage: !attachment.show_in_passage,
+        }),
       });
       const result = await response.json();
 
@@ -376,8 +382,8 @@ const FileManager = {
       const response = await fetch(`/api/admin/attachments/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': this.getAuthHeader()
-        }
+          Authorization: this.getAuthHeader(),
+        },
       });
       const result = await response.json();
 
@@ -399,50 +405,50 @@ const FileManager = {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   },
 
   // 获取文件图标
   getFileIcon(fileType) {
     const icons = {
-      'image': '🖼️',
-      'video': '🎬',
-      'audio': '🎵',
-      'document': '📄',
-      'archive': '📦'
+      image: '🖼️',
+      video: '🎬',
+      audio: '🎵',
+      document: '📄',
+      archive: '📦',
     };
     return icons[fileType] || '📁';
   },
-  
+
   // 渲染文件列表
   renderFiles(files) {
     const fileGrid = document.getElementById('fileGrid');
     const emptyState = document.getElementById('emptyState');
-    
+
     if (files.length === 0) {
       fileGrid.innerHTML = '';
       emptyState.style.display = 'flex';
       return;
     }
-    
+
     emptyState.style.display = 'none';
-    
+
     // 先显示目录，再显示文件
     const sortedFiles = [...files].sort((a, b) => {
       if (a.is_dir && !b.is_dir) return -1;
       if (!a.is_dir && b.is_dir) return 1;
       return a.name.localeCompare(b.name);
     });
-    
+
     fileGrid.innerHTML = sortedFiles.map(file => this.createFileItem(file)).join('');
-    
+
     // 绑定文件项事件
     fileGrid.querySelectorAll('.file-item').forEach(item => {
-      item.addEventListener('click', (e) => {
+      item.addEventListener('click', e => {
         e.stopPropagation();
         const path = item.dataset.path;
         const isDir = item.dataset.isDir === 'true';
-        
+
         if (isDir) {
           this.navigateTo(path);
         } else {
@@ -456,8 +462,8 @@ const FileManager = {
           }
         }
       });
-      
-      item.addEventListener('contextmenu', (e) => {
+
+      item.addEventListener('contextmenu', e => {
         e.preventDefault();
         const path = item.dataset.path;
         const isDir = item.dataset.isDir === 'true';
@@ -465,34 +471,48 @@ const FileManager = {
       });
     });
   },
-  
+
   // 创建文件项HTML
   createFileItem(file) {
     let icon = '📄';
     let typeClass = '';
-    
+
     if (file.is_dir) {
       icon = '📁';
       typeClass = 'directory';
-    } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes(file.extension)) {
+    } else if (
+      ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes(
+        file.extension
+      )
+    ) {
       icon = `<img src="/${file.path}" alt="${file.name}" onerror="this.parentElement.innerHTML='🖼️'">`;
       typeClass = 'image';
-    } else if (['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus', '.ape'].includes(file.extension)) {
+    } else if (
+      ['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus', '.ape'].includes(
+        file.extension
+      )
+    ) {
       icon = '🎵';
       typeClass = 'audio';
-    } else if (['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.m4v', '.3gp'].includes(file.extension)) {
+    } else if (
+      ['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.m4v', '.3gp'].includes(
+        file.extension
+      )
+    ) {
       icon = '🎬';
       typeClass = 'video';
-    } else if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'].includes(file.extension)) {
+    } else if (
+      ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'].includes(file.extension)
+    ) {
       icon = '📄';
       typeClass = 'document';
     } else if (file.extension === '.md') {
       icon = '📝';
       typeClass = 'markdown';
     }
-    
+
     const size = this.formatFileSize(file.size);
-    
+
     return `
       <div class="file-item ${typeClass}" data-path="${file.path}" data-is-dir="${file.is_dir}">
         <div class="file-icon">${icon}</div>
@@ -501,7 +521,7 @@ const FileManager = {
       </div>
     `;
   },
-  
+
   // 格式化文件大小
   formatFileSize(bytes) {
     if (bytes === 0) return '0 B';
@@ -510,42 +530,42 @@ const FileManager = {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   },
-  
+
   // 更新面包屑
   updateBreadcrumb(path) {
     document.getElementById('currentPath').textContent = path || '/';
   },
-  
+
   // 更新返回按钮状态
   updateBackButton(parentPath) {
     const backBtn = document.getElementById('backBtn');
     backBtn.disabled = !parentPath;
   },
-  
+
   // 更新文件计数
   updateFileCount(count) {
     document.getElementById('fileCount').textContent = `${count} 个项目`;
   },
-  
+
   // 切换根目录
   switchRoot(root) {
     this.currentRoot = root;
     this.currentPath = root;
-    
+
     // 更新根目录按钮状态
     document.querySelectorAll('.fm-root-btn').forEach(btn => {
       btn.classList.toggle('fm-root-btn-active', btn.dataset.path === root);
     });
-    
+
     this.loadFiles();
   },
-  
+
   // 导航到目录
   navigateTo(path) {
     this.currentPath = path;
     this.loadFiles();
   },
-  
+
   // 返回上级目录
   goBack() {
     const parentPath = this.getParentPath(this.currentPath);
@@ -553,7 +573,7 @@ const FileManager = {
       this.navigateTo(parentPath);
     }
   },
-  
+
   // 获取父目录路径
   getParentPath(path) {
     if (path === this.currentRoot) {
@@ -564,7 +584,7 @@ const FileManager = {
     const parent = parts.join('/');
     return parent || this.currentRoot;
   },
-  
+
   // 打开文件
   async openFile(path) {
     const extension = path.split('.').pop().toLowerCase();
@@ -577,7 +597,11 @@ const FileManager = {
     }
 
     // 图片文件 - 在线预览
-    if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes('.' + extension)) {
+    if (
+      ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes(
+        '.' + extension
+      )
+    ) {
       this.openImagePreview(path, fileName);
       return;
     }
@@ -595,7 +619,9 @@ const FileManager = {
     }
 
     // 文档文件 - 在线预览
-    if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'].includes('.' + extension)) {
+    if (
+      ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'].includes('.' + extension)
+    ) {
       this.openDocumentPreview(path, fileName, extension);
       return;
     }
@@ -604,8 +630,8 @@ const FileManager = {
     try {
       const response = await fetch(`/api/files/download?path=${encodeURIComponent(path)}`, {
         headers: {
-          'Authorization': this.getAuthHeader()
-        }
+          Authorization: this.getAuthHeader(),
+        },
       });
 
       if (!response.ok) {
@@ -654,12 +680,12 @@ const FileManager = {
       document.body.removeChild(modal);
     };
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) closeModal();
     });
 
     // ESC 键关闭
-    const escHandler = (e) => {
+    const escHandler = e => {
       if (e.key === 'Escape') {
         closeModal();
         document.removeEventListener('keydown', escHandler);
@@ -700,12 +726,12 @@ const FileManager = {
       document.body.removeChild(modal);
     };
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) closeModal();
     });
 
     // ESC 键关闭
-    const escHandler = (e) => {
+    const escHandler = e => {
       if (e.key === 'Escape') {
         closeModal();
         document.removeEventListener('keydown', escHandler);
@@ -748,12 +774,12 @@ const FileManager = {
       document.body.removeChild(modal);
     };
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) closeModal();
     });
 
     // ESC 键关闭
-    const escHandler = (e) => {
+    const escHandler = e => {
       if (e.key === 'Escape') {
         closeModal();
         document.removeEventListener('keydown', escHandler);
@@ -772,10 +798,10 @@ const FileManager = {
     const documentUrl = `/${path}`;
     const modal = document.createElement('div');
     modal.className = 'fm-modal preview-modal';
-    
+
     let previewContent = '';
     let previewClass = 'document-preview';
-    
+
     // 根据文件类型生成不同的预览内容
     switch (extension) {
       case 'pdf':
@@ -811,7 +837,7 @@ const FileManager = {
           </div>
         `;
     }
-    
+
     modal.innerHTML = `
       <div class="fm-modal-content preview-content ${previewClass}">
         <div class="fm-modal-header">
@@ -835,7 +861,7 @@ const FileManager = {
       document.body.removeChild(modal);
     };
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) closeModal();
     });
 
@@ -845,7 +871,7 @@ const FileManager = {
     });
 
     // ESC 键关闭
-    const escHandler = (e) => {
+    const escHandler = e => {
       if (e.key === 'Escape') {
         closeModal();
         document.removeEventListener('keydown', escHandler);
@@ -921,8 +947,8 @@ const FileManager = {
     try {
       const response = await fetch(`/api/files/download?path=${encodeURIComponent(path)}`, {
         headers: {
-          'Authorization': this.getAuthHeader()
-        }
+          Authorization: this.getAuthHeader(),
+        },
       });
 
       if (!response.ok) {
@@ -949,7 +975,7 @@ const FileManager = {
       this.showToast('下载失败', 'error');
     }
   },
-  
+
   // 显示上下文菜单
   showContextMenu(event, path, isDir) {
     this.selectedFile = { path, isDir };
@@ -970,7 +996,7 @@ const FileManager = {
         item.style.display = 'none';
       } else if (action === 'preview') {
         // 预览选项只在 markdown 文件时显示
-        item.style.display = (isMarkdown && !isDir) ? 'flex' : 'none';
+        item.style.display = isMarkdown && !isDir ? 'flex' : 'none';
       } else {
         item.style.display = 'flex';
       }
@@ -984,12 +1010,12 @@ const FileManager = {
       };
     });
   },
-  
+
   // 隐藏上下文菜单
   hideContextMenu() {
     document.getElementById('contextMenu').classList.remove('active');
   },
-  
+
   // 处理上下文菜单操作
   handleContextAction(action) {
     if (!this.selectedFile) return;
@@ -1016,7 +1042,7 @@ const FileManager = {
         break;
     }
   },
-  
+
   // 打开上传模态框
   openUploadModal() {
     this.filesToUpload = [];
@@ -1024,20 +1050,20 @@ const FileManager = {
     const modal = document.getElementById('uploadModal');
     modal.classList.add('active');
   },
-  
+
   // 处理文件选择
   handleFileSelect(event) {
     const files = Array.from(event.target.files);
     this.addFilesToUpload(files);
     event.target.value = '';
   },
-  
+
   // 处理文件拖放
   handleFileDrop(event) {
     const files = Array.from(event.dataTransfer.files);
     this.addFilesToUpload(files);
   },
-  
+
   // 添加文件到上传列表
   addFilesToUpload(files) {
     files.forEach(file => {
@@ -1047,60 +1073,64 @@ const FileManager = {
     });
     this.updateUploadList();
   },
-  
+
   // 更新上传列表
   updateUploadList() {
     const list = document.getElementById('uploadList');
     const confirmBtn = document.getElementById('confirmUploadBtn');
-    
+
     if (this.filesToUpload.length === 0) {
       list.innerHTML = '';
       confirmBtn.disabled = true;
       return;
     }
-    
+
     confirmBtn.disabled = false;
-    list.innerHTML = this.filesToUpload.map((file, index) => `
+    list.innerHTML = this.filesToUpload
+      .map(
+        (file, index) => `
       <div class="upload-item">
         <div class="upload-item-name">${file.name}</div>
         <div class="upload-item-size">${this.formatFileSize(file.size)}</div>
         <button class="upload-item-remove" onclick="FileManager.removeFileFromUpload(${index})">✕</button>
       </div>
-    `).join('');
+    `
+      )
+      .join('');
   },
-  
+
   // 从上传列表移除文件
   removeFileFromUpload(index) {
     this.filesToUpload.splice(index, 1);
     this.updateUploadList();
   },
-  
+
   // 上传文件
   async uploadFiles() {
     if (this.filesToUpload.length === 0) return;
-    
+
     const confirmBtn = document.getElementById('confirmUploadBtn');
     confirmBtn.disabled = true;
     confirmBtn.textContent = '上传中...';
-    
+
     let successCount = 0;
     let failCount = 0;
-    
+
     for (const file of this.filesToUpload) {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const response = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`, {
           method: 'POST',
           headers: {
-            'Authorization': this.getAuthHeader()
+            Authorization: this.getAuthHeader(),
           },
-          body: formData
+          body: formData,
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
           successCount++;
         } else {
@@ -1112,10 +1142,10 @@ const FileManager = {
         failCount++;
       }
     }
-    
+
     this.closeModal(document.getElementById('uploadModal'));
     this.loadFiles();
-    
+
     if (successCount > 0 && failCount === 0) {
       this.showToast(`成功上传 ${successCount} 个文件`, 'success');
     } else if (successCount > 0) {
@@ -1123,11 +1153,11 @@ const FileManager = {
     } else {
       this.showToast('上传失败', 'error');
     }
-    
+
     confirmBtn.disabled = false;
     confirmBtn.textContent = '上传';
   },
-  
+
   // 打开创建目录模态框
   openCreateDirModal() {
     document.getElementById('dirNameInput').value = '';
@@ -1137,31 +1167,31 @@ const FileManager = {
       document.getElementById('dirNameInput').focus();
     }, 100);
   },
-  
+
   // 创建目录
   async createDirectory() {
     const dirName = document.getElementById('dirNameInput').value.trim();
-    
+
     if (!dirName) {
       this.showToast('请输入文件夹名称', 'warning');
       return;
     }
-    
+
     try {
       const response = await fetch('/api/files/create-dir', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': this.getAuthHeader()
+          Authorization: this.getAuthHeader(),
         },
         body: JSON.stringify({
           path: this.currentPath,
-          dir_name: dirName
-        })
+          dir_name: dirName,
+        }),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         this.showToast('文件夹创建成功', 'success');
         this.closeModal(document.getElementById('createDirModal'));
@@ -1174,7 +1204,7 @@ const FileManager = {
       this.showToast('创建文件夹失败', 'error');
     }
   },
-  
+
   // 打开重命名模态框
   openRenameModal() {
     if (!this.selectedFile) return;
@@ -1188,33 +1218,33 @@ const FileManager = {
       document.getElementById('renameInput').select();
     }, 100);
   },
-  
+
   // 重命名文件
   async renameFile() {
     if (!this.selectedFile) return;
-    
+
     const newName = document.getElementById('renameInput').value.trim();
-    
+
     if (!newName) {
       this.showToast('请输入新名称', 'warning');
       return;
     }
-    
+
     try {
       const response = await fetch('/api/files', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': this.getAuthHeader()
+          Authorization: this.getAuthHeader(),
         },
         body: JSON.stringify({
           old_path: this.selectedFile.path,
-          new_name: newName
-        })
+          new_name: newName,
+        }),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         this.showToast('重命名成功', 'success');
         this.closeModal(document.getElementById('renameModal'));
@@ -1227,7 +1257,7 @@ const FileManager = {
       this.showToast('重命名失败', 'error');
     }
   },
-  
+
   // 打开删除确认模态框
   openDeleteModal() {
     if (!this.selectedFile) return;
@@ -1237,21 +1267,24 @@ const FileManager = {
     const modal = document.getElementById('deleteModal');
     modal.classList.add('active');
   },
-  
+
   // 删除文件
   async deleteFile() {
     if (!this.selectedFile) return;
-    
+
     try {
-      const response = await fetch(`/api/files?path=${encodeURIComponent(this.selectedFile.path)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': this.getAuthHeader()
+      const response = await fetch(
+        `/api/files?path=${encodeURIComponent(this.selectedFile.path)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: this.getAuthHeader(),
+          },
         }
-      });
-      
+      );
+
       const result = await response.json();
-      
+
       if (result.success) {
         this.showToast('删除成功', 'success');
         this.closeModal(document.getElementById('deleteModal'));
@@ -1264,7 +1297,7 @@ const FileManager = {
       this.showToast('删除失败', 'error');
     }
   },
-  
+
   // 关闭模态框
   closeModal(modal) {
     modal.classList.remove('active');
@@ -1273,17 +1306,17 @@ const FileManager = {
       modal.classList.remove('closing');
     }, 300);
   },
-  
+
   // 显示Toast通知
   showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = `toast ${type} active`;
-    
+
     setTimeout(() => {
       toast.classList.remove('active');
     }, 3000);
-  }
+  },
 };
 
 // 页面加载完成后初始化

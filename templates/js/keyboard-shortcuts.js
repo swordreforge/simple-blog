@@ -5,30 +5,30 @@ class KeyboardShortcuts {
   constructor() {
     this.shortcuts = {
       // 导航快捷键
-      '1': { action: 'navigate', url: '/', label: '主页' },
-      '2': { action: 'navigate', url: '/passage', label: '文章' },
-      '3': { action: 'navigate', url: '/collect', label: '归档' },
-      '4': { action: 'navigate', url: '/about', label: '关于' },
-      '5': { action: 'openModal', modalId: 'userCenterModal', label: '个人中心' },
-      '6': { action: 'navigate', url: '/markdown-editor', label: '编辑器' },
+      1: { action: 'navigate', url: '/', label: '主页' },
+      2: { action: 'navigate', url: '/passage', label: '文章' },
+      3: { action: 'navigate', url: '/collect', label: '归档' },
+      4: { action: 'navigate', url: '/about', label: '关于' },
+      5: { action: 'openModal', modalId: 'userCenterModal', label: '个人中心' },
+      6: { action: 'navigate', url: '/markdown-editor', label: '编辑器' },
 
       // 功能快捷键
-      'f': { action: 'navigate', url: '/friends', label: '友链' },
-      'l': { action: 'openModal', modalId: 'loginModal', label: '登录' },
+      f: { action: 'navigate', url: '/friends', label: '友链' },
+      l: { action: 'openModal', modalId: 'loginModal', label: '登录' },
       '/': { action: 'showHelp', label: '快捷键帮助' },
-      'Escape': { action: 'closeAllModals', label: '关闭模态框' },
+      Escape: { action: 'closeAllModals', label: '关闭模态框' },
 
       // 音乐播放器快捷键
       ' ': { action: 'music', musicAction: 'togglePlay', label: '播放/暂停' },
-      'ArrowLeft': { action: 'music', musicAction: 'previous', label: '上一首' },
-      'ArrowRight': { action: 'music', musicAction: 'next', label: '下一首' },
-      'ArrowUp': { action: 'music', musicAction: 'volumeUp', label: '音量+' },
-      'ArrowDown': { action: 'music', musicAction: 'volumeDown', label: '音量-' },
-      'm': { action: 'music', musicAction: 'mute', label: '静音' },
-      'p': { action: 'music', musicAction: 'playlist', label: '播放列表' },
+      ArrowLeft: { action: 'music', musicAction: 'previous', label: '上一首' },
+      ArrowRight: { action: 'music', musicAction: 'next', label: '下一首' },
+      ArrowUp: { action: 'music', musicAction: 'volumeUp', label: '音量+' },
+      ArrowDown: { action: 'music', musicAction: 'volumeDown', label: '音量-' },
+      m: { action: 'music', musicAction: 'mute', label: '静音' },
+      p: { action: 'music', musicAction: 'playlist', label: '播放列表' },
 
       // 管理员快捷键
-      'a': { action: 'navigate', url: '/admin', label: '管理员设置', adminOnly: true }
+      a: { action: 'navigate', url: '/admin', label: '管理员设置', adminOnly: true },
     };
 
     this.enabled = true;
@@ -37,7 +37,7 @@ class KeyboardShortcuts {
 
   init() {
     // 监听键盘事件
-    document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+    document.addEventListener('keydown', e => this.handleKeyPress(e));
 
     // 显示快捷键提示
     this.showShortcutHints();
@@ -52,11 +52,12 @@ class KeyboardShortcuts {
 
     // 如果用户正在输入框中输入,不触发快捷键
     const activeElement = document.activeElement;
-    if (activeElement && (
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.isContentEditable
-    )) {
+    if (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable)
+    ) {
       return;
     }
 
@@ -71,13 +72,25 @@ class KeyboardShortcuts {
 
     // 检查是否在文章页面且处于聚焦模式
     const isPassageFocusMode = document.body.classList.contains('focus-mode');
-    if (isPassageFocusMode && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    if (
+      isPassageFocusMode &&
+      (e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown' ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight')
+    ) {
       return;
     }
 
     // 检查是否在归档页面且处于聚焦模式
     const isCollectFocusMode = document.body.classList.contains('collect-focus-mode');
-    if (isCollectFocusMode && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    if (
+      isCollectFocusMode &&
+      (e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown' ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight')
+    ) {
       return;
     }
 
@@ -96,13 +109,13 @@ class KeyboardShortcuts {
     } else {
       // 如果 e.key 没有找到，尝试使用 keyCode 映射
       const keyCodeMap = {
-        49: '1',  // 数字键1
-        50: '2',  // 数字键2
-        51: '3',  // 数字键3
-        52: '4',  // 数字键4
-        53: '5',  // 数字键5
-        54: '6',  // 数字键6
-        76: 'l',  // 字母键L
+        49: '1', // 数字键1
+        50: '2', // 数字键2
+        51: '3', // 数字键3
+        52: '4', // 数字键4
+        53: '5', // 数字键5
+        54: '6', // 数字键6
+        76: 'l', // 字母键L
       };
 
       const mappedKey = keyCodeMap[e.keyCode];
@@ -163,7 +176,11 @@ class KeyboardShortcuts {
 
   executeMusicAction(musicAction, label) {
     // 检查音乐播放器是否存在且已启用
-    if (!window.musicPlayer || !window.musicPlayer.settings || !window.musicPlayer.settings.enabled) {
+    if (
+      !window.musicPlayer ||
+      !window.musicPlayer.settings ||
+      !window.musicPlayer.settings.enabled
+    ) {
       this.showToast('音乐播放器未启用', 'warning');
       return;
     }
@@ -239,12 +256,16 @@ class KeyboardShortcuts {
 
   isPassagePage() {
     // 检查是否在文章页面
-    return window.location.pathname === '/passage' || window.location.pathname.startsWith('/passage/');
+    return (
+      window.location.pathname === '/passage' || window.location.pathname.startsWith('/passage/')
+    );
   }
 
   isCollectPage() {
     // 检查是否在归档页面
-    return window.location.pathname === '/collect' || window.location.pathname.startsWith('/collect/');
+    return (
+      window.location.pathname === '/collect' || window.location.pathname.startsWith('/collect/')
+    );
   }
 
   isAboutPage() {
@@ -254,18 +275,20 @@ class KeyboardShortcuts {
 
   showShortcutHints() {
     // 检测移动端，如果是移动端则不显示快捷键提示
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth <= 768;
     if (isMobile) {
       return; // 移动端不显示快捷键提示
     }
 
     // 为导航链接添加快捷键提示
     const navLinks = document.querySelectorAll('nav a, nav button');
-    
+
     navLinks.forEach(link => {
       const href = link.getAttribute('href');
       const id = link.getAttribute('id');
-      
+
       let shortcutKey = null;
       let label = null;
 
@@ -307,9 +330,9 @@ class KeyboardShortcuts {
       快捷键
       <span class="shortcut-hint">/</span>
     `;
-    
+
     helpButton.addEventListener('click', () => this.showHelpModal());
-    
+
     // 添加到导航栏
     const nav = document.querySelector('nav');
     if (nav) {
@@ -335,7 +358,9 @@ class KeyboardShortcuts {
             <h4>功能快捷键</h4>
             ${this.renderShortcutList(['5', 'f', 'l', '/', 'Escape'])}
 
-            ${this.isPassagePage() ? `
+            ${
+              this.isPassagePage()
+                ? `
             <h4>文章页面 - 文本聚焦模式</h4>
             <div class="shortcut-item">
               <kbd class="shortcut-key">i</kbd>
@@ -352,9 +377,13 @@ class KeyboardShortcuts {
             <div class="shortcut-description">
               聚焦模式下：← → 切换面板，↑ ↓ 导航，Enter 激活，u 展开/折叠
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
-            ${this.isCollectPage() ? `
+            ${
+              this.isCollectPage()
+                ? `
             <h4>归档页面 - 聚焦模式</h4>
             <div class="shortcut-item">
               <kbd class="shortcut-key">i</kbd>
@@ -371,9 +400,13 @@ class KeyboardShortcuts {
             <div class="shortcut-description">
               聚焦模式下：↑ ↓ ← → 导航，Enter 进入子菜单/激活，ESC 返回
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
-            ${this.isAboutPage() ? `
+            ${
+              this.isAboutPage()
+                ? `
             <h4>关于页面 - 聚焦模式</h4>
             <div class="shortcut-item">
               <kbd class="shortcut-key">i</kbd>
@@ -390,7 +423,9 @@ class KeyboardShortcuts {
             <div class="shortcut-description">
               聚焦模式下：↑ ↓ 导航卡片，Enter 查看卡片内容
             </div>
-            ` : ''}
+            `
+                : ''
+            }
 
             <h4>音乐播放器快捷键</h4>
             ${this.renderShortcutList([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'm', 'p'])}
@@ -412,7 +447,7 @@ class KeyboardShortcuts {
     });
 
     // 点击外部关闭
-    helpModal.addEventListener('click', (e) => {
+    helpModal.addEventListener('click', e => {
       if (e.target === helpModal) {
         helpModal.classList.remove('active');
         setTimeout(() => helpModal.remove(), 300);
@@ -420,7 +455,7 @@ class KeyboardShortcuts {
     });
 
     // ESC 键关闭
-    const handleEscape = (e) => {
+    const handleEscape = e => {
       if (e.key === 'Escape') {
         helpModal.classList.remove('active');
         setTimeout(() => helpModal.remove(), 300);
@@ -431,31 +466,33 @@ class KeyboardShortcuts {
   }
 
   renderShortcutList(keys) {
-    return keys.map(key => {
-      const shortcut = this.shortcuts[key];
-      if (!shortcut) return '';
+    return keys
+      .map(key => {
+        const shortcut = this.shortcuts[key];
+        if (!shortcut) return '';
 
-      // 格式化按键显示
-      let displayKey = key;
-      if (key === ' ') {
-        displayKey = 'Space';
-      } else if (key === 'ArrowLeft') {
-        displayKey = '←';
-      } else if (key === 'ArrowRight') {
-        displayKey = '→';
-      } else if (key === 'ArrowUp') {
-        displayKey = '↑';
-      } else if (key === 'ArrowDown') {
-        displayKey = '↓';
-      }
+        // 格式化按键显示
+        let displayKey = key;
+        if (key === ' ') {
+          displayKey = 'Space';
+        } else if (key === 'ArrowLeft') {
+          displayKey = '←';
+        } else if (key === 'ArrowRight') {
+          displayKey = '→';
+        } else if (key === 'ArrowUp') {
+          displayKey = '↑';
+        } else if (key === 'ArrowDown') {
+          displayKey = '↓';
+        }
 
-      return `
+        return `
         <div class="shortcut-item">
           <kbd class="shortcut-key">${displayKey}</kbd>
           <span class="shortcut-label">${shortcut.label}</span>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
   }
 
   showToast(message, type = 'info') {
@@ -499,7 +536,7 @@ class KeyboardShortcuts {
       success: '✓',
       error: '✕',
       warning: '⚠',
-      info: 'ℹ'
+      info: 'ℹ',
     };
     return icons[type] || icons.info;
   }
@@ -522,15 +559,23 @@ class AdminKeyboardManager {
     this.selectedRows = new Set();
     this.selectedFile = null;
     this.currentPath = '/';
-    
+
     // 关于界面的表格状态
     this.aboutCurrentTable = 'main'; // 'main' 或 'sub'
-    
+
     this.tabs = [
-      'articles', 'users', 'comments', 'categories', 'tags',
-      'analytics', 'about', 'filemanager', 'attachments', 'settings'
+      'articles',
+      'users',
+      'comments',
+      'categories',
+      'tags',
+      'analytics',
+      'about',
+      'filemanager',
+      'attachments',
+      'settings',
     ];
-    
+
     this.init();
   }
 
@@ -543,13 +588,13 @@ class AdminKeyboardManager {
     // 监听键盘事件
     document.addEventListener('keydown', this.handleKeyDown.bind(this));
     document.addEventListener('keyup', this.handleKeyUp.bind(this));
-    
+
     // 监听模态框变化
     this.observeModals();
-    
+
     // 监听标签页变化
     this.observeTabs();
-    
+
     console.log('[管理员快捷键] 已初始化');
   }
 
@@ -598,11 +643,12 @@ class AdminKeyboardManager {
   }
 
   isInputElement(element) {
-    return element && (
-      element.tagName === 'INPUT' ||
-      element.tagName === 'TEXTAREA' ||
-      element.tagName === 'SELECT' ||
-      element.isContentEditable
+    return (
+      element &&
+      (element.tagName === 'INPUT' ||
+        element.tagName === 'TEXTAREA' ||
+        element.tagName === 'SELECT' ||
+        element.isContentEditable)
     );
   }
 
@@ -640,7 +686,9 @@ class AdminKeyboardManager {
 
         // 然后触发保存
         setTimeout(() => {
-          const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+          const currentTabPane = document.querySelector(
+            `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+          );
           if (currentTabPane) {
             const visibleSection = this.getVisibleSettingsSection(currentTabPane);
             if (visibleSection) {
@@ -651,7 +699,13 @@ class AdminKeyboardManager {
                 saveBtn = document.getElementById('saveSettingsBtn');
               } else if (sectionTitle.includes('音乐')) {
                 saveBtn = document.getElementById('saveMusicSettingsBtn');
-              } else if (sectionTitle.includes('模板') || sectionTitle.includes('文章标题') || sectionTitle.includes('切换界面') || sectionTitle.includes('外部链接') || sectionTitle.includes('赞助')) {
+              } else if (
+                sectionTitle.includes('模板') ||
+                sectionTitle.includes('文章标题') ||
+                sectionTitle.includes('切换界面') ||
+                sectionTitle.includes('外部链接') ||
+                sectionTitle.includes('赞助')
+              ) {
                 saveBtn = document.getElementById('saveTemplateSettingsBtn');
               }
 
@@ -673,10 +727,14 @@ class AdminKeyboardManager {
 
         // 然后触发跳转
         setTimeout(() => {
-          const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+          const currentTabPane = document.querySelector(
+            `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+          );
           if (currentTabPane) {
             const sectionIndex = parseInt(key);
-            const section = currentTabPane.querySelector(`.settings-section:nth-of-type(${sectionIndex})`);
+            const section = currentTabPane.querySelector(
+              `.settings-section:nth-of-type(${sectionIndex})`
+            );
             if (section) {
               section.scrollIntoView({ behavior: 'smooth', block: 'start' });
               this.focusFirstInputInSection(section);
@@ -696,17 +754,17 @@ class AdminKeyboardManager {
   getKeyString(event) {
     // 构建按键字符串
     let key = event.key;
-    
+
     // 处理特殊键
     if (key === ' ') {
       key = 'Space';
     }
-    
+
     return key;
   }
 
   handleGlobalShortcuts(key, event) {
-    switch(key) {
+    switch (key) {
       case 'i':
         if (!this.activeModal) {
           this.enterFocusMode();
@@ -714,12 +772,12 @@ class AdminKeyboardManager {
           return true;
         }
         break;
-        
+
       case 'q':
         this.exitFocusMode();
         event.preventDefault();
         return true;
-        
+
       case 'Escape':
         if (this.activeModal) {
           this.closeCurrentModal();
@@ -734,16 +792,16 @@ class AdminKeyboardManager {
 
   handleModalShortcuts(key, event) {
     if (!this.activeModal) return false;
-    
+
     const activeElement = document.activeElement;
     const isInput = this.isInputElement(activeElement);
-    
-    switch(key) {
+
+    switch (key) {
       case 'Escape':
         this.closeCurrentModal();
         event.preventDefault();
         return true;
-        
+
       case 'Enter':
         // 如果在文本域中且按了 Shift+Enter，允许换行
         if (isInput && activeElement.tagName === 'TEXTAREA' && event.shiftKey) {
@@ -781,7 +839,7 @@ class AdminKeyboardManager {
           }
         }
         break;
-        
+
       case 's':
         // 查找并点击保存/提交按钮
         const submitBtn = this.activeModal.querySelector('button[type="submit"], .btn-primary');
@@ -791,22 +849,22 @@ class AdminKeyboardManager {
           return true;
         }
         break;
-        
+
       case 'y':
         // y = yes/确认：点击主要操作按钮
         // 优先查找 ID 为 confirmAction 的按钮（删除确认模态框）
         let confirmBtn = this.activeModal.querySelector('#confirmAction');
-        
+
         // 如果没有找到，查找 type="submit" 的按钮
         if (!confirmBtn) {
           confirmBtn = this.activeModal.querySelector('button[type="submit"]');
         }
-        
+
         // 如果还没有找到，查找 .btn-primary 类的按钮
         if (!confirmBtn) {
           confirmBtn = this.activeModal.querySelector('.btn-primary');
         }
-        
+
         if (confirmBtn) {
           // 检查按钮是否可见和可点击
           const style = window.getComputedStyle(confirmBtn);
@@ -817,7 +875,7 @@ class AdminKeyboardManager {
           }
         }
         break;
-        
+
       case 'c':
         // c = cancel/取消：关闭模态框
         // 优先查找取消按钮并点击
@@ -830,7 +888,7 @@ class AdminKeyboardManager {
         }
         event.preventDefault();
         return true;
-        
+
       case 'Tab':
         // 实现模态框内的循环 Tab 导航
         this.handleTabNavigation(event);
@@ -838,7 +896,10 @@ class AdminKeyboardManager {
 
       case ' ':
         // 如果焦点在单选框或复选框上，模拟点击切换状态
-        if (activeElement && (activeElement.type === 'radio' || activeElement.type === 'checkbox')) {
+        if (
+          activeElement &&
+          (activeElement.type === 'radio' || activeElement.type === 'checkbox')
+        ) {
           activeElement.click();
           event.preventDefault();
           return true;
@@ -880,7 +941,7 @@ class AdminKeyboardManager {
     }
 
     // 标签页内导航
-    switch(key) {
+    switch (key) {
       case 'ArrowRight':
         this.nextTab();
         event.preventDefault();
@@ -911,13 +972,13 @@ class AdminKeyboardManager {
         event.preventDefault();
         return true;
     }
-    
+
     // 特定标签页功能
     return this.handleSpecificTabShortcuts(key, event);
   }
 
   handleSpecificTabShortcuts(key, event) {
-    switch(this.currentTab) {
+    switch (this.currentTab) {
       case 'articles':
         return this.handleArticleShortcuts(key, event);
       case 'filemanager':
@@ -942,28 +1003,28 @@ class AdminKeyboardManager {
 
   handleArticleShortcuts(key, event) {
     if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
-    
-    switch(key) {
+
+    switch (key) {
       case 'e':
         this.editSelectedArticle();
         event.preventDefault();
         return true;
-        
+
       case 'd':
         this.deleteSelectedArticle();
         event.preventDefault();
         return true;
-        
+
       case 'v':
         this.viewSelectedArticle();
         event.preventDefault();
         return true;
-        
+
       case 'a':
         this.attachToSelectedArticle();
         event.preventDefault();
         return true;
-        
+
       case 'p':
         this.publishSelectedArticle();
         event.preventDefault();
@@ -973,17 +1034,17 @@ class AdminKeyboardManager {
   }
 
   handleFileManagerShortcuts(key, event) {
-    switch(key) {
+    switch (key) {
       case 'Enter':
         this.openSelectedFile();
         event.preventDefault();
         return true;
-        
+
       case 'Backspace':
         this.goUpDirectory();
         event.preventDefault();
         return true;
-        
+
       case 'r':
         if (!this.selectedFile) {
           this.refreshCurrentTab();
@@ -992,7 +1053,7 @@ class AdminKeyboardManager {
         }
         event.preventDefault();
         return true;
-        
+
       case 'Delete':
         this.deleteSelectedFile();
         event.preventDefault();
@@ -1003,13 +1064,13 @@ class AdminKeyboardManager {
 
   handleUserShortcuts(key, event) {
     if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
-    
-    switch(key) {
+
+    switch (key) {
       case 'e':
         this.editSelectedUser();
         event.preventDefault();
         return true;
-        
+
       case 'd':
         this.deleteSelectedUser();
         event.preventDefault();
@@ -1020,13 +1081,13 @@ class AdminKeyboardManager {
 
   handleCommentShortcuts(key, event) {
     if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
-    
-    switch(key) {
+
+    switch (key) {
       case 'a':
         this.approveSelectedComment();
         event.preventDefault();
         return true;
-        
+
       case 'd':
         this.deleteSelectedComment();
         event.preventDefault();
@@ -1036,7 +1097,7 @@ class AdminKeyboardManager {
   }
 
   handleCategoryShortcuts(key, event) {
-    switch(key) {
+    switch (key) {
       case 'a':
         // 点击添加分类按钮
         const addCategoryBtn = document.getElementById('addCategoryBtn');
@@ -1046,13 +1107,13 @@ class AdminKeyboardManager {
           return true;
         }
         break;
-        
+
       case 'e':
         if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
         this.editSelectedCategory();
         event.preventDefault();
         return true;
-        
+
       case 'd':
         if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
         this.deleteSelectedCategory();
@@ -1063,7 +1124,7 @@ class AdminKeyboardManager {
   }
 
   handleTagShortcuts(key, event) {
-    switch(key) {
+    switch (key) {
       case 'a':
         // 点击添加标签按钮
         const addTagBtn = document.getElementById('addTagBtn');
@@ -1073,13 +1134,13 @@ class AdminKeyboardManager {
           return true;
         }
         break;
-        
+
       case 'e':
         if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
         this.editSelectedTag();
         event.preventDefault();
         return true;
-        
+
       case 'd':
         if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
         this.deleteSelectedTag();
@@ -1092,7 +1153,7 @@ class AdminKeyboardManager {
   handleAttachmentShortcuts(key, event) {
     if (!this.selectedRows.size && !this.hasSelectedRow()) return false;
 
-    switch(key) {
+    switch (key) {
       case 'v':
         this.viewSelectedAttachment();
         event.preventDefault();
@@ -1117,7 +1178,7 @@ class AdminKeyboardManager {
     const selectedRow = this.getSelectedRow();
     if (!selectedRow) return false;
 
-    switch(key) {
+    switch (key) {
       case 'e':
         // 编辑：点击编辑按钮
         const editBtn = selectedRow.querySelector('button[onclick*="edit"]');
@@ -1152,10 +1213,12 @@ class AdminKeyboardManager {
   }
 
   handleSettingsShortcuts(key, event) {
-    const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+    const currentTabPane = document.querySelector(
+      `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+    );
     if (!currentTabPane) return false;
 
-    switch(key) {
+    switch (key) {
       case '1':
         // 跳转到外观设置
         const appearanceSection = currentTabPane.querySelector('.settings-section:nth-of-type(1)');
@@ -1194,7 +1257,9 @@ class AdminKeyboardManager {
 
       case '4':
         // 跳转到文章标题设置
-        const articleTitleSection = currentTabPane.querySelector('.settings-section:nth-of-type(4)');
+        const articleTitleSection = currentTabPane.querySelector(
+          '.settings-section:nth-of-type(4)'
+        );
         if (articleTitleSection) {
           articleTitleSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
           this.focusFirstInputInSection(articleTitleSection);
@@ -1206,7 +1271,9 @@ class AdminKeyboardManager {
 
       case '5':
         // 跳转到切换界面提示设置
-        const switchNoticeSection = currentTabPane.querySelector('.settings-section:nth-of-type(5)');
+        const switchNoticeSection = currentTabPane.querySelector(
+          '.settings-section:nth-of-type(5)'
+        );
         if (switchNoticeSection) {
           switchNoticeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
           this.focusFirstInputInSection(switchNoticeSection);
@@ -1218,7 +1285,9 @@ class AdminKeyboardManager {
 
       case '6':
         // 跳转到外部链接设置
-        const externalLinkSection = currentTabPane.querySelector('.settings-section:nth-of-type(6)');
+        const externalLinkSection = currentTabPane.querySelector(
+          '.settings-section:nth-of-type(6)'
+        );
         if (externalLinkSection) {
           externalLinkSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
           this.focusFirstInputInSection(externalLinkSection);
@@ -1251,7 +1320,13 @@ class AdminKeyboardManager {
             saveBtn = document.getElementById('saveSettingsBtn');
           } else if (sectionTitle.includes('音乐')) {
             saveBtn = document.getElementById('saveMusicSettingsBtn');
-          } else if (sectionTitle.includes('模板') || sectionTitle.includes('文章标题') || sectionTitle.includes('切换界面') || sectionTitle.includes('外部链接') || sectionTitle.includes('赞助')) {
+          } else if (
+            sectionTitle.includes('模板') ||
+            sectionTitle.includes('文章标题') ||
+            sectionTitle.includes('切换界面') ||
+            sectionTitle.includes('外部链接') ||
+            sectionTitle.includes('赞助')
+          ) {
             saveBtn = document.getElementById('saveTemplateSettingsBtn');
           }
 
@@ -1306,7 +1381,7 @@ class AdminKeyboardManager {
     // 查找区块中第一个可聚焦的输入元素
     const focusableElements = section.querySelectorAll(
       'input[type="text"], input[type="number"], input[type="color"], ' +
-      'textarea, select, input[type="checkbox"]'
+        'textarea, select, input[type="checkbox"]'
     );
 
     if (focusableElements.length > 0) {
@@ -1325,8 +1400,8 @@ class AdminKeyboardManager {
     // 获取所有表单控件（排除操作按钮）
     const formControls = document.querySelectorAll(
       '#settings input[type="text"], #settings input[type="number"], #settings input[type="color"], ' +
-      '#settings textarea, #settings select, #settings input[type="checkbox"], ' +
-      '#settings input[type="range"]'
+        '#settings textarea, #settings select, #settings input[type="checkbox"], ' +
+        '#settings input[type="range"]'
     );
 
     if (formControls.length === 0) return false;
@@ -1458,7 +1533,7 @@ class AdminKeyboardManager {
     });
 
     // 点击外部关闭
-    helpModal.addEventListener('click', (e) => {
+    helpModal.addEventListener('click', e => {
       if (e.target === helpModal) {
         helpModal.classList.remove('active');
         setTimeout(() => helpModal.remove(), 300);
@@ -1466,7 +1541,7 @@ class AdminKeyboardManager {
     });
 
     // ESC 键关闭
-    const handleEscape = (e) => {
+    const handleEscape = e => {
       if (e.key === 'Escape') {
         helpModal.classList.remove('active');
         setTimeout(() => helpModal.remove(), 300);
@@ -1478,7 +1553,9 @@ class AdminKeyboardManager {
 
   handleRowNavigation(key, event) {
     // 获取当前标签页的表格
-    const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+    const currentTabPane = document.querySelector(
+      `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+    );
     if (!currentTabPane) return false;
 
     // 关于界面特殊处理：有两个表格
@@ -1499,7 +1576,7 @@ class AdminKeyboardManager {
     let currentRow = this.getSelectedRow();
     let currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
 
-    switch(key) {
+    switch (key) {
       case 'ArrowUp':
         event.preventDefault();
         if (currentIndex <= 0) {
@@ -1581,7 +1658,7 @@ class AdminKeyboardManager {
     let currentRow = this.getSelectedRow();
     let currentIndex = currentRow ? rows.indexOf(currentRow) : -1;
 
-    switch(key) {
+    switch (key) {
       case 'ArrowUp':
         event.preventDefault();
         if (currentIndex <= 0) {
@@ -1677,20 +1754,20 @@ class AdminKeyboardManager {
 
     return false;
   }
-  
+
   // ========== 行选择相关方法 ==========
-  
+
   selectRow(row) {
     // 移除所有行的选中状态
     const allRows = document.querySelectorAll('.data-table tbody tr');
     allRows.forEach(r => r.classList.remove('selected'));
-    
+
     // 添加选中状态到目标行
     row.classList.add('selected');
-    
+
     // 确保行在视口中可见
     row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    
+
     // 更新选中行集合
     this.selectedRows.clear();
     const rowId = row.dataset.id || row.querySelector('td:first-child')?.textContent;
@@ -1698,7 +1775,7 @@ class AdminKeyboardManager {
       this.selectedRows.add(rowId);
     }
   }
-  
+
   toggleRowSelection(row) {
     // 切换行的选中状态
     if (row.classList.contains('selected')) {
@@ -1715,13 +1792,13 @@ class AdminKeyboardManager {
       }
     }
   }
-  
+
   activateSelectedRow() {
     const selectedRow = this.getSelectedRow();
     if (!selectedRow) return;
-    
+
     // 根据当前标签页执行不同的操作
-    switch(this.currentTab) {
+    switch (this.currentTab) {
       case 'articles':
         // 文章管理：默认执行查看操作
         this.viewSelectedArticle();
@@ -1748,7 +1825,7 @@ class AdminKeyboardManager {
         }
     }
   }
-  
+
   clearRowSelection() {
     const allRows = document.querySelectorAll('.data-table tbody tr');
     allRows.forEach(r => r.classList.remove('selected'));
@@ -1757,11 +1834,11 @@ class AdminKeyboardManager {
 
   handleFocusModeShortcuts(key, event) {
     // 通用聚焦模式快捷键
-    switch(key) {
+    switch (key) {
       case 'Tab':
         event.preventDefault();
         return true;
-        
+
       case '?':
         this.showAdminShortcutHelp();
         event.preventDefault();
@@ -1771,21 +1848,23 @@ class AdminKeyboardManager {
   }
 
   // ========== 聚焦模式控制 ==========
-  
+
   enterFocusMode() {
     if (this.isFocusMode) return;
-    
+
     this.isFocusMode = true;
     document.body.classList.add('admin-focus-mode');
-    
+
     // 禁用普通快捷键
     if (window.keyboardShortcuts) {
       window.keyboardShortcuts.disable();
     }
-    
+
     // 自动选择第一行（如果有的话）
     setTimeout(() => {
-      const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+      const currentTabPane = document.querySelector(
+        `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+      );
       if (currentTabPane) {
         const tbody = currentTabPane.querySelector('.data-table tbody');
         if (tbody) {
@@ -1796,31 +1875,31 @@ class AdminKeyboardManager {
         }
       }
     }, 100);
-    
+
     this.showToast('已进入管理员聚焦模式', 'success');
     console.log('[管理员快捷键] 进入聚焦模式');
   }
 
   exitFocusMode() {
     if (!this.isFocusMode) return;
-    
+
     this.isFocusMode = false;
     document.body.classList.remove('admin-focus-mode');
-    
+
     // 清除行选择
     this.clearRowSelection();
-    
+
     // 启用普通快捷键
     if (window.keyboardShortcuts) {
       window.keyboardShortcuts.enable();
     }
-    
+
     this.showToast('已退出管理员聚焦模式', 'info');
     console.log('[管理员快捷键] 退出聚焦模式');
   }
 
   // ========== 标签页操作 ==========
-  
+
   switchToTab(tabId) {
     const tabButton = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
     if (tabButton) {
@@ -1851,7 +1930,7 @@ class AdminKeyboardManager {
   refreshCurrentTab() {
     // 根据当前标签页查找对应的刷新按钮
     let refreshBtn = null;
-    
+
     // 文章管理 - 使用特定的ID
     if (this.currentTab === 'articles') {
       refreshBtn = document.getElementById('refreshArticlesBtn');
@@ -1868,15 +1947,17 @@ class AdminKeyboardManager {
     else {
       refreshBtn = document.querySelector(`#${this.currentTab}RefreshBtn, .refresh-btn`);
     }
-    
+
     if (refreshBtn) {
       refreshBtn.click();
       this.showToast('已刷新', 'success');
       return;
     }
-    
+
     // 尝试通过文本查找（在当前标签页内容区域内）
-    const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+    const currentTabPane = document.querySelector(
+      `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+    );
     if (currentTabPane) {
       const buttons = currentTabPane.querySelectorAll('button');
       for (const btn of buttons) {
@@ -1888,7 +1969,7 @@ class AdminKeyboardManager {
         }
       }
     }
-    
+
     // 尝试调用刷新函数（如果存在）
     if (this.currentTab === 'articles' && typeof loadPassages === 'function') {
       loadPassages();
@@ -1905,7 +1986,7 @@ class AdminKeyboardManager {
   createNewItem() {
     // 根据当前标签页查找对应的新建按钮
     let newBtn = null;
-    
+
     // 文章管理 - 使用特定的ID
     if (this.currentTab === 'articles') {
       newBtn = document.getElementById('newArticleBtn');
@@ -1926,44 +2007,58 @@ class AdminKeyboardManager {
     else {
       newBtn = document.querySelector(`#${this.currentTab}NewBtn, .new-btn`);
     }
-    
+
     if (newBtn) {
       newBtn.click();
       return;
     }
-    
+
     // 尝试通过文本查找（在当前标签页内容区域内）
-    const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+    const currentTabPane = document.querySelector(
+      `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+    );
     if (currentTabPane) {
       const buttons = currentTabPane.querySelectorAll('button');
       for (const btn of buttons) {
         const text = btn.textContent.trim();
-        if (text === '新建文章' || text === '新建用户' || text === '新建分类' || 
-            text === '新建标签' || text.startsWith('新建') || text.startsWith('创建') || text.startsWith('添加')) {
+        if (
+          text === '新建文章' ||
+          text === '新建用户' ||
+          text === '新建分类' ||
+          text === '新建标签' ||
+          text.startsWith('新建') ||
+          text.startsWith('创建') ||
+          text.startsWith('添加')
+        ) {
           btn.click();
           return;
         }
       }
     }
-    
+
     // 最后尝试在整个页面查找
     const allButtons = document.querySelectorAll('button');
     for (const btn of allButtons) {
       const text = btn.textContent.trim();
-      if (text === '新建文章' || text === '新建用户' || text === '新建分类' || 
-          text === '新建标签' || text.startsWith('新建')) {
+      if (
+        text === '新建文章' ||
+        text === '新建用户' ||
+        text === '新建分类' ||
+        text === '新建标签' ||
+        text.startsWith('新建')
+      ) {
         btn.click();
         return;
       }
     }
-    
+
     this.showToast('未找到新建按钮', 'warning');
   }
 
   uploadItem() {
     // 根据当前标签页查找对应的上传按钮
     let uploadBtn = null;
-    
+
     // 附件管理 - 使用特定的ID
     if (this.currentTab === 'attachments') {
       uploadBtn = document.getElementById('amUploadBtn');
@@ -1976,14 +2071,16 @@ class AdminKeyboardManager {
     else {
       uploadBtn = document.querySelector(`#${this.currentTab}UploadBtn, .upload-btn`);
     }
-    
+
     if (uploadBtn) {
       uploadBtn.click();
       return;
     }
-    
+
     // 尝试通过文本查找（在当前标签页内容区域内）
-    const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+    const currentTabPane = document.querySelector(
+      `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+    );
     if (currentTabPane) {
       const buttons = currentTabPane.querySelectorAll('button');
       for (const btn of buttons) {
@@ -1994,7 +2091,7 @@ class AdminKeyboardManager {
         }
       }
     }
-    
+
     // 最后尝试在整个页面查找
     const allButtons = document.querySelectorAll('button');
     for (const btn of allButtons) {
@@ -2004,14 +2101,14 @@ class AdminKeyboardManager {
         return;
       }
     }
-    
+
     this.showToast('未找到上传按钮', 'warning');
   }
 
   openSearch() {
     // 根据当前标签页查找对应的搜索框
     let searchInput = null;
-    
+
     // 附件管理 - 使用特定的ID
     if (this.currentTab === 'attachments') {
       searchInput = document.getElementById('amSearchInput');
@@ -2026,34 +2123,42 @@ class AdminKeyboardManager {
     }
     // 通用查找
     else {
-      searchInput = document.querySelector(`#${this.currentTab}SearchInput, .search-input, input[type="search"]`);
+      searchInput = document.querySelector(
+        `#${this.currentTab}SearchInput, .search-input, input[type="search"]`
+      );
     }
-    
+
     if (searchInput) {
       searchInput.focus();
       this.showToast('已聚焦到搜索框', 'success');
       return;
     }
-    
+
     // 尝试在当前标签页内容区域内查找
-    const currentTabPane = document.querySelector(`.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`);
+    const currentTabPane = document.querySelector(
+      `.tab-pane[data-tab="${this.currentTab}"], .tab-pane.active`
+    );
     if (currentTabPane) {
       const inputs = currentTabPane.querySelectorAll('input[type="text"], input[type="search"]');
       for (const input of inputs) {
         const placeholder = input.placeholder || '';
-        if (placeholder.includes('搜索') || placeholder.includes('筛选') || placeholder.includes('查找')) {
+        if (
+          placeholder.includes('搜索') ||
+          placeholder.includes('筛选') ||
+          placeholder.includes('查找')
+        ) {
           input.focus();
           this.showToast('已聚焦到搜索框', 'success');
           return;
         }
       }
     }
-    
+
     this.showToast('未找到搜索框', 'warning');
   }
 
   // ========== 文章管理操作 ==========
-  
+
   hasSelectedRow() {
     return document.querySelector('.data-table tr.selected') !== null;
   }
@@ -2114,7 +2219,7 @@ class AdminKeyboardManager {
   }
 
   // ========== 文件管理操作 ==========
-  
+
   openSelectedFile() {
     if (this.selectedFile) {
       if (window.FileManager) {
@@ -2146,7 +2251,7 @@ class AdminKeyboardManager {
   }
 
   // ========== 用户管理操作 ==========
-  
+
   editSelectedUser() {
     const selectedRow = this.getSelectedRow();
     if (selectedRow) {
@@ -2168,7 +2273,7 @@ class AdminKeyboardManager {
   }
 
   // ========== 评论管理操作 ==========
-  
+
   approveSelectedComment() {
     const selectedRow = this.getSelectedRow();
     if (selectedRow) {
@@ -2190,7 +2295,7 @@ class AdminKeyboardManager {
   }
 
   // ========== 分类管理操作 ==========
-  
+
   editSelectedCategory() {
     const selectedRow = this.getSelectedRow();
     if (selectedRow) {
@@ -2212,7 +2317,7 @@ class AdminKeyboardManager {
   }
 
   // ========== 标签管理操作 ==========
-  
+
   editSelectedTag() {
     const selectedRow = this.getSelectedRow();
     if (selectedRow) {
@@ -2234,7 +2339,7 @@ class AdminKeyboardManager {
   }
 
   // ========== 附件管理操作 ==========
-  
+
   viewSelectedAttachment() {
     const selectedRow = this.getSelectedRow();
     if (selectedRow) {
@@ -2266,14 +2371,14 @@ class AdminKeyboardManager {
   }
 
   // ========== 模态框操作 ==========
-  
+
   observeModals() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
         // 监听 class 属性变化
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
           const target = mutation.target;
-          
+
           // 检查是否是模态框
           if (target.classList && target.classList.contains('modal')) {
             if (target.classList.contains('active') && !target.classList.contains('closing')) {
@@ -2291,10 +2396,14 @@ class AdminKeyboardManager {
             }
           }
         }
-        
+
         // 监听节点添加/移除（用于动态创建的模态框）
-        mutation.addedNodes.forEach((node) => {
-          if (node.classList && node.classList.contains('modal') && node.classList.contains('active')) {
+        mutation.addedNodes.forEach(node => {
+          if (
+            node.classList &&
+            node.classList.contains('modal') &&
+            node.classList.contains('active')
+          ) {
             this.activeModal = node;
             // 设置焦点陷阱
             this.setupFocusTrap(node);
@@ -2302,8 +2411,8 @@ class AdminKeyboardManager {
             this.focusFirstInput(node);
           }
         });
-        
-        mutation.removedNodes.forEach((node) => {
+
+        mutation.removedNodes.forEach(node => {
           if (node.classList && node.classList.contains('modal')) {
             if (this.activeModal === node) {
               this.activeModal = null;
@@ -2312,42 +2421,42 @@ class AdminKeyboardManager {
         });
       });
     });
-    
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class']
+      attributeFilter: ['class'],
     });
   }
-  
+
   // 设置焦点陷阱，确保焦点始终在模态框内
   setupFocusTrap(modal) {
     if (!modal) return;
-    
+
     // 获取模态框中所有可聚焦的元素
     const focusableElements = modal.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    
+
     // 使用相同的可见性检查逻辑
     const visibleFocusable = Array.from(focusableElements).filter(el => {
       // 检查是否禁用
       if (el.disabled) return false;
-      
+
       // 检查 tabindex 是否为 -1
       if (el.getAttribute('tabindex') === '-1') return false;
-      
+
       // 检查是否隐藏
       const style = window.getComputedStyle(el);
       if (style.display === 'none') return false;
       if (style.visibility === 'hidden') return false;
       if (style.opacity === '0') return false;
-      
+
       // 检查元素是否在视口中可见
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) return false;
-      
+
       // 检查父元素是否可见
       let parent = el.parentElement;
       while (parent && parent !== modal) {
@@ -2357,19 +2466,19 @@ class AdminKeyboardManager {
         }
         parent = parent.parentElement;
       }
-      
+
       return true;
     });
-    
+
     if (visibleFocusable.length === 0) return;
-    
+
     const firstFocusable = visibleFocusable[0];
     const lastFocusable = visibleFocusable[visibleFocusable.length - 1];
-    
+
     // 监听模态框内的键盘事件
-    const trapFocus = (e) => {
+    const trapFocus = e => {
       if (e.key !== 'Tab') return;
-      
+
       if (e.shiftKey) {
         // Shift+Tab: 如果焦点在第一个元素，移到最后一个
         if (document.activeElement === firstFocusable) {
@@ -2384,41 +2493,41 @@ class AdminKeyboardManager {
         }
       }
     };
-    
+
     // 添加事件监听器
     modal.addEventListener('keydown', trapFocus);
-    
+
     // 保存引用以便清理
     modal._focusTrapHandler = trapFocus;
   }
-  
+
   // 处理模态框内的 Tab 导航
   handleTabNavigation(event) {
     if (!this.activeModal) return;
-    
+
     // 获取模态框中所有可聚焦的元素
     const focusableElements = this.activeModal.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    
+
     // 过滤掉不可见和禁用的元素 - 使用更可靠的检查
     const visibleFocusable = Array.from(focusableElements).filter(el => {
       // 检查是否禁用
       if (el.disabled) return false;
-      
+
       // 检查 tabindex 是否为 -1
       if (el.getAttribute('tabindex') === '-1') return false;
-      
+
       // 检查是否隐藏
       const style = window.getComputedStyle(el);
       if (style.display === 'none') return false;
       if (style.visibility === 'hidden') return false;
       if (style.opacity === '0') return false;
-      
+
       // 检查元素是否在视口中可见
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) return false;
-      
+
       // 检查父元素是否可见
       let parent = el.parentElement;
       while (parent && parent !== this.activeModal) {
@@ -2428,19 +2537,19 @@ class AdminKeyboardManager {
         }
         parent = parent.parentElement;
       }
-      
+
       return true;
     });
-    
+
     if (visibleFocusable.length === 0) return;
-    
+
     const activeElement = document.activeElement;
     const currentIndex = visibleFocusable.indexOf(activeElement);
-    
+
     if (event.shiftKey) {
       // Shift+Tab: 反向导航
       event.preventDefault();
-      
+
       if (currentIndex <= 0) {
         // 如果在第一个元素，跳到最后一个
         visibleFocusable[visibleFocusable.length - 1].focus();
@@ -2450,7 +2559,7 @@ class AdminKeyboardManager {
     } else {
       // Tab: 正向导航
       event.preventDefault();
-      
+
       if (currentIndex === -1 || currentIndex >= visibleFocusable.length - 1) {
         // 如果没有焦点或在最后一个元素，跳到第一个
         visibleFocusable[0].focus();
@@ -2459,17 +2568,17 @@ class AdminKeyboardManager {
       }
     }
   }
-  
+
   // 聚焦到模态框中的第一个输入框
   focusFirstInput(modal) {
     if (!modal) return;
-    
+
     // 查找第一个可聚焦的输入元素
     const focusableElements = modal.querySelectorAll(
       'input[type="text"], input[type="email"], input[type="password"], ' +
-      'input[type="number"], input[type="url"], textarea, select'
+        'input[type="number"], input[type="url"], textarea, select'
     );
-    
+
     if (focusableElements.length > 0) {
       // 延迟一点聚焦，确保模态框动画完成
       setTimeout(() => {
@@ -2490,7 +2599,7 @@ class AdminKeyboardManager {
         this.activeModal.removeEventListener('keydown', this.activeModal._focusTrapHandler);
         delete this.activeModal._focusTrapHandler;
       }
-      
+
       const closeBtn = this.activeModal.querySelector('.modal-close');
       if (closeBtn) {
         closeBtn.click();
@@ -2501,10 +2610,10 @@ class AdminKeyboardManager {
   }
 
   // ========== 标签页监听 ==========
-  
+
   observeTabs() {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
           const target = mutation.target;
           if (target.classList && target.classList.contains('tab-btn')) {
@@ -2516,14 +2625,14 @@ class AdminKeyboardManager {
         }
       });
     });
-    
+
     document.querySelectorAll('.tab-btn').forEach(tab => {
       observer.observe(tab, { attributes: true });
     });
   }
 
   // ========== 帮助界面 ==========
-  
+
   showAdminShortcutHelp() {
     const helpContent = `
       <div style="padding: 20px; max-width: 600px;">
@@ -2641,7 +2750,7 @@ class AdminKeyboardManager {
         </ul>
       </div>
     `;
-    
+
     // 创建帮助模态框
     const modal = document.createElement('div');
     modal.className = 'modal active';
@@ -2656,12 +2765,12 @@ class AdminKeyboardManager {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(modal);
   }
 
   // ========== 工具方法 ==========
-  
+
   showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -2699,7 +2808,7 @@ class AdminKeyboardManager {
       success: '✓',
       error: '✕',
       warning: '⚠',
-      info: 'ℹ'
+      info: 'ℹ',
     };
     return icons[type] || icons.info;
   }

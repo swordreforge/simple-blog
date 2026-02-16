@@ -13,7 +13,9 @@
   padding: 20px;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
 }
 
 .modal.active {
@@ -38,7 +40,9 @@
   width: 100%;
   transform: translateY(-50px) scale(0.9);
   opacity: 0;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -82,7 +86,9 @@
   align-items: center;
   transform: translateY(-10px);
   opacity: 0;
-  transition: transform 0.4s ease 0.1s, opacity 0.3s ease 0.1s;
+  transition:
+    transform 0.4s ease 0.1s,
+    opacity 0.3s ease 0.1s;
 }
 
 .modal.active .modal-header {
@@ -122,7 +128,9 @@
   padding: 30px;
   transform: translateY(10px);
   opacity: 0;
-  transition: transform 0.4s ease 0.2s, opacity 0.3s ease 0.2s;
+  transition:
+    transform 0.4s ease 0.2s,
+    opacity 0.3s ease 0.2s;
 }
 
 .modal.active .modal-body {
@@ -134,7 +142,9 @@
   margin-bottom: 20px;
   transform: translateY(10px);
   opacity: 0;
-  transition: transform 0.4s ease 0.25s, opacity 0.3s ease 0.25s;
+  transition:
+    transform 0.4s ease 0.25s,
+    opacity 0.3s ease 0.25s;
 }
 
 .modal.active .form-group {
@@ -163,7 +173,9 @@
   border-radius: 0 0 20px 20px;
   transform: translateY(10px);
   opacity: 0;
-  transition: transform 0.4s ease 0.3s, opacity 0.3s ease 0.3s;
+  transition:
+    transform 0.4s ease 0.3s,
+    opacity 0.3s ease 0.3s;
 }
 
 .modal.active .modal-footer {
@@ -218,7 +230,9 @@
 .modal.active .btn-primary {
   transform: translateY(0);
   opacity: 1;
-  transition: transform 0.4s ease 0.4s, opacity 0.3s ease 0.4s;
+  transition:
+    transform 0.4s ease 0.4s,
+    opacity 0.3s ease 0.4s;
 }
 
 .btn-primary:hover {
@@ -265,7 +279,9 @@
 .modal.active .btn-secondary {
   transform: translateY(0);
   opacity: 1;
-  transition: transform 0.4s ease 0.4s, opacity 0.3s ease 0.4s;
+  transition:
+    transform 0.4s ease 0.4s,
+    opacity 0.3s ease 0.4s;
 }
 
 .btn-secondary:hover {
@@ -296,7 +312,9 @@
 .user-center-modal .user-profile {
   transform: translateY(10px);
   opacity: 0;
-  transition: transform 0.4s ease 0.2s, opacity 0.3s ease 0.2s;
+  transition:
+    transform 0.4s ease 0.2s,
+    opacity 0.3s ease 0.2s;
 }
 
 .modal.active .user-center-modal .user-profile {
@@ -307,7 +325,9 @@
 .user-center-modal .user-center-menu {
   transform: translateY(10px);
   opacity: 0;
-  transition: transform 0.4s ease 0.3s, opacity 0.3s ease 0.3s;
+  transition:
+    transform 0.4s ease 0.3s,
+    opacity 0.3s ease 0.3s;
 }
 
 .modal.active .user-center-modal .user-center-menu {
@@ -318,7 +338,9 @@
 .user-center-item {
   transform: translateX(-10px);
   opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .modal.active .user-center-item {

@@ -85,14 +85,14 @@
 }
 
 /* 滑块输入框 */
-.settings-section input[type="range"].form-control {
+.settings-section input[type='range'].form-control {
   width: 100%;
   padding: 15px 0;
   background: transparent !important;
   border: none !important;
 }
 
-.settings-section input[type="range"] {
+.settings-section input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -102,7 +102,7 @@
   outline: none;
 }
 
-.settings-section input[type="range"]::-webkit-slider-thumb {
+.settings-section input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 22px;
@@ -114,13 +114,13 @@
   box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
 }
 
-.settings-section input[type="range"]::-webkit-slider-thumb:hover {
+.settings-section input[type='range']::-webkit-slider-thumb:hover {
   background: #0056b3;
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.5);
 }
 
-.settings-section input[type="range"]::-moz-range-thumb {
+.settings-section input[type='range']::-moz-range-thumb {
   width: 22px;
   height: 22px;
   background: #007bff;
@@ -131,7 +131,7 @@
   box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
 }
 
-.settings-section input[type="range"]::-moz-range-thumb:hover {
+.settings-section input[type='range']::-moz-range-thumb:hover {
   background: #0056b3;
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.5);
@@ -207,7 +207,9 @@
 .preview-box p {
   position: relative;
   z-index: 2;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.6);
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(0, 0, 0, 0.6);
   font-weight: 600;
   background: rgba(0, 0, 0, 0.7);
   padding: 15px 25px;
@@ -387,21 +389,21 @@ html.dark-mode .preview-box {
 }
 
 /* 滑块 - 暗色模式 */
-html.dark-mode input[type="range"] {
+html.dark-mode input[type='range'] {
   background: var(--bg-tertiary);
 }
 
-html.dark-mode input[type="range"]::-webkit-slider-thumb {
+html.dark-mode input[type='range']::-webkit-slider-thumb {
   background: var(--accent-color);
 }
 
 /* 复选框 - 暗色模式 */
-html.dark-mode input[type="checkbox"] {
+html.dark-mode input[type='checkbox'] {
   background: var(--bg-tertiary);
   border-color: var(--border-color);
 }
 
-html.dark-mode input[type="checkbox"]:checked {
+html.dark-mode input[type='checkbox']:checked {
   background: var(--accent-color);
   border-color: var(--accent-color);
 }

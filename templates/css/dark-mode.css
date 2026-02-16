@@ -27,7 +27,7 @@ html.dark-mode {
   --error-color: #e74c3c;
   --shadow-color: rgba(0, 0, 0, 0.5);
   --shadow-light: rgba(0, 0, 0, 0.3);
-  
+
   /* 暗色模式下的毛玻璃颜色 - 灰色调 */
   --navbar-glass-color: rgba(60, 60, 60, 0.6);
   --card-glass-color: rgba(35, 35, 35, 0.1);
@@ -256,23 +256,23 @@ html.dark-mode .progress-bar-fill {
 }
 
 /* 滑块 - 暗色模式 */
-html.dark-mode input[type="range"] {
+html.dark-mode input[type='range'] {
   background: var(--bg-tertiary);
 }
 
-html.dark-mode input[type="range"]::-webkit-slider-thumb {
+html.dark-mode input[type='range']::-webkit-slider-thumb {
   background: var(--accent-color);
 }
 
 /* 复选框和单选框 - 暗色模式 */
-html.dark-mode input[type="checkbox"],
-html.dark-mode input[type="radio"] {
+html.dark-mode input[type='checkbox'],
+html.dark-mode input[type='radio'] {
   background: var(--bg-tertiary);
   border-color: var(--border-color);
 }
 
-html.dark-mode input[type="checkbox"]:checked,
-html.dark-mode input[type="radio"]:checked {
+html.dark-mode input[type='checkbox']:checked,
+html.dark-mode input[type='radio']:checked {
   background: var(--accent-color);
   border-color: var(--accent-color);
 }
@@ -321,8 +321,9 @@ html.dark-mode .shadow-lg {
 html.dark-mode *,
 html.dark-mode *::before,
 html.dark-mode *::after {
-  transition: background-color 0.3s ease,
-              color 0.3s ease,
-              border-color 0.3s ease,
-              box-shadow 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }

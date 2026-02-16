@@ -15,17 +15,18 @@ class CollectFocusMode {
 
   init() {
     // 监听键盘事件
-    document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+    document.addEventListener('keydown', e => this.handleKeyPress(e));
   }
 
   handleKeyPress(e) {
     // 如果用户正在输入框中输入,不触发快捷键
     const activeElement = document.activeElement;
-    if (activeElement && (
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.isContentEditable
-    )) {
+    if (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable)
+    ) {
       return;
     }
 
@@ -109,7 +110,7 @@ class CollectFocusMode {
     this.showToast('聚焦模式已暂停 (按 i 重新进入)');
 
     // 监听下次按键，如果是 i 则重新进入聚焦模式
-    const reEnterHandler = (e) => {
+    const reEnterHandler = e => {
       if (e.key === 'i') {
         e.preventDefault();
         document.removeEventListener('keydown', reEnterHandler);
@@ -128,7 +129,7 @@ class CollectFocusMode {
       this.mainItems.push({
         element: filterCard,
         type: 'filter',
-        title: '筛选归档'
+        title: '筛选归档',
       });
     }
 
@@ -138,7 +139,7 @@ class CollectFocusMode {
       this.mainItems.push({
         element: card,
         type: 'article',
-        title: card.querySelector('.document-title')?.textContent || '文章'
+        title: card.querySelector('.document-title')?.textContent || '文章',
       });
     });
 
@@ -148,7 +149,7 @@ class CollectFocusMode {
       this.mainItems.push({
         element: timelineCard,
         type: 'timeline',
-        title: '文章时间线'
+        title: '文章时间线',
       });
     }
 
@@ -158,7 +159,7 @@ class CollectFocusMode {
       this.mainItems.push({
         element: tagsCard,
         type: 'tags',
-        title: '标签云'
+        title: '标签云',
       });
     }
   }
@@ -173,7 +174,7 @@ class CollectFocusMode {
         this.subItems.push({
           element: btn,
           type: 'filter-btn',
-          title: btn.textContent
+          title: btn.textContent,
         });
       });
     } else if (mainItem.type === 'article') {
@@ -183,7 +184,7 @@ class CollectFocusMode {
         this.subItems.push({
           element: tag,
           type: 'tag',
-          title: tag.textContent
+          title: tag.textContent,
         });
       });
     } else if (mainItem.type === 'timeline') {
@@ -193,7 +194,7 @@ class CollectFocusMode {
         this.subItems.push({
           element: year,
           type: 'year',
-          title: year.textContent
+          title: year.textContent,
         });
       });
     } else if (mainItem.type === 'tags') {
@@ -203,7 +204,7 @@ class CollectFocusMode {
         this.subItems.push({
           element: tag,
           type: 'cloud-tag',
-          title: tag.textContent
+          title: tag.textContent,
         });
       });
     }

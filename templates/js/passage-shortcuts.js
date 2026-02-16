@@ -5,11 +5,11 @@ class PassageShortcuts {
   constructor() {
     this.shortcuts = {
       // 文章页面专用快捷键
-      's': { action: 'toggleSidebar', label: '切换侧边栏' },
-      't': { action: 'toggleReadingMode', label: '切换阅读模式' },
-      'h': { action: 'toggleHeader', label: '切换顶栏和底栏' },
-      'f': { action: 'toggleFullscreen', label: '全屏模式' },
-      'Escape': { action: 'exitFullscreen', label: '退出全屏' }
+      s: { action: 'toggleSidebar', label: '切换侧边栏' },
+      t: { action: 'toggleReadingMode', label: '切换阅读模式' },
+      h: { action: 'toggleHeader', label: '切换顶栏和底栏' },
+      f: { action: 'toggleFullscreen', label: '全屏模式' },
+      Escape: { action: 'exitFullscreen', label: '退出全屏' },
     };
 
     this.enabled = true;
@@ -27,7 +27,7 @@ class PassageShortcuts {
 
   setupShortcuts() {
     // 监听键盘事件
-    document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+    document.addEventListener('keydown', e => this.handleKeyPress(e));
 
     // 显示快捷键提示
     this.showShortcutHints();
@@ -43,18 +43,21 @@ class PassageShortcuts {
     // 如果图片查看器或代码查看器打开，不处理快捷键
     const imageViewer = document.getElementById('imageViewer');
     const codeViewer = document.getElementById('codeViewer');
-    if ((imageViewer && imageViewer.classList.contains('active')) ||
-        (codeViewer && codeViewer.classList.contains('active'))) {
+    if (
+      (imageViewer && imageViewer.classList.contains('active')) ||
+      (codeViewer && codeViewer.classList.contains('active'))
+    ) {
       return;
     }
 
     // 如果用户正在输入框中输入,不触发快捷键
     const activeElement = document.activeElement;
-    if (activeElement && (
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.isContentEditable
-    )) {
+    if (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable)
+    ) {
       return;
     }
 
@@ -127,11 +130,14 @@ class PassageShortcuts {
 
   toggleFullscreen() {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        this.showToast('已进入全屏模式', 'success');
-      }).catch(err => {
-        this.showToast('无法进入全屏模式', 'error');
-      });
+      document.documentElement
+        .requestFullscreen()
+        .then(() => {
+          this.showToast('已进入全屏模式', 'success');
+        })
+        .catch(err => {
+          this.showToast('无法进入全屏模式', 'error');
+        });
     } else {
       this.exitFullscreen();
     }
@@ -147,7 +153,9 @@ class PassageShortcuts {
 
   showShortcutHints() {
     // 检测移动端，如果是移动端则不显示快捷键提示
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth <= 768;
     if (isMobile) {
       return; // 移动端不显示快捷键提示
     }
@@ -156,7 +164,7 @@ class PassageShortcuts {
     const buttons = [
       { id: 'sidebarToggle', key: 's' },
       { id: 'readingModeToggle', key: 't' },
-      { id: 'sidebarToggleFixed', key: 'h' }
+      { id: 'sidebarToggleFixed', key: 'h' },
     ];
 
     buttons.forEach(({ id, key }) => {
@@ -177,7 +185,9 @@ class PassageShortcuts {
   updateHelpModal() {
     // 更新通用快捷键系统的帮助模态框
     if (window.keyboardShortcuts) {
-      const originalShowHelpModal = window.keyboardShortcuts.showHelpModal.bind(window.keyboardShortcuts);
+      const originalShowHelpModal = window.keyboardShortcuts.showHelpModal.bind(
+        window.keyboardShortcuts
+      );
 
       window.keyboardShortcuts.showHelpModal = () => {
         originalShowHelpModal();
@@ -203,17 +213,19 @@ class PassageShortcuts {
   }
 
   renderShortcutList(keys) {
-    return keys.map(key => {
-      const shortcut = this.shortcuts[key];
-      if (!shortcut) return '';
+    return keys
+      .map(key => {
+        const shortcut = this.shortcuts[key];
+        if (!shortcut) return '';
 
-      return `
+        return `
         <div class="shortcut-item">
           <kbd class="shortcut-key">${key}</kbd>
           <span class="shortcut-label">${shortcut.label}</span>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
   }
 
   showToast(message, type = 'info') {

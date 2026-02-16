@@ -194,7 +194,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+  animation:
+    slideIn 0.3s ease,
+    fadeOut 0.3s ease 2.7s forwards;
   min-width: 280px;
   max-width: 100%;
 }

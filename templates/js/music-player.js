@@ -15,7 +15,7 @@ class MusicPlayer {
       controlSize: 'medium',
       customCSS: '',
       playerColor: 'rgba(66, 133, 244, 0.9)',
-      position: 'bottom-right'
+      position: 'bottom-right',
     };
 
     this.init();
@@ -77,7 +77,7 @@ class MusicPlayer {
   async tryAutoPlay() {
     console.log('尝试自动播放...', {
       autoPlay: this.settings.autoPlay,
-      playlistLength: this.playlist.length
+      playlistLength: this.playlist.length,
     });
 
     if (!this.settings.autoPlay || this.playlist.length === 0) {
@@ -120,19 +120,21 @@ class MusicPlayer {
       const playPromise = this.audio.play();
 
       if (playPromise !== undefined) {
-        playPromise.then(() => {
-          // 播放成功
-          this.isPlaying = true;
-          this.updatePlayButton();
-          console.log('音乐自动播放成功');
-        }).catch(error => {
-          // 播放失败（可能是浏览器阻止），等待用户交互
-          console.log('自动播放被阻止，等待用户交互:', error.message);
-          this.autoPlayPending = true;
+        playPromise
+          .then(() => {
+            // 播放成功
+            this.isPlaying = true;
+            this.updatePlayButton();
+            console.log('音乐自动播放成功');
+          })
+          .catch(error => {
+            // 播放失败（可能是浏览器阻止），等待用户交互
+            console.log('自动播放被阻止，等待用户交互:', error.message);
+            this.autoPlayPending = true;
 
-          // 显示提示信息
-          this.showAutoPlayHint();
-        });
+            // 显示提示信息
+            this.showAutoPlayHint();
+          });
       }
     } catch (error) {
       console.error('自动播放尝试失败:', error);
@@ -226,10 +228,12 @@ class MusicPlayer {
         const normalizedSettings = {
           enabled: settings.enabled !== undefined ? settings.enabled : settings.music_enabled,
           autoPlay: settings.autoPlay !== undefined ? settings.autoPlay : settings.auto_play,
-          controlSize: settings.controlSize !== undefined ? settings.controlSize : settings.control_size,
+          controlSize:
+            settings.controlSize !== undefined ? settings.controlSize : settings.control_size,
           customCSS: settings.customCSS !== undefined ? settings.customCSS : settings.custom_css,
-          playerColor: settings.playerColor !== undefined ? settings.playerColor : settings.player_color,
-          position: settings.position !== undefined ? settings.position : settings.music_position
+          playerColor:
+            settings.playerColor !== undefined ? settings.playerColor : settings.player_color,
+          position: settings.position !== undefined ? settings.position : settings.music_position,
         };
         this.settings = { ...this.settings, ...normalizedSettings };
         console.log('音乐设置已加载:', this.settings);
@@ -252,7 +256,7 @@ class MusicPlayer {
           artist: track.artist,
           url: `/music/${track.file_name}`,
           duration: track.duration || '未知',
-          cover: track.cover_image || '/img/avatar.webp'
+          cover: track.cover_image || '/img/avatar.webp',
         }));
         this.updatePlaylistUI();
 
@@ -417,7 +421,7 @@ class MusicPlayer {
 
     // 音量条
     const volumeBar = player.querySelector('#volumeBar');
-    volumeBar.addEventListener('input', (e) => {
+    volumeBar.addEventListener('input', e => {
       if (this.audio) {
         this.audio.volume = e.target.value / 100;
         // 立即保存音量设置
@@ -430,7 +434,7 @@ class MusicPlayer {
     volumeBtn.addEventListener('click', () => this.toggleVolumeSlider());
 
     // 音量按钮 - 切换静音（右键）
-    volumeBtn.addEventListener('contextmenu', (e) => {
+    volumeBtn.addEventListener('contextmenu', e => {
       e.preventDefault();
       this.toggleMute();
     });
@@ -443,14 +447,14 @@ class MusicPlayer {
     if (this.audio) {
       this.audio.addEventListener('timeupdate', () => this.updateProgress());
       this.audio.addEventListener('ended', () => this.playNext());
-      this.audio.addEventListener('error', (e) => {
+      this.audio.addEventListener('error', e => {
         console.error('音频播放错误:', e);
         this.playNext();
       });
     }
 
     // 点击其他地方关闭音量滑块
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
       const volumeContainer = document.querySelector('.music-volume');
       if (volumeContainer && !volumeContainer.contains(e.target)) {
         const volumeSlider = document.getElementById('volumeSlider');
@@ -619,7 +623,7 @@ class MusicPlayer {
         this.updatePlaylistUI();
 
         // 添加键盘事件监听
-        this.playlistKeyHandler = (e) => {
+        this.playlistKeyHandler = e => {
           if (!playlist.classList.contains('show')) return;
 
           if (e.key === 'ArrowUp') {
@@ -630,7 +634,10 @@ class MusicPlayer {
           } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             e.stopPropagation();
-            this.selectedPlaylistIndex = Math.min(this.playlist.length - 1, this.selectedPlaylistIndex + 1);
+            this.selectedPlaylistIndex = Math.min(
+              this.playlist.length - 1,
+              this.selectedPlaylistIndex + 1
+            );
             this.updatePlaylistUI();
           } else if (e.key === 'Enter') {
             e.preventDefault();
@@ -657,7 +664,8 @@ class MusicPlayer {
     const playIcon = document.getElementById('playIcon');
     if (playIcon) {
       if (this.isPlaying) {
-        playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+        playIcon.innerHTML =
+          '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
       } else {
         playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
       }
@@ -668,9 +676,11 @@ class MusicPlayer {
     const volumeIcon = document.getElementById('volumeIcon');
     if (volumeIcon && this.audio) {
       if (this.audio.muted || this.audio.volume === 0) {
-        volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+        volumeIcon.innerHTML =
+          '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
       } else {
-        volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+        volumeIcon.innerHTML =
+          '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
       }
     }
   }
@@ -705,15 +715,18 @@ class MusicPlayer {
     const playlist = document.getElementById('musicPlaylist');
     if (!playlist) return;
 
-    playlist.innerHTML = this.playlist.map((track, index) => {
-      const isActive = index === this.currentTrackIndex ? 'active' : '';
-      const isSelected = index === this.selectedPlaylistIndex ? 'selected' : '';
-      return `
+    playlist.innerHTML = this.playlist
+      .map((track, index) => {
+        const isActive = index === this.currentTrackIndex ? 'active' : '';
+        const isSelected = index === this.selectedPlaylistIndex ? 'selected' : '';
+        return `
       <div class="music-playlist-item ${isActive} ${isSelected}" data-index="${index}">
         <div class="music-playlist-item-title">${this.removeTimestamp(track.title)}</div>
         <div class="music-playlist-item-duration">${track.duration}</div>
       </div>
-    `}).join('');
+    `;
+      })
+      .join('');
 
     // 绑定播放列表点击事件
     playlist.querySelectorAll('.music-playlist-item').forEach(item => {
@@ -762,9 +775,9 @@ class MusicPlayer {
       const state = {
         currentTrackIndex: this.currentTrackIndex,
         isPlaying: this.isPlaying,
-        currentTime: (this.audio && isFinite(this.audio.currentTime)) ? this.audio.currentTime : 0,
-        volume: volumeBar ? volumeBar.value : (this.audio ? this.audio.volume * 100 : 80),
-        playlist: this.playlist
+        currentTime: this.audio && isFinite(this.audio.currentTime) ? this.audio.currentTime : 0,
+        volume: volumeBar ? volumeBar.value : this.audio ? this.audio.volume * 100 : 80,
+        playlist: this.playlist,
       };
       localStorage.setItem('musicPlayerState', JSON.stringify(state));
     } catch (error) {
@@ -784,10 +797,12 @@ class MusicPlayer {
       await this.loadPlaylist();
 
       // 检查播放列表是否匹配
-      if (state.playlist && state.playlist.length > 0 &&
-          this.playlist.length > 0 &&
-          this.playlist[0].url === state.playlist[0].url) {
-
+      if (
+        state.playlist &&
+        state.playlist.length > 0 &&
+        this.playlist.length > 0 &&
+        this.playlist[0].url === state.playlist[0].url
+      ) {
         // 恢复播放状态
         this.currentTrackIndex = state.currentTrackIndex || 0;
 
@@ -815,13 +830,16 @@ class MusicPlayer {
 
           // 如果之前在播放，恢复播放
           if (state.isPlaying) {
-            this.audio.play().then(() => {
-              this.isPlaying = true;
-              this.updatePlayButton();
-            }).catch(error => {
-              console.log('恢复播放失败，等待用户交互:', error.message);
-              this.autoPlayPending = true;
-            });
+            this.audio
+              .play()
+              .then(() => {
+                this.isPlaying = true;
+                this.updatePlayButton();
+              })
+              .catch(error => {
+                console.log('恢复播放失败，等待用户交互:', error.message);
+                this.autoPlayPending = true;
+              });
           }
         }
 

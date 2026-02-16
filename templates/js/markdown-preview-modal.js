@@ -1,5 +1,5 @@
 // Markdown Preview Modal
-(function() {
+(function () {
   // Modal element
   let modal = null;
   let modalContent = null;
@@ -150,14 +150,14 @@
 
     // Event listeners
     modalClose.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
+    modal.addEventListener('click', e => {
       if (e.target === modal) {
         closeModal();
       }
     });
 
     // Escape key to close
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && modal.style.display === 'flex') {
         closeModal();
       }
@@ -213,7 +213,9 @@
 
     try {
       // Fetch markdown content
-      const response = await fetch(`/api/markdown/preview?path=${encodeURIComponent(markdownPath)}`);
+      const response = await fetch(
+        `/api/markdown/preview?path=${encodeURIComponent(markdownPath)}`
+      );
       const result = await response.json();
 
       if (!result.success) {
@@ -233,7 +235,6 @@
 
       // Add styles for markdown content
       addMarkdownStyles();
-
     } catch (error) {
       console.error('Failed to load markdown:', error);
       modalBody.innerHTML = `
@@ -292,19 +293,31 @@
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>');
 
     // Images
-    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;">');
+    html = html.replace(
+      /!\[([^\]]*)\]\(([^)]+)\)/gim,
+      '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;">'
+    );
 
     // Code blocks
     html = html.replace(/```(\w+)?\n([\s\S]*?)```/gim, '<pre><code>$2</code></pre>');
 
     // Inline code
-    html = html.replace(/`([^`]+)`/gim, '<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>');
+    html = html.replace(
+      /`([^`]+)`/gim,
+      '<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>'
+    );
 
     // Blockquotes
-    html = html.replace(/^> (.*$)/gim, '<blockquote style="border-left: 4px solid #ddd; padding-left: 16px; margin: 10px 0; color: #666;">$1</blockquote>');
+    html = html.replace(
+      /^> (.*$)/gim,
+      '<blockquote style="border-left: 4px solid #ddd; padding-left: 16px; margin: 10px 0; color: #666;">$1</blockquote>'
+    );
 
     // Horizontal rules
-    html = html.replace(/^---$/gim, '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">');
+    html = html.replace(
+      /^---$/gim,
+      '<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">'
+    );
 
     // Lists
     html = html.replace(/^\- (.*$)/gim, '<li style="margin: 4px 0;">$1</li>');
@@ -421,7 +434,7 @@
   // Export to global scope
   window.MarkdownPreviewModal = {
     open: openModal,
-    close: closeModal
+    close: closeModal,
   };
 
   // Auto-initialize when DOM is ready

@@ -1,0 +1,12 @@
+node_modules/
+target/
+dist/
+.git/
+data/
+music/
+attachments/
+markdown/
+.profiling/
+*.log
+*.md
+rustblog

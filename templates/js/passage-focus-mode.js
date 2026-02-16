@@ -15,25 +15,28 @@ class PassageFocusMode {
 
   init() {
     // 监听键盘事件
-    document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+    document.addEventListener('keydown', e => this.handleKeyPress(e));
   }
 
   handleKeyPress(e) {
     // 如果图片查看器或代码查看器打开，不处理快捷键
     const imageViewer = document.getElementById('imageViewer');
     const codeViewer = document.getElementById('codeViewer');
-    if ((imageViewer && imageViewer.classList.contains('active')) ||
-        (codeViewer && codeViewer.classList.contains('active'))) {
+    if (
+      (imageViewer && imageViewer.classList.contains('active')) ||
+      (codeViewer && codeViewer.classList.contains('active'))
+    ) {
       return;
     }
 
     // 如果用户正在输入框中输入,不触发快捷键
     const activeElement = document.activeElement;
-    if (activeElement && (
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.isContentEditable
-    )) {
+    if (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable)
+    ) {
       return;
     }
 
@@ -125,7 +128,7 @@ class PassageFocusMode {
     this.showToast('聚焦模式已暂停 (按 i 重新进入)');
 
     // 监听下次按键，如果是 i 则重新进入聚焦模式
-    const reEnterHandler = (e) => {
+    const reEnterHandler = e => {
       if (e.key === 'i') {
         e.preventDefault();
         document.removeEventListener('keydown', reEnterHandler);
@@ -160,7 +163,7 @@ class PassageFocusMode {
     fileItems.forEach((item, index) => {
       this.items.push({
         element: item,
-        type: item.classList.contains('folder-header') ? 'folder' : 'file'
+        type: item.classList.contains('folder-header') ? 'folder' : 'file',
       });
     });
   }

@@ -32,7 +32,8 @@ class FloatingTextController {
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'floating-text-canvas';
     // 移除 pointer-events: none，允许 canvas 接收点击事件
-    this.canvas.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;';
+    this.canvas.style.cssText =
+      'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;';
     this.ctx = this.canvas.getContext('2d');
     document.body.appendChild(this.canvas);
     this.handleResize();
@@ -47,7 +48,7 @@ class FloatingTextController {
 
   setupClickHandler() {
     // 监听整个文档的点击事件
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', e => {
       if (!this.isEnabled) {
         return;
       }
@@ -64,7 +65,11 @@ class FloatingTextController {
         this.isEnabled = parsed.floating_text_enabled || false;
 
         // 从设置中读取自定义飘字文本
-        if (parsed.floating_texts && Array.isArray(parsed.floating_texts) && parsed.floating_texts.length > 0) {
+        if (
+          parsed.floating_texts &&
+          Array.isArray(parsed.floating_texts) &&
+          parsed.floating_texts.length > 0
+        ) {
           this.texts = parsed.floating_texts;
         }
       }
@@ -79,7 +84,7 @@ class FloatingTextController {
 
   listenToSettings() {
     // 监听自定义事件
-    window.addEventListener('appearanceSettingsChanged', (e) => {
+    window.addEventListener('appearanceSettingsChanged', e => {
       if (e.detail) {
         if (e.detail.floating_text_enabled !== undefined) {
           const prevEnabled = this.isEnabled;
@@ -93,7 +98,11 @@ class FloatingTextController {
         }
 
         // 更新飘字文本
-        if (e.detail.floating_texts && Array.isArray(e.detail.floating_texts) && e.detail.floating_texts.length > 0) {
+        if (
+          e.detail.floating_texts &&
+          Array.isArray(e.detail.floating_texts) &&
+          e.detail.floating_texts.length > 0
+        ) {
           this.texts = e.detail.floating_texts;
         }
       }
@@ -143,7 +152,7 @@ class FloatingTextController {
       size: 18 + Math.random() * 6,
       speedY: -0.8 - Math.random() * 0.4, // 慢速向上移动
       life: 1,
-      decay: 0.005 + Math.random() * 0.002 // 慢速淡出
+      decay: 0.005 + Math.random() * 0.002, // 慢速淡出
     };
 
     this.particles.push(particle);
@@ -197,7 +206,11 @@ class FloatingTextController {
       }
     }
 
-    if (settings.floating_texts && Array.isArray(settings.floating_texts) && settings.floating_texts.length > 0) {
+    if (
+      settings.floating_texts &&
+      Array.isArray(settings.floating_texts) &&
+      settings.floating_texts.length > 0
+    ) {
       this.texts = settings.floating_texts;
     }
   }
@@ -216,7 +229,7 @@ class FloatingTextController {
 // 初始化
 let floatingTextController = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // 延迟初始化，等待外观设置加载
   setTimeout(() => {
     floatingTextController = new FloatingTextController();

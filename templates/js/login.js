@@ -41,7 +41,7 @@ const AuthManager = {
   checkLoginStatus() {
     const token = localStorage.getItem('auth_token');
     const user = localStorage.getItem('auth_user');
-    
+
     if (token && user) {
       this.isLoggedIn = true;
       this.token = token;
@@ -64,7 +64,7 @@ const AuthManager = {
     // 登录表单提交
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-      loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+      loginForm.addEventListener('submit', e => this.handleLogin(e));
     }
 
     // 关闭登录模态框
@@ -76,7 +76,7 @@ const AuthManager = {
     // 点击登录模态框外部关闭
     const loginModal = document.getElementById('loginModal');
     if (loginModal) {
-      loginModal.addEventListener('click', (e) => {
+      loginModal.addEventListener('click', e => {
         if (e.target === loginModal) {
           this.closeLoginModal();
         }
@@ -86,7 +86,7 @@ const AuthManager = {
     // 打开注册模态框
     const openRegisterBtn = document.getElementById('openRegisterModal');
     if (openRegisterBtn) {
-      openRegisterBtn.addEventListener('click', (e) => {
+      openRegisterBtn.addEventListener('click', e => {
         e.preventDefault();
         this.closeLoginModal();
         this.openRegisterModal();
@@ -96,7 +96,7 @@ const AuthManager = {
     // 注册表单提交
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
-      registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+      registerForm.addEventListener('submit', e => this.handleRegister(e));
     }
 
     // 关闭注册模态框
@@ -108,7 +108,7 @@ const AuthManager = {
     // 点击注册模态框外部关闭
     const registerModal = document.getElementById('registerModal');
     if (registerModal) {
-      registerModal.addEventListener('click', (e) => {
+      registerModal.addEventListener('click', e => {
         if (e.target === registerModal) {
           this.closeRegisterModal();
         }
@@ -118,7 +118,7 @@ const AuthManager = {
     // 从注册模态框打开登录模态框
     const openLoginFromRegisterBtn = document.getElementById('openLoginModal');
     if (openLoginFromRegisterBtn) {
-      openLoginFromRegisterBtn.addEventListener('click', (e) => {
+      openLoginFromRegisterBtn.addEventListener('click', e => {
         e.preventDefault();
         this.closeRegisterModal();
         this.openLoginModal();
@@ -134,7 +134,7 @@ const AuthManager = {
     // 点击个人中心模态框外部关闭
     const userCenterModal = document.getElementById('userCenterModal');
     if (userCenterModal) {
-      userCenterModal.addEventListener('click', (e) => {
+      userCenterModal.addEventListener('click', e => {
         if (e.target === userCenterModal) {
           this.closeUserCenterModal();
         }
@@ -154,7 +154,7 @@ const AuthManager = {
     }
 
     // ESC键关闭所有模态框
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         this.closeLoginModal();
         this.closeRegisterModal();
@@ -169,7 +169,7 @@ const AuthManager = {
     if (modal) {
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
-      
+
       // 聚焦用户名输入框
       setTimeout(() => {
         const usernameInput = document.getElementById('loginUsername');
@@ -188,13 +188,13 @@ const AuthManager = {
       setTimeout(() => {
         modal.classList.remove('active', 'closing');
         document.body.style.overflow = '';
-        
+
         // 清空表单
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
           loginForm.reset();
         }
-        
+
         // 清除错误信息
         const errorMessage = document.getElementById('loginError');
         if (errorMessage) {
@@ -237,7 +237,7 @@ const AuthManager = {
     if (modal) {
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
-      
+
       // 聚焦用户名输入框
       setTimeout(() => {
         const usernameInput = document.getElementById('registerUsername');
@@ -256,13 +256,13 @@ const AuthManager = {
       setTimeout(() => {
         modal.classList.remove('active', 'closing');
         document.body.style.overflow = '';
-        
+
         // 清空表单
         const registerForm = document.getElementById('registerForm');
         if (registerForm) {
           registerForm.reset();
         }
-        
+
         // 清除错误信息
         const errorMessage = document.getElementById('registerError');
         if (errorMessage) {
@@ -276,17 +276,17 @@ const AuthManager = {
   // 处理登录
   async handleLogin(e) {
     e.preventDefault();
-    
+
     const usernameInput = document.getElementById('loginUsername');
     const passwordInput = document.getElementById('loginPassword');
     const errorMessage = document.getElementById('loginError');
     const submitBtn = document.getElementById('loginSubmitBtn');
-    
+
     if (!usernameInput || !passwordInput) return;
-    
+
     const username = usernameInput.value.trim();
     const password = passwordInput.value.trim();
-    
+
     if (!username || !password) {
       if (errorMessage) {
         errorMessage.textContent = '请输入用户名和密码';
@@ -294,18 +294,18 @@ const AuthManager = {
       }
       return;
     }
-    
+
     // 禁用提交按钮
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = '登录中...';
     }
-    
+
     try {
       // 准备登录数据
       let loginData = {
         username: username,
-        password: password
+        password: password,
       };
 
       // 如果ECC加密器可用，使用加密传输
@@ -313,14 +313,14 @@ const AuthManager = {
         try {
           // 加密密码
           const encryptedData = await this.eccEncryptor.encrypt(password);
-          
+
           // 使用加密数据
           loginData = {
             username: username,
             encrypted_password: encryptedData.encrypted,
             session_id: encryptedData.sessionId,
             client_public_key: encryptedData.clientPublicKey,
-            algorithm: encryptedData.algorithm
+            algorithm: encryptedData.algorithm,
           };
         } catch (encryptError) {
           console.warn('ECC encryption failed, falling back to plain text:', encryptError);
@@ -333,30 +333,30 @@ const AuthManager = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(loginData)
+        body: JSON.stringify(loginData),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         // 保存登录信息
         localStorage.setItem('auth_token', result.token);
         localStorage.setItem('auth_user', JSON.stringify(result.user));
-        
+
         // 更新状态
         this.isLoggedIn = true;
         this.token = result.token;
         this.currentUser = result.user;
-        
+
         // 更新UI
         this.updateUI();
-        
+
         // 关闭登录模态框
         this.closeLoginModal();
-        
+
         // 打开个人中心模态框
         this.openUserCenterModal();
-        
+
         // 显示成功提示
         this.showNotification('登录成功！', 'success');
       } else {
@@ -383,19 +383,19 @@ const AuthManager = {
   // 处理注册
   async handleRegister(e) {
     e.preventDefault();
-    
+
     const usernameInput = document.getElementById('registerUsername');
     const emailInput = document.getElementById('registerEmail');
     const passwordInput = document.getElementById('registerPassword');
     const errorMessage = document.getElementById('registerError');
     const submitBtn = document.getElementById('registerSubmitBtn');
-    
+
     if (!usernameInput || !emailInput || !passwordInput) return;
-    
+
     const username = usernameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
-    
+
     if (!username || !email || !password) {
       if (errorMessage) {
         errorMessage.textContent = '请填写所有必填字段';
@@ -403,19 +403,19 @@ const AuthManager = {
       }
       return;
     }
-    
+
     // 禁用提交按钮
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = '注册中...';
     }
-    
+
     try {
       // 准备注册数据
       let registerData = {
         username: username,
         email: email,
-        password: password
+        password: password,
       };
 
       // 如果ECC加密器可用，使用加密传输
@@ -423,7 +423,7 @@ const AuthManager = {
         try {
           // 加密密码
           const encryptedData = await this.eccEncryptor.encrypt(password);
-          
+
           // 使用加密数据
           registerData = {
             username: username,
@@ -431,7 +431,7 @@ const AuthManager = {
             encrypted_password: encryptedData.encrypted,
             session_id: encryptedData.sessionId,
             client_public_key: encryptedData.clientPublicKey,
-            algorithm: encryptedData.algorithm
+            algorithm: encryptedData.algorithm,
           };
         } catch (encryptError) {
           console.warn('ECC encryption failed, falling back to plain text:', encryptError);
@@ -444,18 +444,18 @@ const AuthManager = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(registerData)
+        body: JSON.stringify(registerData),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok && result.success) {
         // 注册成功，关闭注册模态框
         this.closeRegisterModal();
-        
+
         // 显示成功提示
         this.showNotification('注册成功！请登录', 'success');
-        
+
         // 自动打开登录模态框
         setTimeout(() => {
           this.openLoginModal();
@@ -496,8 +496,8 @@ const AuthManager = {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
       }
     } catch (error) {
@@ -506,21 +506,21 @@ const AuthManager = {
       // 无论请求成功与否，都清除本地存储
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
-      
+
       // 清除 cookie
       document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      
+
       // 更新状态
       this.isLoggedIn = false;
       this.token = null;
       this.currentUser = null;
-      
+
       // 更新UI
       this.updateUI();
-      
+
       // 关闭个人中心模态框
       this.closeUserCenterModal();
-      
+
       // 显示提示
       this.showNotification('已退出登录', 'info');
     }
@@ -560,7 +560,7 @@ const AuthManager = {
       }
 
       // 检查是否为管理员，显示或隐藏所有管理员专用元素
-      adminOnlyElements.forEach((element) => {
+      adminOnlyElements.forEach(element => {
         if (this.currentUser.role === 'admin') {
           // 使用!important来覆盖CSS中的!important规则
           // 根据元素类型设置合适的display值
@@ -606,7 +606,7 @@ const AuthManager = {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
-    
+
     // 添加样式
     notification.style.cssText = `
       position: fixed;
@@ -621,7 +621,7 @@ const AuthManager = {
       animation: slideInRight 0.3s ease;
       font-weight: 500;
     `;
-    
+
     // 添加动画样式
     if (!document.getElementById('notification-styles')) {
       const style = document.createElement('style');
@@ -650,10 +650,10 @@ const AuthManager = {
       `;
       document.head.appendChild(style);
     }
-    
+
     // 添加到页面
     document.body.appendChild(notification);
-    
+
     // 3秒后移除
     setTimeout(() => {
       notification.style.animation = 'slideOutRight 0.3s ease';
@@ -684,25 +684,25 @@ const AuthManager = {
     if (!token) {
       throw new Error('未登录');
     }
-    
+
     const headers = {
       ...options.headers,
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     };
-    
+
     const response = await fetch(url, {
       ...options,
-      headers
+      headers,
     });
-    
+
     // 如果返回401，说明token过期或无效
     if (response.status === 401) {
       this.handleLogout();
       throw new Error('登录已过期，请重新登录');
     }
-    
+
     return response;
-  }
+  },
 };
 
 // 页面加载时初始化

@@ -21,7 +21,7 @@ class ECCEncryptor {
 
       // 从服务器获取ECC公钥
       const response = await fetch(`/api/crypto/public-key?session_id=${this.sessionId}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to get server public key');
@@ -44,7 +44,7 @@ class ECCEncryptor {
       return {
         sessionId: this.sessionId,
         algorithm: serverKeyInfo.algorithm,
-        expiresAt: serverKeyInfo.expires_at
+        expiresAt: serverKeyInfo.expires_at,
       };
     } catch (error) {
       console.error('Failed to initialize ECC encryptor:', error);
@@ -65,7 +65,7 @@ class ECCEncryptor {
         keyInfo.public_key,
         {
           name: 'ECDH',
-          namedCurve: 'P-256'
+          namedCurve: 'P-256',
         },
         true,
         []
@@ -78,7 +78,7 @@ class ECCEncryptor {
         keyData,
         {
           name: 'ECDH',
-          namedCurve: 'P-256'
+          namedCurve: 'P-256',
         },
         true,
         ['deriveKey', 'deriveBits']
@@ -96,7 +96,7 @@ class ECCEncryptor {
     return await window.crypto.subtle.generateKey(
       {
         name: 'ECDH',
-        namedCurve: 'P-256'
+        namedCurve: 'P-256',
       },
       true, // 可导出
       ['deriveKey', 'deriveBits']
@@ -108,10 +108,7 @@ class ECCEncryptor {
    * @returns {Promise<Object>}
    */
   async exportClientPublicKey() {
-    return await window.crypto.subtle.exportKey(
-      'jwk',
-      this.clientKeyPair.publicKey
-    );
+    return await window.crypto.subtle.exportKey('jwk', this.clientKeyPair.publicKey);
   }
 
   /**
@@ -120,14 +117,14 @@ class ECCEncryptor {
    */
   async exportClientPublicKeyPEM() {
     const jwk = await this.exportClientPublicKey();
-    
+
     // 将JWK转换为PEM格式
     const publicKey = await window.crypto.subtle.importKey(
       'jwk',
       jwk,
       {
         name: 'ECDH',
-        namedCurve: 'P-256'
+        namedCurve: 'P-256',
       },
       true,
       []
@@ -154,10 +151,10 @@ class ECCEncryptor {
     const sharedSecretBits = await window.crypto.subtle.deriveBits(
       {
         name: 'ECDH',
-        public: this.serverPublicKey
+        public: this.serverPublicKey,
       },
       this.clientKeyPair.privateKey,
-      256  // 派生256位（32字节）- 直接返回X坐标
+      256 // 派生256位（32字节）- 直接返回X坐标
     );
 
     const sharedSecretBytes = new Uint8Array(sharedSecretBits);
@@ -171,7 +168,7 @@ class ECCEncryptor {
       keyBytes,
       {
         name: 'AES-GCM',
-        length: 256
+        length: 256,
       },
       true,
       ['encrypt', 'decrypt']
@@ -202,7 +199,7 @@ class ECCEncryptor {
       const encrypted = await window.crypto.subtle.encrypt(
         {
           name: 'AES-GCM',
-          iv: iv
+          iv: iv,
         },
         sharedKey,
         encoded
@@ -220,7 +217,7 @@ class ECCEncryptor {
         encrypted: this.arrayBufferToBase64(combined),
         clientPublicKey: clientPublicKeyPEM,
         sessionId: this.sessionId,
-        algorithm: 'ECDH-ES+A256KW'
+        algorithm: 'ECDH-ES+A256KW',
       };
     } catch (error) {
       console.error('Encryption failed:', error);
@@ -295,7 +292,7 @@ function checkCryptoSupport() {
     return {
       supported: false,
       message: 'window.crypto is not available',
-      reason: 'browser_not_supported'
+      reason: 'browser_not_supported',
     };
   }
 
@@ -305,7 +302,7 @@ function checkCryptoSupport() {
       message: 'Web Crypto API is not available (requires HTTPS or localhost)',
       reason: 'insecure_context',
       protocol: window.location.protocol,
-      hostname: window.location.hostname
+      hostname: window.location.hostname,
     };
   }
 
@@ -314,7 +311,7 @@ function checkCryptoSupport() {
     supported: true,
     ecdh: true,
     curves: ['P-256', 'P-384', 'P-521'],
-    message: 'Web Crypto API is fully supported'
+    message: 'Web Crypto API is fully supported',
   };
 }
 
