@@ -564,7 +564,7 @@ function updateUploadListUI() {
         (t.innerHTML = musicUploadQueue
           .map(
             (e, t) =>
-              `\n    <div class="upload-item" data-id="${e.id}">\n      <div class="upload-item-cover">\n        <div class="cover-preview ${e.coverFile ? 'has-cover' : ''}" onclick="triggerCoverSelect('${e.id}')">\n          ${e.coverFile ? `<img src="${e.coverPreview}" alt="封面">\n             <div class="cover-remove-btn" onclick="event.stopPropagation(); removeCover('${e.id}')">×</div>` : '<span class="cover-placeholder">🖼️</span>'}\n          <div class="cover-upload-hint">点击上传封面</div>\n        </div>\n        <input type="file" class="cover-input" id="coverInput-${e.id}" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="handleCoverSelect('${e.id}', this)">\n      </div>\n      <div class="upload-item-icon" style="display: none;">🎵</div>\n      <div class="upload-item-info">\n        <div class="upload-item-name">${e.file.name}</div>\n        <div class="upload-item-meta">\n          <span>${formatFileSize(e.file.size)}</span>\n          <span>${e.file.type || 'audio/*'}</span>\n        </div>\n      </div>\n      <div class="upload-item-progress">\n        <div class="progress-bar">\n          <div class="progress-fill" style="width: ${e.progress}%"></div>\n        </div>\n        <div class="progress-text">${e.progress}%</div>\n      </div>\n      <div class="upload-item-status ${e.status}">\n        ${getStatusText(e.status)}\n      </div>\n      <div class="upload-item-action">\n        <button class="remove-upload-btn" onclick="removeUploadItem('${e.id}')" ${'uploading' === e.status ? 'disabled' : ''}>×</button>\n      </div>\n    </div>\n  `
+              `\n    <div class="upload-item" data-id="${e.id}">\n      <div class="upload-item-cover">\n        <div class="cover-preview ${e.coverFile ? 'has-cover' : ''}" onclick="triggerCoverSelect('${e.id}')">\n          ${e.coverFile ? `<img src="${e.coverPreview}" alt="封面">\n             <div class="cover-remove-btn" onclick="event.stopPropagation(); removeCover('${e.id}')">×</div>` : '<span class="cover-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>️</span>'}\n          <div class="cover-upload-hint">点击上传封面</div>\n        </div>\n        <input type="file" class="cover-input" id="coverInput-${e.id}" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="handleCoverSelect('${e.id}', this)">\n      </div>\n      <div class="upload-item-icon" style="display: none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>\n      <div class="upload-item-info">\n        <div class="upload-item-name">${e.file.name}</div>\n        <div class="upload-item-meta">\n          <span>${formatFileSize(e.file.size)}</span>\n          <span>${e.file.type || 'audio/*'}</span>\n        </div>\n      </div>\n      <div class="upload-item-progress">\n        <div class="progress-bar">\n          <div class="progress-fill" style="width: ${e.progress}%"></div>\n        </div>\n        <div class="progress-text">${e.progress}%</div>\n      </div>\n      <div class="upload-item-status ${e.status}">\n        ${getStatusText(e.status)}\n      </div>\n      <div class="upload-item-action">\n        <button class="remove-upload-btn" onclick="removeUploadItem('${e.id}')" ${'uploading' === e.status ? 'disabled' : ''}>×</button>\n      </div>\n    </div>\n  `
           )
           .join('')))
       : (e.style.display = 'none'));
@@ -730,7 +730,7 @@ function updateMusicPlaylistUI(e) {
             const o = n.match(/^\d+_/);
             return (
               o && (n = n.substring(o[0].length)),
-              `\n    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">\n      <div style="width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center;">\n        ${e.cover_image ? `<img src="${e.cover_image}" alt="${e.title}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 24px;">🎵</span>'}\n      </div>\n      <div style="flex: 1;">\n        <div style="font-weight: 500;">${n}</div>\n        <div style="font-size: 0.85em; color: #666;">${e.artist}</div>\n      </div>\n      <div style="font-size: 0.85em; color: #999;">${e.duration}</div>\n      <div style="display: flex; gap: 5px;">\n        <button onclick="editMusicTitle(${e.id}, '${n.replace(/'/g, "\\'")}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">编辑标题</button>\n        <button onclick="changeMusicCover(${e.id})" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">更换封面</button>\n        <button onclick="deleteMusicTrack(${e.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">删除</button>\n      </div>\n    </div>\n    `
+              `\n    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">\n      <div style="width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center;">\n        ${e.cover_image ? `<img src="${e.cover_image}" alt="${e.title}" style="width: 100%; height: 100%; object-fit: cover;">` : '<span style="font-size: 24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>'}\n      </div>\n      <div style="flex: 1;">\n        <div style="font-weight: 500;">${n}</div>\n        <div style="font-size: 0.85em; color: #666;">${e.artist}</div>\n      </div>\n      <div style="font-size: 0.85em; color: #999;">${e.duration}</div>\n      <div style="display: flex; gap: 5px;">\n        <button onclick="editMusicTitle(${e.id}, '${n.replace(/'/g, "\\'")}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">编辑标题</button>\n        <button onclick="changeMusicCover(${e.id})" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">更换封面</button>\n        <button onclick="deleteMusicTrack(${e.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">删除</button>\n      </div>\n    </div>\n    `
             );
           })
           .join(''))
@@ -1382,7 +1382,11 @@ const FileManager = {
       const o = document.createElement('div');
       ((o.className = 'fm-tree-item'), t && e === this.currentRoot && o.classList.add('active'));
       const a = document.createElement('span');
-      ((a.className = 'fm-tree-icon'), (a.textContent = t ? '📁' : '📂'), o.appendChild(a));
+      ((a.className = 'fm-tree-icon'),
+        (a.textContent = t
+          ? `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`
+          : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>`),
+        o.appendChild(a));
       const d = document.createElement('span');
       ((d.textContent = e), o.appendChild(d));
       const i = n || e;
@@ -1436,12 +1440,13 @@ const FileManager = {
         }));
     },
     createFileItem(e) {
-      let t = '📄';
+      let t = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
       e.is_dir
-        ? (t = '📁')
+        ? (t = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`)
         : ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(e.extension)
-          ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='🖼️'">`)
-          : '.md' === e.extension && (t = '📝');
+          ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>️'">`)
+          : '.md' === e.extension &&
+            (t = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`);
       const n = this.formatFileSize(e.size);
       return `\n      <div class="fm-file-item" data-path="${e.path}" data-is-dir="${e.is_dir}">\n        <div class="fm-file-icon">${t}</div>\n        <div class="fm-file-name">${e.name}</div>\n        <div class="fm-file-meta">${e.is_dir ? '文件夹' : n}</div>\n      </div>\n    `;
     },
@@ -1562,10 +1567,19 @@ const FileManager = {
       const d = t.split('/').pop().split('.').pop().toLowerCase();
       ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(d);
       ([
-        { action: 'open', label: '打开', icon: '📂' },
+        {
+          action: 'open',
+          label: '打开',
+          icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>`,
+        },
         { action: 'download', label: '下载', icon: '⬇️', hide: n },
         { action: 'rename', label: '重命名', icon: '✏️' },
-        { action: 'delete', label: '删除', icon: '🗑️', danger: !0 },
+        {
+          action: 'delete',
+          label: '删除',
+          icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>️',
+          danger: !0,
+        },
       ].forEach(e => {
         if (e.hide) return;
         const t = document.createElement('div');

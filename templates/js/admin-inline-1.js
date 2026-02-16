@@ -60,7 +60,7 @@ function updateCategoriesTable(e) {
         bindActionButtons(),
         bindCategoryCheckboxes())
       : (t.innerHTML =
-          '\n      <tr>\n        <td colspan="7" style="text-align: center; padding: 40px; color: #999;">\n          <div style="font-size: 48px; margin-bottom: 10px;">📭</div>\n          <div>暂无分类</div>\n        </td>\n      </tr>\n    '));
+          '\n      <tr>\n        <td colspan="7" style="text-align: center; padding: 40px; color: #999;">\n          <div style="font-size: 48px; margin-bottom: 10px;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>\n          <div>暂无分类</div>\n        </td>\n      </tr>\n    '));
 }
 function updateTagsTable(e) {
   const t = document.querySelector('#tags tbody');
@@ -75,7 +75,7 @@ function updateTagsTable(e) {
         bindActionButtons(),
         bindTagCheckboxes())
       : (t.innerHTML =
-          '\n      <tr>\n        <td colspan="8" style="text-align: center; padding: 40px; color: #999;">\n          <div style="font-size: 48px; margin-bottom: 10px;">📭</div>\n          <div>暂无标签</div>\n        </td>\n      </tr>\n    '));
+          '\n      <tr>\n        <td colspan="8" style="text-align: center; padding: 40px; color: #999;">\n          <div style="font-size: 48px; margin-bottom: 10px;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>\n          <div>暂无标签</div>\n        </td>\n      </tr>\n    '));
 }
 async function loadCategoriesAndTags() {
   const e = await fetchCategories();
@@ -302,7 +302,7 @@ function showEmptyState(e, t, n = 6) {
   const o = localStorage.getItem('auth_token');
   let c = t;
   (o || (c = '请先登录以查看数据'),
-    (a.innerHTML = `\n    <tr>\n      <td colspan="${n}" style="text-align: center; padding: 40px; color: #999;">\n        <div style="font-size: 48px; margin-bottom: 10px;">📭</div>\n        <div>${c}</div>\n        ${o ? '' : '<div style="margin-top: 10px; font-size: 0.9em;"><a href="#loginModal" onclick="document.getElementById(\'loginBtn\').click(); return false;" style="color: #007bff; text-decoration: none;">点击登录</a></div>'}\n      </td>\n    </tr>\n  `));
+    (a.innerHTML = `\n    <tr>\n      <td colspan="${n}" style="text-align: center; padding: 40px; color: #999;">\n        <div style="font-size: 48px; margin-bottom: 10px;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>\n        <div>${c}</div>\n        ${o ? '' : '<div style="margin-top: 10px; font-size: 0.9em;"><a href="#loginModal" onclick="document.getElementById(\'loginBtn\').click(); return false;" style="color: #007bff; text-decoration: none;">点击登录</a></div>'}\n      </td>\n    </tr>\n  `));
 }
 let currentPage = 1,
   currentLimit = 100,
@@ -1619,7 +1619,7 @@ function handleFiles(e) {
         t.innerHTML = `\n          <img src="${e.target.result}" alt="${n.name}">\n          <button class="upload-remove">×</button>\n        `;
       else {
         const e = n.name.split('.').pop().toUpperCase();
-        t.innerHTML = `\n          <div style="background:#f0f0f0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">\n            <div style="font-size:2em;">📄</div>\n            <div style="font-size:0.8em; margin-top:5px; text-align:center; padding:0 5px;">${e}</div>\n          </div>\n          <button class="upload-remove">×</button>\n        `;
+        t.innerHTML = `\n          <div style="background:#f0f0f0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">\n            <div style="font-size:2em;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>\n            <div style="font-size:0.8em; margin-top:5px; text-align:center; padding:0 5px;">${e}</div>\n          </div>\n          <button class="upload-remove">×</button>\n        `;
       }
       (t.querySelector('.upload-remove').addEventListener('click', function () {
         const e = parseInt(t.dataset.fileIndex);
