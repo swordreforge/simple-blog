@@ -40,7 +40,15 @@
             <div class="stat-card">
                <div class="stat-header">
                   <div class="stat-title">总文章数</div>
-                  <div class="stat-icon">📝</div>
+                  <div class="stat-icon">
+                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                     </svg>
+                  </div>
                </div>
                <div class="stat-value" id="totalArticles">0</div>
                <div class="stat-change positive">本月新增</div>
@@ -48,7 +56,14 @@
             <div class="stat-card">
                <div class="stat-header">
                   <div class="stat-title">总用户数</div>
-                  <div class="stat-icon">👥</div>
+                  <div class="stat-icon">
+                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                     </svg>
+                  </div>
                </div>
                <div class="stat-value" id="totalUsers">0</div>
                <div class="stat-change positive">本周新增</div>
@@ -56,7 +71,13 @@
             <div class="stat-card">
                <div class="stat-header">
                   <div class="stat-title">今日访问量</div>
-                  <div class="stat-icon">📊</div>
+                  <div class="stat-icon">
+                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                     </svg>
+                  </div>
                </div>
                <div class="stat-value" id="todayVisits">0</div>
                <div class="stat-change">较昨日</div>
@@ -66,7 +87,18 @@
             <div class="panel-header">
                <h2>管理控制台</h2>
             </div>
-            <div class="quick-actions"><button class="action-btn" id="uploadArticleBtn"><span>📤</span> 上传文章</button> <button class="action-btn" id="newArticleBtn"><span>📝</span> 新建文章</button></div>
+            <div class="quick-actions"><button class="action-btn" id="uploadArticleBtn"><span>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                     </svg>
+                  </span> 上传文章</button> <button class="action-btn" id="newArticleBtn"><span>
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                     </svg>
+                  </span> 新建文章</button></div>
             <div class="tab-nav">
                <button class="tab-btn active" data-tab="articles">文章管理<span class="shortcut-hint">1</span></button> <button class="tab-btn" data-tab="users">用户管理<span class="shortcut-hint">2</span></button> <button class="tab-btn" data-tab="comments">评论管理<span class="shortcut-hint">3</span></button> <button class="tab-btn" data-tab="categories">分类管理<span class="shortcut-hint">4</span></button> <button class="tab-btn" data-tab="tags">标签管理<span class="shortcut-hint">5</span></button> <button class="tab-btn" data-tab="analytics">统计分析<span class="shortcut-hint">6</span></button> <button class="tab-btn" data-tab="about">卡片管理<span class="shortcut-hint">7</span></button> <button class="tab-btn" data-tab="filemanager">文件管理<span class="shortcut-hint">8</span></button> <button class="tab-btn" data-tab="attachments">附件管理<span class="shortcut-hint">9</span></button> <button class="tab-btn" data-tab="settings">系统设置<span class="shortcut-hint">0</span></button> 
                <button class="shortcuts-help-btn" id="adminShortcutsHelpBtn" title="快捷键帮助">
@@ -339,12 +371,24 @@
                   </div>
                </div>
                <div class="tab-pane" id="analytics">
-                  <h3>📊 统计分析</h3>
+                  <h3>
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                     </svg>
+                     统计分析
+                  </h3>
                   <p>查看文章阅读统计、热门分析和访问来源数据。
                   <div class="analytics-grid">
                      <div class="analytics-card">
                         <div class="analytics-header">
-                           <h4>🔥 热门文章</h4>
+                           <h4>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                                 <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                              </svg>
+                              热门文章
+                           </h4>
                            <select id="mostViewedLimit" class="form-control" style="width:100px;padding:5px">
                               <option value="5">前5篇
                               <option value="10" selected>前10篇
@@ -367,7 +411,14 @@
                      </div>
                      <div class="analytics-card">
                         <div class="analytics-header">
-                           <h4>🌍 访问来源（按国家）</h4>
+                           <h4>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                                 <circle cx="12" cy="12" r="10"></circle>
+                                 <line x1="2" y1="12" x2="22" y2="12"></line>
+                                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                              </svg>
+                              访问来源（按国家）
+                           </h4>
                            <select id="viewSourcesDays" class="form-control" style="width:100px;padding:5px">
                               <option value="7">近7天
                               <option value="30" selected>近30天
@@ -389,7 +440,14 @@
                      </div>
                      <div class="analytics-card">
                         <div class="analytics-header">
-                           <h4>🏙️ 访问来源（按城市）</h4>
+                           <h4>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                                 <path d="M3 21h18"></path>
+                                 <path d="M5 21V7l8-4 8 4v14"></path>
+                                 <path d="M17 21v-8.83a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3V21"></path>
+                              </svg>
+                              访问来源（按城市）
+                           </h4>
                            <select id="viewByCityDays" class="form-control" style="width:100px;padding:5px">
                               <option value="7">近7天
                               <option value="30" selected>近30天
@@ -412,7 +470,14 @@
                      </div>
                      <div class="analytics-card full-width">
                         <div class="analytics-header">
-                           <h4>🖥️ 访问来源（按IP）</h4>
+                           <h4>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                 <line x1="8" y1="21" x2="16" y2="21"></line>
+                                 <line x1="12" y1="17" x2="12" y2="21"></line>
+                              </svg>
+                              访问来源（按IP）
+                           </h4>
                            <select id="viewByIPDays" class="form-control" style="width:100px;padding:5px">
                               <option value="7">近7天
                               <option value="30" selected>近30天
@@ -439,7 +504,13 @@
                      </div>
                      <div class="analytics-card full-width">
                         <div class="analytics-header">
-                           <h4>📈 阅读趋势</h4>
+                           <h4>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                 <polyline points="17 6 23 6 23 12"></polyline>
+                              </svg>
+                              阅读趋势
+                           </h4>
                            <select id="viewTrendDays" class="form-control" style="width:100px;padding:5px">
                               <option value="7">近7天
                               <option value="30" selected>近30天
@@ -454,10 +525,27 @@
                </div>
                <div class="tab-pane" id="attachments">
                   <div class="am-header">
-                     <h3>📎 附件管理</h3>
+                     <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px">
+                           <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                        附件管理
+                     </h3>
                      <p>管理所有上传的附件，支持上传、查看、下载、删除和权限设置。
                   </div>
-                  <div class="quick-actions"><button class="btn-primary" id="amUploadBtn"><span style="margin-right:5px">📤</span>上传附件</button> <button class="btn-secondary" id="amRefreshBtn"><span style="margin-right:5px">🔄</span>刷新列表</button></div>
+                  <div class="quick-actions"><button class="btn-primary" id="amUploadBtn"><span style="margin-right:5px">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                           <polyline points="17 8 12 3 7 8"></polyline>
+                           <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                     </span>上传附件</button> <button class="btn-secondary" id="amRefreshBtn"><span style="margin-right:5px">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <polyline points="23 4 23 10 17 10"></polyline>
+                           <polyline points="1 20 1 14 7 14"></polyline>
+                           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                     </span>刷新列表</button></div>
                   <div class="am-filter-section">
                      <div class="am-filter-row">
                         <div class="form-group" style="margin-bottom:0">
@@ -512,7 +600,11 @@
                            <tr>
                               <td colspan="9" style="text-align:center;padding:40px">
                                  <div class="am-empty-state">
-                                    <div class="am-empty-icon">📭</div>
+                                    <div class="am-empty-icon">
+                                       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                       </svg>
+                                    </div>
                                     <p>暂无附件</p>
                                  </div>
                      </table>
@@ -535,13 +627,23 @@
                         </button>
                      </div>
                   </div>
-                  <div class="am-batch-actions" id="amBatchActions" style="display:none"><span style="margin-right:15px">已选择 <strong id="amSelectedCount">0</strong> 项</span> <button class="btn-danger" id="amBatchDeleteBtn"><span style="margin-right:5px">🗑️</span>批量删除</button> <button class="btn-secondary" id="amBatchSetPublicBtn">设为公开</button> <button class="btn-secondary" id="amBatchSetPrivateBtn">设为私密</button> <button class="btn-secondary" id="amCancelSelectionBtn">取消选择</button></div>
+                  <div class="am-batch-actions" id="amBatchActions" style="display:none"><span style="margin-right:15px">已选择 <strong id="amSelectedCount">0</strong> 项</span> <button class="btn-danger" id="amBatchDeleteBtn"><span style="margin-right:5px">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                           <polyline points="3 6 5 6 21 6"></polyline>
+                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                     </span>批量删除</button> <button class="btn-secondary" id="amBatchSetPublicBtn">设为公开</button> <button class="btn-secondary" id="amBatchSetPrivateBtn">设为私密</button> <button class="btn-secondary" id="amCancelSelectionBtn">取消选择</button></div>
                </div>
                <div class="tab-pane" id="settings">
                   <h3>系统设置</h3>
                   <p>配置网站参数和功能设置。
                   <div class="settings-section">
-                     <h4>🎨 外观设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        </svg>
+                        外观设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="backgroundImage">背景图片路径</label> <input id="backgroundImage" class="form-control" placeholder="/img/test.webp">
@@ -645,7 +747,14 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>🎵 音乐设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M9 18V5l12-2v13"></path>
+                           <circle cx="6" cy="18" r="3"></circle>
+                           <circle cx="18" cy="16" r="3"></circle>
+                        </svg>
+                        音乐设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="musicEnabled"><input type="checkbox" id="musicEnabled" style="margin-right:8px"> 启用音乐播放器</label>
@@ -686,7 +795,12 @@
                         </div>
                      </div>
                      <div style="margin-top:30px;padding-top:20px;border-top:1px solid rgba(0,0,0,.1)">
-                        <h5>📁 音乐文件管理</h5>
+                        <h5>
+                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px">
+                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                           </svg>
+                           音乐文件管理
+                        </h5>
                         <div id="musicDropZone" class="music-drop-zone">
                            <div class="drop-zone-content">
                               <div class="drop-zone-icon">
@@ -714,7 +828,14 @@
                            <p style="font-size:.9em;color:rgba(255,255,255,.8);margin:0">💡 <strong>提示：</strong>可以在上传队列中为每个音乐文件单独添加封面图片（支持 JPG、PNG、GIF、WebP 格式）
                         </div>
                         <div style="margin-top:20px">
-                           <h5>🎼 播放列表</h5>
+                           <h5>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px">
+                                 <path d="M9 18V5l12-2v13"></path>
+                                 <circle cx="6" cy="18" r="3"></circle>
+                                 <circle cx="18" cy="16" r="3"></circle>
+                              </svg>
+                              播放列表
+                           </h5>
                            <div id="musicPlaylistContainer" style="max-height:300px;overflow-y:auto;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:10px">
                               <div style="text-align:center;color:#999;padding:20px">暂无音乐文件</div>
                            </div>
@@ -722,7 +843,16 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>📝 模板设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                           <polyline points="14 2 14 8 20 8"></polyline>
+                           <line x1="16" y1="13" x2="8" y2="13"></line>
+                           <line x1="16" y1="17" x2="8" y2="17"></line>
+                           <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        模板设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="templateName">个人主页标题</label> <input id="templateName" class="form-control" placeholder="欢迎来到我的博客">
@@ -748,7 +878,16 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>📄 文章标题设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                           <polyline points="14 2 14 8 20 8"></polyline>
+                           <line x1="16" y1="13" x2="8" y2="13"></line>
+                           <line x1="16" y1="17" x2="8" y2="17"></line>
+                           <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        文章标题设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="templateArticleTitle"><input type="checkbox" id="templateArticleTitle" style="margin-right:8px"> 显示文章标题</label>
@@ -761,7 +900,14 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>💡 切换界面提示设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M9 18h6"></path>
+                           <path d="M10 22h4"></path>
+                           <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"></path>
+                        </svg>
+                        切换界面提示设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="templateSwitchNotice"><input type="checkbox" id="templateSwitchNotice" style="margin-right:8px"> 显示切换标签页提示</label>
@@ -774,7 +920,13 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>🔗 外部链接设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        外部链接设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="externalLinkWarning"><input type="checkbox" id="externalLinkWarning" style="margin-right:8px"> 启用外部链接跳转警告</label>
@@ -824,7 +976,12 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>💰 赞助设置</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        赞助设置
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="sponsorEnabled"><input type="checkbox" id="sponsorEnabled" style="margin-right:8px"> 启用赞助功能</label>
@@ -850,7 +1007,16 @@
                      </div>
                   </div>
                   <div class="settings-section">
-                     <h4>📋 备案信息（中国内地）</h4>
+                     <h4>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                           <polyline points="14 2 14 8 20 8"></polyline>
+                           <line x1="16" y1="13" x2="8" y2="13"></line>
+                           <line x1="16" y1="17" x2="8" y2="17"></line>
+                           <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        备案信息（中国内地）
+                     </h4>
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="beianEnabled"><input type="checkbox" id="beianEnabled" style="margin-right:8px"> 启用备案显示</label>
@@ -914,7 +1080,11 @@
                <div class="form-group">
                   <label>上传附件</label>
                   <div class="upload-area" id="uploadArea">
-                     <div class="upload-icon">📁</div>
+                     <div class="upload-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                     </div>
                      <div class="upload-text">
                         <h4>点击或拖拽文件到此处</h4>
                         <p>支持图片、文档、压缩包等文件格式，单个文件最大10MB
