@@ -375,7 +375,6 @@ impl PassageRepository {
             
 
                 /// 获取最新一篇已发布的文章
-
                 pub async fn get_latest_published(&self) -> Result<Option<Passage>, Box<dyn std::error::Error>> {
 
                     let conn = self.pool.get()?;
