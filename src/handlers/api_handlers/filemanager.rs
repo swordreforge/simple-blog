@@ -11,6 +11,7 @@ pub struct FileInfo {
     pub name: String,
     pub path: String,
     pub is_dir: bool,
+    pub extension: String,
     pub size: Option<i64>,
     pub modified: Option<String>,
 }
@@ -85,11 +86,24 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     for entry in entries.flatten() {
         let entry_path = entry.path();
         let metadata = entry_path.metadata().ok();
+        let file_name = entry.file_name().to_string_lossy().to_string();
+        
+        // 提取文件扩展名
+        let extension = if metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false) {
+            String::new()
+        } else {
+            entry_path
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .map(|ext| format!(".{}", ext))
+                .unwrap_or_default()
+        };
         
         let file_info = FileInfo {
-            name: entry.file_name().to_string_lossy().to_string(),
+            name: file_name.clone(),
             path: entry_path.to_string_lossy().to_string(),
             is_dir: metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false),
+            extension,
             size: metadata.as_ref().map(|m| m.len() as i64),
             modified: metadata.as_ref()
                 .and_then(|m| m.modified().ok())
