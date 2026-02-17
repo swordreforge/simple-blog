@@ -310,6 +310,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::passage::list))
             .route(web::post().to(api_handlers::passage::create))
     ).service(
+        web::resource("/api/passages/latest")
+            .route(web::get().to(api_handlers::passage::get_latest))
+    ).service(
         web::resource("/api/passages/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
     ).service(

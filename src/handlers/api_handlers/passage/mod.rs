@@ -19,6 +19,7 @@ pub use crud::{
     update,
     delete,
     delete_batch,
+    get_latest,
 };
 
 pub use query_handlers::{

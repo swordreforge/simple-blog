@@ -2510,20 +2510,135 @@ input[type=range]::-moz-range-thumb:hover {
 .fm-file-item:hover {
 	background: rgba(0, 123, 255, .05);
 	border-color: rgba(0, 123, 255, .3);
-	transform: translateY(-2px);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, .1)
+	transform: translateY(-3px);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, .12)
+}
+
+.fm-file-item:hover .fm-file-icon {
+	transform: scale(1.05);
+	box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3)
 }
 
 .fm-file-icon {
 	font-size: 3em;
-	margin-bottom: 8px
+	margin-bottom: 8px;
+	width: 60px;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	box-shadow: 0 5px 15px rgba(102, 126, 234, 0.25);
+	position: relative;
+	overflow: hidden;
+	transition: all 0.3s ease
+}
+
+.fm-file-icon::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+	border-radius: 12px
+}
+
+.fm-file-icon svg {
+	color: white;
+	position: relative;
+	z-index: 1
 }
 
 .fm-file-icon img {
-	width: 60px;
-	height: 60px;
+	width: 100%;
+	height: 100%;
 	object-fit: cover;
-	border-radius: 6px
+	border-radius: 12px
+}
+
+/* 不同文件类型的颜色样式 */
+.fm-file-item.directory .fm-file-icon {
+	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+	box-shadow: 0 5px 15px rgba(245, 87, 108, 0.25)
+}
+
+.fm-file-item.image .fm-file-icon {
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+	box-shadow: 0 5px 15px rgba(79, 172, 254, 0.25);
+	padding: 0
+}
+
+.fm-file-item.markdown .fm-file-icon {
+	background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+	box-shadow: 0 5px 15px rgba(67, 233, 123, 0.25)
+}
+
+.fm-file-item.audio .fm-file-icon {
+	background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+	box-shadow: 0 5px 15px rgba(250, 112, 154, 0.25)
+}
+
+.fm-file-item.video .fm-file-icon {
+	background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+	box-shadow: 0 5px 15px rgba(48, 207, 208, 0.25)
+}
+
+.fm-file-item.pdf .fm-file-icon {
+	background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+	box-shadow: 0 5px 15px rgba(238, 90, 36, 0.25)
+}
+
+.fm-file-item.word .fm-file-icon {
+	background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+	box-shadow: 0 5px 15px rgba(33, 150, 243, 0.25)
+}
+
+.fm-file-item.excel .fm-file-icon {
+	background: linear-gradient(135deg, #4CAF50 0%, #00E676 100%);
+	box-shadow: 0 5px 15px rgba(76, 175, 80, 0.25)
+}
+
+.fm-file-item.ppt .fm-file-icon {
+	background: linear-gradient(135deg, #FF9800 0%, #FF5722 100%);
+	box-shadow: 0 5px 15px rgba(255, 152, 0, 0.25)
+}
+
+.fm-file-item.text .fm-file-icon {
+	background: linear-gradient(135deg, #607D8B 0%, #90A4AE 100%);
+	box-shadow: 0 5px 15px rgba(96, 125, 139, 0.25)
+}
+
+.fm-file-item.archive .fm-file-icon {
+	background: linear-gradient(135deg, #FFA726 0%, #FB8C00 100%);
+	box-shadow: 0 5px 15px rgba(255, 167, 38, 0.25)
+}
+
+.fm-file-item.code .fm-file-icon {
+	background: linear-gradient(135deg, #7C4DFF 0%, #536DFE 100%);
+	box-shadow: 0 5px 15px rgba(124, 77, 255, 0.25)
+}
+
+.fm-file-item.font .fm-file-icon {
+	background: linear-gradient(135deg, #EC407A 0%, #E91E63 100%);
+	box-shadow: 0 5px 15px rgba(236, 64, 122, 0.25)
+}
+
+.fm-file-item.database .fm-file-icon {
+	background: linear-gradient(135deg, #3F51B5 0%, #303F9F 100%);
+	box-shadow: 0 5px 15px rgba(63, 81, 181, 0.25)
+}
+
+.fm-file-item.executable .fm-file-icon {
+	background: linear-gradient(135deg, #78909C 0%, #546E7A 100%);
+	box-shadow: 0 5px 15px rgba(120, 144, 156, 0.25)
+}
+
+.fm-file-item.file .fm-file-icon {
+	background: linear-gradient(135deg, #9E9E9E 0%, #757575 100%);
+	box-shadow: 0 5px 15px rgba(158, 158, 158, 0.25)
 }
 
 .fm-file-name {
@@ -5022,6 +5137,6 @@ body.admin-focus-mode .modal-header {
 	transform: none;
 	box-shadow: none
 }</style>
-   <script type="module" src="/js/admin-inline-2.js"></script><script src="/js/ecc-encrypt.js" defer></script><script src="/js/login.js" defer></script><script src="/js/modal-animations.js" defer></script><script src="/js/keyboard-shortcuts.js" defer></script><script src="/js/markdown-preview-modal.js?v=3" defer></script><script>!function(){const t= {{ live2d_enabled }},o= {{ live2d_show_on_admin }};if(!t||!o)return;const s={waifuPath:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json",cdnPath:"{{ live2d_cdn_path }}",cubism2Path:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js",cubism5Path:"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",modelId: {{ live2d_model_id }},modelPath:"{{ live2d_model_path }}",tools:["switch-model","switch-texture","photo","info","quit"],drag:!0,logLevel:"error",position:"{{ live2d_position }}",width:"{{ live2d_width }}",height:"{{ live2d_height }}"};window.addEventListener("load",function(){setTimeout(function(){try{if(document.querySelector('script[src*="autoload.js"]'))return;const t=document.createElement("script");t.src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js",t.async=!0,t.onload=function(){if(console.log("Live2D 看板娘加载完成"),"function"==typeof initWidget)try{initWidget(s)}catch(t){console.warn("Live2D 看板娘初始化失败:",t)}},t.onerror=function(){console.warn("Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用")},document.body.appendChild(t)}catch(t){console.warn("Live2D 看板娘初始化错误:",t)}},1e3)})}()</script><script type="module" src="/js/admin-inline-4.js"></script>
+   <script type="module" src="/js/admin-inline-2.js?v=2"></script><script src="/js/ecc-encrypt.js" defer></script><script src="/js/login.js" defer></script><script src="/js/modal-animations.js" defer></script><script src="/js/keyboard-shortcuts.js" defer></script><script src="/js/markdown-preview-modal.js?v=3" defer></script><script>!function(){const t= {{ live2d_enabled }},o= {{ live2d_show_on_admin }};if(!t||!o)return;const s={waifuPath:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json",cdnPath:"{{ live2d_cdn_path }}",cubism2Path:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js",cubism5Path:"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",modelId: {{ live2d_model_id }},modelPath:"{{ live2d_model_path }}",tools:["switch-model","switch-texture","photo","info","quit"],drag:!0,logLevel:"error",position:"{{ live2d_position }}",width:"{{ live2d_width }}",height:"{{ live2d_height }}"};window.addEventListener("load",function(){setTimeout(function(){try{if(document.querySelector('script[src*="autoload.js"]'))return;const t=document.createElement("script");t.src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js",t.async=!0,t.onload=function(){if(console.log("Live2D 看板娘加载完成"),"function"==typeof initWidget)try{initWidget(s)}catch(t){console.warn("Live2D 看板娘初始化失败:",t)}},t.onerror=function(){console.warn("Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用")},document.body.appendChild(t)}catch(t){console.warn("Live2D 看板娘初始化错误:",t)}},1e3)})}()</script><script type="module" src="/js/admin-inline-4.js"></script>
    <link rel="stylesheet" href="/css/music-player.css" media="print" onload='this.media="all"'>
    <script src="/js/music-player.js" defer></script>

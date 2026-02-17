@@ -353,14 +353,100 @@ impl PassageRepository {
             })?.collect::<Result<Vec<_>, _>>()?;
 
             // 计算下一页游标（使用最后一条记录）
-            // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
-            let next_cursor = passages.last().map(|p| {
-                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
-            });
 
-            Ok((passages, next_cursor))
-        }
-    }
+                        // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
+
+                        let next_cursor = passages.last().map(|p| {
+
+                            format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
+
+                        });
+
+            
+
+            
+
+                        Ok((passages, next_cursor))
+
+                    }
+
+                }
+
+            
+
+                /// 获取最新一篇已发布的文章
+
+                pub async fn get_latest_published(&self) -> Result<Option<Passage>, Box<dyn std::error::Error>> {
+
+                    let conn = self.pool.get()?;
+
+            
+
+                    let query = r#"
+
+                        SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+
+                        FROM passages
+
+                        WHERE status = 'published'
+
+                        ORDER BY created_at DESC, id DESC
+
+                        LIMIT 1
+
+                    "#;
+
+            
+
+                    let mut stmt = conn.prepare(query)?;
+
+                    let passage = stmt.query_row(params![], |row| {
+
+                        Ok(Passage {
+
+                            id: Some(row.get(0)?),
+
+                            uuid: Some(row.get(1)?),
+
+                            title: row.get(2)?,
+
+                            content: row.get(3)?,
+
+                            original_content: row.get(4)?,
+
+                            summary: row.get(5)?,
+
+                            author: row.get(6)?,
+
+                            tags: row.get(7)?,
+
+                            category: row.get(8)?,
+
+                            status: row.get(9)?,
+
+                            file_path: row.get(10)?,
+
+                            visibility: row.get(11)?,
+
+                            is_scheduled: row.get(12)?,
+
+                            published_at: row.get(13)?,
+
+                            cover_image: row.get(14)?,
+
+                            created_at: row.get(15)?,
+
+                            updated_at: row.get(16)?,
+
+                        })
+
+                    }).optional()?;
+
+            
+
+                    Ok(passage)
+
+                }
 
     /// 按日期获取已发布的文章（支持年、月、日筛选）
     pub async fn get_published_by_date(

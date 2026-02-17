@@ -1453,15 +1453,61 @@ const FileManager = {
         }));
     },
     createFileItem(e) {
-      let t = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`;
+      let t = this.getFileIcon('default');
+      let i = 'file';
       e.is_dir
-        ? (t = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`)
-        : ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(e.extension)
-          ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>️'">`)
-          : '.md' === e.extension &&
-            (t = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`);
+        ? (t = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`, i = 'directory')
+        : ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif', '.avif', '.jxl'].includes(e.extension)
+          ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='<svg width=\\'16\\' height=\\'16\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'3\\' ry=\\'3\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><path d=\\'21 15l-5-5L5 21\\'></path></svg>'">`, i = 'image')
+          : ['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus', '.ape', '.wv', '.tta'].includes(e.extension)
+            ? (t = this.getFileIcon('audio'), i = 'audio')
+            : ['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.m4v', '.3gp', '.ts', '.m2ts'].includes(e.extension)
+              ? (t = this.getFileIcon('video'), i = 'video')
+              : '.md' === e.extension
+                ? (t = this.getFileIcon('markdown'), i = 'markdown')
+                : '.pdf' === e.extension
+                  ? (t = this.getFileIcon('pdf'), i = 'pdf')
+                  : ['.doc', '.docx', '.odt', '.rtf'].includes(e.extension)
+                    ? (t = this.getFileIcon('word'), i = 'word')
+                    : ['.xls', '.xlsx', '.ods', '.csv'].includes(e.extension)
+                      ? (t = this.getFileIcon('excel'), i = 'excel')
+                      : ['.ppt', '.pptx', '.odp'].includes(e.extension)
+                        ? (t = this.getFileIcon('ppt'), i = 'ppt')
+                        : ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz'].includes(e.extension)
+                          ? (t = this.getFileIcon('archive'), i = 'archive')
+                          : ['.html', '.htm', '.css', '.js', '.ts', '.jsx', '.tsx', '.vue', '.svelte', '.json', '.xml', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf'].includes(e.extension)
+                            ? (t = this.getFileIcon('code'), i = 'code')
+                            : ['.txt', '.log'].includes(e.extension)
+                              ? (t = this.getFileIcon('text'), i = 'text')
+                              : ['.ttf', '.otf', '.woff', '.woff2', '.eot'].includes(e.extension)
+                                ? (t = this.getFileIcon('font'), i = 'font')
+                                : ['.db', '.sqlite', '.sqlite3', '.mdb', '.sql'].includes(e.extension)
+                                  ? (t = this.getFileIcon('database'), i = 'database')
+                                  : ['.exe', '.app', '.dmg', '.msi', '.deb', '.rpm', '.sh', '.bat', '.cmd', '.ps1'].includes(e.extension)
+                                    ? (t = this.getFileIcon('executable'), i = 'executable')
+                                    : (t = this.getFileIcon('default'), i = 'file');
       const n = this.formatFileSize(e.size);
-      return `\n      <div class="fm-file-item" data-path="${e.path}" data-is-dir="${e.is_dir}">\n        <div class="fm-file-icon">${t}</div>\n        <div class="fm-file-name">${e.name}</div>\n        <div class="fm-file-meta">${e.is_dir ? '文件夹' : n}</div>\n      </div>\n    `;
+      return `\n      <div class="fm-file-item ${i}" data-path="${e.path}" data-is-dir="${e.is_dir}">\n        <div class="fm-file-icon">${t}</div>\n        <div class="fm-file-name">${e.name}</div>\n        <div class="fm-file-meta">${e.is_dir ? '文件夹' : n}</div>\n      </div>\n    `;
+    },
+    getFileIcon(e) {
+      const t = {
+        image: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3" ry="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+        video: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/><rect x="2" y="2" width="20" height="20" rx="3" ry="3"/></svg>',
+        audio: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3" fill="currentColor"/><circle cx="18" cy="16" r="3" fill="currentColor"/></svg>',
+        document: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+        archive: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+        markdown: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l-2 2 2 2"/><path d="M14 13l2 2-2 2"/></svg>',
+        code: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>',
+        pdf: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7" y="17" font-size="6" font-weight="bold" fill="currentColor">PDF</text></svg>',
+        word: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="4" y="17" font-size="5" font-weight="bold" fill="currentColor">DOC</text></svg>',
+        excel: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="7" y="10" width="10" height="2"/><rect x="7" y="14" width="10" height="2"/><rect x="7" y="18" width="10" height="2"/></svg>',
+        ppt: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="11" width="8" height="6" rx="1"/></svg>',
+        text: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',
+        font: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="6" y="18" font-size="10" font-weight="bold" fill="currentColor">Aa</text></svg>',
+        database: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+        executable: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="14" r="3"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>'
+      };
+      return t[e] || '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>';
     },
     formatFileSize(e) {
       if (0 === e) return '0 B';
@@ -1585,8 +1631,17 @@ const FileManager = {
           label: '打开',
           icon: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>`,
         },
-        { action: 'download', label: '下载', icon: '⬇️', hide: n },
-        { action: 'rename', label: '重命名', icon: '✏️' },
+        {
+          action: 'download',
+          label: '下载',
+          icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+          hide: n,
+        },
+        {
+          action: 'rename',
+          label: '重命名',
+          icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
+        },
         {
           action: 'delete',
           label: '删除',

@@ -1071,3 +1071,70 @@ pub async fn delete_batch(
         }
     }
 }
+
+/// 获取最新一篇文章（用于收藏页面的最新文章提醒）
+pub async fn get_latest(
+    state: web::Data<crate::app_state::AppState>,
+) -> HttpResponse {
+    let passage_repo = state.passage_repository();
+
+    // 尝试从缓存获取
+    let cache_key = "passage:latest";
+    if let Some(manager) = state.cache.manager() {
+        if let Some(cached_data) = manager.get(cache_key).await {
+            if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
+                return HttpResponse::Ok()
+                    .insert_header(("Cache-Control", "public, max-age=60"))
+                    .insert_header(("X-Cache", "HIT"))
+                    .json(response);
+            }
+        }
+    }
+
+    // 从数据库获取最新发布的文章
+    match passage_repo.get_latest_published().await {
+        Ok(Some(passage)) => {
+            let response = serde_json::json!({
+                "success": true,
+                "data": {
+                    "id": passage.id.unwrap_or(0),
+                    "uuid": passage.uuid.unwrap_or_default(),
+                    "title": passage.title,
+                    "summary": passage.summary,
+                    "author": passage.author,
+                    "tags": passage.tags,
+                    "category": passage.category,
+                    "cover_image": passage.cover_image,
+                    "published_at": passage.published_at.map(|d: chrono::DateTime<chrono::Utc>| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    "created_at": passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    "updated_at": passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                }
+            });
+
+            // 缓存响应
+            if let Some(manager) = state.cache.manager() {
+                if let Ok(json_str) = serde_json::to_string(&response) {
+                    let _ = manager.set(cache_key, &json_str).await;
+                }
+            }
+
+            HttpResponse::Ok()
+                .insert_header(("Cache-Control", "public, max-age=60"))
+                .insert_header(("X-Cache", "MISS"))
+                .json(response)
+        }
+        Ok(None) => {
+            HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "暂无文章"
+            }))
+        }
+        Err(e) => {
+            eprintln!("获取最新文章失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取最新文章失败"
+            }))
+        }
+    }
+}

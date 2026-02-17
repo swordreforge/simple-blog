@@ -119,17 +119,22 @@ body {
   align-items: center;
   padding: 20px;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 15px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   border: 2px solid transparent;
 }
 
 .file-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
   border-color: #667eea;
+}
+
+.file-item:hover .file-icon {
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.35);
 }
 
 .file-item.selected {
@@ -143,49 +148,134 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3em;
   margin-bottom: 12px;
-  border-radius: 12px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.file-icon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 16px;
+}
+
+.file-icon svg {
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+
+/* 文件夹图标 - 粉紫渐变 */
 .file-item.directory .file-icon {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
+  box-shadow: 0 8px 24px rgba(245, 87, 108, 0.25);
 }
 
+/* 图片文件 - 青蓝渐变 */
 .file-item.image .file-icon {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
-  font-size: 2.5em;
+  box-shadow: 0 8px 24px rgba(79, 172, 254, 0.25);
+  padding: 0;
 }
 
 .file-item.image .file-icon img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 16px;
 }
 
+/* Markdown文件 - 绿青渐变 */
 .file-item.markdown .file-icon {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  box-shadow: 0 5px 15px rgba(67, 233, 123, 0.3);
+  box-shadow: 0 8px 24px rgba(67, 233, 123, 0.25);
 }
 
+/* 音频文件 - 橙黄渐变 */
 .file-item.audio .file-icon {
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  box-shadow: 0 5px 15px rgba(250, 112, 154, 0.3);
+  box-shadow: 0 8px 24px rgba(250, 112, 154, 0.25);
 }
 
+/* 视频文件 - 紫深渐变 */
 .file-item.video .file-icon {
   background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
-  box-shadow: 0 5px 15px rgba(48, 207, 208, 0.3);
+  box-shadow: 0 8px 24px rgba(48, 207, 208, 0.25);
 }
 
-.file-item.document .file-icon {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-  box-shadow: 0 5px 15px rgba(168, 237, 234, 0.3);
+/* PDF文件 - 红橙渐变 */
+.file-item.pdf .file-icon {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  box-shadow: 0 8px 24px rgba(238, 90, 36, 0.25);
+}
+
+/* Word文档 - 蓝绿渐变 */
+.file-item.word .file-icon {
+  background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+  box-shadow: 0 8px 24px rgba(33, 150, 243, 0.25);
+}
+
+/* Excel表格 - 绿青渐变 */
+.file-item.excel .file-icon {
+  background: linear-gradient(135deg, #4CAF50 0%, #00E676 100%);
+  box-shadow: 0 8px 24px rgba(76, 175, 80, 0.25);
+}
+
+/* PPT演示文稿 - 橙黄渐变 */
+.file-item.ppt .file-icon {
+  background: linear-gradient(135deg, #FF9800 0%, #FF5722 100%);
+  box-shadow: 0 8px 24px rgba(255, 152, 0, 0.25);
+}
+
+/* 文本文件 - 灰白渐变 */
+.file-item.text .file-icon {
+  background: linear-gradient(135deg, #607D8B 0%, #90A4AE 100%);
+  box-shadow: 0 8px 24px rgba(96, 125, 139, 0.25);
+}
+
+/* 压缩包 - 橙红渐变 */
+.file-item.archive .file-icon {
+  background: linear-gradient(135deg, #FFA726 0%, #FB8C00 100%);
+  box-shadow: 0 8px 24px rgba(255, 167, 38, 0.25);
+}
+
+/* 代码文件 - 蓝紫渐变 */
+.file-item.code .file-icon {
+  background: linear-gradient(135deg, #7C4DFF 0%, #536DFE 100%);
+  box-shadow: 0 8px 24px rgba(124, 77, 255, 0.25);
+}
+
+/* 字体文件 - 粉红渐变 */
+.file-item.font .file-icon {
+  background: linear-gradient(135deg, #EC407A 0%, #E91E63 100%);
+  box-shadow: 0 8px 24px rgba(236, 64, 122, 0.25);
+}
+
+/* 数据库文件 - 靛蓝渐变 */
+.file-item.database .file-icon {
+  background: linear-gradient(135deg, #3F51B5 0%, #303F9F 100%);
+  box-shadow: 0 8px 24px rgba(63, 81, 181, 0.25);
+}
+
+/* 可执行文件 - 灰色渐变 */
+.file-item.executable .file-icon {
+  background: linear-gradient(135deg, #78909C 0%, #546E7A 100%);
+  box-shadow: 0 8px 24px rgba(120, 144, 156, 0.25);
+}
+
+/* 默认文件 */
+.file-item.file .file-icon {
+  background: linear-gradient(135deg, #9E9E9E 0%, #757575 100%);
+  box-shadow: 0 8px 24px rgba(158, 158, 158, 0.25);
 }
 
 .file-name {
