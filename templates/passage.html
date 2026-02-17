@@ -2079,6 +2079,129 @@ body.fullscreen .content-area {
   }
 }
 
+/* 快捷操作按钮 */
+.quick-actions-btn {
+  position: fixed !important;
+  right: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 56px;
+  height: 56px;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, .9);
+  text-decoration: none;
+  transition: all .4s cubic-bezier(.68, -0.55, .265, 1.55);
+  cursor: pointer;
+  z-index: 10002;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .1)
+}
+
+.quick-actions-btn:hover {
+  background: rgba(255, 255, 255, .2);
+  border-color: rgba(255, 255, 255, .5);
+  transform: translateY(-50%) scale(1.1) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .15)
+}
+
+.quick-actions-btn:active {
+  transform: translateY(-50%) scale(.95) !important
+}
+
+.quick-actions-btn svg {
+  width: 24px;
+  height: 24px;
+  transition: transform .3s ease
+}
+
+.quick-actions-btn:hover svg {
+  transform: rotate(90deg)
+}
+
+.quick-actions-panel {
+  position: fixed !important;
+  right: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 56px;
+  height: 56px;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 28px;
+  opacity: 0;
+  visibility: hidden;
+  transform-origin: center center;
+  transition: all .5s cubic-bezier(.68, -0.55, .265, 1.55);
+  z-index: 10000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+  overflow: hidden;
+  pointer-events: none
+}
+
+.quick-actions-panel.show {
+  opacity: 1;
+  visibility: visible;
+  width: 200px;
+  height: auto;
+  border-radius: 16px;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1) !important
+}
+
+.quick-actions-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all .3s ease
+}
+
+.quick-actions-panel.show .quick-actions-content {
+  opacity: 1;
+  transform: scale(1)
+}
+
+.quick-action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, .9);
+  text-decoration: none;
+  transition: all .2s ease;
+  font-size: .9em;
+  white-space: nowrap
+}
+
+.quick-action-item:hover {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .2);
+  transform: translateX(-3px)
+}
+
+.quick-action-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0
+}
+
 /* 工具按钮 */
 .toolbar {
   display: flex;
@@ -2991,6 +3114,164 @@ body.focus-mode-right .sidebar {
   </div>
 </div>
 </main>
+
+<!-- 快捷操作按钮 -->
+<div class="quick-actions-btn" id="quickActionsBtn" title="快捷操作" style="position: fixed !important; right: 20px !important; top: calc(50% + 10px) !important; transform: translateY(-50%) !important;">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <circle cx="12" cy="12" r="3"></circle>
+    <path
+      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+    ></path>
+  </svg>
+</div>
+
+<!-- 快捷操作面板 -->
+<div class="quick-actions-panel" id="quickActionsPanel" style="position: fixed !important; right: 20px !important; top: calc(50% + 10px) !important; transform: translateY(-50%) !important;">
+  <div class="quick-actions-content">
+    <a href="/" class="quick-action-item">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span>主页</span>
+    </a>
+    <a href="/passage" class="quick-action-item">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <span>文章</span>
+    </a>
+    <a href="/collect" class="quick-action-item">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+        ></path>
+      </svg>
+      <span>归档</span>
+    </a>
+    <a href="/about" class="quick-action-item">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span>关于</span>
+    </a>
+    <a href="/friends" class="quick-action-item">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+      <span>友链</span>
+    </a>
+  </div>
+</div>
+
+<!-- 文章索引按钮 -->
+<div class="quick-actions-btn" id="articleIndexBtn" title="文章索引" style="position: fixed !important; right: 20px !important; top: calc(50% + 76px) !important; transform: translateY(-50%) !important; z-index: 10002 !important;">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+  </svg>
+</div>
+
+<!-- 本文目录按钮 -->
+<div class="quick-actions-btn" id="tocBtn" title="本文目录" style="position: fixed !important; right: 20px !important; top: calc(50% + 142px) !important; transform: translateY(-50%) !important; z-index: 10002 !important;">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <line x1="8" y1="6" x2="21" y2="6"></line>
+    <line x1="8" y1="12" x2="21" y2="12"></line>
+    <line x1="8" y1="18" x2="21" y2="18"></line>
+    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+  </svg>
+</div>
 
 <!-- 页脚和备案信息 -->
 <footer style="text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.2); margin-top: auto; position: relative; z-index: 1; color: rgba(255, 255, 255, 0.9);">
@@ -7405,165 +7686,7 @@ html.dark-mode .sponsor-btn:hover {
   background: #3395ff;
 }
 
-/* 快捷操作按钮样式 */
-.quick-actions-btn {
-  position: fixed !important;
-  right: 20px !important;
-  bottom: 80px !important;
-  width: 56px;
-  height: 56px;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
 
-.quick-actions-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.quick-actions-btn:active {
-  transform: scale(0.95);
-}
-
-.quick-actions-btn svg {
-  width: 24px;
-  height: 24px;
-  transition: transform 0.3s ease;
-}
-
-.quick-actions-btn:hover svg {
-  transform: rotate(90deg);
-}
-
-/* 快捷操作面板样式 */
-.quick-actions-panel {
-  position: fixed !important;
-  right: 20px !important;
-  bottom: 80px !important;
-  width: 56px;
-  height: 56px;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 28px;
-  opacity: 0;
-  visibility: hidden;
-  transform: scale(1);
-  transform-origin: bottom right;
-  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  z-index: 999;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.quick-actions-panel.show {
-  opacity: 1;
-  visibility: visible;
-  width: 200px;
-  height: auto;
-  border-radius: 16px;
-  pointer-events: auto;
-  transform: scale(1);
-}
-
-.quick-actions-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  overflow-y: auto;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.3s ease;
-}
-
-.quick-actions-panel.show .quick-actions-content {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.quick-action-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  transition: all 0.2s ease;
-  font-size: 0.9em;
-  white-space: nowrap;
-}
-
-.quick-action-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateX(-3px);
-}
-
-.quick-action-item svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-  .quick-actions-btn {
-    width: 48px;
-    height: 48px;
-    right: 15px;
-    bottom: 15px;
-  }
-
-  .quick-actions-btn svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .quick-actions-panel {
-    width: 48px;
-    height: 48px;
-    right: 15px;
-    bottom: 15px;
-  }
-
-  .quick-actions-panel.show {
-    width: 180px;
-    height: auto;
-    transform: scale(1);
-  }
-
-  .quick-action-item {
-    padding: 8px 12px;
-    font-size: 0.85em;
-  }
-
-  .quick-action-item svg {
-    width: 16px;
-    height: 16px;
-  }
-}
 </style>
 
 <script>
@@ -7599,6 +7722,184 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+
+<!-- 快捷操作面板功能 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const quickActionsBtn = document.getElementById('quickActionsBtn');
+  const quickActionsPanel = document.getElementById('quickActionsPanel');
+  let quickActionsClosing = false;
+
+  // 点击按钮切换面板
+  if (quickActionsBtn) {
+    quickActionsBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const isShown = quickActionsPanel.classList.contains('show');
+
+      if (isShown) {
+        // 关闭时先让内容淡出
+        quickActionsClosing = true;
+        quickActionsPanel.classList.remove('show');
+        setTimeout(() => {
+          quickActionsClosing = false;
+        }, 500);
+      } else {
+        quickActionsPanel.classList.add('show');
+      }
+    });
+  }
+
+  // 点击其他地方关闭面板
+  document.addEventListener('click', function (e) {
+    if (!quickActionsBtn.contains(e.target) && !quickActionsPanel.contains(e.target)) {
+      if (quickActionsPanel.classList.contains('show') && !quickActionsClosing) {
+        quickActionsClosing = true;
+        quickActionsPanel.classList.remove('show');
+        setTimeout(() => {
+          quickActionsClosing = false;
+        }, 500);
+      }
+    }
+  });
+});
+</script>
+
+<!-- 文章索引和本文目录按钮功能 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const articleIndexBtn = document.getElementById('articleIndexBtn');
+  const tocBtn = document.getElementById('tocBtn');
+  const articleFilterToggle = document.getElementById('articleFilterToggle');
+  const articleFilterModal = document.getElementById('articleFilterModal');
+
+  // 文章索引按钮点击事件
+  if (articleIndexBtn && articleFilterToggle && articleFilterModal) {
+    articleIndexBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      // 打开模态框并切换到时间戳模式
+      articleFilterModal.classList.add('active');
+      const timestampTab = document.querySelector('.filter-tab[data-mode="timestamp"]');
+      if (timestampTab) {
+        timestampTab.click();
+      }
+    });
+  }
+
+  // 本文目录按钮点击事件
+  if (tocBtn && articleFilterToggle && articleFilterModal) {
+    tocBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      // 打开模态框并切换到目录模式
+      articleFilterModal.classList.add('active');
+      const outlineTab = document.querySelector('.filter-tab[data-mode="outline"]');
+      if (outlineTab) {
+        outlineTab.click();
+      }
+    });
+  }
+});
+</script>
+
+<!-- 顶栏滚动隐藏逻辑 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[顶栏滚动隐藏逻辑] DOMContentLoaded 触发');
+
+  const nav = document.querySelector('nav');
+  const contentArea = document.querySelector('.content-area');
+  const articleContainer = document.querySelector('.article-container');
+  const mainContainer = document.querySelector('.main-container');
+  const footer = document.querySelector('footer');
+
+  console.log('[顶栏滚动隐藏逻辑] nav 元素:', nav);
+  console.log('[顶栏滚动隐藏逻辑] contentArea 元素:', contentArea);
+  console.log('[顶栏滚动隐藏逻辑] articleContainer 元素:', articleContainer);
+  console.log('[顶栏滚动隐藏逻辑] mainContainer 元素:', mainContainer);
+  console.log('[顶栏滚动隐藏逻辑] footer 元素:', footer);
+
+  if (articleContainer) {
+    console.log('[顶栏滚动隐藏逻辑] articleContainer 当前样式:', {
+      overflow: window.getComputedStyle(articleContainer).overflow,
+      overflowY: window.getComputedStyle(articleContainer).overflowY,
+      height: window.getComputedStyle(articleContainer).height,
+      maxHeight: window.getComputedStyle(articleContainer).maxHeight
+    });
+  }
+
+  // 为顶栏和底栏添加过渡效果
+  if (nav) {
+    nav.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease';
+  }
+  if (footer) {
+    footer.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease';
+  }
+  if (mainContainer) {
+    mainContainer.style.transition = 'height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  }
+
+  let lastScrollY = 0;
+  let ticking = false;
+  let scrollEventCount = 0;
+  let isNavHidden = false;
+  let hasTriggered = false; // 标记是否已经触发过
+
+  if (nav && articleContainer && mainContainer) {
+    console.log('[顶栏滚动隐藏逻辑] 所有元素都找到了，添加滚动监听');
+
+    articleContainer.addEventListener('scroll', function() {
+      scrollEventCount++;
+      console.log('[顶栏滚动隐藏逻辑] 滚动事件触发 (第' + scrollEventCount + '次)');
+
+      if (!ticking && !hasTriggered) {
+        window.requestAnimationFrame(function() {
+          const currentScrollY = articleContainer.scrollTop;
+
+          console.log('[顶栏滚动隐藏逻辑] 当前滚动位置:', currentScrollY, '上次滚动位置:', lastScrollY);
+
+          // 只在滚动超过10px时触发一次
+          if (currentScrollY > 10) {
+            console.log('[顶栏滚动隐藏逻辑] 滚动超过10px，触发隐藏顶栏和底栏');
+            hasTriggered = true;
+            
+            // 先添加过渡效果，然后隐藏
+            nav.style.transform = 'translateY(-100%)';
+            nav.style.opacity = '0';
+            footer.style.transform = 'translateY(100%)';
+            footer.style.opacity = '0';
+            
+            // 等待过渡完成后，完全隐藏元素
+            setTimeout(() => {
+              nav.style.display = 'none';
+              footer.style.display = 'none';
+              mainContainer.style.height = '100vh';
+              console.log('[顶栏滚动隐藏逻辑] mainContainer 新高度:', window.getComputedStyle(mainContainer).height);
+            }, 400);
+          }
+
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+
+        ticking = true;
+      }
+    });
+
+    console.log('[顶栏滚动隐藏逻辑] 滚动监听器已添加');
+    console.log('[顶栏滚动隐藏逻辑] 等待滚动事件...');
+
+    // 5秒后检查是否触发过滚动事件
+    setTimeout(function() {
+      console.log('[顶栏滚动隐藏逻辑] 5秒内滚动事件触发次数:', scrollEventCount);
+      if (scrollEventCount === 0) {
+        console.warn('[顶栏滚动隐藏逻辑] 5秒内没有触发滚动事件，可能articleContainer不可滚动');
+      }
+    }, 5000);
+
+  } else {
+    console.error('[顶栏滚动隐藏逻辑] 未找到元素 - nav:', nav, 'articleContainer:', articleContainer, 'mainContainer:', mainContainer);
+  }
+});
+</script>
 
 <!-- 键盘快捷键脚本 (延迟加载 - 最大文件 84.6KB) -->
 <script src="/js/keyboard-shortcuts.js" defer></script>
@@ -7876,127 +8177,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- 虚拟滚动 JS -->
 <script src="/js/virtual-scroll.js" defer></script>
 
-<!-- 快捷操作面板 JS -->
-<script src="/js/quick-actions.js" defer></script>
-
 <!-- 飘字效果 JS -->
 {% if settings.floating_text_enabled %}
 <script src="/js/floating-text.js" defer></script>
 {% endif %}
 
-<!-- 快捷操作按钮 -->
-<div class="quick-actions-btn" id="quickActionsBtn" title="快捷操作">
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <circle cx="12" cy="12" r="3"></circle>
-    <path
-      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-    ></path>
-  </svg>
-</div>
-
-<!-- 快捷操作面板 -->
-<div class="quick-actions-panel" id="quickActionsPanel">
-  <div class="quick-actions-content">
-    <a href="/" class="quick-action-item">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-      </svg>
-      <span>主页</span>
-    </a>
-    <a href="/collect" class="quick-action-item">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path
-          d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
-        ></path>
-      </svg>
-      <span>归档</span>
-    </a>
-    <a href="/about" class="quick-action-item">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-      </svg>
-      <span>关于</span>
-    </a>
-    <a href="/friends" class="quick-action-item">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-      </svg>
-      <span>友链</span>
-    </a>
-    <a href="/markdown-editor" class="quick-action-item">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-      </svg>
-      <span>编辑器</span>
-    </a>
-  </div>
-</div>
 </body>
 </html>
