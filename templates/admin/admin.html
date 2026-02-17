@@ -4931,6 +4931,36 @@ body.admin-focus-mode .modal-header {
          </div>
       </div>
    </div>
+   <div class="modal" id="createDirModal">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h3>新建文件夹</h3>
+            <button class="modal-close" data-modal="createDirModal">×</button>
+         </div>
+         <div class="modal-body">
+            <div class="form-group">
+               <label for="dirNameInput">文件夹名称</label>
+               <input id="dirNameInput" class="form-control" placeholder="请输入文件夹名称" />
+            </div>
+         </div>
+         <div class="btn-group"><button type="button" class="btn-secondary" data-modal="createDirModal">取消</button> <button type="button" class="btn-primary" id="confirmCreateDirBtn">创建</button></div>
+      </div>
+   </div>
+   <div class="modal" id="renameModal">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h3>重命名</h3>
+            <button class="modal-close" data-modal="renameModal">×</button>
+         </div>
+         <div class="modal-body">
+            <div class="form-group">
+               <label for="renameInput">新名称</label>
+               <input id="renameInput" class="form-control" placeholder="请输入新名称" />
+            </div>
+         </div>
+         <div class="btn-group"><button type="button" class="btn-secondary" data-modal="renameModal">取消</button> <button type="button" class="btn-primary" id="confirmRenameBtn">确定</button></div>
+      </div>
+   </div>
    <style>.modal {
 	display: none;
 	position: fixed;

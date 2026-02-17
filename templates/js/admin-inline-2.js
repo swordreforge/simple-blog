@@ -1346,6 +1346,28 @@ const FileManager = {
           .getElementById('fmCreateDirBtn')
           .addEventListener('click', () => this.openCreateDirModal()),
         document.getElementById('fmBackBtn').addEventListener('click', () => this.goBack()),
+        document.getElementById('confirmCreateDirBtn').addEventListener('click', () => {
+          const input = document.getElementById('dirNameInput');
+          if (input) {
+            const dirName = input.value.trim();
+            if (dirName) {
+              this.createDirectory(dirName);
+              const modal = document.getElementById('createDirModal');
+              modal.classList.remove('active');
+            }
+          }
+        }),
+        document.getElementById('confirmRenameBtn').addEventListener('click', () => {
+          const input = document.getElementById('renameInput');
+          if (input) {
+            const newName = input.value.trim();
+            if (newName) {
+              this.renameFile(newName);
+              const modal = document.getElementById('renameModal');
+              modal.classList.remove('active');
+            }
+          }
+        }),
         document.addEventListener('click', e => {
           e.target.closest('.fm-context-menu') ||
             e.target.closest('.fm-file-item') ||
@@ -1714,15 +1736,22 @@ const FileManager = {
       (this.loadFiles(), this.loadTree());
     },
     openCreateDirModal() {
-      const e = prompt('请输入文件夹名称:');
-      e && e.trim() && this.createDirectory(e.trim());
+      const modal = document.getElementById('createDirModal');
+      const input = document.getElementById('dirNameInput');
+      if (input) {
+        input.value = '';
+        modal.classList.add('active');
+        setTimeout(() => {
+          input.focus();
+        }, 100);
+      }
     },
     async createDirectory(e) {
       try {
         const t = await fetch('/api/files/create-dir', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: this.getAuthHeader() },
-            body: JSON.stringify({ path: this.currentPath, dir_name: e }),
+            body: JSON.stringify({ path: this.currentPath, name: e }),
           }),
           n = await t.json();
         n.success
@@ -1734,9 +1763,17 @@ const FileManager = {
     },
     openRenameModal() {
       if (!this.selectedFile) return;
-      const e = this.selectedFile.path.split('/').pop(),
-        t = prompt('请输入新名称:', e);
-      t && t.trim() && t.trim() !== e && this.renameFile(t.trim());
+      const e = this.selectedFile.path.split('/').pop();
+      const modal = document.getElementById('renameModal');
+      const input = document.getElementById('renameInput');
+      if (input) {
+        input.value = e;
+        modal.classList.add('active');
+        setTimeout(() => {
+          input.focus();
+          input.select();
+        }, 100);
+      }
     },
     async renameFile(e) {
       if (this.selectedFile)
