@@ -1,120 +1,76 @@
 use super::backend::{CacheBackend, CacheError};
 use async_trait::async_trait;
-use chrono::{Duration, Utc};
-use dashmap::DashMap;
-use std::time::Duration as StdDuration;
+use moka::sync::Cache;
+use std::time::Duration;
 
-/// 本地缓存条目
-#[derive(Debug, Clone)]
-struct CacheEntry {
-    value: String,
-    expires_at: i64,
-}
-
-impl CacheEntry {
-    fn new(value: String, ttl: StdDuration) -> Self {
-        let expires_at = Utc::now()
-            .checked_add_signed(Duration::seconds(ttl.as_secs() as i64))
-            .map(|dt| dt.timestamp())
-            .unwrap_or(i64::MAX);
-
-        Self { value, expires_at }
-    }
-
-    fn is_expired(&self) -> bool {
-        Utc::now().timestamp() > self.expires_at
-    }
-}
-
-/// 本地内存缓存后端（降级方案）
+/// 本地内存缓存后端（降级方案）- 使用 Moka 实现
+/// Moka 使用分段锁且不会阻塞工作线程，可以彻底避免死锁问题
 pub struct LocalCacheBackend {
-    cache: DashMap<String, CacheEntry>,
-    max_size: usize,
+    cache: Cache<String, String>,
 }
 
 impl LocalCacheBackend {
     /// 创建新的本地缓存后端
     pub fn new(max_size: Option<usize>) -> Self {
-        Self {
-            cache: DashMap::new(),
-            max_size: max_size.unwrap_or(10000),
-        }
-    }
+        let max_capacity = max_size.unwrap_or(10000);
 
-    /// 检查是否需要清理空间
-    fn ensure_capacity(&self) {
-        let current = self.cache.len();
-        
-        if current >= self.max_size {
-            // 使用 LRU 策略：移除最旧的条目
-            let mut oldest_key = None;
-            let mut oldest_time = i64::MAX;
+        // 使用 Moka 的同步缓存
+        // 设置最大容量、TTL 和支持闭包失效
+        let cache = Cache::builder()
+            .max_capacity(max_capacity as u64)
+            .time_to_live(Duration::from_secs(3600)) // 默认 TTL 1 小时
+            .support_invalidation_closures() // 启用闭包失效支持
+            .build();
 
-            for entry in self.cache.iter() {
-                if entry.value().expires_at < oldest_time {
-                    oldest_time = entry.value().expires_at;
-                    oldest_key = Some(entry.key().clone());
-                }
-            }
-
-            if let Some(key) = oldest_key {
-                self.cache.remove(&key);
-            }
-        }
+        Self { cache }
     }
 }
 
 #[async_trait]
 impl CacheBackend for LocalCacheBackend {
     async fn get(&self, key: &str) -> Option<String> {
-        if let Some(entry) = self.cache.get(key) {
-            if entry.is_expired() {
-                self.cache.remove(key);
-                return None;
-            }
-            Some(entry.value.clone())
-        } else {
-            None
-        }
+        // Moka 自动处理过期，无需手动检查
+        self.cache.get(key)
     }
 
-    async fn set(&self, key: &str, value: &str, ttl: StdDuration) -> Result<(), CacheError> {
-        self.ensure_capacity();
-        
-        let entry = CacheEntry::new(value.to_string(), ttl);
-        self.cache.insert(key.to_string(), entry);
-        
+    async fn set(&self, key: &str, value: &str, _ttl: Duration) -> Result<(), CacheError> {
+        // Moka 的 sync 缓存使用全局 TTL，在构造时已设置为 1 小时
+        // 如果需要每个 key 不同 TTL，可以考虑使用 Moka 的 async 版本
+        self.cache.insert(key.to_string(), value.to_string());
         Ok(())
     }
 
     async fn delete(&self, key: &str) -> Result<(), CacheError> {
-        self.cache.remove(key);
+        self.cache.invalidate(key);
         Ok(())
     }
 
     async fn delete_many(&self, keys: &[String]) -> Result<(), CacheError> {
+        // Moka 的 invalidate_all 不接受参数，需要循环删除
         for key in keys {
-            self.cache.remove(key);
+            self.cache.invalidate(key);
         }
         Ok(())
     }
 
     async fn delete_pattern(&self, pattern: &str) -> Result<(), CacheError> {
         use glob::Pattern;
-        
+
         let glob_pattern = Pattern::new(pattern).map_err(|e| {
             CacheError::Unknown(format!("Invalid glob pattern: {}", e))
         })?;
-        
-        let keys_to_remove: Vec<String> = self.cache.iter()
-            .filter(|entry| glob_pattern.matches(entry.key()))
-            .map(|entry| entry.key().clone())
-            .collect();
-        
-        for key in keys_to_remove {
-            self.cache.remove(&key);
-        }
-        
+
+        // 使用 Moka 的 invalidate_entries_if 实现模式匹配删除
+        // 这是两阶段模型：立即逻辑删除 + 异步物理清理
+        // 性能比手动遍历 + invalidate 更高，且不会阻塞工作线程
+        let _predicate_id = self.cache.invalidate_entries_if(move |key: &String, _value: &String| {
+            glob_pattern.matches(key)
+        }).map_err(|e| {
+            CacheError::Unknown(format!("Failed to invalidate entries: {}", e))
+        })?;
+
+        tracing::debug!("模式匹配删除已触发: {} (使用 Moka 的 invalidate_entries_if)", pattern);
+
         Ok(())
     }
 }

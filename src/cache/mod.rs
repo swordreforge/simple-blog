@@ -1,13 +1,17 @@
 mod backend;
+mod concurrent;
 mod keys;
 mod manager;
 mod local;
+mod retry;
 mod utils;
 mod valkey;
 
 pub use backend::{CacheConfig, CacheError};
+pub use concurrent::{CacheLock, SafeCacheBackend, get_null_value, is_null_value, jitter_ttl, should_cache_null};
 pub use keys::{PassageCacheKeys};
 pub use manager::CacheManager;
+pub use retry::{RetryCacheBackend, RetryConfig, RetryQueue};
 pub use utils::*;
 
 /// 应用缓存（兼容旧接口）

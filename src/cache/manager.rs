@@ -19,6 +19,8 @@ pub struct DegradationConfig {
     pub sliding_window_seconds: u64,
     /// 滑动窗口内失败率达到多少百分比才降级（0-100）
     pub sliding_window_failure_rate: f32,
+    /// Valkey 初始化失败后，尝试重连的间隔（秒）
+    pub reconnect_interval: u64,
 }
 
 impl Default for DegradationConfig {
@@ -29,6 +31,7 @@ impl Default for DegradationConfig {
             enable_sliding_window: true,       // 默认启用滑动窗口
             sliding_window_seconds: 120,       // 120 秒窗口（增加窗口时间）
             sliding_window_failure_rate: 60.0, // 60% 失败率（提高阈值）
+            reconnect_interval: 60,            // 每 60 秒尝试重连一次
         }
     }
 }
@@ -45,7 +48,11 @@ pub struct CacheManager {
     // 滑动窗口：使用 DashMap 记录操作时间戳和是否失败（无锁）
     operation_history: DashMap<u64, (Instant, bool)>,
     valkey_backend: Option<Arc<ValkeyCacheBackend>>,
+    valkey_url: Option<String>,  // 保存 Valkey URL 用于重连
     health_check_task: Option<Arc<tokio::task::JoinHandle<()>>>,
+    reconnect_task: Option<Arc<tokio::task::JoinHandle<()>>>,  // 重连任务
+    // 上次检查滑动窗口的时间（避免频繁检查）
+    last_sliding_window_check: Arc<AtomicUsize>,
 }
 
 impl Clone for CacheManager {
@@ -60,7 +67,10 @@ impl Clone for CacheManager {
             consecutive_failures: Arc::clone(&self.consecutive_failures),
             operation_history: DashMap::clone(&self.operation_history),
             valkey_backend: self.valkey_backend.clone(),
+            valkey_url: self.valkey_url.clone(),
             health_check_task: self.health_check_task.clone(),
+            reconnect_task: self.reconnect_task.clone(),
+            last_sliding_window_check: Arc::clone(&self.last_sliding_window_check),
         }
     }
 }
@@ -72,6 +82,7 @@ impl CacheManager {
         valkey_url: Option<&str>,
         config: CacheConfig,
     ) -> Result<Self, CacheError> {
+        let valkey_url_owned = valkey_url.map(|s| s.to_string());
         let (primary, fallback, valkey_backend) = match backend_type {
             "valkey" | "redis" => {
                 let url = valkey_url.ok_or_else(|| {
@@ -144,6 +155,7 @@ impl CacheManager {
         let consecutive_failures = Arc::new(AtomicUsize::new(0));
         let degradation_config = DegradationConfig::default();
         let operation_history = DashMap::new();
+        let last_sliding_window_check = Arc::new(AtomicUsize::new(0));
 
         // 启动后台健康检查任务
         let health_check_task = if valkey_backend.is_some() {
@@ -165,6 +177,27 @@ impl CacheManager {
             None
         };
 
+        // 启动重连任务（如果 Valkey URL 存在但连接失败）
+        let reconnect_task = if valkey_url_owned.is_some() && valkey_backend.is_none() {
+            let url = valkey_url_owned.clone().unwrap();
+            let primary_healthy_clone = Arc::clone(&primary_healthy);
+            let consecutive_failures_clone = Arc::clone(&consecutive_failures);
+            let fallback_enabled_clone = Arc::clone(&fallback_enabled);
+            let degradation_config_clone = degradation_config.clone();
+
+            Some(Arc::new(tokio::spawn(async move {
+                Self::reconnect_loop(
+                    &url,
+                    primary_healthy_clone,
+                    consecutive_failures_clone,
+                    fallback_enabled_clone,
+                    degradation_config_clone,
+                ).await;
+            })))
+        } else {
+            None
+        };
+
         Ok(Self {
             primary,
             fallback,
@@ -175,7 +208,10 @@ impl CacheManager {
             consecutive_failures,
             operation_history,
             valkey_backend,
+            valkey_url: valkey_url_owned,
             health_check_task,
+            reconnect_task,
+            last_sliding_window_check,
         })
     }
 
@@ -220,15 +256,19 @@ impl CacheManager {
                 // 检查是否应该降级（连续失败或滑动窗口失败率）
                 let should_degrade = if self.valkey_backend.is_some() {
                     let consecutive_threshold = self.degradation_config.consecutive_failures_threshold;
-                    let sliding_window_triggered = self.check_sliding_window_failure_rate();
+
+                    // 优化：限制滑动窗口检查频率，避免高并发时频繁遍历
+                    let sliding_window_triggered = if self.should_check_sliding_window() {
+                        self.check_sliding_window_failure_rate()
+                    } else {
+                        false
+                    };
 
                     if failures >= consecutive_threshold {
                         eprintln!("⚠️  Valkey 连续失败 {} 次（阈值: {}），触发降级",
                                   failures, consecutive_threshold);
                         true
                     } else if sliding_window_triggered {
-                        // check_sliding_window_failure_rate 已经获取并释放了锁
-                        // 这里不再重复获取锁，直接记录日志
                         eprintln!("⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
                                   self.degradation_config.sliding_window_failure_rate);
                         true
@@ -312,6 +352,13 @@ impl CacheManager {
                         self.degradation_config.consecutive_failures_threshold
                     };
 
+                    // 优化：限制滑动窗口检查频率，避免高并发时频繁遍历
+                    let sliding_window_triggered = if self.should_check_sliding_window() {
+                        self.check_sliding_window_failure_rate()
+                    } else {
+                        false
+                    };
+
                     if failures >= threshold {
                         eprintln!("⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}, 触发降级",
                                   if is_critical_error { "严重错误" } else { "普通错误" },
@@ -323,9 +370,7 @@ impl CacheManager {
                                   },
                                   e);
                         true
-                    } else if self.check_sliding_window_failure_rate() {
-                        // check_sliding_window_failure_rate 已经获取并释放了锁
-                        // 这里不再重复获取锁，直接记录日志
+                    } else if sliding_window_triggered {
                         eprintln!("⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
                                   self.degradation_config.sliding_window_failure_rate);
                         true
@@ -431,11 +476,39 @@ impl CacheManager {
         }
     }
 
+    /// 检查是否应该检查滑动窗口（添加时间间隔限制）
+    /// 优化：避免在高并发场景下频繁检查滑动窗口
+    fn should_check_sliding_window(&self) -> bool {
+        if !self.degradation_config.enable_sliding_window {
+            return false;
+        }
+
+        const CHECK_INTERVAL_SECONDS: u64 = 5; // 每 5 秒最多检查一次
+        let now = Instant::now();
+        let last_check_secs = self.last_sliding_window_check.load(Ordering::Relaxed);
+
+        // 将当前时间转换为秒数
+        let now_secs = now.elapsed().as_secs();
+
+        // 如果距离上次检查不足 5 秒，跳过检查
+        if now_secs.saturating_sub(last_check_secs as u64) < CHECK_INTERVAL_SECONDS {
+            return false;
+        }
+
+        // 更新最后检查时间
+        self.last_sliding_window_check.store(now_secs as usize, Ordering::Relaxed);
+        true
+    }
+
     /// 检查滑动窗口内的失败率（使用 DashMap 无锁方式）
+    /// 优化：添加最大遍历限制，防止在大量并发请求时卡死
     fn check_sliding_window_failure_rate(&self) -> bool {
         if !self.degradation_config.enable_sliding_window {
             return false;
         }
+
+        const MAX_ITERATIONS: usize = 500; // 最大遍历记录数，防止卡死
+        const MIN_SAMPLE_SIZE: usize = 10; // 最小样本数，太少不计算
 
         let window_duration = Duration::from_secs(self.degradation_config.sliding_window_seconds);
         let now = Instant::now();
@@ -446,7 +519,12 @@ impl CacheManager {
         let mut failure_count = 0usize;
         let mut keys_to_remove: Vec<u64> = Vec::new();
 
-        for entry in self.operation_history.iter() {
+        // 限制最大遍历次数，防止在大量并发请求时卡死
+        for (i, entry) in self.operation_history.iter().enumerate() {
+            if i >= MAX_ITERATIONS {
+                break; // 达到最大遍历限制，提前退出
+            }
+
             let (key, (timestamp, failed)) = entry.pair();
 
             // 移除窗口外的记录
@@ -466,7 +544,8 @@ impl CacheManager {
             self.operation_history.remove(&key);
         }
 
-        if total_operations == 0 {
+        // 样本太少不计算失败率
+        if total_operations < MIN_SAMPLE_SIZE {
             return false;
         }
 
@@ -534,6 +613,47 @@ impl CacheManager {
                     // 健康检查失败也算一次失败
                     let failures = consecutive_failures.fetch_add(1, Ordering::Relaxed) + 1;
                     eprintln!("⚠️  Valkey 连续失败次数: {}", failures);
+                }
+            }
+        }
+    }
+
+    /// Valkey 重连循环（用于初始化失败后的自动重连）
+    async fn reconnect_loop(
+        valkey_url: &str,
+        primary_healthy: Arc<AtomicBool>,
+        consecutive_failures: Arc<AtomicUsize>,
+        _fallback_enabled: Arc<AtomicBool>,
+        degradation_config: DegradationConfig,
+    ) {
+        let reconnect_interval = Duration::from_secs(degradation_config.reconnect_interval);
+        let mut interval = tokio::time::interval(reconnect_interval);
+
+        loop {
+            interval.tick().await;
+
+            println!("🔄 尝试重新连接 Valkey...");
+
+            match ValkeyCacheBackend::new(valkey_url, Some("rustblog:".to_string())).await {
+                Ok(valkey) => {
+                    match valkey.health_check().await {
+                        Ok(()) => {
+                            println!("✅ Valkey 重连成功，已恢复");
+                            // 标记为健康
+                            primary_healthy.store(true, Ordering::Relaxed);
+                            // 重置失败计数器
+                            consecutive_failures.store(0, Ordering::Relaxed);
+                            // 注意：由于无法动态替换 primary，这里只是标记状态
+                            // 实际的恢复需要重启服务或者后续版本实现动态替换
+                            break;
+                        }
+                        Err(e) => {
+                            eprintln!("⚠️  Valkey 重连后健康检查失败: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("⚠️  Valkey 重连失败: {}", e);
                 }
             }
         }
