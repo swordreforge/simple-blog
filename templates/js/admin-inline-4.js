@@ -3,9 +3,10 @@
         c = 1;
     const s = 20;
     let r = 0;
-    let selectedAttachments = new Set();
-    let currentAction = null;
-    let currentItemId = null;
+    let selectedAttachments = window.selectedAttachments || new Set();
+    window.currentAction = window.currentAction || null;
+    window.currentItemId = window.currentItemId || null;
+    window.selectedAttachments = selectedAttachments;
     const m = {
         uploadBtn: document.getElementById("amUploadBtn"),
         emptyUploadBtn: document.getElementById("amEmptyUploadBtn"),
@@ -178,7 +179,7 @@
     }
     async function a() {
         var e;
-        0 !== selectedAttachments.size && (currentAction = "batch-delete-attachment", currentItemId = Array.from(selectedAttachments).join(","), e = `确定要删除选中的 ${selectedAttachments.size} 个附件吗？此操作不可恢复。`, document.getElementById("confirmMessage").textContent = e, openModal("confirmModal"))
+        0 !== selectedAttachments.size && (window.currentAction = "batch-delete-attachment", window.currentItemId = Array.from(selectedAttachments).join(","), e = `确定要删除选中的 ${selectedAttachments.size} 个附件吗？此操作不可恢复。`, document.getElementById("confirmMessage").textContent = e, openModal("confirmModal"))
     }
     async function o(n) {
         if (0 !== selectedAttachments.size) {
@@ -389,8 +390,8 @@
             e.remove()
         }, 300))
     }, window.deleteAttachment = async function(e) {
-        currentAction = "delete-attachment";
-        e = `确定要删除附件 #${currentItemId=e} 吗？此操作不可撤销。`;
+        window.currentAction = "delete-attachment";
+        e = `确定要删除附件 #${window.currentItemId=e} 吗？此操作不可撤销。`;
         document.getElementById("confirmMessage").textContent = e, openModal("confirmModal")
     }, "loading" === document.readyState ? document.addEventListener("DOMContentLoaded", l) : l()
 }();

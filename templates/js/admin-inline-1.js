@@ -367,8 +367,9 @@ document.addEventListener("DOMContentLoaded", function() {
     e && e.addEventListener("click", batchDeleteTags), a && a.addEventListener("change", async function() {
         updateTagsTable(await fetchTags(this.value))
     }), document.getElementById("confirmAction").addEventListener("click", async function() {
-        if (currentAction && currentItemId)
-            if (currentAction.startsWith("batch-delete-")) await handleBatchDelete(currentAction, currentItemId);
+        console.log('confirmAction clicked', { currentAction: window.currentAction, currentItemId: window.currentItemId });
+        if (window.currentAction && window.currentItemId)
+            if (window.currentAction.startsWith("batch-delete-")) await handleBatchDelete(window.currentAction, window.currentItemId);
             else {
                 var e = localStorage.getItem("auth_token"),
                     t = {
@@ -377,16 +378,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 e && (t.Authorization = "Bearer " + e);
                 try {
                     let e = "";
-                    if ("delete" === currentAction) e = "/api/admin/passages?id=" + currentItemId;
-                    else if ("delete-comment" === currentAction) e = "/api/admin/comments/" + currentItemId;
-                    else if ("delete-user" === currentAction) e = "/api/admin/users/" + currentItemId;
-                    else if ("delete-category" === currentAction) e = "/api/admin/categories/" + currentItemId;
-                    else if ("delete-tag" === currentAction) e = "/api/admin/tags/" + currentItemId;
-                    else if ("delete-main-card" === currentAction) e = "/api/about/main-cards/delete?id=" + currentItemId;
-                    else if ("delete-sub-card" === currentAction) e = "/api/about/sub-cards/delete?id=" + currentItemId;
-                    else if ("delete-attachment" === currentAction) e = "/api/admin/attachments/" + currentItemId;
-                    else if ("batch-delete-attachment" === currentAction) {
-                        var a = currentItemId.split(",");
+                    if ("delete" === window.currentAction) e = "/api/admin/passages?id=" + window.currentItemId;
+                    else if ("delete-comment" === window.currentAction) e = "/api/admin/comments/" + window.currentItemId;
+                    else if ("delete-user" === window.currentAction) e = "/api/admin/users/" + window.currentItemId;
+                    else if ("delete-category" === window.currentAction) e = "/api/admin/categories/" + window.currentItemId;
+                    else if ("delete-tag" === window.currentAction) e = "/api/admin/tags/" + window.currentItemId;
+                    else if ("delete-main-card" === window.currentAction) e = "/api/about/main-cards/delete?id=" + window.currentItemId;
+                    else if ("delete-sub-card" === window.currentAction) e = "/api/about/sub-cards/delete?id=" + window.currentItemId;
+                    else if ("delete-attachment" === window.currentAction) {
+                        console.log('delete-attachment: sending DELETE request to', `/api/admin/attachments/${window.currentItemId}`);
+                        e = "/api/admin/attachments/" + window.currentItemId;
+                    }
+                    else if ("batch-delete-attachment" === window.currentAction) {
+                        var a = window.currentItemId.split(",");
                         let e = 0,
                             t = 0;
                         for (const o of a) try {
@@ -402,7 +406,29 @@ document.addEventListener("DOMContentLoaded", function() {
                         method: "DELETE",
                         headers: t
                     })).json();
-                    n.success ? (closeModal("confirmModal"), showToast("删除成功！", "success"), ("delete-category" === currentAction || "delete-tag" === currentAction ? loadCategoriesAndTags : "delete-main-card" === currentAction ? (loadMainCards(), loadSubCards) : "delete-sub-card" === currentAction ? loadSubCards : "delete-attachment" === currentAction ? (selectedAttachments.delete(currentItemId), updateBatchActions(), loadAttachments) : fetchAdminData)()) : showToast("删除失败：" + (n.message || "未知错误"), "error")
+                    console.log('DELETE response', n);
+                    if (n.success) {
+                        closeModal("confirmModal");
+                        showToast("删除成功！", "success");
+                        if ("delete-category" === window.currentAction || "delete-tag" === window.currentAction) {
+                            loadCategoriesAndTags();
+                        } else if ("delete-main-card" === window.currentAction) {
+                            loadMainCards();
+                            loadSubCards();
+                        } else if ("delete-sub-card" === window.currentAction) {
+                            loadSubCards();
+                        } else if ("delete-attachment" === window.currentAction) {
+                            console.log('delete-attachment success, reloading...');
+                            selectedAttachments.delete(window.currentItemId);
+                            updateBatchActions();
+                            loadAttachments();
+                        } else {
+                            fetchAdminData();
+                        }
+                    } else {
+                        console.error('DELETE failed', n);
+                        showToast("删除失败：" + (n.message || "未知错误"), "error");
+                    }
                 } catch (e) {
                     console.error("删除失败:", e), alert("删除失败，请稍后重试")
                 }
@@ -555,7 +581,7 @@ function clearCommentSelection() {
 async function batchDeleteComments() {
     var e = document.querySelectorAll(".comment-checkbox:checked"),
         e = Array.from(e).map(e => parseInt(e.dataset.id));
-    0 !== e.length ? (currentAction = "batch-delete-comments", currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 条评论吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的评论", "warning")
+    0 !== e.length ? (window.currentAction = "batch-delete-comments", window.currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 条评论吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的评论", "warning")
 }
 
 function bindCategoryCheckboxes() {
@@ -599,7 +625,7 @@ function clearCategorySelection() {
 async function batchDeleteCategories() {
     var e = document.querySelectorAll(".category-checkbox:checked"),
         e = Array.from(e).map(e => parseInt(e.dataset.id));
-    0 !== e.length ? (currentAction = "batch-delete-categories", currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 个分类吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的分类", "warning")
+    0 !== e.length ? (window.currentAction = "batch-delete-categories", window.currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 个分类吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的分类", "warning")
 }
 
 function bindTagCheckboxes() {
@@ -643,7 +669,7 @@ function clearTagSelection() {
 async function batchDeleteTags() {
     var e = document.querySelectorAll(".tag-checkbox:checked"),
         e = Array.from(e).map(e => parseInt(e.dataset.id));
-    0 !== e.length ? (currentAction = "batch-delete-tags", currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 个标签吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的标签", "warning")
+    0 !== e.length ? (window.currentAction = "batch-delete-tags", window.currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 个标签吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的标签", "warning")
 }
 
 function updateCommentsPagination(e) {
@@ -748,7 +774,7 @@ function updateBatchActionsBar() {
 async function batchDeleteArticles() {
     var e = document.querySelectorAll(".article-checkbox:checked"),
         e = Array.from(e).map(e => parseInt(e.dataset.id));
-    0 !== e.length ? (currentAction = "batch-delete-articles", currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 篇文章吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的文章", "warning")
+    0 !== e.length ? (window.currentAction = "batch-delete-articles", window.currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 篇文章吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的文章", "warning")
 }
 
 function clearSelection() {
@@ -788,7 +814,7 @@ function updateUserBatchActionsBar() {
 async function batchDeleteUsers() {
     var e = document.querySelectorAll(".user-checkbox:checked"),
         e = Array.from(e).map(e => parseInt(e.dataset.id));
-    0 !== e.length ? (currentAction = "batch-delete-users", currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 个用户吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的用户", "warning")
+    0 !== e.length ? (window.currentAction = "batch-delete-users", window.currentItemId = e.join(","), document.getElementById("confirmMessage").textContent = `确定要删除选中的 ${e.length} 个用户吗？此操作不可恢复！`, openModal("confirmModal")) : showToast("请选择要删除的用户", "warning")
 }
 
 function clearUserSelection() {
@@ -995,10 +1021,10 @@ function bindActionButtons() {
         e.parentNode.replaceChild(t, e), t.addEventListener("click", async function() {
             const t = this.getAttribute("data-action"),
                 a = this.getAttribute("data-id");
-            if ("delete" === t || "delete-comment" === t || "delete-user" === t || "delete-category" === t) {
-                currentAction = t, currentItemId = a;
+            if ("delete" === t || "delete-comment" === t || "delete-user" === t || "delete-category" === t || "delete-tag" === t || "delete-attachment" === t) {
+                window.currentAction = t, window.currentItemId = a;
                 let e = "";
-                "delete" === t ? e = `确定要删除文章 #${a} 吗？此操作不可撤销。` : "delete-comment" === t ? e = `确定要删除评论 #${a} 吗？此操作不可撤销。` : "delete-user" === t ? e = `确定要删除用户 #${a} 吗？此操作不可撤销。` : "delete-category" === t && (e = `确定要删除分类 #${a} 吗？此操作不可撤销。`), document.getElementById("confirmMessage").textContent = e, openModal("confirmModal")
+                "delete" === t ? e = `确定要删除文章 #${a} 吗？此操作不可撤销。` : "delete-comment" === t ? e = `确定要删除评论 #${a} 吗？此操作不可撤销。` : "delete-user" === t ? e = `确定要删除用户 #${a} 吗？此操作不可撤销。` : "delete-category" === t ? e = `确定要删除分类 #${a} 吗？此操作不可撤销。` : "delete-tag" === t ? e = `确定要删除标签 #${a} 吗？此操作不可撤销。` : "delete-attachment" === t ? e = `确定要删除附件 #${a} 吗？此操作不可撤销。` : e = `确定要删除 #${a} 吗？此操作不可撤销。`, document.getElementById("confirmMessage").textContent = e, openModal("confirmModal")
             } else if ("edit" === t) try {
                     const t = localStorage.getItem("auth_token"),
                         i = {
@@ -1547,9 +1573,9 @@ uploadArea.addEventListener("click", () => {
         console.error("保存标签失败:", a), o.textContent = c, o.disabled = !1, showToast("保存失败，请稍后重试", "error")
     }
 });
-let currentAction = null,
-    currentItemId = null,
-    selectedAttachments = new Set;
+window.currentAction = window.currentAction || null;
+window.currentItemId = window.currentItemId || null;
+window.selectedAttachments = window.selectedAttachments || new Set();
 async function handleBatchDelete(e, t) {
     var a = t.split(",").map(e => parseInt(e.trim()));
     let n = "",
