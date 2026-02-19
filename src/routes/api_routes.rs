@@ -94,14 +94,14 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::attachments::list))
             .route(web::post().to(api_handlers::attachments::upload))
     ).service(
+        web::resource("/api/admin/attachments/batch-delete")
+            .route(web::post().to(api_handlers::attachments::delete_batch))
+    ).service(
         web::resource("/api/admin/attachments/{id}")
             .route(web::get().to(api_handlers::attachments::get))
             .route(web::put().to(api_handlers::attachments::update))
             .route(web::delete().to(api_handlers::attachments::delete))
             .route(web::patch().to(api_handlers::attachments::update))
-    ).service(
-        web::resource("/api/admin/attachments/batch-delete")
-            .route(web::post().to(api_handlers::attachments::delete_batch))
     );
 
     // 评论 API
