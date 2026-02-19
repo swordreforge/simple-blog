@@ -1607,6 +1607,11 @@ async function handleBatchDelete(e, t) {
                 clearSelection(), fetchAdminData(currentPage, 10)
             };
             break;
+        case "batch-delete-attachment":
+            n = "/api/admin/attachments/batch-delete", o = "批量删除附件成功", c = () => {
+                selectedAttachments.clear(), updateBatchActions(), loadAttachments()
+            };
+            break;
         default:
             return
     }

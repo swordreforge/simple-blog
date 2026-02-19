@@ -1812,6 +1812,50 @@ impl AttachmentRepository {
         conn.execute("DELETE FROM attachments WHERE id = ?", params![id])?;
         Ok(())
     }
+
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<usize, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!("DELETE FROM attachments WHERE id IN ({})", placeholders);
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let rows_affected = conn.execute(&sql, params.as_slice())?;
+        Ok(rows_affected)
+    }
+
+    pub async fn get_by_ids(&self, ids: Vec<i64>) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.pool.get()?;
+        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
+             FROM attachments WHERE id IN ({})", placeholders
+        );
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+
+        let mut stmt = conn.prepare(&sql)?;
+        let attachments = stmt.query_map(params.as_slice(), |row| {
+            Ok(Attachment {
+                id: Some(row.get(0)?),
+                file_name: row.get(1)?,
+                stored_name: row.get(2)?,
+                file_path: row.get(3)?,
+                file_type: row.get(4)?,
+                content_type: row.get(5)?,
+                file_size: row.get(6)?,
+                passage_uuid: row.get(7)?,
+                visibility: row.get(8)?,
+                show_in_passage: row.get(9)?,
+                uploaded_at: row.get(10)?,
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+
+        Ok(attachments)
+    }
 }
 
 /// 关于页面主卡片仓库

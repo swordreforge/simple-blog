@@ -346,6 +346,95 @@ pub async fn delete(
     }
 }
 
+/// 批量删除附件
+pub async fn delete_batch(
+    state: web::Data<crate::app_state::AppState>,
+    body: web::Json<serde_json::Value>,
+    req: actix_web::HttpRequest,
+) -> HttpResponse {
+    // 鉴权检查
+    if req.cookie("auth_token").is_none() {
+        return crate::middleware::auth::missing_token_response();
+    }
+    if crate::middleware::auth::check_admin_auth(&req).is_none() {
+        return crate::middleware::auth::forbidden_response();
+    }
+
+    // 解析 IDs
+    let ids: Vec<i64> = match body.get("ids") {
+        Some(ids) => match ids.as_array() {
+            Some(arr) => arr.iter().filter_map(|v| v.as_i64()).collect(),
+            None => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "success": false,
+                    "message": "ids 必须是数组"
+                }));
+            }
+        },
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "缺少 ids 参数"
+            }));
+        }
+    };
+
+    if ids.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "success": false,
+            "message": "ids 不能为空"
+        }));
+    }
+
+    let attachment_repo = state.attachment_repository();
+
+    // 先获取附件信息（用于删除文件）
+    let attachments = match attachment_repo.get_by_ids(ids.clone()).await {
+        Ok(a) => a,
+        Err(e) => {
+            eprintln!("获取附件信息失败: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "获取附件信息失败"
+            }));
+        }
+    };
+
+    // 删除文件
+    let mut files_deleted = 0;
+    let mut files_failed = 0;
+    for attachment in &attachments {
+        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+            eprintln!("删除文件失败 {}: {}", attachment.file_path, e);
+            files_failed += 1;
+        } else {
+            files_deleted += 1;
+        }
+    }
+
+    // 删除数据库记录
+    match attachment_repo.delete_batch(ids).await {
+        Ok(rows_affected) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": format!("成功删除 {} 个附件", rows_affected),
+                "data": {
+                    "deleted": rows_affected,
+                    "files_deleted": files_deleted,
+                    "files_failed": files_failed
+                }
+            }))
+        }
+        Err(e) => {
+            eprintln!("批量删除附件记录失败: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": "批量删除附件失败"
+            }))
+        }
+    }
+}
+
 /// 更新附件
 pub async fn update(
     state: web::Data<crate::app_state::AppState>,
