@@ -46,8 +46,9 @@ async function saveSettings() {
         for (const l in a) {
             var d = originalAppearanceSettings[l],
                 r = a[l];
-            "navbar_text_color" === l && (console.log("navbar_text_color 比对:"), console.log("  原始值:", d, "(类型:", typeof d, ")"), console.log("  当前值:", r, "(类型:", typeof r, ")"), console.log("  是否相等:", r === d)), r !== d && (i[l] = r)
-        }(console.log("原始设置:", originalAppearanceSettings), console.log("当前设置:", a), console.log("变更设置:", i), 0 === Object.keys(i).length) ? showToast("没有检测到任何变化", "warning"): (console.log("发送变更的外观字段:", i), (e = await fetch("/api/settings/appearance", {
+            r !== d && (i[l] = r)
+        }
+        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning"): (e = await fetch("/api/settings/appearance", {
             method: "PATCH",
             headers: o,
             body: JSON.stringify(i)
@@ -249,7 +250,7 @@ async function saveTemplateSettings() {
             }),
             i = {};
         for (const d in a) a[d] !== originalTemplateSettings[d] && (i[d] = a[d]);
-        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (console.log("发送变更的字段:", i), (e = await fetch("/api/settings/template", {
+        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/template", {
             method: "PATCH",
             headers: o,
             body: JSON.stringify(i)
@@ -292,7 +293,7 @@ async function saveMusicSettings() {
             }),
             i = {};
         for (const d in a) a[d] !== originalMusicSettings[d] && (i[d] = a[d]);
-        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (console.log("发送变更的音乐设置字段:", i), (e = await fetch("/api/settings/music", {
+        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/music", {
             method: "PATCH",
             headers: o,
             body: JSON.stringify(i)
@@ -915,8 +916,7 @@ function updateFriendLinksTable() {
 }
 
 function toggleFriendLinkSelection(e) {
-    console.log("toggleFriendLinkSelection called with id:", e), console.log("Current selectedFriendLinkIds:", selectedFriendLinkIds);
-    var t = selectedFriendLinkIds.indexOf(e); - 1 < t ? (selectedFriendLinkIds.splice(t, 1), console.log("Removed from selection")) : (selectedFriendLinkIds.push(e), console.log("Added to selection")), console.log("New selectedFriendLinkIds:", selectedFriendLinkIds), updateBatchDeleteButton(), updateSelectAllCheckbox()
+    var t = selectedFriendLinkIds.indexOf(e); - 1 < t ? selectedFriendLinkIds.splice(t, 1) : selectedFriendLinkIds.push(e), updateBatchDeleteButton(), updateSelectAllCheckbox()
 }
 
 function toggleSelectAllFriendLinks() {

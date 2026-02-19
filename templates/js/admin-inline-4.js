@@ -313,7 +313,6 @@
         var e = d.find(e => e.id === t);
         e && window.open(e.file_path, "_blank")
     }, window.editAttachment = async function(e) {
-        console.log("打开编辑模态框，ID:", e);
         const t = document.getElementById("editModal");
         t && t.remove();
         try {
@@ -321,7 +320,6 @@
                 a = await t.json();
             if (a.success && a.data) {
                 const t = Array.isArray(a.data) ? a.data[0] : a.data;
-                console.log("从API获取的附件数据:", t);
                 var n = `
           <div class="modal active" id="editModal">
             <div class="modal-content">
@@ -364,11 +362,6 @@
     }, window.saveAttachmentSettings = async function(e) {
         var t = document.getElementById("editVisibility").value,
             n = document.getElementById("editShowInPassage").checked;
-        console.log("保存附件设置:", {
-            id: e,
-            visibility: t,
-            showInPassage: n
-        });
         try {
             var a = await (await fetch("/api/admin/attachments/" + e, {
                 method: "PATCH",
@@ -380,9 +373,9 @@
                     show_in_passage: n
                 })
             })).json();
-            console.log("保存响应:", a), a.success ? (g("保存成功", "success"), closeEditModal(), console.log("正在重新加载附件列表..."), await loadAttachments(), console.log("附件列表重新加载完成")) : g("保存失败: " + a.message, "error")
+            a.success ? (g("保存成功", "success"), closeEditModal(), await loadAttachments()) : g("保存失败: " + a.message, "error")
         } catch (e) {
-            console.error("保存失败:", e), g("保存失败", "error")
+            g("保存失败", "error")
         }
     }, window.closeEditModal = function() {
         const e = document.getElementById("editModal");

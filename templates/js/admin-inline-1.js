@@ -201,7 +201,7 @@ async function fetchAdminData(e = 1, t = 10, a = 1, n = 10, o = 1, c = 10) {
         var m = await (await fetch("/api/admin/stats", {
             headers: s
         })).json();
-        if (console.log("统计数据响应:", m), m.success && m.data) {
+        if (m.success && m.data) {
             updateStatCard("todayVisits", m.data.today_visits || 0);
             const e = document.querySelector("#todayVisits").closest(".stat-card").querySelector(".stat-change");
             if (e && void 0 !== m.data.yesterday_visits) {
@@ -367,7 +367,6 @@ document.addEventListener("DOMContentLoaded", function() {
     e && e.addEventListener("click", batchDeleteTags), a && a.addEventListener("change", async function() {
         updateTagsTable(await fetchTags(this.value))
     }), document.getElementById("confirmAction").addEventListener("click", async function() {
-        console.log('confirmAction clicked', { currentAction: window.currentAction, currentItemId: window.currentItemId });
         if (window.currentAction && window.currentItemId)
             if (window.currentAction.startsWith("batch-delete-")) await handleBatchDelete(window.currentAction, window.currentItemId);
             else {
@@ -386,7 +385,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     else if ("delete-main-card" === window.currentAction) e = "/api/about/main-cards/delete?id=" + window.currentItemId;
                     else if ("delete-sub-card" === window.currentAction) e = "/api/about/sub-cards/delete?id=" + window.currentItemId;
                     else if ("delete-attachment" === window.currentAction) {
-                        console.log('delete-attachment: sending DELETE request to', `/api/admin/attachments/${window.currentItemId}`);
                         e = "/api/admin/attachments/" + window.currentItemId;
                     }
                     else if ("batch-delete-attachment" === window.currentAction) {
@@ -406,7 +404,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         method: "DELETE",
                         headers: t
                     })).json();
-                    console.log('DELETE response', n);
                     if (n.success) {
                         closeModal("confirmModal");
                         showToast("删除成功！", "success");
@@ -418,7 +415,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         } else if ("delete-sub-card" === window.currentAction) {
                             loadSubCards();
                         } else if ("delete-attachment" === window.currentAction) {
-                            console.log('delete-attachment success, reloading...');
                             selectedAttachments.delete(window.currentItemId);
                             updateBatchActions();
                             loadAttachments();
@@ -1340,11 +1336,11 @@ uploadArea.addEventListener("click", () => {
                                         body: n
                                     })),
                                     y = await h.json();
-                                y.success ? (e++, console.log(`附件 ${o.name} 上传成功`)) : (t++, g.push(o.name + ": " + (y.message || "未知错误")), console.error(`附件 ${o.name} 上传失败:`, y))
+                                y.success ? e++ : (t++, g.push(o.name + ": " + (y.message || "未知错误")))
                             } catch (n) {
-                                t++, g.push(o.name + ": " + (n.message || "网络错误")), console.error(`上传附件 ${o.name} 失败:`, n)
+                                t++, g.push(o.name + ": " + (n.message || "网络错误"))
                             }
-                            0 < t && console.error("附件上传失败详情:", g), f.textContent = "创建成功!", f.style.background = "rgba(255, 183, 122, 0.8)";
+                            f.textContent = "创建成功!", f.style.background = "rgba(255, 183, 122, 0.8)";
                             let a = "文章创建成功！";
                             0 < e && (a += ` 成功上传 ${e} 个附件`), 0 < t && (a += ` 失败 ${t} 个附件`), setTimeout(() => {
                                 closeModal("uploadModal"), f.textContent = b, f.disabled = !1, f.style.background = "rgba(255, 183, 122, 0.8)", this.reset(), uploadPreview.innerHTML = "", selectedFiles = [], fetchAdminData(), showToast(a, 0 < t ? "warning" : "success")
