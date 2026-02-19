@@ -266,7 +266,7 @@ pub async fn create_main_card(
 /// 更新主卡片
 pub async fn update_main_card(
     state: web::Data<crate::app_state::AppState>,
-    path: web::Path<i64>,
+    query: web::Query<std::collections::HashMap<String, String>>,
     req: web::Json<MainCardRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -277,7 +277,9 @@ pub async fn update_main_card(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let id = path.into_inner();
+    let id = query.get("id")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(0);
     let main_card_repo = state.about_main_card_repository();
     let mut card = match main_card_repo.get_by_id(id).await {
         Ok(c) => c,
@@ -315,7 +317,7 @@ pub async fn update_main_card(
 /// 删除主卡片
 pub async fn delete_main_card(
     state: web::Data<crate::app_state::AppState>,
-    path: web::Path<i64>,
+    query: web::Query<std::collections::HashMap<String, String>>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
     // 鉴权检查
@@ -325,7 +327,9 @@ pub async fn delete_main_card(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let id = path.into_inner();
+    let id = query.get("id")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(0);
     let main_card_repo = state.about_main_card_repository();
     
     match main_card_repo.delete(id).await {
@@ -390,7 +394,7 @@ pub async fn create_sub_card(
 /// 更新次卡片
 pub async fn update_sub_card(
     state: web::Data<crate::app_state::AppState>,
-    path: web::Path<i64>,
+    query: web::Query<std::collections::HashMap<String, String>>,
     req: web::Json<SubCardRequest>,
     http_req: actix_web::HttpRequest,
 ) -> HttpResponse {
@@ -401,7 +405,9 @@ pub async fn update_sub_card(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let id = path.into_inner();
+    let id = query.get("id")
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(0);
     let sub_card_repo = state.about_sub_card_repository();
     let mut card = match sub_card_repo.get_by_id(id).await {
         Ok(c) => c,

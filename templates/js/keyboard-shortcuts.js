@@ -2616,7 +2616,7 @@ class AdminKeyboardManager {
       mutations.forEach(mutation => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
           const target = mutation.target;
-          if (target.classList && target.classList.contains('tab-btn')) {
+          if (target && target.classList && target.classList.contains('tab-btn')) {
             if (target.classList.contains('active')) {
               this.currentTab = target.dataset.tab;
               console.log(`[管理员快捷键] 当前标签页: ${this.currentTab}`);
@@ -2627,7 +2627,9 @@ class AdminKeyboardManager {
     });
 
     document.querySelectorAll('.tab-btn').forEach(tab => {
-      observer.observe(tab, { attributes: true });
+      if (tab) {
+        observer.observe(tab, { attributes: true });
+      }
     });
   }
 
