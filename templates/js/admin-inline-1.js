@@ -366,6 +366,47 @@ document.addEventListener("DOMContentLoaded", function() {
         }), t && t.addEventListener("click", loadCategoriesAndTags), document.getElementById("batchDeleteTagsBtn"));
     e && e.addEventListener("click", batchDeleteTags), a && a.addEventListener("change", async function() {
         updateTagsTable(await fetchTags(this.value))
+    }), document.getElementById("confirmAction").addEventListener("click", async function() {
+        if (currentAction && currentItemId)
+            if (currentAction.startsWith("batch-delete-")) await handleBatchDelete(currentAction, currentItemId);
+            else {
+                var e = localStorage.getItem("auth_token"),
+                    t = {
+                        "Content-Type": "application/json"
+                    };
+                e && (t.Authorization = "Bearer " + e);
+                try {
+                    let e = "";
+                    if ("delete" === currentAction) e = "/api/admin/passages?id=" + currentItemId;
+                    else if ("delete-comment" === currentAction) e = "/api/admin/comments/" + currentItemId;
+                    else if ("delete-user" === currentAction) e = "/api/admin/users/" + currentItemId;
+                    else if ("delete-category" === currentAction) e = "/api/admin/categories/" + currentItemId;
+                    else if ("delete-tag" === currentAction) e = "/api/admin/tags/" + currentItemId;
+                    else if ("delete-main-card" === currentAction) e = "/api/about/main-cards/delete?id=" + currentItemId;
+                    else if ("delete-sub-card" === currentAction) e = "/api/about/sub-cards/delete?id=" + currentItemId;
+                    else if ("delete-attachment" === currentAction) e = "/api/admin/attachments/" + currentItemId;
+                    else if ("batch-delete-attachment" === currentAction) {
+                        var a = currentItemId.split(",");
+                        let e = 0,
+                            t = 0;
+                        for (const o of a) try {
+                            (await (await fetch("/api/admin/attachments/" + o, {
+                                method: "DELETE"
+                            })).json()).success ? e++ : t++
+                        } catch (e) {
+                            console.error("删除失败:", e), t++
+                        }
+                        return closeModal("confirmModal"), 0 < e && showToast(`成功删除 ${e} 个附件`, "success"), 0 < t && showToast(t + " 个附件删除失败", "error"), selectedAttachments.clear(), updateBatchActions(), void loadAttachments()
+                    }
+                    var n = await (await fetch(e, {
+                        method: "DELETE",
+                        headers: t
+                    })).json();
+                    n.success ? (closeModal("confirmModal"), showToast("删除成功！", "success"), ("delete-category" === currentAction || "delete-tag" === currentAction ? loadCategoriesAndTags : "delete-main-card" === currentAction ? (loadMainCards(), loadSubCards) : "delete-sub-card" === currentAction ? loadSubCards : "delete-attachment" === currentAction ? (selectedAttachments.delete(currentItemId), updateBatchActions(), loadAttachments) : fetchAdminData)()) : showToast("删除失败：" + (n.message || "未知错误"), "error")
+                } catch (e) {
+                    console.error("删除失败:", e), alert("删除失败，请稍后重试")
+                }
+            }
     })
 });
 let currentUserPage = 1,
@@ -1560,48 +1601,7 @@ async function handleBatchDelete(e, t) {
         console.error("批量删除失败:", e), showToast("批量删除失败，请重试", "error")
     }
 }
-document.getElementById("confirmAction").addEventListener("click", async function() {
-    if (currentAction && currentItemId)
-        if (currentAction.startsWith("batch-delete-")) await handleBatchDelete(currentAction, currentItemId);
-        else {
-            var e = localStorage.getItem("auth_token"),
-                t = {
-                    "Content-Type": "application/json"
-                };
-            e && (t.Authorization = "Bearer " + e);
-            try {
-                let e = "";
-                if ("delete" === currentAction) e = "/api/admin/passages?id=" + currentItemId;
-                else if ("delete-comment" === currentAction) e = "/api/admin/comments/" + currentItemId;
-                else if ("delete-user" === currentAction) e = "/api/admin/users/" + currentItemId;
-                else if ("delete-category" === currentAction) e = "/api/admin/categories/" + currentItemId;
-                else if ("delete-tag" === currentAction) e = "/api/admin/tags/" + currentItemId;
-                else if ("delete-main-card" === currentAction) e = "/api/about/main-cards/delete?id=" + currentItemId;
-                else if ("delete-sub-card" === currentAction) e = "/api/about/sub-cards/delete?id=" + currentItemId;
-                else if ("delete-attachment" === currentAction) e = "/api/admin/attachments/" + currentItemId;
-                else if ("batch-delete-attachment" === currentAction) {
-                    var a = currentItemId.split(",");
-                    let e = 0,
-                        t = 0;
-                    for (const o of a) try {
-                        (await (await fetch("/api/admin/attachments/" + o, {
-                            method: "DELETE"
-                        })).json()).success ? e++ : t++
-                    } catch (e) {
-                        console.error("删除失败:", e), t++
-                    }
-                    return closeModal("confirmModal"), 0 < e && showToast(`成功删除 ${e} 个附件`, "success"), 0 < t && showToast(t + " 个附件删除失败", "error"), selectedAttachments.clear(), updateBatchActions(), void loadAttachments()
-                }
-                var n = await (await fetch(e, {
-                    method: "DELETE",
-                    headers: t
-                })).json();
-                n.success ? (closeModal("confirmModal"), showToast("删除成功！", "success"), ("delete-category" === currentAction || "delete-tag" === currentAction ? loadCategoriesAndTags : "delete-main-card" === currentAction ? (loadMainCards(), loadSubCards) : "delete-sub-card" === currentAction ? loadSubCards : "delete-attachment" === currentAction ? (selectedAttachments.delete(currentItemId), updateBatchActions(), loadAttachments) : fetchAdminData)()) : showToast("删除失败：" + (n.message || "未知错误"), "error")
-            } catch (e) {
-                console.error("删除失败:", e), alert("删除失败，请稍后重试")
-            }
-        }
-}), document.querySelectorAll(".modal").forEach(e => {
+document.querySelectorAll(".modal").forEach(e => {
     e.addEventListener("click", function(e) {
         e.target === this && closeModal(this.id)
     })

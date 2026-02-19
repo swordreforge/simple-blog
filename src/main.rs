@@ -319,6 +319,8 @@ async fn main() -> std::io::Result<()> {
             // 优化的压缩中间件（已压缩内容不会再次压缩）
             // 支持 Gzip、Deflate、Brotli，优先使用 Brotli
             .wrap(actix_middleware::Compress::default())
+            // 默认服务：处理所有未匹配的路由，显示友好的状态码页面
+            .default_service(web::route().to(handlers::page_handlers::handle_default_status))
     });
 
     // 应用 keep-alive 和性能优化配置

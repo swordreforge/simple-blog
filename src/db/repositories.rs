@@ -36,6 +36,7 @@ pub fn create_repository(pool: Pool<SqliteConnectionManager>) -> Arc<dyn Reposit
 }
 
 /// 文章仓库
+#[derive(Clone)]
 pub struct PassageRepository {
     pool: Arc<Pool<SqliteConnectionManager>>,
     count_cache: Arc<std::sync::RwLock<Option<i64>>>,
@@ -2168,7 +2169,6 @@ impl FriendLinkRepository {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::db::models::Passage;
     use chrono::Utc;
 

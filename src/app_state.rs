@@ -109,8 +109,6 @@ impl AppState {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_app_state_creation() {
         // 这个测试需要实际的数据库连接池

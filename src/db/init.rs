@@ -740,11 +740,13 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
         }
     }
 
-    // 检查是否已有文章
-    let passage_count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
-    
-    if passage_count == 0 {
-        // 插入示例文章
+    // 检查是否已有文章（仅在 debug 模式下插入示例文章）
+    #[cfg(debug_assertions)]
+    {
+        let passage_count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
+
+        if passage_count == 0 {
+            // 插入示例文章
         let sample_passages = vec![
             (
                 "欢迎使用 RustBlog",
@@ -818,8 +820,9 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                 }
             }
         }
-        
-        println!("✅ 已插入 3 篇示例文章");
+
+            println!("✅ 已插入 3 篇示例文章");
+        }
     }
 
     // 检查是否已有主卡片数据
@@ -868,13 +871,13 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ("核心特性", "全平台", "响应式设计，各类设备完美呈现。", "📱", "", "default", "", 3, true),
             ("核心特性", "开放API", "提供完善的API接口，方便集成扩展。", "🌐", "", "default", "", 4, true),
             // 开发团队
-            ("开发团队", "技术总监", "负责平台架构设计与技术选型。", "JD", "", "default", "", 1, true),
-            ("开发团队", "前端负责人", "专注于用户体验与交互设计。", "LW", "", "default", "", 2, true),
-            ("开发团队", "后端工程师", "负责服务器端逻辑与数据库设计。", "ZY", "", "default", "", 3, true),
+            ("开发团队", "技术总监", "负责平台架构设计与技术选型。", "swordreforge", "", "default", "", 1, true),
+            ("开发团队", "前端负责人", "专注于用户体验与交互设计。", "swordreforge", "", "default", "", 2, true),
+            ("开发团队", "后端工程师", "负责服务器端逻辑与数据库设计。", "swordreforge", "", "default", "", 3, true),
             // 联系我们
-            ("联系我们", "电子邮件", "contact@example.com", "📧", "mailto:contact@example.com", "default", "", 1, true),
-            ("联系我们", "GitHub", "github.com/ourproject", "🐙", "https://github.com/ourproject", "default", "", 2, true),
-            ("联系我们", "社交媒体", "@ourproject", "🐦", "https://twitter.com/ourproject", "default", "", 3, true),
+            ("联系我们", "电子邮件", "zhujian_20060818@qq.com", "📧", "mailto:zhujian_20060818@qq.com", "default", "", 1, true),
+            ("联系我们", "GitHub", "github.com/simpleblog", "🐙", "https://github.com/simpleblog", "default", "", 2, true),
+            ("联系我们", "社交媒体", "@nobody", "🐦", "https://twitter.com/ourproject", "default", "", 3, true),
             // 卡片使用指南
             ("卡片使用指南", "主卡片介绍", "主卡片用于组织和分类内容，可以设置标题、图标和布局方式。每个主卡片下可以包含多个次卡片，形成层级结构。", "📁", "", "default", "", 1, true),
             ("卡片使用指南", "次卡片介绍", "次卡片用于展示具体内容，可以包含标题、描述、图标和链接。次卡片归属于某个主卡片，支持自定义布局样式。", "📄", "", "default", "", 2, true),

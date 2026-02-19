@@ -117,16 +117,63 @@ pub async fn admin(req: HttpRequest) -> HttpResponse {
 
 /// 状态页面
 pub async fn status_page(path: web::Path<u16>) -> HttpResponse {
-    let status = path.into_inner();
+    render_status_page(path.into_inner()).await
+}
+
+/// 通用的状态码页面渲染函数
+/// 可以在代码中任何需要返回状态码页面的地方调用
+pub async fn render_status_page(status: u16) -> HttpResponse {
+    // 根据状态码选择对应的模板文件
+    let template_name = format!("status/{}.html", status);
+    
+    // 创建上下文
+    let mut context = tera::Context::new();
     let status_text = match status {
+        302 => "Found",
+        401 => "Unauthorized",
         404 => "Not Found",
+        405 => "Method Not Allowed",
+        409 => "Conflict",
+        423 => "Locked",
         500 => "Internal Server Error",
-        403 => "Forbidden",
+        999 => "Unknown Error",
         _ => "Unknown Status",
     };
     
-    HttpResponse::build(actix_web::http::StatusCode::from_u16(status).unwrap_or(actix_web::http::StatusCode::NOT_FOUND))
-        .body(format!("{}: {}", status, status_text))
+    context.insert("status_code", &status);
+    context.insert("status_text", &status_text);
+    
+    // 使用新的渲染函数，支持自定义状态码
+    let http_status = actix_web::http::StatusCode::from_u16(status)
+        .unwrap_or(actix_web::http::StatusCode::NOT_FOUND);
+    
+    crate::templates::render_template_with_status(&template_name, &context, http_status).await
+}
+
+/// 处理默认状态码（用于默认服务，如 404）
+pub async fn handle_default_status(req: HttpRequest) -> HttpResponse {
+    // 从请求中获取方法，如果是 GET 请求返回 404，其他方法返回 405
+    let status_code = if req.method() == actix_web::http::Method::GET {
+        404
+    } else {
+        405
+    };
+    
+    let template_name = format!("status/{}.html", status_code);
+    let mut context = tera::Context::new();
+    let status_text = match status_code {
+        404 => "Not Found",
+        405 => "Method Not Allowed",
+        _ => "Unknown Status",
+    };
+    
+    context.insert("status_code", &status_code);
+    context.insert("status_text", &status_text);
+    
+    let http_status = actix_web::http::StatusCode::from_u16(status_code)
+        .unwrap_or(actix_web::http::StatusCode::NOT_FOUND);
+    
+    crate::templates::render_template_with_status(&template_name, &context, http_status).await
 }
 
 /// 健康检查

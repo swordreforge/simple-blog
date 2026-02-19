@@ -100,24 +100,53 @@ function containsTemplateSyntax(css) {
   return /{{\s*\w+\.?\w+\s*}}/.test(css)
 }
 
+// 保护模板语法：用占位符替换
+function protectTemplateSyntax(css) {
+  const placeholders = []
+  const protectedCss = css.replace(/{{[^}]+}}/g, (match) => {
+    const placeholder = `__TEMPLATE_PLACEHOLDER_${placeholders.length}__`
+    placeholders.push(match)
+    return placeholder
+  })
+  return { protectedCss, placeholders }
+}
+
+// 还原模板语法：将占位符替换回原始模板语法
+function restoreTemplateSyntax(css, placeholders) {
+  return css.replace(/__TEMPLATE_PLACEHOLDER_(\d+)__/g, (match, index) => {
+    return placeholders[parseInt(index)] || match
+  })
+}
+
 // 处理 CSS 文件
 async function optimizeCss(inputPath, outputPath) {
   try {
     // 读取 CSS 文件
     const css = readFileSync(inputPath, 'utf-8')
 
-    // 检查是否包含模板语法
-    if (containsTemplateSyntax(css)) {
-      console.log(`⏭ 跳过 ${inputPath.split('/').pop()} (包含模板语法)`)
-      return null
+    let processedCss = css
+    const hasTemplateSyntax = containsTemplateSyntax(css)
+
+    // 如果包含模板语法，先保护它们
+    let placeholders = []
+    if (hasTemplateSyntax) {
+      const result = protectTemplateSyntax(css)
+      processedCss = result.protectedCss
+      placeholders = result.placeholders
     }
 
     // 处理 CSS
-    const result = await processor.process(css, {
+    const result = await processor.process(processedCss, {
       from: inputPath,
       to: outputPath,
       map: false
     })
+
+    // 还原模板语法
+    let finalCss = result.css
+    if (hasTemplateSyntax) {
+      finalCss = restoreTemplateSyntax(result.css, placeholders)
+    }
 
     // 生成文件名（添加 hash）
     const originalName = inputPath.split('/').pop().replace('.css', '')
@@ -126,17 +155,21 @@ async function optimizeCss(inputPath, outputPath) {
     const outputFilePath = join(outputDir, outputFileName)
 
     // 写入优化后的 CSS
-    writeFileSync(outputFilePath, result.css)
+    writeFileSync(outputFilePath, finalCss)
 
     // 计算压缩率
     const originalSize = Buffer.byteLength(css, 'utf-8')
-    const optimizedSize = Buffer.byteLength(result.css, 'utf-8')
+    const optimizedSize = Buffer.byteLength(finalCss, 'utf-8')
     const reduction = ((1 - optimizedSize / originalSize) * 100).toFixed(2)
 
-    console.log(`✓ ${originalName}.css`)
+    const templateNotice = hasTemplateSyntax ? ' (包含模板语法)' : ''
+    console.log(`✓ ${originalName}.css${templateNotice}`)
     console.log(`  原始大小: ${(originalSize / 1024).toFixed(2)} KB`)
     console.log(`  优化后: ${(optimizedSize / 1024).toFixed(2)} KB`)
     console.log(`  压缩率: ${reduction}%`)
+    if (hasTemplateSyntax) {
+      console.log(`  受保护的模板语法: ${placeholders.length} 个`)
+    }
     console.log()
 
     return {

@@ -5,6 +5,7 @@ use std::time::Duration;
 
 /// 本地内存缓存后端（降级方案）- 使用 Moka 实现
 /// Moka 使用分段锁且不会阻塞工作线程，可以彻底避免死锁问题
+#[derive(Clone)]
 pub struct LocalCacheBackend {
     cache: Cache<String, String>,
 }

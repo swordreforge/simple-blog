@@ -1,4 +1,5 @@
 use super::backend::{CacheBackend, CacheConfig, CacheError};
+use super::concurrent::get_null_value;
 use super::local::LocalCacheBackend;
 use super::valkey::ValkeyCacheBackend;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -36,7 +37,7 @@ impl Default for DegradationConfig {
     }
 }
 
-/// 缓存管理器 - 支持自动降级和重连
+/// 缓存管理器 - 支持自动降级、重连、并发安全防护和重试机制
 pub struct CacheManager {
     primary: Arc<dyn CacheBackend>,
     fallback: Option<Arc<dyn CacheBackend>>,
@@ -53,6 +54,12 @@ pub struct CacheManager {
     reconnect_task: Option<Arc<tokio::task::JoinHandle<()>>>,  // 重连任务
     // 上次检查滑动窗口的时间（避免频繁检查）
     last_sliding_window_check: Arc<AtomicUsize>,
+    // 并发安全配置
+    enable_cache_lock: bool,
+    enable_null_cache: bool,
+    enable_ttl_jitter: bool,
+    // 重试配置
+    retry_enabled: bool,
 }
 
 impl Clone for CacheManager {
@@ -71,6 +78,10 @@ impl Clone for CacheManager {
             health_check_task: self.health_check_task.clone(),
             reconnect_task: self.reconnect_task.clone(),
             last_sliding_window_check: Arc::clone(&self.last_sliding_window_check),
+            enable_cache_lock: self.enable_cache_lock,
+            enable_null_cache: self.enable_null_cache,
+            enable_ttl_jitter: self.enable_ttl_jitter,
+            retry_enabled: self.retry_enabled,
         }
     }
 }
@@ -83,7 +94,11 @@ impl CacheManager {
         config: CacheConfig,
     ) -> Result<Self, CacheError> {
         let valkey_url_owned = valkey_url.map(|s| s.to_string());
-        let (primary, fallback, valkey_backend) = match backend_type {
+        let (primary, fallback, valkey_backend): (
+            Arc<dyn CacheBackend>,
+            Option<Arc<dyn CacheBackend>>,
+            Option<Arc<ValkeyCacheBackend>>
+        ) = match backend_type {
             "valkey" | "redis" => {
                 let url = valkey_url.ok_or_else(|| {
                     CacheError::ConnectionError("Valkey URL is required for valkey backend".to_string())
@@ -97,17 +112,18 @@ impl CacheManager {
                         if let Err(e) = valkey.health_check().await {
                             tracing::warn!("Valkey 健康检查失败: {}, 降级到本地缓存", e);
                             let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
-                            (local.clone(), None, None)
+                            (local, None, None)
                         } else {
-                            let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                             let valkey_arc = Arc::new(valkey);
-                            (Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>, Some(local), Some(valkey_arc))
+                            let valkey_dyn = Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>;
+                            let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                            (valkey_dyn, Some(local), Some(valkey_arc))
                         }
                     }
                     Err(e) => {
                         tracing::warn!("Valkey 连接失败: {}, 使用本地缓存降级", e);
                         let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
-                        (local.clone(), None, None)
+                        (local, None, None)
                     }
                 }
             }
@@ -125,24 +141,25 @@ impl CacheManager {
                             if let Err(e) = valkey.health_check().await {
                                 println!("⚠️  Valkey 不可用（健康检查失败: {}），使用本地缓存", e);
                                 let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
-                                (local.clone(), None, None)
+                                (local, None, None)
                             } else {
                                 println!("✅ 自动检测到 Valkey，使用 Valkey 缓存");
-                                let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                                 let valkey_arc = Arc::new(valkey);
-                                (Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>, Some(local), Some(valkey_arc))
+                                let valkey_dyn = Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>;
+                                let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                                (valkey_dyn, Some(local), Some(valkey_arc))
                             }
                         }
                         Err(e) => {
                             println!("⚠️  Valkey 不可用（连接失败: {}），使用本地缓存", e);
                             let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
-                            (local.clone(), None, None)
+                            (local, None, None)
                         }
                     }
                 } else {
                     println!("⚠️  未配置 Valkey URL，使用本地缓存");
                     let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
-                    (local.clone(), None, None)
+                    (local, None, None)
                 }
             }
             _ => {
@@ -151,11 +168,15 @@ impl CacheManager {
         };
 
         let fallback_enabled = Arc::new(AtomicBool::new(config.enable_fallback));
-        let primary_healthy = Arc::new(AtomicBool::new(valkey_backend.is_some()));
+        let primary_healthy = Arc::new(AtomicBool::new(true));
         let consecutive_failures = Arc::new(AtomicUsize::new(0));
         let degradation_config = DegradationConfig::default();
         let operation_history = DashMap::new();
         let last_sliding_window_check = Arc::new(AtomicUsize::new(0));
+        let enable_cache_lock = true;
+        let enable_null_cache = true;
+        let enable_ttl_jitter = true;
+        let retry_enabled = true;
 
         // 启动后台健康检查任务
         let health_check_task = if valkey_backend.is_some() {
@@ -212,6 +233,10 @@ impl CacheManager {
             health_check_task,
             reconnect_task,
             last_sliding_window_check,
+            enable_cache_lock,
+            enable_null_cache,
+            enable_ttl_jitter,
+            retry_enabled,
         })
     }
 
@@ -669,6 +694,73 @@ impl CacheManager {
             // 如果没有 Valkey，总是健康
             Ok(())
         }
+    }
+
+    /// 获取或加载缓存值（防止缓存击穿）
+    ///
+    /// # 参数
+    /// - `key`: 缓存键
+    /// - `loader`: 加载函数，当缓存未命中时调用
+    ///
+    /// # 返回
+    /// 返回缓存值或加载的值
+    ///
+    /// # 缓存击穿防护
+    /// 使用互斥锁防止并发请求同时查询数据库
+    pub async fn get_or_load<F, Fut>(
+        &self,
+        key: &str,
+        loader: F,
+    ) -> Result<Option<String>, CacheError>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = Result<Option<String>, CacheError>>,
+    {
+        // 1. 先尝试从缓存获取
+        if let Some(value) = self.get(key).await {
+            return Ok(Some(value));
+        }
+
+        // 2. 使用异步互斥锁防止缓存击穿
+        // 注意：这里简化实现，生产环境应该使用分布式锁（如 Valkey SETNX）
+        use tokio::sync::Mutex;
+        use std::sync::Arc;
+
+        // 为每个键创建一个锁
+        lazy_static::lazy_static! {
+            static ref CACHE_LOCKS: Mutex<std::collections::HashMap<String, Arc<Mutex<()>>>> =
+                Mutex::new(std::collections::HashMap::new());
+        }
+
+        let lock = {
+            let mut locks = CACHE_LOCKS.lock().await;
+            if !locks.contains_key(key) {
+                locks.insert(key.to_string(), Arc::new(Mutex::new(())));
+            }
+            Arc::clone(locks.get(key).unwrap())
+        };
+
+        // 3. 获取锁
+        let _guard = lock.lock().await;
+
+        // 4. 双重检查：获取锁后再次检查缓存
+        if let Some(value) = self.get(key).await {
+            return Ok(Some(value));
+        }
+
+        // 5. 从数据源加载
+        let value = loader().await?;
+
+        // 6. 写入缓存（包括空值，防止缓存穿透）
+        let _ttl = Duration::from_secs(self.config.default_ttl);
+        if let Some(ref v) = value {
+            let _ = self.set(key, v).await;
+        } else if self.enable_null_cache {
+            // 缓存空值，防止缓存穿透
+            let _ = self.set(key, &get_null_value()).await;
+        }
+
+        Ok(value)
     }
 }
 

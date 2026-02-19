@@ -1,5 +1,5 @@
-/// 并发安全防护模块
-/// 提供缓存击穿、穿透、雪崩的防护机制
+//! 并发安全防护模块
+//! 提供缓存击穿、穿透、雪崩的防护机制
 
 use super::backend::{CacheBackend, CacheError};
 use async_trait::async_trait;
@@ -9,10 +9,12 @@ use tokio::sync::{Mutex, Semaphore};
 
 /// 空值标记，用于缓存穿透防护
 const NULL_VALUE: &str = "__NULL__";
+#[allow(dead_code)]
 const NULL_VALUE_TTL: u64 = 60; // 空值缓存1分钟
 
 /// 缓存击穿防护锁
 /// 使用本地信号量 + Valkey 分布式锁的双重保护
+#[allow(dead_code)]
 pub struct CacheLock {
     /// 本地信号量，用于快速防护同一实例内的并发
     local_locks: Arc<Mutex<std::collections::HashMap<String, Arc<Semaphore>>>>,
@@ -20,6 +22,7 @@ pub struct CacheLock {
     enable_distributed: bool,
 }
 
+#[allow(dead_code)]
 impl CacheLock {
     pub fn new(enable_distributed: bool) -> Self {
         Self {
@@ -58,6 +61,7 @@ impl CacheLock {
 }
 
 /// 缓存锁守卫
+#[allow(dead_code)]
 pub struct CacheLockGuard {
     key: String,
     permit: Option<tokio::sync::OwnedSemaphorePermit>,
@@ -76,7 +80,7 @@ impl Drop for CacheLockGuard {
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_secs(5)).await;
                 let mut locks = locks.lock().await;
-                if locks.get(&key).map_or(true, |s| s.available_permits() > 0) {
+                if locks.get(&key).is_none_or(|s| s.available_permits() > 0) {
                     locks.remove(&key);
                 }
             });
@@ -98,6 +102,7 @@ pub fn jitter_ttl(base_ttl: u64, jitter_percent: u8) -> u64 {
 }
 
 /// 缓存穿透防护 - 缓存空值
+#[allow(dead_code)]
 pub fn should_cache_null(result: &Option<String>) -> bool {
     // 如果查询结果为空，说明数据不存在，应该缓存空值
     result.is_none()
@@ -114,17 +119,19 @@ pub fn is_null_value(value: &str) -> bool {
 }
 
 /// 增强的缓存后端，内置并发安全防护
+#[allow(dead_code)]
 pub struct SafeCacheBackend<B: CacheBackend> {
-    inner: B,
+    inner: Arc<B>,
     cache_lock: Arc<CacheLock>,
     enable_null_cache: bool,
     enable_ttl_jitter: bool,
 }
 
+#[allow(dead_code)]
 impl<B: CacheBackend> SafeCacheBackend<B> {
     pub fn new(backend: B, enable_distributed_lock: bool) -> Self {
         Self {
-            inner: backend,
+            inner: Arc::new(backend),
             cache_lock: Arc::new(CacheLock::new(enable_distributed_lock)),
             enable_null_cache: true,
             enable_ttl_jitter: true,
@@ -169,6 +176,7 @@ impl<B: CacheBackend> SafeCacheBackend<B> {
     }
 
     /// 带锁的获取或加载模式，防止缓存击穿
+    #[allow(dead_code)]
     pub async fn get_or_load<F, Fut>(
         &self,
         key: &str,
@@ -214,11 +222,24 @@ impl<B: CacheBackend> SafeCacheBackend<B> {
     }
 
     /// 获取内部后端的引用
-    pub fn inner(&self) -> &B {
+    #[allow(dead_code)]
+    pub fn inner(&self) -> &Arc<B> {
         &self.inner
     }
 }
 
+impl<B: CacheBackend> Clone for SafeCacheBackend<B> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+            cache_lock: Arc::clone(&self.cache_lock),
+            enable_null_cache: self.enable_null_cache,
+            enable_ttl_jitter: self.enable_ttl_jitter,
+        }
+    }
+}
+
+#[allow(dead_code)]
 #[async_trait]
 impl<B: CacheBackend> CacheBackend for SafeCacheBackend<B> {
     async fn get(&self, key: &str) -> Option<String> {

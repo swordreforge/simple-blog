@@ -5,11 +5,13 @@
 // - validation.rs: 数据验证逻辑
 // - markdown.rs: Markdown 处理相关函数
 // - query_handlers.rs: 查询参数处理器
+// - crud_helper.rs: 缓存辅助函数
 
 pub mod crud;
 pub mod validation;
 pub mod markdown;
 pub mod query_handlers;
+pub mod crud_helper;
 
 // 重新导出所有公共接口，保持向后兼容
 pub use crud::{

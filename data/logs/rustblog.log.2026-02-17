@@ -1,0 +1,49 @@
+2026-02-17T05:53:22.695915Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T05:53:22.712732Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-02-17T05:53:22.712743Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-02-17T05:53:22.712748Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-02-17T05:54:31.693513Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T05:56:48.271363Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T05:56:48.277075Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-02-17T05:56:48.277085Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-02-17T05:56:48.277091Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-02-17T05:59:47.505643Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T06:01:53.569531Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T06:01:59.370602Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T06:02:29.258550Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T06:12:52.751480Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T06:12:52.757577Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-02-17T06:12:52.757591Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-02-17T06:12:52.757598Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-02-17T06:22:12.119866Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T06:22:12.126587Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-02-17T06:22:12.126606Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-02-17T06:22:12.126614Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-02-17T13:57:01.145913Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已生成并保存到: /home/swordreforge/project/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-02-17T13:57:01.172729Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-02-17T13:57:01.172775Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-02-17T13:57:01.172790Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-02-17T13:57:02.860750Z  INFO ThreadId(01) actix_server::server: SIGTERM received; starting graceful shutdown
+2026-02-17T13:57:02.860896Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860906Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-02-17T13:57:02.860910Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860920Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860918Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860926Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860936Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860937Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860947Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860959Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860957Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.860981Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861140Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861150Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861169Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861199Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861265Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861312Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861327Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861350Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861368Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861411Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-02-17T13:57:02.861682Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker

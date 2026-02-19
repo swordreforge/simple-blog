@@ -120,19 +120,66 @@ pub async fn list(
         format!("passage:list:{}:page:{}:limit:{}", date_part, page, limit)
     };
 
-    // 尝试从缓存获取
-    if let Some(manager) = state.cache.manager() {
-        if let Some(cached_data) = manager.get(&cache_key).await {
-            if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
+    // 使用 get_or_load 方法（带缓存击穿防护）
+    let cache_result = if let Some(manager) = state.cache.manager() {
+        manager.get_or_load(&cache_key, || async {
+            // 加载函数：从数据库获取数据
+            super::crud_helper::fetch_passage_list_from_db(
+                std::sync::Arc::new(passage_repo.clone()),
+                use_cursor,
+                query.get("cursor").map(|s| s.to_string()),
+                year,
+                month,
+                day,
+                limit,
+                page,
+                offset,
+            ).await
+        }).await
+    } else {
+        // 没有缓存，直接从数据库获取
+        super::crud_helper::fetch_passage_list_from_db(
+            std::sync::Arc::new(passage_repo.clone()),
+            use_cursor,
+            query.get("cursor").map(|s| s.to_string()),
+            year,
+            month,
+            day,
+            limit,
+            page,
+            offset,
+        ).await
+    };
+
+    match cache_result {
+        Ok(Some(json_str)) => {
+            if let Ok(response) = serde_json::from_str::<serde_json::Value>(&json_str) {
                 return HttpResponse::Ok()
                     .insert_header(("Cache-Control", "public, max-age=60"))
                     .insert_header(("X-Cache", "HIT"))
                     .json(response);
             }
         }
+        Ok(None) => {
+            // 缓存穿透：数据库中没有数据
+            return HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": [],
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total": 0,
+                    "total_pages": 0,
+                    "has_more": false
+                }
+            }));
+        }
+        Err(e) => {
+            tracing::error!("获取文章列表失败: {}", e);
+        }
     }
 
-    // 缓存未命中，从数据库获取
+    // 缓存失败，回退到直接查询数据库
     if use_cursor {
         // 游标分页
         let cursor = query.get("cursor").map(|s| s.to_string());

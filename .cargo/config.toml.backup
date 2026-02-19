@@ -1,0 +1,23 @@
+[build]
+target = "x86_64-unknown-linux-musl"
+rustflags = [
+    "-C", "target-cpu=x86-64",
+    "-C", "embed-bitcode=no",
+    "-C", "codegen-units=256",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=yes",
+    "-C", "debuginfo=2",
+    "-C", "overflow-checks=true",
+]
+
+[target.x86_64-unknown-linux-musl]
+rustflags = [
+    "-C", "target-cpu=x86-64",
+    "-C", "embed-bitcode=no",
+    "-C", "codegen-units=256",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=yes",
+    "-C", "debuginfo=2",
+    "-C", "overflow-checks=true",
+]
+

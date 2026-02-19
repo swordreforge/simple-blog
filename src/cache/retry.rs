@@ -1,5 +1,5 @@
-/// 缓存删除失败重试机制
-/// 用于确保缓存删除操作的最终一致性
+//! 缓存删除失败重试机制
+//! 用于确保缓存删除操作的最终一致性
 
 use super::backend::{CacheBackend, CacheError};
 use async_trait::async_trait;
@@ -17,6 +17,7 @@ enum RetryTask {
 }
 
 /// 重试队列配置
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct RetryConfig {
     /// 最大重试次数
@@ -41,6 +42,8 @@ impl Default for RetryConfig {
 }
 
 /// 重试队列管理器
+#[allow(dead_code)]
+#[derive(Clone)]
 pub struct RetryQueue<B: CacheBackend> {
     backend: Arc<B>,
     config: RetryConfig,
@@ -48,6 +51,7 @@ pub struct RetryQueue<B: CacheBackend> {
     is_running: Arc<std::sync::atomic::AtomicBool>,
 }
 
+#[allow(dead_code)]
 impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
     /// 创建新的重试队列
     pub fn new(backend: B, config: RetryConfig) -> Self {
@@ -196,11 +200,13 @@ impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
 }
 
 /// 带重试机制的缓存后端
-pub struct RetryCacheBackend<B: CacheBackend + Clone> {
+#[allow(dead_code)]
+pub struct RetryCacheBackend<B: CacheBackend + Clone + Send + Sync + 'static> {
     inner: B,
     retry_queue: Option<RetryQueue<B>>,
 }
 
+#[allow(dead_code)]
 impl<B: CacheBackend + Clone + Send + Sync + 'static> RetryCacheBackend<B> {
     /// 创建新的带重试机制的缓存后端
     pub fn new(backend: B, enable_retry: bool) -> Self {
@@ -235,6 +241,17 @@ impl<B: CacheBackend + Clone + Send + Sync + 'static> RetryCacheBackend<B> {
     }
 }
 
+impl<B: CacheBackend + Clone + 'static> Clone for RetryCacheBackend<B> {
+    fn clone(&self) -> Self {
+        // 注意：重试队列不应该被克隆，克隆后的实例共享同一个队列
+        Self {
+            inner: self.inner.clone(),
+            retry_queue: self.retry_queue.clone(),
+        }
+    }
+}
+
+#[allow(dead_code)]
 #[async_trait]
 impl<B: CacheBackend + Clone + Send + Sync + 'static> CacheBackend for RetryCacheBackend<B> {
     async fn get(&self, key: &str) -> Option<String> {

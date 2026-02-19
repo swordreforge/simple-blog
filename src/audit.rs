@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_audit_logger_default() {
-        let logger = AuditLogger::default();
+        let _logger = AuditLogger::default();
         // 测试 logger 可以创建
         // 实际的日志写入测试需要文件系统
     }

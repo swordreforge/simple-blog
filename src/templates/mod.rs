@@ -4,21 +4,8 @@ use std::sync::Arc;
 
 lazy_static::lazy_static! {
     static ref TERA: Arc<Tera> = {
-        // 优先使用内嵌的文件系统
-        let tera = match create_embedded_tera() {
-            Ok(t) => t,
-            Err(e) => {
-                eprintln!("Failed to create embedded Tera: {}, falling back to filesystem", e);
-                // 回退到文件系统
-                match Tera::new("templates/**/*.html") {
-                    Ok(t) => t,
-                    Err(e) => {
-                        eprintln!("Error parsing templates: {}", e);
-                        panic!("Failed to parse templates");
-                    }
-                }
-            }
-        };
+        // 强制使用嵌入的文件系统，不回退到文件系统
+        let tera = create_embedded_tera().expect("Failed to create embedded Tera - 请确保从项目根目录编译：cargo build --release");
         // 不启用自动转义，避免 CSS URL 中的字符被转义
         // 如需转义，在模板中使用 | escape 过滤器
         Arc::new(tera)
@@ -32,6 +19,9 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
     let mut tera = Tera::default();
     tera.autoescape_on(vec!["html"]);
     
+    println!("🔍 调试：开始从内嵌文件加载模板...");
+    let mut found_templates = Vec::new();
+    
     // 遍历内嵌的模板文件
     for path in EmbeddedAssets::iter() {
         let path_str = path.as_ref();
@@ -44,10 +34,24 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
                 let name = path_str.strip_prefix("templates/").unwrap();
                 let content_str = std::str::from_utf8(&content.data)?;
                 
+                println!("  ✓ 加载模板: {} ({} bytes)", name, content.data.len());
+                found_templates.push(name.to_string());
+                
                 // 使用 add_raw_template 方法直接添加模板内容
                 tera.add_raw_template(name, content_str)?;
             }
         }
+    }
+    
+    if found_templates.is_empty() {
+        eprintln!("❌ 错误: 没有找到任何内嵌模板文件！");
+        eprintln!("🔍 所有嵌入的文件:");
+        for path in EmbeddedAssets::iter() {
+            eprintln!("  - {}", path.as_ref());
+        }
+        return Err("No embedded templates found".into());
+    } else {
+        println!("✅ 成功加载 {} 个内嵌模板", found_templates.len());
     }
     
     Ok(tera)
@@ -430,6 +434,27 @@ pub async fn render_template(template_name: &str, context: &TeraContext) -> Http
         Err(e) => {
             eprintln!("Template rendering error: {}", e);
             HttpResponse::InternalServerError()
+                .body(format!("Failed to render template: {}", e))
+        }
+    }
+}
+
+/// 渲染模板并返回指定的 HTTP 状态码
+pub async fn render_template_with_status(
+    template_name: &str,
+    context: &TeraContext,
+    status_code: actix_web::http::StatusCode,
+) -> HttpResponse {
+    // 使用静态的 TERA 实例（内嵌的模板），无需加锁
+    match TERA.render(template_name, context) {
+        Ok(html) => HttpResponse::build(status_code)
+            .content_type("text/html; charset=utf-8")
+            .insert_header(("Cache-Control", "no-cache"))
+            .body(html),
+        Err(e) => {
+            eprintln!("Template rendering error: {}", e);
+            HttpResponse::build(status_code)
+                .content_type("text/plain; charset=utf-8")
                 .body(format!("Failed to render template: {}", e))
         }
     }

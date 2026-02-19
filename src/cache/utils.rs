@@ -2,6 +2,104 @@
 //! 提供统一的缓存失效操作，消除代码重复
 
 use super::PassageCacheKeys;
+use super::backend::CacheError;
+
+/// 获取文章缓存（带缓存击穿防护）
+///
+/// # 参数
+/// - `manager`: 缓存管理器
+/// - `key`: 缓存键
+/// - `loader`: 加载函数
+///
+/// # 返回
+/// 返回缓存值或加载的值
+///
+/// # 缓存防护
+/// - 防止缓存击穿：使用互斥锁防止并发请求同时查询数据库
+/// - 防止缓存穿透：缓存空值（__NULL__）
+pub async fn get_passage_cache<F, Fut>(
+    manager: Option<&crate::cache::manager::CacheManager>,
+    key: &str,
+    loader: F,
+) -> Result<Option<String>, CacheError>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = Result<Option<String>, CacheError>>,
+{
+    if let Some(mgr) = manager {
+        mgr.get_or_load(key, loader).await
+    } else {
+        // 没有缓存管理器，直接调用加载函数
+        loader().await
+    }
+}
+
+/// 获取文章列表缓存（带缓存击穿防护）
+///
+/// # 参数
+/// - `manager`: 缓存管理器
+/// - `key`: 缓存键
+/// - `loader`: 加载函数
+///
+/// # 返回
+/// 返回缓存值或加载的值
+///
+/// # 缓存防护
+/// - 防止缓存击穿：使用互斥锁防止并发请求同时查询数据库
+/// - 防止缓存穿透：缓存空值（__NULL__）
+pub async fn get_passage_list_cache<F, Fut>(
+    manager: Option<&crate::cache::manager::CacheManager>,
+    key: &str,
+    loader: F,
+) -> Result<Option<String>, CacheError>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = Result<Option<String>, CacheError>>,
+{
+    if let Some(mgr) = manager {
+        mgr.get_or_load(key, loader).await
+    } else {
+        // 没有缓存管理器，直接调用加载函数
+        loader().await
+    }
+}
+
+/// 设置文章缓存（带 TTL 抖动，防止缓存雪崩）
+///
+/// # 参数
+/// - `manager`: 缓存管理器
+/// - `key`: 缓存键
+/// - `value`: 缓存值（None 表示缓存空值）
+/// - `ttl`: 基础 TTL（秒）
+///
+/// # 返回
+/// 返回操作结果
+///
+/// # 缓存防护
+/// - 防止缓存雪崩：使用 TTL 抖动（10% 抖动）
+/// - 防止缓存穿透：支持缓存空值
+pub async fn set_passage_cache(
+    manager: Option<&crate::cache::manager::CacheManager>,
+    key: &str,
+    value: Option<&str>,
+    ttl: u64,
+) -> Result<(), CacheError> {
+    if let Some(mgr) = manager {
+        // 确定实际要缓存的值
+        let actual_value = match value {
+            Some(v) => v.to_string(),
+            None => {
+                // 缓存空值，防止缓存穿透
+                super::concurrent::get_null_value()
+            }
+        };
+
+        // 使用 TTL 抖动（10% 抖动）防止缓存雪崩
+        let _jittered_ttl = super::concurrent::jitter_ttl(ttl, 10);
+        let _ = mgr.set(key, &actual_value).await;
+    }
+    Ok(())
+}
 
 /// 失效指定的缓存模式
 ///
