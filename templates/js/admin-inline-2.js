@@ -48,11 +48,26 @@ async function saveSettings() {
                 r = a[l];
             r !== d && (i[l] = r)
         }
-        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning"): (e = await fetch("/api/settings/appearance", {
-            method: "PATCH",
-            headers: o,
-            body: JSON.stringify(i)
-        })).ok ? (showToast("设置保存成功！", "success"), Object.assign(originalAppearanceSettings, i), "dark_mode_enabled" in i && applyDarkMode(i.dark_mode_enabled), updatePreview()) : (t = await e.json(), showToast("保存失败：" + (t.error || "未知错误"), "error")))
+        if (0 === Object.keys(i).length) {
+            showToast("没有检测到任何变化", "warning")
+        } else {
+            e = await fetch("/api/settings/appearance", {
+                method: "PATCH",
+                headers: o,
+                body: JSON.stringify(i)
+            })
+            if (e.ok) {
+                showToast("设置保存成功！", "success")
+                Object.assign(originalAppearanceSettings, i)
+                if ("dark_mode_enabled" in i) {
+                    applyDarkMode(i.dark_mode_enabled)
+                }
+                updatePreview()
+            } else {
+                t = await e.json()
+                showToast("保存失败：" + (t.error || "未知错误"), "error")
+            }
+        }
     } catch (e) {
         console.error("保存设置失败:", e), showToast("保存失败，请稍后重试", "error")
     }
@@ -250,11 +265,22 @@ async function saveTemplateSettings() {
             }),
             i = {};
         for (const d in a) a[d] !== originalTemplateSettings[d] && (i[d] = a[d]);
-        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/template", {
-            method: "PATCH",
-            headers: o,
-            body: JSON.stringify(i)
-        })).ok ? (showToast("模板设置保存成功！", "success"), Object.assign(originalTemplateSettings, i)) : (t = await e.json(), showToast("保存失败：" + (t.error || "未知错误"), "error")))
+        if (0 === Object.keys(i).length) {
+            showToast("没有检测到任何变化", "warning")
+        } else {
+            e = await fetch("/api/settings/template", {
+                method: "PATCH",
+                headers: o,
+                body: JSON.stringify(i)
+            })
+            if (e.ok) {
+                showToast("模板设置保存成功！", "success")
+                Object.assign(originalTemplateSettings, i)
+            } else {
+                t = await e.json()
+                showToast("保存失败：" + (t.error || "未知错误"), "error")
+            }
+        }
     } catch (e) {
         console.error("保存模板设置失败:", e), showToast("保存失败，请稍后重试", "error")
     }
@@ -293,11 +319,22 @@ async function saveMusicSettings() {
             }),
             i = {};
         for (const d in a) a[d] !== originalMusicSettings[d] && (i[d] = a[d]);
-        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/music", {
-            method: "PATCH",
-            headers: o,
-            body: JSON.stringify(i)
-        })).ok ? (showToast("音乐设置保存成功！", "success"), Object.assign(originalMusicSettings, i)) : (t = await e.json(), showToast("保存失败：" + (t.error || "未知错误"), "error")))
+        if (0 === Object.keys(i).length) {
+            showToast("没有检测到任何变化", "warning")
+        } else {
+            e = await fetch("/api/settings/music", {
+                method: "PATCH",
+                headers: o,
+                body: JSON.stringify(i)
+            })
+            if (e.ok) {
+                showToast("音乐设置保存成功！", "success")
+                Object.assign(originalMusicSettings, i)
+            } else {
+                t = await e.json()
+                showToast("保存失败：" + (t.error || "未知错误"), "error")
+            }
+        }
     } catch (e) {
         console.error("保存音乐设置失败:", e), showToast("保存失败，请稍后重试", "error")
     }
