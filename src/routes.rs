@@ -5,6 +5,7 @@ use axum::{
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
+use crate::embedded::serve_html_file;
 use crate::handlers::{
     check_init, delete_wallpaper, get_me, get_random_wallpaper_mo, get_random_wallpaper_pc,
     get_wallpapers, init_admin, login, logout, update_wallpaper_tags, upload_wallpaper,
@@ -22,7 +23,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/upload", post(upload_wallpaper))
         .route("/wallpapers/:id/tags", axum::routing::put(update_wallpaper_tags))
         .route("/wallpapers/:id", axum::routing::delete(delete_wallpaper))
-        .with_state(state.clone());
+        .with_state(state.clone())
+        .layer(axum::extract::DefaultBodyLimit::max(50 * 1024 * 1024));
 
     Router::new()
         .route("/", get(index_handler))
@@ -39,31 +41,17 @@ pub fn create_router(state: AppState) -> Router {
 }
 
 async fn index_handler() -> axum::response::Html<String> {
-    serve_html_file("public/index.html")
+    serve_html_file("index.html")
 }
 
 async fn about_handler() -> axum::response::Html<String> {
-    serve_html_file("public/about.html")
+    serve_html_file("about.html")
 }
 
 async fn admin_handler() -> axum::response::Html<String> {
-    serve_html_file("public/admin/index.html")
+    serve_html_file("admin/index.html")
 }
 
 async fn login_handler() -> axum::response::Html<String> {
-    serve_html_file("public/login.html")
-}
-
-fn serve_html_file(path: &str) -> axum::response::Html<String> {
-    match std::fs::read_to_string(path) {
-        Ok(content) => axum::response::Html(content),
-        Err(_) => axum::response::Html(format!(
-            r#"<!DOCTYPE html>
-<html>
-<head><title>404</title></head>
-<body><h1>404 - File not found</h1><p>{}</p></body>
-</html>"#,
-            path
-        )),
-    }
+    serve_html_file("login.html")
 }

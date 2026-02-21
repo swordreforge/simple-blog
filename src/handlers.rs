@@ -159,69 +159,153 @@ pub async fn upload_wallpaper(
     headers: HeaderMap,
     mut multipart: Multipart,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    tracing::info!("=== Starting upload_wallpaper handler ===");
+    tracing::info!("Content-Type header: {:?}", headers.get("content-type"));
+
     verify_auth(&state, &headers).await?;
+    tracing::info!("Auth verified successfully");
 
     let mut wallpaper_type: Option<WallpaperType> = None;
     let mut tags = String::new();
     let mut file_bytes: Option<Vec<u8>> = None;
     let mut original_filename: Option<String> = None;
+    let mut field_count = 0;
 
     // Process all fields
-    while let Some(field_result) = multipart.next_field().await
-        .map_err(|_| StatusCode::BAD_REQUEST)?
-    {
-        let field: Field = field_result;
+    loop {
+        let field_result = multipart.next_field().await;
+        field_count += 1;
+        tracing::info!("Processing field #{}", field_count);
+
+        let field: Field = match field_result {
+            Ok(Some(f)) => f,
+            Ok(None) => {
+                tracing::info!("No more fields to process");
+                break;
+            }
+            Err(e) => {
+                tracing::error!("Failed to read multipart field #{}: {:?}", field_count, e);
+                tracing::error!("Error details: {}", e);
+                return Err(StatusCode::BAD_REQUEST);
+            }
+        };
+
         let name = field.name().unwrap_or("");
+        let filename = field.file_name().map(|n| n.to_string());
+        let content_type = field.content_type().map(|ct| ct.to_string());
+
+        tracing::info!("Field details - name: '{}', filename: {:?}, content_type: {:?}",
+            name, filename, content_type);
 
         match name {
             "type" => {
-                let type_str = field.text().await.map_err(|_| StatusCode::BAD_REQUEST)?;
+                let type_str = match field.text().await {
+                    Ok(s) => s,
+                    Err(e) => {
+                        tracing::error!("Failed to read type field: {:?}", e);
+                        return Err(StatusCode::BAD_REQUEST);
+                    }
+                };
+                tracing::info!("Type field value: '{}'", type_str);
                 wallpaper_type = WallpaperType::from_str(&type_str);
             }
             "tags" => {
                 tags = field.text().await.unwrap_or_default();
+                tracing::info!("Tags field value: '{}'", tags);
             }
             "file" => {
-                if let Some(filename) = field.file_name() {
-                    original_filename = Some(filename.to_string());
-                    file_bytes = Some(field.bytes().await.map_err(|_| StatusCode::BAD_REQUEST)?.to_vec());
+                if let Some(filename) = filename {
+                    original_filename = Some(filename.clone());
+                    tracing::info!("Found file field with filename: '{}'", filename);
+
+                    match field.bytes().await {
+                        Ok(bytes) => {
+                            let size = bytes.len();
+                            tracing::info!("Successfully read {} bytes from file '{}'", size, filename);
+                            tracing::info!("File size: {} KB", size / 1024);
+                            file_bytes = Some(bytes.to_vec());
+                        }
+                        Err(e) => {
+                            tracing::error!("Failed to read file bytes for '{}': {:?}", filename, e);
+                            tracing::error!("Error details: {}", e);
+                            return Err(StatusCode::BAD_REQUEST);
+                        }
+                    }
+                } else {
+                    tracing::warn!("File field has no filename");
                 }
             }
-            _ => {}
+            _ => {
+                tracing::warn!("Unknown field name: '{}'", name);
+            }
         }
     }
 
-    let wallpaper_type = wallpaper_type.ok_or(StatusCode::BAD_REQUEST)?;
-    let bytes = file_bytes.ok_or(StatusCode::BAD_REQUEST)?;
-    let original_filename = original_filename.ok_or(StatusCode::BAD_REQUEST)?;
+    tracing::info!("Processed {} fields total", field_count);
+    tracing::info!("Final values - type: {:?}, filename: {:?}, tags: '{}', bytes present: {}",
+        wallpaper_type, original_filename, tags, file_bytes.is_some());
 
+    let wallpaper_type = wallpaper_type.ok_or_else(|| {
+        tracing::error!("Missing wallpaper_type");
+        StatusCode::BAD_REQUEST
+    })?;
+    let bytes = file_bytes.ok_or_else(|| {
+        tracing::error!("Missing file_bytes");
+        StatusCode::BAD_REQUEST
+    })?;
+    let original_filename = original_filename.ok_or_else(|| {
+        tracing::error!("Missing original_filename");
+        StatusCode::BAD_REQUEST
+    })?;
+
+    tracing::info!("Validating file type for '{}'", original_filename);
     if !is_image_file(&original_filename) {
+        tracing::error!("File '{}' is not a valid image file", original_filename);
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    tracing::info!("Preparing to convert file to WebP");
     let target_dir = state.wallpaper_dir.join(wallpaper_type.as_str());
+    tracing::info!("Target directory: {:?}", target_dir);
+
     tokio::fs::create_dir_all(&target_dir)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            tracing::error!("Failed to create directory {:?}: {:?}", target_dir, e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let temp_path = target_dir.join(format!("temp_{}", original_filename));
+    tracing::info!("Temporary file path: {:?}", temp_path);
 
     tokio::fs::write(&temp_path, &bytes)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            tracing::error!("Failed to write temp file {:?}: {:?}", temp_path, e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    tracing::info!("File written successfully, starting WebP conversion");
 
     let webp_filename = generate_timestamped_filename(&original_filename)
         .replace(&format!(".{}", crate::image::get_file_extension(&original_filename)), ".webp");
     let webp_path = target_dir.join(&webp_filename);
+    tracing::info!("WebP output path: {:?}", webp_path);
 
     convert_to_webp(&temp_path, &webp_path)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            tracing::error!("Failed to convert to WebP: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    tracing::info!("WebP conversion completed successfully");
 
     tokio::fs::remove_file(&temp_path)
         .await
         .ok();
 
+    tracing::info!("Inserting wallpaper record into database");
     let wallpaper_id = state
         .db
         .insert_wallpaper(
@@ -232,7 +316,13 @@ pub async fn upload_wallpaper(
             chrono::Utc::now().timestamp_millis(),
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            tracing::error!("Failed to insert wallpaper into database: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    tracing::info!("=== Upload completed successfully ===");
+    tracing::info!("Wallpaper ID: {}, Filename: {}", wallpaper_id, webp_filename);
 
     Ok(Json(serde_json::json!({
         "success": true,

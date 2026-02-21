@@ -1,5 +1,6 @@
 mod auth;
 mod db;
+mod embedded;
 mod handlers;
 mod image;
 mod init;
