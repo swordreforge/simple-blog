@@ -7,7 +7,6 @@ edition = "2021"
 # Web framework
 axum = { version = "0.7.9", features = ["multipart"] }
 tokio = { version = "1.35", features = ["rt-multi-thread", "macros", "net", "fs", "process", "signal"] }
-tower = "0.4"
 tower-http = { version = "0.5", features = ["fs", "cors", "trace"] }
 
 # Database
@@ -52,6 +51,3 @@ overflow-checks = false
 
 [build-dependencies]
 # upx binary compression will be handled manually
-
-[target.x86_64-unknown-linux-musl]
-rustflags = ["-C", "link-arg=-s"]
