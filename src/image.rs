@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
-use rand::Rng;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tokio::process::Command;
 
 pub async fn convert_to_webp(input_path: &Path, output_path: &Path) -> Result<()> {
@@ -44,36 +43,6 @@ pub fn get_file_extension(filename: &str) -> String {
         .next()
         .unwrap_or("")
         .to_lowercase()
-}
-
-pub fn is_webp_file(filename: &str) -> bool {
-    get_file_extension(filename) == "webp"
-}
-
-pub fn get_filename_without_ext(filename: &str) -> String {
-    let last_dot = filename.rfind('.');
-    match last_dot {
-        Some(dot) => filename[..dot].to_string(),
-        None => filename.to_string(),
-    }
-}
-
-pub async fn download_image(url: &str, output_path: &Path) -> Result<()> {
-    let response = reqwest::get(url).await?;
-
-    if !response.status().is_success() {
-        anyhow::bail!("HTTP error: {}", response.status());
-    }
-
-    let bytes = response.bytes().await?;
-
-    if let Some(parent) = output_path.parent() {
-        tokio::fs::create_dir_all(parent).await?;
-    }
-
-    tokio::fs::write(output_path, bytes).await?;
-
-    Ok(())
 }
 
 pub fn get_supported_extensions() -> &'static [&'static str] {

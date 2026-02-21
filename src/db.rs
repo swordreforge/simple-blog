@@ -93,14 +93,6 @@ impl Database {
         Ok(user)
     }
 
-    pub async fn get_user_by_id(&self, id: i64) -> Result<Option<UserWithPasswordHash>> {
-        let user = sqlx::query_as::<_, UserWithPasswordHash>("SELECT * FROM users WHERE id = ?")
-            .bind(id)
-            .fetch_optional(&self.pool)
-            .await?;
-        Ok(user)
-    }
-
     pub async fn insert_wallpaper(
         &self,
         filename: &str,

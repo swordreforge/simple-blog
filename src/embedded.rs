@@ -1,4 +1,4 @@
-use rust_embed::{RustEmbed, EmbeddedFile};
+use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
 #[folder = "public/"]

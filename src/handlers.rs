@@ -11,11 +11,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::auth::{AuthManager, AuthState, AuthenticatedUser};
+use crate::auth::AuthManager;
 use crate::db::Database;
 use crate::image::{convert_to_webp, generate_timestamped_filename, is_image_file};
 use crate::models::{
-    ApiResponse, CheckInitResponse, InitAdminRequest, LoginRequest, LoginResponse,
+    ApiResponse, CheckInitResponse, InitAdminRequest, LoginRequest,
     UpdateTagsRequest, User, Wallpaper, WallpaperType,
 };
 

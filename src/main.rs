@@ -9,11 +9,9 @@ mod routes;
 
 use anyhow::Result;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::signal;
 use tower_http::trace::TraceLayer;
-use tracing::Level;
 use tracing_subscriber::{
     layer::SubscriberExt,
     util::SubscriberInitExt,
@@ -61,10 +59,7 @@ async fn main() -> Result<()> {
 
     // Create router
     let app = create_router(app_state)
-        .layer(TraceLayer::new_for_http())
-        .layer(axum::extract::Extension(auth::AuthState {
-            auth_manager: auth_manager.clone(),
-        }));
+        .layer(TraceLayer::new_for_http());
 
     // Bind to address
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));

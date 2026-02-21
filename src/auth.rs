@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::db::Database;
-use crate::models::{LoginRequest, User, UserWithPasswordHash};
+use crate::models::{LoginRequest, User};
 
 const SESSION_TTL: i64 = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
@@ -134,45 +134,5 @@ impl AuthManager {
 
     pub async fn needs_admin_init(&self) -> Result<bool> {
         Ok(!self.db.has_user().await?)
-    }
-}
-
-#[derive(Clone)]
-pub struct AuthState {
-    pub auth_manager: Arc<AuthManager>,
-}
-
-// Extractor for authentication
-pub struct AuthenticatedUser {
-    pub user: User,
-}
-
-#[axum::async_trait]
-impl<S> axum::extract::FromRequestParts<S> for AuthenticatedUser
-where
-    S: Send + Sync,
-{
-    type Rejection = axum::http::StatusCode;
-
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        let auth_header = parts
-            .headers
-            .get("Authorization")
-            .and_then(|h| h.to_str().ok());
-
-        if let Some(auth_header) = auth_header {
-            if let Some(token) = auth_header.strip_prefix("Bearer ") {
-                if let Some(state) = parts.extensions.get::<AuthState>() {
-                    if let Some(user) = state.auth_manager.verify_session_token(token).await {
-                        return Ok(AuthenticatedUser { user });
-                    }
-                }
-            }
-        }
-
-        Err(axum::http::StatusCode::UNAUTHORIZED)
     }
 }

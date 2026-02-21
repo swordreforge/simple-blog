@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -70,13 +69,6 @@ pub struct UpdateTagsRequest {
 }
 
 #[derive(Debug, Serialize)]
-pub struct LoginResponse {
-    pub success: bool,
-    pub token: Option<String>,
-    pub user: Option<User>,
-}
-
-#[derive(Debug, Serialize)]
 pub struct ApiResponse<T> {
     pub success: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -91,14 +83,6 @@ impl<T> ApiResponse<T> {
             success: true,
             data: Some(data),
             error: None,
-        }
-    }
-
-    pub fn error(message: impl Into<String>) -> Self {
-        Self {
-            success: false,
-            data: None,
-            error: Some(message.into()),
         }
     }
 }
