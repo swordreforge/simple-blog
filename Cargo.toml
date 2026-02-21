@@ -36,12 +36,22 @@ mime_guess = "2.0"
 opt-level = "z"
 lto = "fat"
 codegen-units = 1
+debug = 0
 strip = true
 panic = "abort"
+debug-assertions = false
+incremental = false
+overflow-checks = false
 
 [profile.release.package."*"]
 opt-level = "z"
 strip = true
+debug-assertions = false
+incremental = false
+overflow-checks = false
 
 [build-dependencies]
 # upx binary compression will be handled manually
+
+[target.x86_64-unknown-linux-musl]
+rustflags = ["-C", "link-arg=-s"]
