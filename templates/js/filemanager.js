@@ -1,3 +1,1292 @@
-/* Terser compressed file */
-const t={t:"img",i:"img",o:null,l:[],h(){return`Bearer ${this.m("auth_token")}`},m(t){const e=`; ${document.cookie}`.split(`; ${t}=`);return 2===e.length?e.pop().split(";").shift():""},init(){this.p(),this.v()},p(){document.getElementById("backBtn").addEventListener("click",()=>this.goBack()),document.getElementById("uploadBtn").addEventListener("click",()=>this.u()),document.getElementById("createDirBtn").addEventListener("click",()=>this.k()),document.querySelectorAll(".fm-root-btn").forEach(t=>{t.addEventListener("click",t=>{const e=t.currentTarget.dataset.path;this.M(e)})}),document.querySelectorAll(".modal-close, .fm-modal-close-btn, .fm-modal-close").forEach(t=>{t.addEventListener("click",t=>{const e=t.target.closest(".modal")||t.target.closest(".fm-modal");e&&this.$(e)})});const t=document.getElementById("uploadArea"),e=document.getElementById("fileInput");t&&e?(t.addEventListener("click",t=>{t.stopPropagation(),t.preventDefault(),e.click()}),e.addEventListener("change",t=>{t.stopPropagation(),this.C(t)}),t.addEventListener("dragover",e=>{e.preventDefault(),e.stopPropagation(),t.classList.add("dragover")}),t.addEventListener("dragleave",e=>{e.preventDefault(),e.stopPropagation(),t.classList.remove("dragover")}),t.addEventListener("drop",e=>{e.preventDefault(),e.stopPropagation(),t.classList.remove("dragover"),this.B(e)})):console.error("\u4e0a\u4f20\u533a\u57df\u6216\u6587\u4ef6\u8f93\u5165\u6846\u672a\u627e\u5230"),document.getElementById("confirmUploadBtn").addEventListener("click",()=>this.A()),document.getElementById("confirmCreateDirBtn").addEventListener("click",()=>this.F()),document.getElementById("confirmRenameBtn").addEventListener("click",()=>this.V()),document.getElementById("confirmDeleteBtn").addEventListener("click",()=>this.I()),document.addEventListener("click",t=>{t.target.closest(".context-menu")||t.target.closest(".file-item")||this.T()}),document.addEventListener("keydown",t=>{"Escape"===t.key&&(this.T(),document.querySelectorAll(".modal.active, .fm-modal.active").forEach(t=>{this.$(t)}))})},async v(){if("attachments"!==this.i)try{const t=await fetch(`/api/files?path=${encodeURIComponent(this.t)}`,{headers:{D:this.h()}}),e=await t.json();e.H?(this.U(e.data.files),this.P(e.data.j),this.S(e.data.R),this.L(e.data.files.length)):this.N(e.message,"error")}catch(t){console.error("\u52a0\u8f7d\u6587\u4ef6\u5931\u8d25:",t),this.N("\u52a0\u8f7d\u6587\u4ef6\u5931\u8d25","error")}else await this.O()},async O(){try{const t=await fetch("/api/admin/attachments",{headers:{D:this.h()}}),e=await t.json();e.H?(this._=e.data,this.q(e.data),this.P("/attachments"),this.S(null),this.L(e.total)):this.N(e.message,"error")}catch(t){console.error("\u52a0\u8f7d\u9644\u4ef6\u5931\u8d25:",t),this.N("\u52a0\u8f7d\u9644\u4ef6\u5931\u8d25","error")}},q(t){const e=document.getElementById("fileGrid"),n=document.getElementById("emptyState");if(0===t.length)return e.innerHTML="",void(n.style.display="flex");n.style.display="none",e.innerHTML=t.map(t=>this.G(t)).join(""),e.querySelectorAll(".file-item").forEach(t=>{t.addEventListener("click",e=>{e.stopPropagation();const n=t.dataset.id;this.J(n,e)})})},G(t){const e={K:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',W:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>',X:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>'}[t.visibility]||'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',n={K:"\u516c\u5f00",W:"\u79c1\u5bc6",X:"\u53d7\u4fdd\u62a4"}[t.visibility]||"\u516c\u5f00",i=t.Y?'<span class="badge badge-success">\u663e\u793a</span>':'<span class="badge badge-secondary">\u9690\u85cf</span>';return`\n      <div class="file-item" data-id="${t.id}">\n        <div class="file-icon">${this.Z(t.tt)}</div>\n        <div class="file-info">\n          <div class="file-name">${t.et}</div>\n          <div class="file-meta">\n            <span>${e} ${n}</span>\n            ${i}\n            <span>${this.it(t.ot)}</span>\n          </div>\n        </div>\n      </div>\n    `},J(t,e){const n=this._?.find(e=>e.id===parseInt(t));if(!n)return;const i=document.createElement("div");i.className="context-menu",i.style.position="absolute",i.style.left=`${e.clientX}px`,i.style.top=`${e.clientY}px`,i.innerHTML=`\n      <div class="context-menu-item" data-action="toggle-visibility">\n        <span>\u5207\u6362\u53ef\u89c1\u6027</span>\n        <span class="context-menu-icon">${"public"===n.visibility?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'}</span>\n      </div>\n      <div class="context-menu-item" data-action="toggle-show">\n        <span>${n.Y?"\u5728\u6587\u7ae0\u4e2d\u9690\u85cf":"\u5728\u6587\u7ae0\u4e2d\u663e\u793a"}</span>\n        <span class="context-menu-icon">${n.Y?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'}</span>\n      </div>\n      <div class="context-menu-divider"></div>\n      <div class="context-menu-item context-menu-danger" data-action="delete">\n        <span>\u5220\u9664\u9644\u4ef6</span>\n        <span class="context-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></span>\n      </div>\n    `,document.body.appendChild(i),i.querySelectorAll(".context-menu-item").forEach(e=>{e.addEventListener("click",n=>{n.stopPropagation();const o=e.dataset.action;this.nt(t,o),i.remove()})}),setTimeout(()=>{document.addEventListener("click",function t(){i.remove(),document.removeEventListener("click",t)})},0)},async nt(t,e){switch(e){case"toggle-visibility":await this.st(t);break;case"toggle-show":await this.ct(t);break;case"delete":await this.rt(t)}},async st(t){const e=this._?.find(e=>e.id===parseInt(t));if(!e)return;const n="public"===e.visibility?"private":"public";try{const e=await fetch(`/api/admin/attachments/${t}`,{method:"PATCH",headers:{D:this.h(),dt:"application/json"},body:JSON.stringify({visibility:n})}),i=await e.json();i.H?(this.N("\u66f4\u65b0\u6210\u529f","success"),this.O()):this.N(i.message,"error")}catch(t){console.error("\u66f4\u65b0\u9644\u4ef6\u5931\u8d25:",t),this.N("\u66f4\u65b0\u9644\u4ef6\u5931\u8d25","error")}},async ct(t){const e=this._?.find(e=>e.id===parseInt(t));if(e)try{const n=await fetch(`/api/admin/attachments?id=${t}`,{method:"PATCH",headers:{D:this.h(),dt:"application/json"},body:JSON.stringify({Y:!e.Y})}),i=await n.json();i.H?(this.N("\u66f4\u65b0\u6210\u529f","success"),this.O()):this.N(i.message,"error")}catch(t){console.error("\u66f4\u65b0\u9644\u4ef6\u5931\u8d25:",t),this.N("\u66f4\u65b0\u9644\u4ef6\u5931\u8d25","error")}},async rt(t){if(confirm("\u786e\u5b9a\u8981\u5220\u9664\u6b64\u9644\u4ef6\u5417\uff1f\u6b64\u64cd\u4f5c\u4e0d\u53ef\u6062\u590d\u3002"))try{const e=await fetch(`/api/admin/attachments/${t}`,{method:"DELETE",headers:{D:this.h()}}),n=await e.json();n.H?(this.N("\u5220\u9664\u6210\u529f","success"),this.O()):this.N(n.message,"error")}catch(t){console.error("\u5220\u9664\u9644\u4ef6\u5931\u8d25:",t),this.N("\u5220\u9664\u9644\u4ef6\u5931\u8d25","error")}},it(t){if(0===t)return"0 B";const e=Math.floor(Math.log(t)/Math.log(1024));return Math.round(t/Math.pow(1024,e)*100)/100+" "+["B","KB","MB","GB"][e]},Z:t=>({image:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <rect x="3" y="3" width="18" height="18" rx="3" ry="3"/>\n        <circle cx="8.5" cy="8.5" r="1.5"/>\n        <path d="M21 15l-5-5L5 21"/>\n      </svg>',lt:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>\n        <rect x="2" y="2" width="20" height="20" rx="3" ry="3"/>\n      </svg>',ht:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M9 18V5l12-2v13"/>\n        <circle cx="6" cy="18" r="3" fill="currentColor"/>\n        <circle cx="18" cy="16" r="3" fill="currentColor"/>\n      </svg>',document:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <line x1="16" y1="13" x2="8" y2="13"/>\n        <line x1="16" y1="17" x2="8" y2="17"/>\n        <polyline points="10 9 9 9 8 9"/>\n      </svg>',archive:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>\n        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>\n        <line x1="12" y1="22.08" x2="12" y2="12"/>\n      </svg>',vt:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <path d="M10 13l-2 2 2 2"/>\n        <path d="M14 13l2 2-2 2"/>\n      </svg>',code:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M16 18l6-6-6-6"/>\n        <path d="M8 6l-6 6 6 6"/>\n      </svg>',ut:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <text x="7" y="17" font-size="6" font-weight="bold" fill="currentColor">PDF</text>\n      </svg>',wt:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <text x="4" y="17" font-size="5" font-weight="bold" fill="currentColor">DOC</text>\n      </svg>',ft:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <rect x="7" y="10" width="10" height="2"/>\n        <rect x="7" y="14" width="10" height="2"/>\n        <rect x="7" y="18" width="10" height="2"/>\n      </svg>',gt:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <rect x="8" y="11" width="8" height="6" rx="1"/>\n      </svg>',text:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <line x1="16" y1="13" x2="8" y2="13"/>\n        <line x1="16" y1="17" x2="8" y2="17"/>\n        <line x1="10" y1="9" x2="8" y2="9"/>\n      </svg>',font:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <text x="6" y="18" font-size="10" font-weight="bold" fill="currentColor">Aa</text>\n      </svg>',database:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <ellipse cx="12" cy="5" rx="9" ry="3"/>\n        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>\n        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>\n      </svg>',xt:'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n        <polyline points="14 2 14 8 20 8"/>\n        <circle cx="12" cy="14" r="3"/>\n        <line x1="12" y1="11" x2="12" y2="17"/>\n        <line x1="9" y1="14" x2="15" y2="14"/>\n      </svg>'}[t]||'<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>\n      <polyline points="14 2 14 8 20 8"/>\n      <line x1="12" y1="18" x2="12" y2="12"/>\n      <line x1="9" y1="15" x2="15" y2="15"/>\n    </svg>'),U(t){const e=document.getElementById("fileGrid"),n=document.getElementById("emptyState");if(0===t.length)return e.innerHTML="",void(n.style.display="flex");n.style.display="none";const i=[...t].sort((t,e)=>t.yt&&!e.yt?-1:!t.yt&&e.yt?1:t.name.localeCompare(e.name));e.innerHTML=i.map(t=>this.kt(t)).join(""),e.querySelectorAll(".file-item").forEach(t=>{t.addEventListener("click",e=>{e.stopPropagation();const n=t.dataset.path;"true"===t.dataset.bt?this.Mt(n):n.toLowerCase().endsWith(".md")?this.$t(n):this.Ct(n)}),t.addEventListener("contextmenu",e=>{e.preventDefault();const n=t.dataset.path,i="true"===t.dataset.bt;this.Bt(e,n,i)})})},kt(t){let e,n="";t.yt?(e='<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>\n      </svg>',n="directory"):[".jpg",".jpeg",".png",".gif",".webp",".bmp",".svg",".ico",".tiff",".tif",".avif",".jxl"].includes(t.extension)?(e=`<img src="/${t.path}" alt="${t.name}" onerror="this.parentElement.innerHTML='<svg width=\\'72\\' height=\\'72\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'3\\' ry=\\'3\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><path d=\\'21 15l-5-5L5 21\\'></path></svg>'">`,n="image"):[".mp3",".flac",".wav",".ogg",".m4a",".aac",".wma",".opus",".ape",".wv",".tta"].includes(t.extension)?(e=this.Z("audio"),n="audio"):[".mp4",".webm",".mkv",".avi",".mov",".wmv",".flv",".m4v",".3gp",".ts",".m2ts"].includes(t.extension)?(e=this.Z("video"),n="video"):".md"===t.extension?(e=this.Z("markdown"),n="markdown"):[".pdf"].includes(t.extension)?(e=this.Z("pdf"),n="document pdf"):[".doc",".docx",".odt",".rtf"].includes(t.extension)?(e=this.Z("word"),n="document word"):[".xls",".xlsx",".ods",".csv"].includes(t.extension)?(e=this.Z("excel"),n="document excel"):[".ppt",".pptx",".odp"].includes(t.extension)?(e=this.Z("ppt"),n="document ppt"):[".txt",".log",".md"].includes(t.extension)?(e=this.Z("text"),n="document text"):[".zip",".rar",".7z",".tar",".gz",".bz2",".xz",".tar.gz",".tar.bz2",".tar.xz"].includes(t.extension)?(e=this.Z("archive"),n="archive"):[".html",".htm",".css",".js",".ts",".jsx",".tsx",".vue",".svelte",".json",".xml",".yaml",".yml",".toml",".ini",".cfg",".conf"].includes(t.extension)?(e=this.Z("code"),n="code"):[".ttf",".otf",".woff",".woff2",".eot"].includes(t.extension)?(e=this.Z("font"),n="font"):[".db",".sqlite",".sqlite3",".mdb",".sql"].includes(t.extension)?(e=this.Z("database"),n="database"):[".exe",".app",".dmg",".msi",".deb",".rpm",".sh",".bat",".cmd",".ps1"].includes(t.extension)?(e=this.Z("executable"),n="executable"):(e=this.Z("default"),n="file");const i=this.it(t.size);return`\n      <div class="file-item ${n}" data-path="${t.path}" data-is-dir="${t.yt}">\n        <div class="file-icon">${e}</div>\n        <div class="file-name">${t.name}</div>\n        <div class="file-meta">${t.yt?"\u6587\u4ef6\u5939":i}</div>\n      </div>\n    `},it(t){if(0===t)return"0 B";const e=Math.floor(Math.log(t)/Math.log(1024));return parseFloat((t/Math.pow(1024,e)).toFixed(2))+" "+["B","KB","MB","GB"][e]},P(t){document.getElementById("currentPath").textContent=t||"/"},S(t){document.getElementById("backBtn").disabled=!t},L(t){document.getElementById("fileCount").textContent=`${t} \u4e2a\u9879\u76ee`},M(t){this.i=t,this.t=t,document.querySelectorAll(".fm-root-btn").forEach(e=>{e.classList.toggle("fm-root-btn-active",e.dataset.path===t)}),this.v()},Mt(t){this.t=t,this.v()},goBack(){const t=this.zt(this.t);t&&this.Mt(t)},zt(t){if(t===this.i)return null;const e=t.split("/");return e.pop(),e.join("/")||this.i},async Ct(t){const e=t.split(".").pop().toLowerCase(),n=t.split("/").pop();if("md"!==e)if([".jpg",".jpeg",".png",".gif",".webp",".bmp",".svg",".ico",".tiff",".tif"].includes("."+e))this.At(t,n);else if([".mp3",".flac",".wav",".ogg",".m4a",".aac",".wma"].includes("."+e))this.Ft(t,n);else if([".mp4",".webm",".mkv",".avi",".mov",".wmv",".flv"].includes("."+e))this.Vt(t,n);else if([".pdf",".doc",".docx",".xls",".xlsx",".ppt",".pptx",".txt"].includes("."+e))this.It(t,n,e);else try{const e=await fetch(`/api/files/download?path=${encodeURIComponent(t)}`,{headers:{D:this.h()}});if(!e.ok){const t=await e.json();return void this.N(t.message||"\u4e0b\u8f7d\u5931\u8d25","error")}const i=await e.blob(),o=window.URL.createObjectURL(i),s=document.createElement("a");s.href=o,s.download=n,document.body.appendChild(s),s.click(),document.body.removeChild(s),window.URL.revokeObjectURL(o)}catch(t){console.error("\u4e0b\u8f7d\u5931\u8d25:",t),this.N("\u4e0b\u8f7d\u5931\u8d25","error")}else this.$t(t)},At(t,e){const n=`/${t}`,i=document.createElement("div");i.className="fm-modal preview-modal",i.innerHTML=`\n      <div class="fm-modal-content preview-content">\n        <div class="fm-modal-header">\n          <h3>${e}</h3>\n          <button class="fm-modal-close">&times;</button>\n        </div>\n        <div class="fm-modal-body preview-body">\n          <img src="${n}" alt="${e}" class="preview-image">\n        </div>\n      </div>\n    `,document.body.appendChild(i);const o=i.querySelector(".fm-modal-close"),s=()=>{document.body.removeChild(i)};o.addEventListener("click",s),i.addEventListener("click",t=>{t.target===i&&s()});const a=t=>{"Escape"===t.key&&(s(),document.removeEventListener("keydown",a))};document.addEventListener("keydown",a),i.classList.add("active")},Ft(t,e){const n=`/${t}`,i=document.createElement("div");i.className="fm-modal preview-modal",i.innerHTML=`\n      <div class="fm-modal-content preview-content audio-preview">\n        <div class="fm-modal-header">\n          <h3>${e}</h3>\n          <button class="fm-modal-close">&times;</button>\n        </div>\n        <div class="fm-modal-body preview-body">\n          <div class="audio-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>\n          <audio controls autoplay class="preview-audio">\n            <source src="${n}" type="audio/${t.split(".").pop()}">\n            \u60a8\u7684\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u97f3\u9891\u64ad\u653e\n          </audio>\n        </div>\n      </div>\n    `,document.body.appendChild(i);const o=i.querySelector(".fm-modal-close"),s=()=>{const t=i.querySelector("audio");t&&t.pause(),document.body.removeChild(i)};o.addEventListener("click",s),i.addEventListener("click",t=>{t.target===i&&s()});const a=t=>{"Escape"===t.key&&(s(),document.removeEventListener("keydown",a))};document.addEventListener("keydown",a),i.classList.add("active")},Vt(t,e){const n=`/${t}`,i=document.createElement("div");i.className="fm-modal preview-modal",i.innerHTML=`\n      <div class="fm-modal-content preview-content video-preview">\n        <div class="fm-modal-header">\n          <h3>${e}</h3>\n          <button class="fm-modal-close">&times;</button>\n        </div>\n        <div class="fm-modal-body preview-body">\n          <video controls autoplay class="preview-video">\n            <source src="${n}" type="video/${t.split(".").pop()}">\n            \u60a8\u7684\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u89c6\u9891\u64ad\u653e\n          </video>\n        </div>\n      </div>\n    `,document.body.appendChild(i);const o=i.querySelector(".fm-modal-close"),s=()=>{const t=i.querySelector("video");t&&(t.pause(),t.currentTime=0),document.body.removeChild(i)};o.addEventListener("click",s),i.addEventListener("click",t=>{t.target===i&&s()});const a=t=>{"Escape"===t.key&&(s(),document.removeEventListener("keydown",a))};document.addEventListener("keydown",a),requestAnimationFrame(()=>{i.classList.add("active")})},async It(t,e,n){const i=`/${t}`,o=document.createElement("div");o.className="fm-modal preview-modal";let s="",a="document-preview";switch(n){case"pdf":s=`\n          <embed src="${i}" type="application/pdf" class="preview-embed" />\n        `,a="pdf-preview";break;case"txt":s=`\n          <iframe src="${i}" class="preview-iframe"></iframe>\n        `,a="txt-preview";break;case"doc":case"docx":case"xls":case"xlsx":case"ppt":case"pptx":s=`\n          <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin+"/"+t)}&embedded=true" class="preview-iframe"></iframe>\n        `,a="office-preview";break;default:s=`\n          <div class="preview-placeholder">\n            <div class="placeholder-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>\n            <p>\u6b64\u6587\u4ef6\u7c7b\u578b\u6682\u4e0d\u652f\u6301\u5728\u7ebf\u9884\u89c8</p>\n            <button class="fm-btn fm-btn-primary" onclick="FileManager.downloadFile('${t}')">\u4e0b\u8f7d\u6587\u4ef6</button>\n          </div>\n        `}o.innerHTML=`\n      <div class="fm-modal-content preview-content ${a}">\n        <div class="fm-modal-header">\n          <h3>${e}</h3>\n          <button class="fm-modal-close">&times;</button>\n        </div>\n        <div class="fm-modal-body preview-body">\n          ${s}\n        </div>\n        <div class="fm-modal-footer">\n          <button class="fm-btn fm-btn-secondary fm-modal-close-btn">\u5173\u95ed</button>\n          <button class="fm-btn fm-btn-primary" onclick="FileManager.downloadFile('${t}')">\u4e0b\u8f7d\u6587\u4ef6</button>\n        </div>\n      </div>\n    `,document.body.appendChild(o);const r=o.querySelector(".fm-modal-close"),d=()=>{document.body.removeChild(o)};r.addEventListener("click",d),o.addEventListener("click",t=>{t.target===o&&d()}),o.querySelectorAll(".fm-modal-close-btn").forEach(t=>{t.addEventListener("click",d)});const c=t=>{"Escape"===t.key&&(d(),document.removeEventListener("keydown",c))};document.addEventListener("keydown",c),o.classList.add("active")},async $t(t){if(window.MarkdownPreviewModal)this.Tt(t);else{const e=document.createElement("script");e.src="/js/markdown-preview-modal.js",e.onload=()=>{this.Tt(t)},e.onerror=()=>{this.N("\u9884\u89c8\u7ec4\u4ef6\u52a0\u8f7d\u5931\u8d25","error")},document.head.appendChild(e)}},Tt(t){let e=t;if(e.startsWith("/")){const n=e.indexOf("/markdown/");if(-1===n)return console.error("\u65e0\u6548\u7684 Markdown \u8def\u5f84:",t),void this.N("\u65e0\u6548\u7684 Markdown \u8def\u5f84","error");e=e.substring(n+10)}else{if(!e.startsWith("markdown/"))return console.error("\u65e0\u6548\u7684 Markdown \u8def\u5f84:",t),void this.N("\u65e0\u6548\u7684 Markdown \u8def\u5f84","error");e=e.substring(9)}if(!e||"/"===e||""===e.trim())return console.error("\u63d0\u53d6\u540e\u7684 Markdown \u8def\u5f84\u65e0\u6548:",e),void this.N("\u65e0\u6548\u7684 Markdown \u8def\u5f84","error");console.log("Markdown \u9884\u89c8\u8def\u5f84:",e),window.MarkdownPreviewModal?window.MarkdownPreviewModal.open(e):this.N("\u9884\u89c8\u529f\u80fd\u4e0d\u53ef\u7528","error")},async Dt(t){try{const e=await fetch(`/api/files/download?path=${encodeURIComponent(t)}`,{headers:{D:this.h()}});if(!e.ok){const t=await e.json();return void this.N(t.message||"\u4e0b\u8f7d\u5931\u8d25","error")}const n=t.split("/").pop(),i=await e.blob(),o=window.URL.createObjectURL(i),s=document.createElement("a");s.href=o,s.download=n,document.body.appendChild(s),s.click(),document.body.removeChild(s),window.URL.revokeObjectURL(o)}catch(t){console.error("\u4e0b\u8f7d\u5931\u8d25:",t),this.N("\u4e0b\u8f7d\u5931\u8d25","error")}},Bt(t,e,n){this.o={path:e,bt:n};const i=document.getElementById("contextMenu");i.style.left=t.pageX+"px",i.style.top=t.pageY+"px",i.classList.add("active");const o=e.toLowerCase().endsWith(".md"),s=i.querySelectorAll(".context-menu-item");s.forEach(t=>{const e=t.dataset.action;t.style.display="download"===e&&n?"none":"preview"===e?o&&!n?"flex":"none":"flex"}),s.forEach(t=>{t.onclick=()=>{this.Ht(t.dataset.action),this.T()}})},T(){document.getElementById("contextMenu").classList.remove("active")},Ht(t){if(this.o)switch(t){case"open":this.o.bt?this.Mt(this.o.path):this.Ct(this.o.path);break;case"preview":this.$t(this.o.path);break;case"download":this.Dt(this.o.path);break;case"rename":this.Ut();break;case"delete":this.Pt()}},u(){this.l=[],this.jt(),document.getElementById("uploadModal").classList.add("active")},C(t){const e=Array.from(t.target.files);this.Et(e),t.target.value=""},B(t){const e=Array.from(t.dataTransfer.files);this.Et(e)},Et(t){t.forEach(t=>{this.l.find(e=>e.name===t.name)||this.l.push(t)}),this.jt()},jt(){const t=document.getElementById("uploadList"),e=document.getElementById("confirmUploadBtn");if(0===this.l.length)return t.innerHTML="",void(e.disabled=!0);e.disabled=!1,t.innerHTML=this.l.map((t,e)=>`\n      <div class="upload-item">\n        <div class="upload-item-name">${t.name}</div>\n        <div class="upload-item-size">${this.it(t.size)}</div>\n        <button class="upload-item-remove" onclick="FileManager.removeFileFromUpload(${e})">\u2715</button>\n      </div>\n    `).join("")},St(t){this.l.splice(t,1),this.jt()},async A(){if(0===this.l.length)return;const t=document.getElementById("confirmUploadBtn");t.disabled=!0,t.textContent="\u4e0a\u4f20\u4e2d...";let e=0,n=0;for(const i of this.l)try{const t=new FormData;t.append("file",i);const o=await fetch(`/api/files?path=${encodeURIComponent(this.t)}`,{method:"POST",headers:{D:this.h()},body:t}),s=await o.json();s.H?e++:(n++,console.error("\u4e0a\u4f20\u5931\u8d25:",s.message))}catch(t){console.error("\u4e0a\u4f20\u5931\u8d25:",t),n++}this.$(document.getElementById("uploadModal")),this.v(),e>0&&0===n?this.N(`\u6210\u529f\u4e0a\u4f20 ${e} \u4e2a\u6587\u4ef6`,"success"):e>0?this.N(`\u6210\u529f\u4e0a\u4f20 ${e} \u4e2a\u6587\u4ef6\uff0c\u5931\u8d25 ${n} \u4e2a`,"warning"):this.N("\u4e0a\u4f20\u5931\u8d25","error"),t.disabled=!1,t.textContent="\u4e0a\u4f20"},k(){document.getElementById("dirNameInput").value="",document.getElementById("createDirModal").classList.add("active"),setTimeout(()=>{document.getElementById("dirNameInput").focus()},100)},async F(){const t=document.getElementById("dirNameInput").value.trim();if(t)try{const e=await fetch("/api/files/create-dir",{method:"POST",headers:{dt:"application/json",D:this.h()},body:JSON.stringify({path:this.t,Rt:t})}),n=await e.json();n.H?(this.N("\u6587\u4ef6\u5939\u521b\u5efa\u6210\u529f","success"),this.$(document.getElementById("createDirModal")),this.v()):this.N(n.message,"error")}catch(t){console.error("\u521b\u5efa\u76ee\u5f55\u5931\u8d25:",t),this.N("\u521b\u5efa\u6587\u4ef6\u5939\u5931\u8d25","error")}else this.N("\u8bf7\u8f93\u5165\u6587\u4ef6\u5939\u540d\u79f0","warning")},Ut(){if(!this.o)return;const t=this.o.path.split("/").pop();document.getElementById("renameInput").value=t,document.getElementById("renameModal").classList.add("active"),setTimeout(()=>{document.getElementById("renameInput").focus(),document.getElementById("renameInput").select()},100)},async V(){if(!this.o)return;const t=document.getElementById("renameInput").value.trim();if(t)try{const e=await fetch("/api/files",{method:"PUT",headers:{dt:"application/json",D:this.h()},body:JSON.stringify({Lt:this.o.path,Nt:t})}),n=await e.json();n.H?(this.N("\u91cd\u547d\u540d\u6210\u529f","success"),this.$(document.getElementById("renameModal")),this.v()):this.N(n.message,"error")}catch(t){console.error("\u91cd\u547d\u540d\u5931\u8d25:",t),this.N("\u91cd\u547d\u540d\u5931\u8d25","error")}else this.N("\u8bf7\u8f93\u5165\u65b0\u540d\u79f0","warning")},Pt(){if(!this.o)return;const t=this.o.path.split("/").pop();document.getElementById("deleteFileName").textContent=t,document.getElementById("deleteModal").classList.add("active")},async I(){if(this.o)try{const t=await fetch(`/api/files?path=${encodeURIComponent(this.o.path)}`,{method:"DELETE",headers:{D:this.h()}}),e=await t.json();e.H?(this.N("\u5220\u9664\u6210\u529f","success"),this.$(document.getElementById("deleteModal")),this.v()):this.N(e.message,"error")}catch(t){console.error("\u5220\u9664\u5931\u8d25:",t),this.N("\u5220\u9664\u5931\u8d25","error")}},$(t){t.classList.remove("active"),t.classList.add("closing"),setTimeout(()=>{t.classList.remove("closing")},300)},N(t,e="success"){const n=document.getElementById("toast");n.textContent=t,n.className=`toast ${e} active`,setTimeout(()=>{n.classList.remove("active")},3e3)}};document.addEventListener("DOMContentLoaded",()=>{t.init()});
-//# sourceMappingURL=filemanager.min.js.map
+// 文件管理器状态
+const FileManager = {
+  currentPath: 'img',
+  currentRoot: 'img',
+  selectedFile: null,
+  filesToUpload: [],
+  
+  // 获取认证头
+  getAuthHeader() {
+    const token = this.getCookie('auth_token');
+    return `Bearer ${token}`;
+  },
+  
+  // 获取Cookie
+  getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  },
+  
+  // 初始化
+  init() {
+    this.bindEvents();
+    this.loadFiles();
+  },
+  
+  // 绑定事件
+  bindEvents() {
+    // 返回按钮
+    document.getElementById('backBtn').addEventListener('click', () => this.goBack());
+    
+    // 上传按钮
+    document.getElementById('uploadBtn').addEventListener('click', () => this.openUploadModal());
+    
+    // 新建文件夹按钮
+    document.getElementById('createDirBtn').addEventListener('click', () => this.openCreateDirModal());
+    
+    // 根目录切换
+    document.querySelectorAll('.fm-root-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const path = e.currentTarget.dataset.path;
+        this.switchRoot(path);
+      });
+    });
+    
+    // 模态框关闭
+    document.querySelectorAll('.modal-close, .fm-modal-close-btn, .fm-modal-close').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const modal = e.target.closest('.modal') || e.target.closest('.fm-modal');
+        if (modal) {
+          this.closeModal(modal);
+        }
+      });
+    });
+    
+    // 上传区域
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    if (uploadArea && fileInput) {
+      // 点击上传区域触发文件选择
+      uploadArea.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        fileInput.click();
+      });
+
+      // 文件选择变化事件
+      fileInput.addEventListener('change', (e) => {
+        e.stopPropagation();
+        this.handleFileSelect(e);
+      });
+
+      // 拖拽悬停效果
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.add('dragover');
+      });
+
+      // 拖拽离开效果
+      uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('dragover');
+      });
+
+      // 拖拽放下事件
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('dragover');
+        this.handleFileDrop(e);
+      });
+    } else {
+      console.error('上传区域或文件输入框未找到');
+    }
+    
+    // 确认上传
+    document.getElementById('confirmUploadBtn').addEventListener('click', () => this.uploadFiles());
+    
+    // 确认创建目录
+    document.getElementById('confirmCreateDirBtn').addEventListener('click', () => this.createDirectory());
+    
+    // 确认重命名
+    document.getElementById('confirmRenameBtn').addEventListener('click', () => this.renameFile());
+    
+    // 确认删除
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.deleteFile());
+    
+    // 点击外部关闭上下文菜单
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.context-menu') && !e.target.closest('.file-item')) {
+        this.hideContextMenu();
+      }
+    });
+    
+    // 键盘事件
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.hideContextMenu();
+        document.querySelectorAll('.modal.active, .fm-modal.active').forEach(modal => {
+          this.closeModal(modal);
+        });
+      }
+    });
+  },
+  
+  // 加载文件列表
+  async loadFiles() {
+    // 如果是附件管理，加载附件列表
+    if (this.currentRoot === 'attachments') {
+      await this.loadAttachments();
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`, {
+        headers: {
+          'Authorization': this.getAuthHeader()
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        this.renderFiles(result.data.files);
+        this.updateBreadcrumb(result.data.current_path);
+        this.updateBackButton(result.data.parent_path);
+        this.updateFileCount(result.data.files.length);
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('加载文件失败:', error);
+      this.showToast('加载文件失败', 'error');
+    }
+  },
+
+  // 加载附件列表
+  async loadAttachments() {
+    try {
+      const response = await fetch('/api/admin/attachments', {
+        headers: {
+          'Authorization': this.getAuthHeader()
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        this.currentAttachments = result.data;
+        this.renderAttachments(result.data);
+        this.updateBreadcrumb('/attachments');
+        this.updateBackButton(null);
+        this.updateFileCount(result.total);
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('加载附件失败:', error);
+      this.showToast('加载附件失败', 'error');
+    }
+  },
+
+  // 渲染附件列表
+  renderAttachments(attachments) {
+    const fileGrid = document.getElementById('fileGrid');
+    const emptyState = document.getElementById('emptyState');
+
+    if (attachments.length === 0) {
+      fileGrid.innerHTML = '';
+      emptyState.style.display = 'flex';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    fileGrid.innerHTML = attachments.map(att => this.createAttachmentItem(att)).join('');
+
+    // 绑定附件项事件
+    fileGrid.querySelectorAll('.file-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = item.dataset.id;
+        this.showAttachmentMenu(id, e);
+      });
+    });
+  },
+
+  // 创建附件项
+  createAttachmentItem(attachment) {
+    const visibilityIcon = {
+      'public': '🌐',
+      'private': '🔒',
+      'protected': '🛡️'
+    }[attachment.visibility] || '🌐';
+
+    const visibilityLabel = {
+      'public': '公开',
+      'private': '私密',
+      'protected': '受保护'
+    }[attachment.visibility] || '公开';
+
+    const showInPassageBadge = attachment.show_in_passage
+      ? '<span class="badge badge-success">显示</span>'
+      : '<span class="badge badge-secondary">隐藏</span>';
+
+    return `
+      <div class="file-item" data-id="${attachment.id}">
+        <div class="file-icon">${this.getFileIcon(attachment.file_type)}</div>
+        <div class="file-info">
+          <div class="file-name">${attachment.file_name}</div>
+          <div class="file-meta">
+            <span>${visibilityIcon} ${visibilityLabel}</span>
+            ${showInPassageBadge}
+            <span>${this.formatFileSize(attachment.file_size)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  // 显示附件管理菜单
+  showAttachmentMenu(id, event) {
+    const attachment = this.currentAttachments?.find(a => a.id === parseInt(id));
+    if (!attachment) return;
+
+    // 创建菜单
+    const menu = document.createElement('div');
+    menu.className = 'context-menu';
+    menu.style.position = 'absolute';
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+
+    menu.innerHTML = `
+      <div class="context-menu-item" data-action="toggle-visibility">
+        <span>切换可见性</span>
+        <span class="context-menu-icon">${attachment.visibility === 'public' ? '🔒' : '🌐'}</span>
+      </div>
+      <div class="context-menu-item" data-action="toggle-show">
+        <span>${attachment.show_in_passage ? '在文章中隐藏' : '在文章中显示'}</span>
+        <span class="context-menu-icon">${attachment.show_in_passage ? '👁️‍🗨️' : '👁️'}</span>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div class="context-menu-item context-menu-danger" data-action="delete">
+        <span>删除附件</span>
+        <span class="context-menu-icon">🗑️</span>
+      </div>
+    `;
+
+    document.body.appendChild(menu);
+
+    // 绑定菜单项事件
+    menu.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = item.dataset.action;
+        this.handleAttachmentAction(id, action);
+        menu.remove();
+      });
+    });
+
+    // 点击其他地方关闭菜单
+    setTimeout(() => {
+      document.addEventListener('click', function closeMenu() {
+        menu.remove();
+        document.removeEventListener('click', closeMenu);
+      });
+    }, 0);
+  },
+
+  // 处理附件操作
+  async handleAttachmentAction(id, action) {
+    switch (action) {
+      case 'toggle-visibility':
+        await this.toggleAttachmentVisibility(id);
+        break;
+      case 'toggle-show':
+        await this.toggleAttachmentShow(id);
+        break;
+      case 'delete':
+        await this.deleteAttachment(id);
+        break;
+    }
+  },
+
+  // 切换附件可见性
+  async toggleAttachmentVisibility(id) {
+    const attachment = this.currentAttachments?.find(a => a.id === parseInt(id));
+    if (!attachment) return;
+
+    const newVisibility = attachment.visibility === 'public' ? 'private' : 'public';
+
+    try {
+      const response = await fetch(`/api/admin/attachments/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': this.getAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          visibility: newVisibility
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        this.showToast('更新成功', 'success');
+        this.loadAttachments();
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('更新附件失败:', error);
+      this.showToast('更新附件失败', 'error');
+    }
+  },
+
+  // 切换附件在文章中的显示
+  async toggleAttachmentShow(id) {
+    const attachment = this.currentAttachments?.find(a => a.id === parseInt(id));
+    if (!attachment) return;
+
+    try {
+      const response = await fetch(`/api/admin/attachments?id=${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': this.getAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          show_in_passage: !attachment.show_in_passage
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        this.showToast('更新成功', 'success');
+        this.loadAttachments();
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('更新附件失败:', error);
+      this.showToast('更新附件失败', 'error');
+    }
+  },
+
+  // 删除附件
+  async deleteAttachment(id) {
+    if (!confirm('确定要删除此附件吗？此操作不可恢复。')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/attachments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': this.getAuthHeader()
+        }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        this.showToast('删除成功', 'success');
+        this.loadAttachments();
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('删除附件失败:', error);
+      this.showToast('删除附件失败', 'error');
+    }
+  },
+
+  // 格式化文件大小
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  },
+
+  // 获取文件图标
+  getFileIcon(fileType) {
+    const icons = {
+      'image': '🖼️',
+      'video': '🎬',
+      'audio': '🎵',
+      'document': '📄',
+      'archive': '📦'
+    };
+    return icons[fileType] || '📁';
+  },
+  
+  // 渲染文件列表
+  renderFiles(files) {
+    const fileGrid = document.getElementById('fileGrid');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (files.length === 0) {
+      fileGrid.innerHTML = '';
+      emptyState.style.display = 'flex';
+      return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    // 先显示目录，再显示文件
+    const sortedFiles = [...files].sort((a, b) => {
+      if (a.is_dir && !b.is_dir) return -1;
+      if (!a.is_dir && b.is_dir) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
+    fileGrid.innerHTML = sortedFiles.map(file => this.createFileItem(file)).join('');
+    
+    // 绑定文件项事件
+    fileGrid.querySelectorAll('.file-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const path = item.dataset.path;
+        const isDir = item.dataset.isDir === 'true';
+        
+        if (isDir) {
+          this.navigateTo(path);
+        } else {
+          // 检查是否是 markdown 文件
+          if (path.toLowerCase().endsWith('.md')) {
+            // Markdown 文件使用模态框预览
+            this.previewMarkdownFile(path);
+          } else {
+            // 其他文件使用原有的打开逻辑
+            this.openFile(path);
+          }
+        }
+      });
+      
+      item.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const path = item.dataset.path;
+        const isDir = item.dataset.isDir === 'true';
+        this.showContextMenu(e, path, isDir);
+      });
+    });
+  },
+  
+  // 创建文件项HTML
+  createFileItem(file) {
+    let icon = '📄';
+    let typeClass = '';
+    
+    if (file.is_dir) {
+      icon = '📁';
+      typeClass = 'directory';
+    } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes(file.extension)) {
+      icon = `<img src="/${file.path}" alt="${file.name}" onerror="this.parentElement.innerHTML='🖼️'">`;
+      typeClass = 'image';
+    } else if (['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus', '.ape'].includes(file.extension)) {
+      icon = '🎵';
+      typeClass = 'audio';
+    } else if (['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.m4v', '.3gp'].includes(file.extension)) {
+      icon = '🎬';
+      typeClass = 'video';
+    } else if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'].includes(file.extension)) {
+      icon = '📄';
+      typeClass = 'document';
+    } else if (file.extension === '.md') {
+      icon = '📝';
+      typeClass = 'markdown';
+    }
+    
+    const size = this.formatFileSize(file.size);
+    
+    return `
+      <div class="file-item ${typeClass}" data-path="${file.path}" data-is-dir="${file.is_dir}">
+        <div class="file-icon">${icon}</div>
+        <div class="file-name">${file.name}</div>
+        <div class="file-meta">${file.is_dir ? '文件夹' : size}</div>
+      </div>
+    `;
+  },
+  
+  // 格式化文件大小
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+  
+  // 更新面包屑
+  updateBreadcrumb(path) {
+    document.getElementById('currentPath').textContent = path || '/';
+  },
+  
+  // 更新返回按钮状态
+  updateBackButton(parentPath) {
+    const backBtn = document.getElementById('backBtn');
+    backBtn.disabled = !parentPath;
+  },
+  
+  // 更新文件计数
+  updateFileCount(count) {
+    document.getElementById('fileCount').textContent = `${count} 个项目`;
+  },
+  
+  // 切换根目录
+  switchRoot(root) {
+    this.currentRoot = root;
+    this.currentPath = root;
+    
+    // 更新根目录按钮状态
+    document.querySelectorAll('.fm-root-btn').forEach(btn => {
+      btn.classList.toggle('fm-root-btn-active', btn.dataset.path === root);
+    });
+    
+    this.loadFiles();
+  },
+  
+  // 导航到目录
+  navigateTo(path) {
+    this.currentPath = path;
+    this.loadFiles();
+  },
+  
+  // 返回上级目录
+  goBack() {
+    const parentPath = this.getParentPath(this.currentPath);
+    if (parentPath) {
+      this.navigateTo(parentPath);
+    }
+  },
+  
+  // 获取父目录路径
+  getParentPath(path) {
+    if (path === this.currentRoot) {
+      return null;
+    }
+    const parts = path.split('/');
+    parts.pop();
+    const parent = parts.join('/');
+    return parent || this.currentRoot;
+  },
+  
+  // 打开文件
+  async openFile(path) {
+    const extension = path.split('.').pop().toLowerCase();
+    const fileName = path.split('/').pop();
+
+    // Markdown 文件 - 使用模态框预览
+    if (extension === 'md') {
+      this.previewMarkdownFile(path);
+      return;
+    }
+
+    // 图片文件 - 在线预览
+    if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif'].includes('.' + extension)) {
+      this.openImagePreview(path, fileName);
+      return;
+    }
+
+    // 音频文件 - 在线播放
+    if (['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma'].includes('.' + extension)) {
+      this.openAudioPreview(path, fileName);
+      return;
+    }
+
+    // 视频文件 - 在线播放
+    if (['.mp4', '.webm', '.mkv', '.avi', '.mov', '.wmv', '.flv'].includes('.' + extension)) {
+      this.openVideoPreview(path, fileName);
+      return;
+    }
+
+    // 文档文件 - 在线预览
+    if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt'].includes('.' + extension)) {
+      this.openDocumentPreview(path, fileName, extension);
+      return;
+    }
+
+    // 其他文件 - 直接下载
+    try {
+      const response = await fetch(`/api/files/download?path=${encodeURIComponent(path)}`, {
+        headers: {
+          'Authorization': this.getAuthHeader()
+        }
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        this.showToast(result.message || '下载失败', 'error');
+        return;
+      }
+
+      // 创建 blob 并下载
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('下载失败:', error);
+      this.showToast('下载失败', 'error');
+    }
+  },
+
+  // 打开图片预览
+  openImagePreview(path, fileName) {
+    const imageUrl = `/${path}`;
+    const modal = document.createElement('div');
+    modal.className = 'fm-modal preview-modal';
+    modal.innerHTML = `
+      <div class="fm-modal-content preview-content">
+        <div class="fm-modal-header">
+          <h3>${fileName}</h3>
+          <button class="fm-modal-close">&times;</button>
+        </div>
+        <div class="fm-modal-body preview-body">
+          <img src="${imageUrl}" alt="${fileName}" class="preview-image">
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 关闭事件
+    const closeBtn = modal.querySelector('.fm-modal-close');
+    const closeModal = () => {
+      document.body.removeChild(modal);
+    };
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // ESC 键关闭
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    modal.classList.add('active');
+  },
+
+  // 打开音频预览
+  openAudioPreview(path, fileName) {
+    const audioUrl = `/${path}`;
+    const modal = document.createElement('div');
+    modal.className = 'fm-modal preview-modal';
+    modal.innerHTML = `
+      <div class="fm-modal-content preview-content audio-preview">
+        <div class="fm-modal-header">
+          <h3>${fileName}</h3>
+          <button class="fm-modal-close">&times;</button>
+        </div>
+        <div class="fm-modal-body preview-body">
+          <div class="audio-icon">🎵</div>
+          <audio controls autoplay class="preview-audio">
+            <source src="${audioUrl}" type="audio/${path.split('.').pop()}">
+            您的浏览器不支持音频播放
+          </audio>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 关闭事件
+    const closeBtn = modal.querySelector('.fm-modal-close');
+    const closeModal = () => {
+      const audio = modal.querySelector('audio');
+      if (audio) audio.pause();
+      document.body.removeChild(modal);
+    };
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // ESC 键关闭
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    modal.classList.add('active');
+  },
+
+  // 打开视频预览 - 全屏播放
+  openVideoPreview(path, fileName) {
+    const videoUrl = `/${path}`;
+    const modal = document.createElement('div');
+    modal.className = 'fm-modal preview-modal';
+    modal.innerHTML = `
+      <div class="fm-modal-content preview-content video-preview">
+        <div class="fm-modal-header">
+          <h3>${fileName}</h3>
+          <button class="fm-modal-close">&times;</button>
+        </div>
+        <div class="fm-modal-body preview-body">
+          <video controls autoplay class="preview-video">
+            <source src="${videoUrl}" type="video/${path.split('.').pop()}">
+            您的浏览器不支持视频播放
+          </video>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 关闭事件
+    const closeBtn = modal.querySelector('.fm-modal-close');
+    const closeModal = () => {
+      const video = modal.querySelector('video');
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+      document.body.removeChild(modal);
+    };
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // ESC 键关闭
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // 添加淡入动画
+    requestAnimationFrame(() => {
+      modal.classList.add('active');
+    });
+  },
+
+  // 打开文档预览
+  async openDocumentPreview(path, fileName, extension) {
+    const documentUrl = `/${path}`;
+    const modal = document.createElement('div');
+    modal.className = 'fm-modal preview-modal';
+    
+    let previewContent = '';
+    let previewClass = 'document-preview';
+    
+    // 根据文件类型生成不同的预览内容
+    switch (extension) {
+      case 'pdf':
+        previewContent = `
+          <embed src="${documentUrl}" type="application/pdf" class="preview-embed" />
+        `;
+        previewClass = 'pdf-preview';
+        break;
+      case 'txt':
+        previewContent = `
+          <iframe src="${documentUrl}" class="preview-iframe"></iframe>
+        `;
+        previewClass = 'txt-preview';
+        break;
+      case 'doc':
+      case 'docx':
+      case 'xls':
+      case 'xlsx':
+      case 'ppt':
+      case 'pptx':
+        // Office 文档使用 Google Docs Viewer
+        previewContent = `
+          <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin + '/' + path)}&embedded=true" class="preview-iframe"></iframe>
+        `;
+        previewClass = 'office-preview';
+        break;
+      default:
+        previewContent = `
+          <div class="preview-placeholder">
+            <div class="placeholder-icon">📄</div>
+            <p>此文件类型暂不支持在线预览</p>
+            <button class="fm-btn fm-btn-primary" onclick="FileManager.downloadFile('${path}')">下载文件</button>
+          </div>
+        `;
+    }
+    
+    modal.innerHTML = `
+      <div class="fm-modal-content preview-content ${previewClass}">
+        <div class="fm-modal-header">
+          <h3>${fileName}</h3>
+          <button class="fm-modal-close">&times;</button>
+        </div>
+        <div class="fm-modal-body preview-body">
+          ${previewContent}
+        </div>
+        <div class="fm-modal-footer">
+          <button class="fm-btn fm-btn-secondary fm-modal-close-btn">关闭</button>
+          <button class="fm-btn fm-btn-primary" onclick="FileManager.downloadFile('${path}')">下载文件</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // 关闭事件
+    const closeBtn = modal.querySelector('.fm-modal-close');
+    const closeModal = () => {
+      document.body.removeChild(modal);
+    };
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // 绑定关闭按钮
+    modal.querySelectorAll('.fm-modal-close-btn').forEach(btn => {
+      btn.addEventListener('click', closeModal);
+    });
+
+    // ESC 键关闭
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    modal.classList.add('active');
+  },
+
+  // 预览 Markdown 文件
+  async previewMarkdownFile(path) {
+    // 确保 markdown-preview-modal 已加载
+    if (!window.MarkdownPreviewModal) {
+      // 动态加载 markdown-preview-modal.js
+      const script = document.createElement('script');
+      script.src = '/js/markdown-preview-modal.js';
+      script.onload = () => {
+        this.openMarkdownPreview(path);
+      };
+      script.onerror = () => {
+        this.showToast('预览组件加载失败', 'error');
+      };
+      document.head.appendChild(script);
+    } else {
+      this.openMarkdownPreview(path);
+    }
+  },
+
+  // 打开 Markdown 预览
+  openMarkdownPreview(path) {
+    // 从路径中提取 markdown 文件的相对路径
+    let markdownPath = path;
+
+    // 处理绝对路径（如：/home/user/project/markdown/2026/02/19/test.md）
+    if (markdownPath.startsWith('/')) {
+      const markdownIndex = markdownPath.indexOf('/markdown/');
+      if (markdownIndex !== -1) {
+        markdownPath = markdownPath.substring(markdownIndex + 10); // 去掉 '/markdown/' 前缀
+      } else {
+        console.error('无效的 Markdown 路径:', path);
+        this.showToast('无效的 Markdown 路径', 'error');
+        return;
+      }
+    }
+    // 处理相对路径（如：markdown/2026/02/19/test.md）
+    else if (markdownPath.startsWith('markdown/')) {
+      markdownPath = markdownPath.substring(9); // 去掉 'markdown/' 前缀
+    } else {
+      console.error('无效的 Markdown 路径:', path);
+      this.showToast('无效的 Markdown 路径', 'error');
+      return;
+    }
+
+    // 验证提取后的路径不为空且不是根路径
+    if (!markdownPath || markdownPath === '/' || markdownPath.trim() === '') {
+      console.error('提取后的 Markdown 路径无效:', markdownPath);
+      this.showToast('无效的 Markdown 路径', 'error');
+      return;
+    }
+
+    console.log('Markdown 预览路径:', markdownPath);
+
+    if (window.MarkdownPreviewModal) {
+      window.MarkdownPreviewModal.open(markdownPath);
+    } else {
+      this.showToast('预览功能不可用', 'error');
+    }
+  },
+
+  // 下载文件
+  async downloadFile(path) {
+    try {
+      const response = await fetch(`/api/files/download?path=${encodeURIComponent(path)}`, {
+        headers: {
+          'Authorization': this.getAuthHeader()
+        }
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        this.showToast(result.message || '下载失败', 'error');
+        return;
+      }
+
+      // 获取文件名
+      const fileName = path.split('/').pop();
+
+      // 创建 blob 并下载
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('下载失败:', error);
+      this.showToast('下载失败', 'error');
+    }
+  },
+  
+  // 显示上下文菜单
+  showContextMenu(event, path, isDir) {
+    this.selectedFile = { path, isDir };
+
+    const menu = document.getElementById('contextMenu');
+    menu.style.left = event.pageX + 'px';
+    menu.style.top = event.pageY + 'px';
+    menu.classList.add('active');
+
+    // 检查是否是 markdown 文件
+    const isMarkdown = path.toLowerCase().endsWith('.md');
+
+    // 根据文件类型显示不同的菜单项
+    const items = menu.querySelectorAll('.context-menu-item');
+    items.forEach(item => {
+      const action = item.dataset.action;
+      if (action === 'download' && isDir) {
+        item.style.display = 'none';
+      } else if (action === 'preview') {
+        // 预览选项只在 markdown 文件时显示
+        item.style.display = (isMarkdown && !isDir) ? 'flex' : 'none';
+      } else {
+        item.style.display = 'flex';
+      }
+    });
+
+    // 绑定菜单项点击事件
+    items.forEach(item => {
+      item.onclick = () => {
+        this.handleContextAction(item.dataset.action);
+        this.hideContextMenu();
+      };
+    });
+  },
+  
+  // 隐藏上下文菜单
+  hideContextMenu() {
+    document.getElementById('contextMenu').classList.remove('active');
+  },
+  
+  // 处理上下文菜单操作
+  handleContextAction(action) {
+    if (!this.selectedFile) return;
+
+    switch (action) {
+      case 'open':
+        if (this.selectedFile.isDir) {
+          this.navigateTo(this.selectedFile.path);
+        } else {
+          this.openFile(this.selectedFile.path);
+        }
+        break;
+      case 'preview':
+        this.previewMarkdownFile(this.selectedFile.path);
+        break;
+      case 'download':
+        this.downloadFile(this.selectedFile.path);
+        break;
+      case 'rename':
+        this.openRenameModal();
+        break;
+      case 'delete':
+        this.openDeleteModal();
+        break;
+    }
+  },
+  
+  // 打开上传模态框
+  openUploadModal() {
+    this.filesToUpload = [];
+    this.updateUploadList();
+    const modal = document.getElementById('uploadModal');
+    modal.classList.add('active');
+  },
+  
+  // 处理文件选择
+  handleFileSelect(event) {
+    const files = Array.from(event.target.files);
+    this.addFilesToUpload(files);
+    event.target.value = '';
+  },
+  
+  // 处理文件拖放
+  handleFileDrop(event) {
+    const files = Array.from(event.dataTransfer.files);
+    this.addFilesToUpload(files);
+  },
+  
+  // 添加文件到上传列表
+  addFilesToUpload(files) {
+    files.forEach(file => {
+      if (!this.filesToUpload.find(f => f.name === file.name)) {
+        this.filesToUpload.push(file);
+      }
+    });
+    this.updateUploadList();
+  },
+  
+  // 更新上传列表
+  updateUploadList() {
+    const list = document.getElementById('uploadList');
+    const confirmBtn = document.getElementById('confirmUploadBtn');
+    
+    if (this.filesToUpload.length === 0) {
+      list.innerHTML = '';
+      confirmBtn.disabled = true;
+      return;
+    }
+    
+    confirmBtn.disabled = false;
+    list.innerHTML = this.filesToUpload.map((file, index) => `
+      <div class="upload-item">
+        <div class="upload-item-name">${file.name}</div>
+        <div class="upload-item-size">${this.formatFileSize(file.size)}</div>
+        <button class="upload-item-remove" onclick="FileManager.removeFileFromUpload(${index})">✕</button>
+      </div>
+    `).join('');
+  },
+  
+  // 从上传列表移除文件
+  removeFileFromUpload(index) {
+    this.filesToUpload.splice(index, 1);
+    this.updateUploadList();
+  },
+  
+  // 上传文件
+  async uploadFiles() {
+    if (this.filesToUpload.length === 0) return;
+    
+    const confirmBtn = document.getElementById('confirmUploadBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '上传中...';
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const file of this.filesToUpload) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`/api/files?path=${encodeURIComponent(this.currentPath)}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': this.getAuthHeader()
+          },
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          successCount++;
+        } else {
+          failCount++;
+          console.error('上传失败:', result.message);
+        }
+      } catch (error) {
+        console.error('上传失败:', error);
+        failCount++;
+      }
+    }
+    
+    this.closeModal(document.getElementById('uploadModal'));
+    this.loadFiles();
+    
+    if (successCount > 0 && failCount === 0) {
+      this.showToast(`成功上传 ${successCount} 个文件`, 'success');
+    } else if (successCount > 0) {
+      this.showToast(`成功上传 ${successCount} 个文件，失败 ${failCount} 个`, 'warning');
+    } else {
+      this.showToast('上传失败', 'error');
+    }
+    
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '上传';
+  },
+  
+  // 打开创建目录模态框
+  openCreateDirModal() {
+    document.getElementById('dirNameInput').value = '';
+    const modal = document.getElementById('createDirModal');
+    modal.classList.add('active');
+    setTimeout(() => {
+      document.getElementById('dirNameInput').focus();
+    }, 100);
+  },
+  
+  // 创建目录
+  async createDirectory() {
+    const dirName = document.getElementById('dirNameInput').value.trim();
+    
+    if (!dirName) {
+      this.showToast('请输入文件夹名称', 'warning');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/files/create-dir', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.getAuthHeader()
+        },
+        body: JSON.stringify({
+          path: this.currentPath,
+          dir_name: dirName
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        this.showToast('文件夹创建成功', 'success');
+        this.closeModal(document.getElementById('createDirModal'));
+        this.loadFiles();
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('创建目录失败:', error);
+      this.showToast('创建文件夹失败', 'error');
+    }
+  },
+  
+  // 打开重命名模态框
+  openRenameModal() {
+    if (!this.selectedFile) return;
+
+    const oldName = this.selectedFile.path.split('/').pop();
+    document.getElementById('renameInput').value = oldName;
+    const modal = document.getElementById('renameModal');
+    modal.classList.add('active');
+    setTimeout(() => {
+      document.getElementById('renameInput').focus();
+      document.getElementById('renameInput').select();
+    }, 100);
+  },
+  
+  // 重命名文件
+  async renameFile() {
+    if (!this.selectedFile) return;
+    
+    const newName = document.getElementById('renameInput').value.trim();
+    
+    if (!newName) {
+      this.showToast('请输入新名称', 'warning');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/files', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.getAuthHeader()
+        },
+        body: JSON.stringify({
+          old_path: this.selectedFile.path,
+          new_name: newName
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        this.showToast('重命名成功', 'success');
+        this.closeModal(document.getElementById('renameModal'));
+        this.loadFiles();
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('重命名失败:', error);
+      this.showToast('重命名失败', 'error');
+    }
+  },
+  
+  // 打开删除确认模态框
+  openDeleteModal() {
+    if (!this.selectedFile) return;
+
+    const fileName = this.selectedFile.path.split('/').pop();
+    document.getElementById('deleteFileName').textContent = fileName;
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('active');
+  },
+  
+  // 删除文件
+  async deleteFile() {
+    if (!this.selectedFile) return;
+    
+    try {
+      const response = await fetch(`/api/files?path=${encodeURIComponent(this.selectedFile.path)}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': this.getAuthHeader()
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        this.showToast('删除成功', 'success');
+        this.closeModal(document.getElementById('deleteModal'));
+        this.loadFiles();
+      } else {
+        this.showToast(result.message, 'error');
+      }
+    } catch (error) {
+      console.error('删除失败:', error);
+      this.showToast('删除失败', 'error');
+    }
+  },
+  
+  // 关闭模态框
+  closeModal(modal) {
+    modal.classList.remove('active');
+    modal.classList.add('closing');
+    setTimeout(() => {
+      modal.classList.remove('closing');
+    }, 300);
+  },
+  
+  // 显示Toast通知
+  showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast ${type} active`;
+    
+    setTimeout(() => {
+      toast.classList.remove('active');
+    }, 3000);
+  }
+};
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', () => {
+  FileManager.init();
+});
