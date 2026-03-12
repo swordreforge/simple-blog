@@ -1270,7 +1270,7 @@ body.about-focus-mode .about-focus-selected {
       </a>
     </div>
   </div>
-  <script src="/static/dist/js/about-inline-1.min.js" defer></script>
+  <script src="/js/about-inline-1.js" defer></script>
   <div class="modal" id="loginModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1630,15 +1630,15 @@ body.about-focus-mode .about-focus-selected {
     rel="stylesheet"
     href="/css/glass-effect.css"
   />
-  <script src="/static/dist/js/about-inline-2.min.js" defer></script>
-  <script src="/static/dist/js/ecc-encrypt.min.js" defer></script>
-  <script src="/static/dist/js/login.min.js" defer></script>
-  <script src="/static/dist/js/modal-animations.min.js" defer></script>
+  <script src="/js/about-inline-2.js" defer></script>
+  <script src="/js/ecc-encrypt.js" defer></script>
+  <script src="/js/login.js" defer></script>
+  <script src="/js/modal-animations.js" defer></script>
   <script>
     let originalTitle=document.title;const switchNoticeText="{{ switch_notice_text }}",isNoticeEnabled= {{ switch_notice }};document.addEventListener("visibilitychange",function(){isNoticeEnabled&&(document.hidden?document.title=switchNoticeText:document.title=originalTitle)}),window.addEventListener("focus",function(){isNoticeEnabled&&(document.title=originalTitle)})
   </script>
-  <script src="/static/dist/js/about-focus-mode.min.js" defer></script>
-  <script src="/static/dist/js/keyboard-shortcuts.min.js" defer></script>
+  <script src="/js/about-focus-mode.js" defer></script>
+  <script src="/js/keyboard-shortcuts.js" defer></script>
 <script>
   // 快捷操作面板功能
   (function() {
@@ -1681,6 +1681,6 @@ body.about-focus-mode .about-focus-selected {
     !function(){const t= {{ live2d_enabled }},s= {{ live2d_show_on_about }};if(!t||!s)return;const e={waifuPath:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json",cdnPath:"{{ live2d_cdn_path }}",cubism2Path:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js",cubism5Path:"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",modelId: {{ live2d_model_id }},modelPath:"{{ live2d_model_path }}",tools:["switch-model","switch-texture","photo","info","quit"],drag:!0,logLevel:"error",position:"{{ live2d_position }}",width:"{{ live2d_width }}",height:"{{ live2d_height }}"};window.addEventListener("load",function(){setTimeout(function(){try{if(document.querySelector('script[src*="autoload.js"]'))return;const t=document.createElement("script");t.src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js",t.async=!0,t.onload=function(){if(console.log("Live2D 看板娘加载完成"),"function"==typeof initWidget)try{initWidget(e)}catch(t){console.warn("Live2D 看板娘初始化失败:",t)}},t.onerror=function(){console.warn("Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用")},document.body.appendChild(t)}catch(t){console.warn("Live2D 看板娘初始化错误:",t)}},1e3)})}()
   </script>
   <link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media = 'all'" />
-  <script src="/static/dist/js/music-player.min.js" defer></script>
-  <script src="/static/dist/js/floating-text.min.js" defer></script>
+  <script src="/js/music-player.js" defer></script>
+  <script src="/js/floating-text.js" defer></script>
 </html>
