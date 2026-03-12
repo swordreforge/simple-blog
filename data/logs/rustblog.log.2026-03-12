@@ -26,3 +26,7 @@
 2026-03-12T15:50:14.924833Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
 2026-03-12T15:50:14.924917Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
 2026-03-12T15:50:14.925427Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-12T15:52:16.818418Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/debug/data/jwt-secret
+2026-03-12T15:52:16.832339Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-12T15:52:16.832365Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-12T15:52:16.832376Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
