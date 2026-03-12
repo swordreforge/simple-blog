@@ -26,7 +26,7 @@ for file in templates/js/*.js; do
         # 使用 Terser 进行压缩和语法检查
         npx terser "$file" \
             --compress "ecma=2015,warnings=true,passes=2" \
-            --mangle "toplevel=true,properties=true,reserved=['console','window','document','navigator','fetch','localStorage','sessionStorage']" \
+            --mangle "toplevel=false,properties=false,reserved=['console','window','document','navigator','fetch','localStorage','sessionStorage']" \
             --output "$output_file" \
             --ecma 2015 \
             --source-map "includeSources=true,url='${filename%.js}.min.js.map'" \
