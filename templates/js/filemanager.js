@@ -3,7 +3,6 @@ const FileManager = {
   currentPath: 'img',
   currentRoot: 'img',
   selectedFile: null,
-  selectedAttachmentId: null,
   filesToUpload: [],
 
   // 获取认证头
@@ -112,7 +111,7 @@ const FileManager = {
     document.getElementById('confirmRenameBtn').addEventListener('click', () => this.renameFile());
 
     // 确认删除
-    document.getElementById('confirmDeleteBtn').addEventListener('click', () => { this.selectedAttachmentId ? this.deleteAttachment(this.selectedAttachmentId) : this.deleteFile(); });
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.deleteFile());
 
     // 点击外部关闭上下文菜单
     document.addEventListener('click', e => {
@@ -375,18 +374,10 @@ const FileManager = {
 
   // 删除附件
   async deleteAttachment(id) {
-    // 如果没有设置 selectedAttachmentId，说明是第一次调用，打开确认模态框
-    if (!this.selectedAttachmentId) {
-      const attachment = this.currentAttachments?.find(a => a.id === parseInt(id));
-      if (attachment) {
-        this.selectedAttachmentId = id;
-        document.getElementById('deleteFileName').textContent = attachment.file_name;
-        document.getElementById('deleteModal').classList.add('active');
-      }
+    if (!confirm('确定要删除此附件吗？此操作不可恢复。')) {
       return;
     }
 
-    // 执行删除操作
     try {
       const response = await fetch(`/api/admin/attachments/${id}`, {
         method: 'DELETE',
@@ -398,7 +389,6 @@ const FileManager = {
 
       if (result.success) {
         this.showToast('删除成功', 'success');
-        this.closeModal(document.getElementById('deleteModal'));
         this.loadAttachments();
       } else {
         this.showToast(result.message, 'error');
@@ -406,8 +396,6 @@ const FileManager = {
     } catch (error) {
       console.error('删除附件失败:', error);
       this.showToast('删除附件失败', 'error');
-    } finally {
-      this.selectedAttachmentId = null;
     }
   },
 

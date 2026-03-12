@@ -84,6 +84,7 @@ pub struct TemplateSettings {
     pub navbar_text_color: String,
     pub card_glass_color: String,
     pub footer_glass_color: String,
+    pub dark_mode_enabled: bool,
     
     // 文章相关
     pub article_title: bool,
@@ -161,6 +162,7 @@ impl Default for TemplateSettings {
             navbar_text_color: "#333333".to_string(),
             card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
             footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
+            dark_mode_enabled: false,
             
             // 文章相关
             article_title: true,
@@ -343,11 +345,19 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
         "template_article_title", "template_article_title_prefix",
         "template_switch_notice", "template_switch_notice_text",
         "external_link_warning", "external_link_whitelist", "external_link_warning_text",
+        // 外观设置
+        "background_image", "mobile_background_image", "background_color",
+        "background_size", "background_position", "background_repeat", "background_attachment",
+        "global_opacity", "blur_amount", "saturate_amount", "floating_text_enabled",
+        "navbar_glass_color", "navbar_text_color", "card_glass_color", "footer_glass_color",
+        "dark_mode_enabled",
+        // Live2D 设置
         "live2d_enabled",
         "live2d_show_on_index", "live2d_show_on_passage", "live2d_show_on_collect",
         "live2d_show_on_about", "live2d_show_on_admin",
         "live2d_model_id", "live2d_model_path", "live2d_cdn_path",
         "live2d_position", "live2d_width", "live2d_height",
+        // 赞助设置
         "sponsor_enabled", "sponsor_title", "sponsor_image",
         "sponsor_description", "sponsor_button_text",
         "global_avatar",
@@ -369,6 +379,23 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
                 "external_link_warning" => settings.external_link_warning = setting.value == "true",
                 "external_link_whitelist" => settings.external_link_whitelist = setting.value,
                 "external_link_warning_text" => settings.external_link_warning_text = setting.value,
+                // 外观设置
+                "background_image" => settings.background_image = setting.value,
+                "mobile_background_image" => settings.mobile_background_image = setting.value,
+                "background_color" => settings.background_color = setting.value,
+                "background_size" => settings.background_size = setting.value,
+                "background_position" => settings.background_position = setting.value,
+                "background_repeat" => settings.background_repeat = setting.value,
+                "background_attachment" => settings.background_attachment = setting.value,
+                "global_opacity" => settings.global_opacity = setting.value.parse().unwrap_or(0.15),
+                "blur_amount" => settings.blur_amount = setting.value.parse().unwrap_or(20),
+                "saturate_amount" => settings.saturate_amount = setting.value.parse().unwrap_or(180),
+                "floating_text_enabled" => settings.floating_text_enabled = setting.value == "true",
+                "navbar_glass_color" => settings.navbar_glass_color = setting.value,
+                "navbar_text_color" => settings.navbar_text_color = setting.value,
+                "card_glass_color" => settings.card_glass_color = setting.value,
+                "footer_glass_color" => settings.footer_glass_color = setting.value,
+                "dark_mode_enabled" => settings.dark_mode_enabled = setting.value == "true",
                 "live2d_enabled" => settings.live2d_enabled = setting.value == "true",
                 "live2d_show_on_index" => settings.live2d_show_on_index = setting.value == "true",
                 "live2d_show_on_passage" => settings.live2d_show_on_passage = setting.value == "true",
@@ -559,7 +586,10 @@ pub fn create_index_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("settings", &TemplateSettings::default());
+    
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
+    context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
 
@@ -725,60 +755,8 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
 
-    // 使用从数据库读取的值创建 TemplateSettings
-    let settings = TemplateSettings {
-        name: "欢迎来到我的博客".to_string(),
-        greting: "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。".to_string(),
-        year: now.format("%Y").to_string(),
-        foodes: foodes.clone(),
-        background_image: "/img/test.webp".to_string(),
-        mobile_background_image: "/img/mobile-test.webp".to_string(),
-        background_color: "#ffffff".to_string(),
-        background_size: "cover".to_string(),
-        background_position: "center".to_string(),
-        background_repeat: "no-repeat".to_string(),
-        background_attachment: "fixed".to_string(),
-        global_opacity: 0.15,
-        blur_amount: 20,
-        saturate_amount: 180,
-        floating_text_enabled: false,
-        navbar_glass_color,
-        navbar_text_color,
-        card_glass_color,
-        footer_glass_color,
-        article_title: true,
-        article_title_prefix: "文章".to_string(),
-        switch_notice,
-        switch_notice_text: switch_notice_text.clone(),
-        external_link_warning,
-        external_link_whitelist,
-        external_link_warning_text,
-        live2d_enabled: false,
-        live2d_show_on_index: true,
-        live2d_show_on_passage: true,
-        live2d_show_on_collect: true,
-        live2d_show_on_about: true,
-        live2d_show_on_admin: false,
-        live2d_model_id: "1".to_string(),
-        live2d_model_path: "".to_string(),
-        live2d_cdn_path: "https://unpkg.com/live2d-widget-model@1.0.5/".to_string(),
-        live2d_position: "right".to_string(),
-        live2d_width: "280px".to_string(),
-        live2d_height: "260px".to_string(),
-        sponsor_enabled: false,
-        sponsor_title: "".to_string(),
-        sponsor_image: "".to_string(),
-        sponsor_description: "".to_string(),
-        sponsor_button_text: "".to_string(),
-        global_avatar: "".to_string(),
-        attachment_default_visibility: "public".to_string(),
-        attachment_max_size: 10485760,
-        attachment_allowed_types: "jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,zip,rar,mp3,mp4".to_string(),
-        beian_enabled: false,
-        icp_number: "".to_string(),
-        police_record_code: "".to_string(),
-        police_record_content: "".to_string(),
-    };
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
 
     context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
@@ -936,7 +914,10 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("settings", &TemplateSettings::default());
+    
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
+    context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);
@@ -1070,7 +1051,10 @@ pub fn create_about_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("settings", &TemplateSettings::default());
+    
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
+    context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);
@@ -1192,7 +1176,10 @@ pub fn create_friends_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("global_avatar", &global_avatar);
-    context.insert("settings", &TemplateSettings::default());
+    
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
+    context.insert("settings", &settings);
     
     // 登录状态（前端会通过 API 检查）
     context.insert("is_logged_in", &false);
@@ -1314,7 +1301,10 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("settings", &TemplateSettings::default());
+    
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
+    context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);
@@ -1374,7 +1364,10 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    context.insert("settings", &TemplateSettings::default());
+    
+    // 使用从数据库加载的模板设置，而不是默认值
+    let settings = load_template_settings().unwrap_or_default();
+    context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);

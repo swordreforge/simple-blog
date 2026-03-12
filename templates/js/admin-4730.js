@@ -227,7 +227,7 @@ async function fetchAdminData(e = 1, t = 10, a = 1, n = 10, o = 1, c = 10) {
         var m = await (await fetch("/api/admin/stats", {
             headers: s
         })).json();
-        if (m.success && m.data) {
+        if (console.log("统计数据响应:", m), m.success && m.data) {
             updateStatCard("todayVisits", m.data.today_visits || 0);
             const e = document.querySelector("#todayVisits").closest(".stat-card").querySelector(".stat-change");
             if (e && void 0 !== m.data.yesterday_visits) {
@@ -1278,11 +1278,11 @@ uploadArea.addEventListener("click", () => {
                                         body: n
                                     })),
                                     y = await h.json();
-                                y.success ? e++ : (t++, g.push(o.name + ": " + (y.message || "未知错误")))
+                                y.success ? (e++, console.log(`附件 ${o.name} 上传成功`)) : (t++, g.push(o.name + ": " + (y.message || "未知错误")), console.error(`附件 ${o.name} 上传失败:`, y))
                             } catch (n) {
-                                t++, g.push(o.name + ": " + (n.message || "网络错误"))
+                                t++, g.push(o.name + ": " + (n.message || "网络错误")), console.error(`上传附件 ${o.name} 失败:`, n)
                             }
-                            f.textContent = "创建成功!", f.style.background = "rgba(255, 183, 122, 0.8)";
+                            0 < t && console.error("附件上传失败详情:", g), f.textContent = "创建成功!", f.style.background = "rgba(255, 183, 122, 0.8)";
                             let a = "文章创建成功！";
                             0 < e && (a += ` 成功上传 ${e} 个附件`), 0 < t && (a += ` 失败 ${t} 个附件`), setTimeout(() => {
                                 closeModal("uploadModal"), f.textContent = b, f.disabled = !1, f.style.background = "rgba(255, 183, 122, 0.8)", this.reset(), uploadPreview.innerHTML = "", selectedFiles = [], fetchAdminData(), showToast(a, 0 < t ? "warning" : "success")
