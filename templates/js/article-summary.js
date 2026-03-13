@@ -30,10 +30,26 @@
     // 监听文章加载事件
     observeArticleChanges();
     
+    // 监听文章数据加载完成事件
+    document.addEventListener('articleLoaded', handleArticleLoaded);
+    
     // 处理已存在的文章
     processExistingArticles();
 
     isLoaded = true;
+  }
+
+  /**
+   * 处理文章加载完成事件
+   */
+  function handleArticleLoaded(event) {
+    const articleId = event.detail.articleId;
+    const article = document.getElementById(articleId) || document.querySelector('.article.active');
+    if (article) {
+      // 移除处理标记，重新处理文章
+      article.removeAttribute('data-summary-processed');
+      processArticle(article);
+    }
   }
 
   /**
@@ -77,7 +93,7 @@
   /**
    * 处理单篇文章的摘要显示
    */
-  function processArticle(article) {
+  async function processArticle(article) {
     // 检查是否已经处理过
     if (article.hasAttribute('data-summary-processed')) {
       return;
@@ -100,13 +116,25 @@
     }
 
     // 从文章数据中获取摘要
+    let summary = null;
     const articleData = getArticleData(article);
-    if (!articleData || !articleData.summary) {
+    
+    if (articleData && articleData.summary) {
+      summary = articleData.summary;
+    } else {
+      // 备用方案：尝试从 API 获取摘要
+      const articleId = article.id || article.getAttribute('data-article-id');
+      if (articleId) {
+        summary = await fetchSummaryFromAPI(articleId);
+      }
+    }
+
+    if (!summary) {
       return;
     }
 
     // 创建摘要元素
-    const summaryElement = createSummaryElement(articleData.summary);
+    const summaryElement = createSummaryElement(summary);
     
     // 将摘要插入到标题和内容之间
     if (articleTitle) {
@@ -116,6 +144,26 @@
       // 如果没有标题，插入到 header 之后
       articleHeader.insertAdjacentElement('afterend', summaryElement);
     }
+  }
+
+  /**
+   * 从 API 获取文章摘要
+   */
+  async function fetchSummaryFromAPI(articleId) {
+    try {
+      // 从 articleId 中提取 UUID
+      const uuid = articleId.replace('article-', '');
+      const response = await fetch(`/api/passages/${uuid}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && result.data.summary) {
+          return result.data.summary;
+        }
+      }
+    } catch (error) {
+      console.error('从 API 获取摘要失败:', error);
+    }
+    return null;
   }
 
   /**
@@ -165,15 +213,40 @@
     // 尝试从全局变量获取文章数据
     const articleId = article.id || article.getAttribute('data-article-id');
     
-    // 从缓存中获取文章数据
-    if (window.articleContentCache && articleId) {
-      const cached = window.articleContentCache.get(articleId);
-      if (cached && cached.articleData) {
-        return cached.articleData;
+    // 方法1: 从 articlesData 中查找文章（包含 summary）
+    if (window.articlesData && window.articlesData.folders) {
+      for (const folder of window.articlesData.folders) {
+        const foundArticle = findArticleInFolder(folder, articleId);
+        if (foundArticle) {
+          return foundArticle;
+        }
+      }
+    }
+    
+    // 方法2: 从 findArticleById 函数查找（passage.html 中的函数）
+    if (typeof window.findArticleById === 'function') {
+      const articleData = window.findArticleById(articleId);
+      if (articleData) {
+        return articleData;
       }
     }
 
-    // 尝试从 data 属性获取
+    // 方法3: 从缓存中获取文章数据
+    if (window.articleContentCache && articleId) {
+      const cached = window.articleContentCache.get(articleId);
+      if (cached) {
+        // 如果缓存中有 articleData，直接返回
+        if (cached.articleData) {
+          return cached.articleData;
+        }
+        // 否则尝试从原始数据构建
+        if (cached.summary) {
+          return { summary: cached.summary };
+        }
+      }
+    }
+
+    // 方法4: 尝试从 data 属性获取
     const dataStr = article.getAttribute('data-article');
     if (dataStr) {
       try {
@@ -183,6 +256,37 @@
       }
     }
 
+    // 方法5: 从当前活动的文章数据中获取（passage.html 中的全局变量）
+    if (window.currentPassageData && window.currentPassageData.summary) {
+      return window.currentPassageData;
+    }
+
+    return null;
+  }
+
+  /**
+   * 在文件夹中递归查找文章
+   */
+  function findArticleInFolder(folder, articleId) {
+    // 检查文件夹中的文章
+    if (folder.articles) {
+      for (const article of folder.articles) {
+        if (article.id === articleId) {
+          return article;
+        }
+      }
+    }
+    
+    // 递归检查子文件夹
+    if (folder.folders) {
+      for (const subFolder of folder.folders) {
+        const found = findArticleInFolder(subFolder, articleId);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    
     return null;
   }
 
