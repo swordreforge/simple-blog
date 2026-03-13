@@ -176,12 +176,12 @@
    * 处理单篇文章的摘要显示
    */
   async function processArticle(article) {
-    const articleId = article.id || article.getAttribute('data-article-id');
-    console.log('[ArticleSummary] 开始处理文章:', articleId);
+    const articleElementId = article.id || article.getAttribute('data-article-id');
+    console.log('[ArticleSummary] 开始处理文章:', articleElementId);
     
     // 检查是否已经处理过
     if (article.hasAttribute('data-summary-processed')) {
-      console.log('[ArticleSummary] 文章已处理过，跳过:', articleId);
+      console.log('[ArticleSummary] 文章已处理过，跳过:', articleElementId);
       return;
     }
 
@@ -218,7 +218,9 @@
     } else {
       console.log('[ArticleSummary] 文章数据中没有摘要，尝试从 API 获取...');
       // 备用方案：尝试从 API 获取摘要
-      const apiArticleId = article.id || article.getAttribute('data-article-id');
+      // 从完整的 ID 中提取 UUID 或原始 ID
+      const apiArticleId = extractIdFromElementId(articleElementId);
+      console.log('[ArticleSummary] 提取的 API ID:', apiArticleId);
       if (apiArticleId) {
         summary = await fetchSummaryFromAPI(apiArticleId);
         console.log('[ArticleSummary] 从 API 获取到的摘要:', summary);
@@ -246,7 +248,24 @@
       console.log('[ArticleSummary] 摘要已插入到 header 之后');
     }
     
-    console.log('[ArticleSummary] 文章处理完成:', articleId);
+    console.log('[ArticleSummary] 文章处理完成:', articleElementId);
+  }
+
+  /**
+   * 从元素 ID 中提取文章 ID 或 UUID
+   */
+  function extractIdFromElementId(elementId) {
+    console.log('[ArticleSummary] extractIdFromElementId - elementId:', elementId);
+    if (!elementId) return null;
+    
+    // 如果 ID 以 'article-' 开头，去掉前缀
+    if (elementId.startsWith('article-')) {
+      const extracted = elementId.substring(8); // 去掉 'article-'
+      console.log('[ArticleSummary] extractIdFromElementId - 提取的 ID:', extracted);
+      return extracted;
+    }
+    
+    return elementId;
   }
 
   /**
