@@ -114,6 +114,28 @@
     console.log('[ArticleSummary] 处理已存在的文章...');
     const articles = document.querySelectorAll('.article.active');
     console.log('[ArticleSummary] 找到', articles.length, '个活动文章');
+    
+    // 调试：打印所有文章元素的详细信息
+    articles.forEach((article, index) => {
+      console.log('[ArticleSummary] 文章', index, '详情:');
+      console.log('  - ID:', article.id);
+      console.log('  - data-article-id:', article.getAttribute('data-article-id'));
+      console.log('  - data-article:', article.getAttribute('data-article'));
+      console.log('  - classList:', Array.from(article.classList));
+      
+      // 检查文章内部结构
+      const articleHeader = article.querySelector('.article-header');
+      const articleContent = article.querySelector('.article-content');
+      const articleTitle = article.querySelector('.article-title');
+      console.log('  - 有 header:', !!articleHeader);
+      console.log('  - 有 content:', !!articleContent);
+      console.log('  - 有 title:', !!articleTitle);
+      
+      // 检查是否已经有摘要元素
+      const existingSummary = article.querySelector('.article-summary');
+      console.log('  - 已有摘要:', !!existingSummary);
+    });
+    
     articles.forEach((article, index) => {
       console.log('[ArticleSummary] 处理文章', index, 'ID:', article.id);
       processArticle(article);
@@ -282,15 +304,22 @@
   function getArticleData(article) {
     const articleId = article.id || article.getAttribute('data-article-id');
     console.log('[ArticleSummary] getArticleData - articleId:', articleId);
+    console.log('[ArticleSummary] getArticleData - article.id:', article.id);
+    console.log('[ArticleSummary] getArticleData - article.getAttribute("data-article-id"):', article.getAttribute('data-article-id'));
     
     // 方法1: 从 articlesData 中查找文章（包含 summary）
     console.log('[ArticleSummary] 方法1: 从 articlesData 查找...');
+    console.log('[ArticleSummary] window.articlesData:', window.articlesData);
     if (window.articlesData && window.articlesData.folders) {
       console.log('[ArticleSummary] articlesData 存在，文件夹数量:', window.articlesData.folders.length);
+      console.log('[ArticleSummary] articlesData.folders:', window.articlesData.folders);
+      
       for (const folder of window.articlesData.folders) {
+        console.log('[ArticleSummary] 检查文件夹:', folder);
         const foundArticle = findArticleInFolder(folder, articleId);
         if (foundArticle) {
           console.log('[ArticleSummary] 从 articlesData 找到文章，包含摘要:', !!foundArticle.summary);
+          console.log('[ArticleSummary] 找到的文章数据:', foundArticle);
           return foundArticle;
         }
       }
@@ -301,8 +330,10 @@
     
     // 方法2: 从 findArticleById 函数查找（passage.html 中的函数）
     console.log('[ArticleSummary] 方法2: 从 findArticleById 查找...');
+    console.log('[ArticleSummary] typeof window.findArticleById:', typeof window.findArticleById);
     if (typeof window.findArticleById === 'function') {
       const articleData = window.findArticleById(articleId);
+      console.log('[ArticleSummary] findArticleById 返回:', articleData);
       if (articleData) {
         console.log('[ArticleSummary] 从 findArticleById 找到文章，包含摘要:', !!articleData.summary);
         return articleData;
@@ -314,8 +345,10 @@
 
     // 方法3: 从缓存中获取文章数据
     console.log('[ArticleSummary] 方法3: 从 articleContentCache 查找...');
+    console.log('[ArticleSummary] window.articleContentCache:', window.articleContentCache);
     if (window.articleContentCache && articleId) {
       console.log('[ArticleSummary] articleContentCache 存在，缓存大小:', window.articleContentCache.size);
+      console.log('[ArticleSummary] 缓存键:', Array.from(window.articleContentCache.keys()));
       const cached = window.articleContentCache.get(articleId);
       console.log('[ArticleSummary] 缓存数据:', cached);
       if (cached) {
@@ -338,6 +371,7 @@
     // 方法4: 尝试从 data 属性获取
     console.log('[ArticleSummary] 方法4: 从 data-article 属性获取...');
     const dataStr = article.getAttribute('data-article');
+    console.log('[ArticleSummary] data-article 属性值:', dataStr);
     if (dataStr) {
       try {
         const parsed = JSON.parse(dataStr);
@@ -351,6 +385,7 @@
 
     // 方法5: 从当前活动的文章数据中获取（passage.html 中的全局变量）
     console.log('[ArticleSummary] 方法5: 从 currentPassageData 获取...');
+    console.log('[ArticleSummary] window.currentPassageData:', window.currentPassageData);
     if (window.currentPassageData && window.currentPassageData.summary) {
       console.log('[ArticleSummary] 从 currentPassageData 找到摘要');
       return window.currentPassageData;
@@ -365,10 +400,15 @@
    * 在文件夹中递归查找文章
    */
   function findArticleInFolder(folder, articleId) {
+    console.log('[ArticleSummary] findArticleInFolder - 检查文件夹，articleId:', articleId);
+    console.log('[ArticleSummary] findArticleInFolder - folder.articles:', folder.articles);
+    
     // 检查文件夹中的文章
     if (folder.articles) {
       for (const article of folder.articles) {
+        console.log('[ArticleSummary] findArticleInFolder - 检查文章:', article.id, '===', articleId, '?', article.id === articleId);
         if (article.id === articleId) {
+          console.log('[ArticleSummary] findArticleInFolder - 找到匹配的文章:', article);
           return article;
         }
       }
@@ -376,14 +416,17 @@
     
     // 递归检查子文件夹
     if (folder.folders) {
+      console.log('[ArticleSummary] findArticleInFolder - 检查子文件夹，数量:', folder.folders.length);
       for (const subFolder of folder.folders) {
         const found = findArticleInFolder(subFolder, articleId);
         if (found) {
+          console.log('[ArticleSummary] findArticleInFolder - 从子文件夹找到文章');
           return found;
         }
       }
     }
     
+    console.log('[ArticleSummary] findArticleInFolder - 未找到文章');
     return null;
   }
 
