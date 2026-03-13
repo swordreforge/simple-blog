@@ -407,6 +407,7 @@ pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse 
         ("sponsor_image", "sponsor_image"),
         ("sponsor_description", "sponsor_description"),
         ("sponsor_button_text", "sponsor_button_text"),
+        ("passage_summarize_enabled", "passage_summarize_enabled"),
         ("beian_enabled", "beian_enabled"),
         ("icp_number", "icp_number"),
         ("police_record_code", "police_record_code"),

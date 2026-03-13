@@ -32,3 +32,27 @@
 2026-03-13T11:59:09.616655Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
 2026-03-13T11:59:09.616664Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
 2026-03-13T11:59:09.616670Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-13T12:13:28.687911Z  INFO ThreadId(01) actix_server::server: SIGINT received; starting forced shutdown
+2026-03-13T12:13:28.688101Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688106Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688153Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688169Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688176Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688185Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688192Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688199Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688220Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688263Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688288Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688298Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688313Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688343Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688348Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688370Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688518Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688541Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688600Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-13T12:13:28.688620Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688640Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.688654Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-13T12:13:28.689031Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker

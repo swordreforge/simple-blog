@@ -128,6 +128,9 @@ pub struct TemplateSettings {
     pub attachment_max_size: i64,
     pub attachment_allowed_types: String,
 
+    // 文章摘要设置
+    pub passage_summarize_enabled: bool,
+
     // 备案信息（针对中国内地）
     pub beian_enabled: bool,
     pub icp_number: String,
@@ -205,6 +208,9 @@ impl Default for TemplateSettings {
             attachment_default_visibility: "public".to_string(),
             attachment_max_size: 524288000, // 500MB
             attachment_allowed_types: "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz".to_string(),
+
+            // 文章摘要设置
+            passage_summarize_enabled: true,
 
             // 备案信息（针对中国内地）
             beian_enabled: false,
@@ -362,6 +368,7 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
         "sponsor_description", "sponsor_button_text",
         "global_avatar",
         "attachment_default_visibility", "attachment_max_size", "attachment_allowed_types",
+        "passage_summarize_enabled",
         "beian_enabled", "icp_number", "police_record_code", "police_record_content",
     ];
     
@@ -417,6 +424,7 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
                 "attachment_default_visibility" => settings.attachment_default_visibility = setting.value,
                 "attachment_max_size" => settings.attachment_max_size = setting.value.parse().unwrap_or(524288000),
                 "attachment_allowed_types" => settings.attachment_allowed_types = setting.value,
+                "passage_summarize_enabled" => settings.passage_summarize_enabled = setting.value == "true",
                 "beian_enabled" => settings.beian_enabled = setting.value == "true",
                 "icp_number" => settings.icp_number = setting.value,
                 "police_record_code" => settings.police_record_code = setting.value,
