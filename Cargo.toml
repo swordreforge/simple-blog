@@ -111,11 +111,11 @@ debug-assertions = false
 incremental = false
 
 [profile.release.build-override]
-opt-level = 3
+opt-level = "z"
 codegen-units = 1
 
 [profile.release.package."*"]
-opt-level = 3
+opt-level = "z"
 codegen-units = 1
 debug = false
 debug-assertions = false
