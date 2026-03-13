@@ -148,7 +148,10 @@ async fn sync_markdown_file_async(
     let html_content = convert_markdown_to_html(&content);
     
     // 生成摘要
-    let summary = extract_summary(&html_content);
+    let summary = {
+        use crate::services::summarize_service::SummarizeService;
+        Some(SummarizeService::generate_summary_from_markdown(&content))
+    };
     
     // 不自动生成标签，保持为空数组
     let tags_json = "[]".to_string();

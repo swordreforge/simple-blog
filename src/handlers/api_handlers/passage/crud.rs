@@ -617,7 +617,10 @@ pub async fn create(
     }
 
     // 如果没有提供摘要，则自动生成
-    let summary = req_json.summary.clone().or_else(|| Some(extract_summary(&html_content)));
+    let summary = req_json.summary.clone().or_else(|| {
+        use crate::services::summarize_service::SummarizeService;
+        Some(SummarizeService::generate_summary_from_markdown(&req_json.content))
+    });
 
     // 如果提供了创建时间，使用指定的；否则使用当前时间
     let created_at = req_json.created_at.as_ref()
