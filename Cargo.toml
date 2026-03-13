@@ -40,7 +40,7 @@ spki = "0.7"
 pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
 
 # 文件上传
-mime_guess = { version = "2.0" }
+mime_guess = "2.0"
 
 # URL 解码
 urlencoding = "2.1"
