@@ -1,3 +1,205 @@
-/* Terser compressed file */
-!function(){let n=null,e=null,t=null,o=null,i=null,r=!1;function a(){if(n)return;n=document.createElement("div"),n.id="markdown-preview-modal",n.className="markdown-preview-modal",n.style.cssText="\n      position: fixed;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      background: rgba(0, 0, 0, 0.5);\n      backdrop-filter: blur(5px);\n      z-index: 10000;\n      display: none;\n      align-items: center;\n      justify-content: center;\n      opacity: 0;\n      transition: opacity 0.3s ease;\n    ",e=document.createElement("div"),e.className="markdown-preview-content",e.style.cssText="\n      background: white;\n      width: 90%;\n      max-width: 800px;\n      max-height: 80vh;\n      border-radius: 12px;\n      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n      overflow: hidden;\n      transform: scale(0.9);\n      transition: transform 0.3s ease;\n      display: flex;\n      flex-direction: column;\n    ";const r=document.createElement("div");r.className="markdown-preview-header",r.style.cssText="\n      padding: 16px 20px;\n      border-bottom: 1px solid #e0e0e0;\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      background: #f5f5f5;\n    ",o=document.createElement("h3"),o.className="markdown-preview-title",o.style.cssText="\n      margin: 0;\n      font-size: 18px;\n      font-weight: 600;\n      color: #333;\n    ",t=document.createElement("button"),t.className="markdown-preview-close",t.innerHTML="\xd7",t.style.cssText="\n      background: none;\n      border: none;\n      font-size: 24px;\n      color: #666;\n      cursor: pointer;\n      width: 32px;\n      height: 32px;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      border-radius: 50%;\n      transition: all 0.2s ease;\n    ",t.addEventListener("mouseenter",()=>{t.style.background="#e0e0e0",t.style.color="#333"}),t.addEventListener("mouseleave",()=>{t.style.background="none",t.style.color="#666"}),r.appendChild(o),r.appendChild(t),i=document.createElement("div"),i.className="markdown-preview-body",i.style.cssText="\n      padding: 20px;\n      overflow-y: auto;\n      flex: 1;\n      font-family: 'Segoe UI', 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;\n      line-height: 1.6;\n      color: #333;\n    ";const a=document.createElement("div");a.className="markdown-preview-loading",a.innerHTML='\n      <div style="\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        height: 200px;\n        color: #666;\n      ">\n        <div style="\n          width: 40px;\n          height: 40px;\n          border: 3px solid #f3f3f3;\n          border-top: 3px solid #3498db;\n          border-radius: 50%;\n          animation: spin 1s linear infinite;\n          margin-bottom: 12px;\n        "></div>\n        <div style="font-size: 14px;">\u52a0\u8f7d\u4e2d...</div>\n      </div>\n      <style>\n        @keyframes spin {\n          0% { transform: rotate(0deg); }\n          100% { transform: rotate(360deg); }\n        }\n      </style>\n    ',e.appendChild(r),e.appendChild(i),n.appendChild(e),document.body.appendChild(n),t.addEventListener("click",d),n.addEventListener("click",e=>{e.target===n&&d()}),document.addEventListener("keydown",e=>{"Escape"===e.key&&"flex"===n.style.display&&d()})}function d(){n&&(n.style.opacity="0",e.style.transform="scale(0.9)",setTimeout(()=>{n.style.display="none",i.innerHTML=""},300))}window.MarkdownPreviewModal={open:async function(t){if(r)return;a(),r=!0,i.innerHTML="";const d=document.createElement("div");d.className="markdown-preview-loading",d.innerHTML='\n      <div style="\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        height: 200px;\n        color: #666;\n      ">\n        <div style="\n          width: 40px;\n          height: 40px;\n          border: 3px solid #f3f3f3;\n          border-top: 3px solid #3498db;\n          border-radius: 50%;\n          animation: spin 1s linear infinite;\n          margin-bottom: 12px;\n        "></div>\n        <div style="font-size: 14px;">\u52a0\u8f7d\u4e2d...</div>\n      </div>\n      <style>\n        @keyframes spin {\n          0% { transform: rotate(0deg); }\n          100% { transform: rotate(360deg); }\n        }\n      </style>\n    ',i.appendChild(d),n.style.display="flex",requestAnimationFrame(()=>{n.style.opacity="1",e.style.transform="scale(1)"});try{const n=await fetch(`/api/markdown/preview?path=${encodeURIComponent(t)}`),e=await n.json();if(!e.o)throw new Error(e.message||"\u52a0\u8f7d\u5931\u8d25");const r=e.data;o.textContent=r.title;const a=function(n){let e=n;return e=e.replace(/&/g,"&amp;"),e=e.replace(/</g,"&lt;"),e=e.replace(/>/g,"&gt;"),e=e.replace(/^### (.*$)/gim,"<h3>$1</h3>"),e=e.replace(/^## (.*$)/gim,"<h2>$1</h2>"),e=e.replace(/^# (.*$)/gim,"<h1>$1</h1>"),e=e.replace(/\*\*(.*?)\*\*/gim,"<strong>$1</strong>"),e=e.replace(/\*(.*?)\*/gim,"<em>$1</em>"),e=e.replace(/\[([^\]]+)\]\(([^)]+)\)/gim,'<a href="$2" target="_blank">$1</a>'),e=e.replace(/!\[([^\]]*)\]\(([^)]+)\)/gim,'<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;">'),e=e.replace(/```(\w+)?\n([\s\S]*?)```/gim,"<pre><code>$2</code></pre>"),e=e.replace(/`([^`]+)`/gim,'<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>'),e=e.replace(/^> (.*$)/gim,'<blockquote style="border-left: 4px solid #ddd; padding-left: 16px; margin: 10px 0; color: #666;">$1</blockquote>'),e=e.replace(/^---$/gim,'<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">'),e=e.replace(/^\- (.*$)/gim,'<li style="margin: 4px 0;">$1</li>'),e=e.replace(/^(\d+)\. (.*$)/gim,'<li style="margin: 4px 0;">$2</li>'),e=e.replace(/\n\n/g,'</p><p style="margin: 10px 0;">'),e=e.replace(/\n/g,"<br>"),e=`<p style="margin: 10px 0;">${e}</p>`,e=e.replace(/<li>/g,'<ul style="margin: 10px 0; padding-left: 20px;"><li>'),e=e.replace(/<\/li>/g,"</li></ul>"),e=e.replace(/<\/ul><ul>/g,""),e}(r.content);i.innerHTML=a,function(){if(!document.getElementById("markdown-preview-styles")){const n=document.createElement("style");n.id="markdown-preview-styles",n.textContent="\n        .markdown-preview-body h1,\n        .markdown-preview-body h2,\n        .markdown-preview-body h3 {\n          margin-top: 20px;\n          margin-bottom: 10px;\n          color: #333;\n          font-weight: 600;\n        }\n\n        .markdown-preview-body h1 {\n          font-size: 24px;\n          border-bottom: 2px solid #e0e0e0;\n          padding-bottom: 10px;\n        }\n\n        .markdown-preview-body h2 {\n          font-size: 20px;\n        }\n\n        .markdown-preview-body h3 {\n          font-size: 18px;\n        }\n\n        .markdown-preview-body p {\n          margin: 10px 0;\n          line-height: 1.6;\n        }\n\n        .markdown-preview-body a {\n          color: #007bff;\n          text-decoration: none;\n        }\n\n        .markdown-preview-body a:hover {\n          text-decoration: underline;\n        }\n\n        .markdown-preview-body pre {\n          background: #f4f4f4;\n          padding: 16px;\n          border-radius: 4px;\n          overflow-x: auto;\n          margin: 10px 0;\n        }\n\n        .markdown-preview-body code {\n          font-family: 'Consolas', 'Monaco', monospace;\n          font-size: 14px;\n        }\n\n        .markdown-preview-body blockquote {\n          border-left: 4px solid #007bff;\n          padding-left: 16px;\n          margin: 10px 0;\n          color: #666;\n          font-style: italic;\n        }\n\n        .markdown-preview-body ul,\n        .markdown-preview-body ol {\n          margin: 10px 0;\n          padding-left: 20px;\n        }\n\n        .markdown-preview-body li {\n          margin: 4px 0;\n        }\n\n        .markdown-preview-body hr {\n          border: none;\n          border-top: 1px solid #e0e0e0;\n          margin: 20px 0;\n        }\n\n        .markdown-preview-body img {\n          max-width: 100%;\n          height: auto;\n          border-radius: 4px;\n          margin: 10px 0;\n        }\n      ",document.head.appendChild(n)}}()}catch(n){console.error("Failed to load markdown:",n),i.innerHTML=`\n        <div style="\n          display: flex;\n          flex-direction: column;\n          align-items: center;\n          justify-content: center;\n          height: 200px;\n          color: #e74c3c;\n        ">\n          <div style="font-size: 48px; margin-bottom: 12px;">\u26a0\ufe0f</div>\n          <div style="font-size: 14px; font-weight: 600;">\u52a0\u8f7d\u5931\u8d25</div>\n          <div style="font-size: 12px; color: #666; margin-top: 4px;">${n.message}</div>\n        </div>\n      `}finally{r=!1}},close:d},"loading"===document.readyState?document.addEventListener("DOMContentLoaded",()=>{a()}):a()}();
-//# sourceMappingURL=markdown-preview-modal.min.js.map
+!function(){let a=null,d=null,n=null,l=null,s=null,p=!1;function c(){var e,t;a||((a=document.createElement("div")).id="markdown-preview-modal",a.className="markdown-preview-modal",a.style.cssText=`
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `,(d=document.createElement("div")).className="markdown-preview-content",d.style.cssText=`
+      background: white;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    `,(e=document.createElement("div")).className="markdown-preview-header",e.style.cssText=`
+      padding: 16px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5f5f5;
+    `,(l=document.createElement("h3")).className="markdown-preview-title",l.style.cssText=`
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    `,(n=document.createElement("button")).className="markdown-preview-close",n.innerHTML="×",n.style.cssText=`
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #666;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    `,n.addEventListener("mouseenter",()=>{n.style.background="#e0e0e0",n.style.color="#333"}),n.addEventListener("mouseleave",()=>{n.style.background="none",n.style.color="#666"}),e.appendChild(l),e.appendChild(n),(s=document.createElement("div")).className="markdown-preview-body",s.style.cssText=`
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      font-family: 'Segoe UI', 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      line-height: 1.6;
+      color: #333;
+    `,(t=document.createElement("div")).className="markdown-preview-loading",t.innerHTML=`
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #666;
+      ">
+        <div style="
+          width: 40px;
+          height: 40px;
+          border: 3px solid #f3f3f3;
+          border-top: 3px solid #3498db;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 12px;
+        "></div>
+        <div style="font-size: 14px;">加载中...</div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    `,d.appendChild(e),d.appendChild(s),a.appendChild(d),document.body.appendChild(a),n.addEventListener("click",o),a.addEventListener("click",e=>{e.target===a&&o()}),document.addEventListener("keydown",e=>{"Escape"===e.key&&"flex"===a.style.display&&o()}))}function o(){a&&(a.style.opacity="0",d.style.transform="scale(0.9)",setTimeout(()=>{a.style.display="none",s.innerHTML=""},300))}window.MarkdownPreviewModal={open:async function(e){if(!p){c(),p=!0,s.innerHTML="";var t=document.createElement("div");t.className="markdown-preview-loading",t.innerHTML=`
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #666;
+      ">
+        <div style="
+          width: 40px;
+          height: 40px;
+          border: 3px solid #f3f3f3;
+          border-top: 3px solid #3498db;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 12px;
+        "></div>
+        <div style="font-size: 14px;">加载中...</div>
+      </div>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    `,s.appendChild(t),a.style.display="flex",requestAnimationFrame(()=>{a.style.opacity="1",d.style.transform="scale(1)"});try{var n=await(await fetch("/api/markdown/preview?path="+encodeURIComponent(e))).json();if(!n.success)throw new Error(n.message||"加载失败");var o,i=n.data,r=(l.textContent=i.title,function(){let e=i.content;return e=(e=(e=(e=`<p style="margin: 10px 0;">${e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=(e=e.replace(/&/g,"&amp;")).replace(/</g,"&lt;")).replace(/>/g,"&gt;")).replace(/^### (.*$)/gim,"<h3>$1</h3>")).replace(/^## (.*$)/gim,"<h2>$1</h2>")).replace(/^# (.*$)/gim,"<h1>$1</h1>")).replace(/\*\*(.*?)\*\*/gim,"<strong>$1</strong>")).replace(/\*(.*?)\*/gim,"<em>$1</em>")).replace(/\[([^\]]+)\]\(([^)]+)\)/gim,'<a href="$2" target="_blank">$1</a>')).replace(/!\[([^\]]*)\]\(([^)]+)\)/gim,'<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0;">')).replace(/```(\w+)?\n([\s\S]*?)```/gim,"<pre><code>$2</code></pre>")).replace(/`([^`]+)`/gim,'<code style="background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: monospace;">$1</code>')).replace(/^> (.*$)/gim,'<blockquote style="border-left: 4px solid #ddd; padding-left: 16px; margin: 10px 0; color: #666;">$1</blockquote>')).replace(/^---$/gim,'<hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">')).replace(/^\- (.*$)/gim,'<li style="margin: 4px 0;">$1</li>')).replace(/^(\d+)\. (.*$)/gim,'<li style="margin: 4px 0;">$2</li>')).replace(/\n\n/g,'</p><p style="margin: 10px 0;">')).replace(/\n/g,"<br>")}</p>`).replace(/<li>/g,'<ul style="margin: 10px 0; padding-left: 20px;"><li>')).replace(/<\/li>/g,"</li></ul>")).replace(/<\/ul><ul>/g,"")}());s.innerHTML=r,document.getElementById("markdown-preview-styles")||((o=document.createElement("style")).id="markdown-preview-styles",o.textContent=`
+        .markdown-preview-body h1,
+        .markdown-preview-body h2,
+        .markdown-preview-body h3 {
+          margin-top: 20px;
+          margin-bottom: 10px;
+          color: #333;
+          font-weight: 600;
+        }
+
+        .markdown-preview-body h1 {
+          font-size: 24px;
+          border-bottom: 2px solid #e0e0e0;
+          padding-bottom: 10px;
+        }
+
+        .markdown-preview-body h2 {
+          font-size: 20px;
+        }
+
+        .markdown-preview-body h3 {
+          font-size: 18px;
+        }
+
+        .markdown-preview-body p {
+          margin: 10px 0;
+          line-height: 1.6;
+        }
+
+        .markdown-preview-body a {
+          color: #007bff;
+          text-decoration: none;
+        }
+
+        .markdown-preview-body a:hover {
+          text-decoration: underline;
+        }
+
+        .markdown-preview-body pre {
+          background: #f4f4f4;
+          padding: 16px;
+          border-radius: 4px;
+          overflow-x: auto;
+          margin: 10px 0;
+        }
+
+        .markdown-preview-body code {
+          font-family: 'Consolas', 'Monaco', monospace;
+          font-size: 14px;
+        }
+
+        .markdown-preview-body blockquote {
+          border-left: 4px solid #007bff;
+          padding-left: 16px;
+          margin: 10px 0;
+          color: #666;
+          font-style: italic;
+        }
+
+        .markdown-preview-body ul,
+        .markdown-preview-body ol {
+          margin: 10px 0;
+          padding-left: 20px;
+        }
+
+        .markdown-preview-body li {
+          margin: 4px 0;
+        }
+
+        .markdown-preview-body hr {
+          border: none;
+          border-top: 1px solid #e0e0e0;
+          margin: 20px 0;
+        }
+
+        .markdown-preview-body img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 4px;
+          margin: 10px 0;
+        }
+      `,document.head.appendChild(o))}catch(e){console.error("Failed to load markdown:",e),s.innerHTML=`
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 200px;
+          color: #e74c3c;
+        ">
+          <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+          <div style="font-size: 14px; font-weight: 600;">加载失败</div>
+          <div style="font-size: 12px; color: #666; margin-top: 4px;">${e.message}</div>
+        </div>
+      `}finally{p=!1}}},close:o},"loading"===document.readyState?document.addEventListener("DOMContentLoaded",()=>{c()}):c()}();

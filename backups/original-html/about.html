@@ -1270,7 +1270,7 @@ body.about-focus-mode .about-focus-selected {
       </a>
     </div>
   </div>
-  <script src="/js/about-inline-1.js" defer></script>
+  <script type="module" src="/js/about-inline-1.js"></script>
   <div class="modal" id="loginModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1630,15 +1630,15 @@ body.about-focus-mode .about-focus-selected {
     rel="stylesheet"
     href="/css/glass-effect.css"
   />
-  <script src="/js/about-inline-2.js" defer></script>
+  <script type="module" src="/js/about-inline-2.js"></script>
   <script src="/js/ecc-encrypt.js" defer></script>
   <script src="/js/login.js" defer></script>
   <script src="/js/modal-animations.js" defer></script>
   <script>
     let originalTitle=document.title;const switchNoticeText="{{ switch_notice_text }}",isNoticeEnabled= {{ switch_notice }};document.addEventListener("visibilitychange",function(){isNoticeEnabled&&(document.hidden?document.title=switchNoticeText:document.title=originalTitle)}),window.addEventListener("focus",function(){isNoticeEnabled&&(document.title=originalTitle)})
   </script>
-  <script src="/js/about-focus-mode.js" defer></script>
-  <script src="/js/keyboard-shortcuts.js" defer></script>
+  <script src="/js/about-focus-mode.js"></script>
+  <script src="/js/keyboard-shortcuts.js"></script>
 <script>
   // 快捷操作面板功能
   (function() {
