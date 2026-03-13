@@ -240,9 +240,6 @@ async function saveTemplateSettings() {
                 police_record_content: document.getElementById("policeRecordContent").value
             }),
             i = {};
-        console.log("原始设置:", originalTemplateSettings);
-        console.log("当前设置:", a);
-        console.log("passage_summarize_enabled - 原始:", originalTemplateSettings.passage_summarize_enabled, "当前:", a.passage_summarize_enabled);
         for (const d in a) a[d] !== originalTemplateSettings[d] && (i[d] = a[d]);
         0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/template", {
             method: "PATCH",
