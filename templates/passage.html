@@ -5700,6 +5700,11 @@ function renderArticle(articleData) {
   // 加载附件列表
   loadAttachments(articleData.date, articleEl);
 
+  // 加载文章摘要
+  if (window.ArticleSummary && typeof window.ArticleSummary.processArticle === 'function') {
+    window.ArticleSummary.processArticle(articleEl, articleData);
+  }
+
   // 显示赞助区域（如果启用）
   const sponsorSection = articleEl.querySelector('.sponsor-section-template');
   if (sponsorSection) {

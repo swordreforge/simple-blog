@@ -175,7 +175,7 @@
   /**
    * 处理单篇文章的摘要显示
    */
-  async function processArticle(article) {
+  async function processArticle(article, articleData = null) {
     const articleElementId = article.id || article.getAttribute('data-article-id');
     console.log('[ArticleSummary] 开始处理文章:', articleElementId);
     
@@ -208,22 +208,31 @@
     // 从文章数据中获取摘要
     console.log('[ArticleSummary] 开始获取文章数据...');
     let summary = null;
-    const articleData = getArticleData(article);
     
-    console.log('[ArticleSummary] 获取到的文章数据:', articleData);
-    
+    // 如果直接提供了 articleData，优先使用
     if (articleData && articleData.summary) {
       summary = articleData.summary;
-      console.log('[ArticleSummary] 从文章数据中获取到摘要:', summary);
+      console.log('[ArticleSummary] 从传入的 articleData 获取到摘要:', summary);
     } else {
-      console.log('[ArticleSummary] 文章数据中没有摘要，尝试从 API 获取...');
-      // 备用方案：尝试从 API 获取摘要
-      // 从完整的 ID 中提取 UUID 或原始 ID
-      const apiArticleId = extractIdFromElementId(articleElementId);
-      console.log('[ArticleSummary] 提取的 API ID:', apiArticleId);
-      if (apiArticleId) {
-        summary = await fetchSummaryFromAPI(apiArticleId);
-        console.log('[ArticleSummary] 从 API 获取到的摘要:', summary);
+      console.log('[ArticleSummary] 没有传入 articleData 或没有摘要，尝试其他方法...');
+      // 备用方案：尝试从其他来源获取摘要
+      const fallbackArticleData = getArticleData(article);
+      
+      console.log('[ArticleSummary] 获取到的文章数据:', fallbackArticleData);
+      
+      if (fallbackArticleData && fallbackArticleData.summary) {
+        summary = fallbackArticleData.summary;
+        console.log('[ArticleSummary] 从文章数据中获取到摘要:', summary);
+      } else {
+        console.log('[ArticleSummary] 文章数据中没有摘要，尝试从 API 获取...');
+        // 备用方案：尝试从 API 获取摘要
+        // 从完整的 ID 中提取 UUID 或原始 ID
+        const apiArticleId = extractIdFromElementId(articleElementId);
+        console.log('[ArticleSummary] 提取的 API ID:', apiArticleId);
+        if (apiArticleId) {
+          summary = await fetchSummaryFromAPI(apiArticleId);
+          console.log('[ArticleSummary] 从 API 获取到的摘要:', summary);
+        }
       }
     }
 
