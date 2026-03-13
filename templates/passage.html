@@ -7809,19 +7809,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- 顶栏滚动隐藏逻辑 -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('[顶栏滚动隐藏逻辑] DOMContentLoaded 触发');
-
   const nav = document.querySelector('nav');
   const contentArea = document.querySelector('.content-area');
   const articleContainer = document.querySelector('.article-container');
   const mainContainer = document.querySelector('.main-container');
   const footer = document.querySelector('footer');
-
-  console.log('[顶栏滚动隐藏逻辑] nav 元素:', nav);
-  console.log('[顶栏滚动隐藏逻辑] contentArea 元素:', contentArea);
-  console.log('[顶栏滚动隐藏逻辑] articleContainer 元素:', articleContainer);
-  console.log('[顶栏滚动隐藏逻辑] mainContainer 元素:', mainContainer);
-  console.log('[顶栏滚动隐藏逻辑] footer 元素:', footer);
 
   if (articleContainer) {
     console.log('[顶栏滚动隐藏逻辑] articleContainer 当前样式:', {
@@ -7850,23 +7842,14 @@ document.addEventListener('DOMContentLoaded', function() {
   let hasTriggered = false; // 标记是否已经触发过
 
   if (nav && articleContainer && mainContainer) {
-    console.log('[顶栏滚动隐藏逻辑] 所有元素都找到了，添加滚动监听');
-
     articleContainer.addEventListener('scroll', function() {
       scrollEventCount++;
-      console.log('[顶栏滚动隐藏逻辑] 滚动事件触发 (第' + scrollEventCount + '次)');
-
       if (!ticking && !hasTriggered) {
         window.requestAnimationFrame(function() {
           const currentScrollY = articleContainer.scrollTop;
-
-          console.log('[顶栏滚动隐藏逻辑] 当前滚动位置:', currentScrollY, '上次滚动位置:', lastScrollY);
-
           // 只在滚动超过10px时触发一次
           if (currentScrollY > 10) {
-            console.log('[顶栏滚动隐藏逻辑] 滚动超过10px，触发隐藏顶栏和底栏');
-            hasTriggered = true;
-            
+            hasTriggered = true;   
             // 先添加过渡效果，然后隐藏
             nav.style.transform = 'translateY(-100%)';
             nav.style.opacity = '0';
@@ -7878,7 +7861,6 @@ document.addEventListener('DOMContentLoaded', function() {
               nav.style.display = 'none';
               footer.style.display = 'none';
               mainContainer.style.height = '100vh';
-              console.log('[顶栏滚动隐藏逻辑] mainContainer 新高度:', window.getComputedStyle(mainContainer).height);
             }, 400);
           }
 
@@ -7890,19 +7872,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    console.log('[顶栏滚动隐藏逻辑] 滚动监听器已添加');
-    console.log('[顶栏滚动隐藏逻辑] 等待滚动事件...');
-
     // 5秒后检查是否触发过滚动事件
     setTimeout(function() {
-      console.log('[顶栏滚动隐藏逻辑] 5秒内滚动事件触发次数:', scrollEventCount);
       if (scrollEventCount === 0) {
-        console.warn('[顶栏滚动隐藏逻辑] 5秒内没有触发滚动事件，可能articleContainer不可滚动');
       }
     }, 5000);
-
   } else {
-    console.error('[顶栏滚动隐藏逻辑] 未找到元素 - nav:', nav, 'articleContainer:', articleContainer, 'mainContainer:', mainContainer);
   }
 });
 </script>
