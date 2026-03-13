@@ -8,6 +8,7 @@
 
   let passageSummarizeEnabled = true; // 默认启用
   let isLoaded = false;
+  let checkInterval = null;
 
   /**
    * 初始化文章摘要功能
@@ -48,8 +49,37 @@
     // 处理已存在的文章
     processExistingArticles();
 
+    // 添加定期检查机制，因为文章是动态加载的
+    console.log('[ArticleSummary] 启动定期检查机制...');
+    startPeriodicCheck();
+
     isLoaded = true;
     console.log('[ArticleSummary] 初始化完成');
+  }
+
+  /**
+   * 启动定期检查机制
+   */
+  function startPeriodicCheck() {
+    if (checkInterval) {
+      console.log('[ArticleSummary] 定期检查机制已存在，跳过');
+      return;
+    }
+    
+    console.log('[ArticleSummary] 设置定期检查，每500ms检查一次...');
+    checkInterval = setInterval(() => {
+      console.log('[ArticleSummary] 定期检查 - 寻找未处理的文章...');
+      processExistingArticles();
+    }, 500);
+    
+    // 10秒后停止定期检查
+    setTimeout(() => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+        console.log('[ArticleSummary] 定期检查已停止');
+      }
+    }, 10000);
   }
 
   /**
