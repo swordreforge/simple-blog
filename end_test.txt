@@ -1,0 +1,29 @@
+GET /api/settings/template HTTP/1.1
+Host: localhost:8080
+sec-ch-ua-platform: "Linux"
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzczNDkyNjA1LCJpYXQiOjE3NzM0MDYyMDUsIm5iZiI6MTc3MzQwNjIwNSwiaXNzIjoicnVzdGJsb2cifQ.5tQBHh_-qwtyR2awXnn4ssSyRXYrKCWCXuTUIs9yBww
+Accept-Language: zh-CN,zh;q=0.9
+sec-ch-ua: "Chromium";v="145", "Not:A-Brand";v="99"
+Content-Type: application/json
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36
+Accept: */*
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Referer: http://localhost:8080/admin
+Accept-Encoding: gzip, deflate, br
+Cookie: auth_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzczNDkyNjA1LCJpYXQiOjE3NzM0MDYyMDUsIm5iZiI6MTc3MzQwNjIwNSwiaXNzIjoicnVzdGJsb2cifQ.5tQBHh_-qwtyR2awXnn4ssSyRXYrKCWCXuTUIs9yBww
+Connection: keep-alive
+
+
+
+
+
+HTTP/1.1 200 OK
+vary: accept-encoding
+content-type: application/json
+date: Fri, 13 Mar 2026 12:50:46 GMT
+Content-Length: 1919
+
+{"name":"欢迎来到我的博客","greting":"这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。","year":"2026","foodes":"我的博客","background_image":"/img/test.webp","mobile_background_image":"/img/mobile-test.webp","background_color":"#ffffff","background_size":"cover","background_position":"center","background_repeat":"no-repeat","background_attachment":"fixed","global_opacity":0.15,"blur_amount":20,"saturate_amount":180,"floating_text_enabled":false,"navbar_glass_color":"rgba(220, 138, 221, 0.15)","navbar_text_color":"#333333","card_glass_color":"rgba(220, 138, 221, 0.2)","footer_glass_color":"rgba(220, 138, 221, 0.25)","dark_mode_enabled":false,"article_title":true,"article_title_prefix":"文章","switch_notice":true,"switch_notice_text":"回来继续阅读","external_link_warning":true,"external_link_whitelist":"github.com,gitee.com,stackoverflow.com","external_link_warning_text":"您即将离开本站，前往外部链接","live2d_enabled":false,"live2d_show_on_index":true,"live2d_show_on_passage":true,"live2d_show_on_collect":true,"live2d_show_on_about":true,"live2d_show_on_admin":false,"live2d_model_id":"1","live2d_model_path":"","live2d_cdn_path":"https://unpkg.com/live2d-widget-model@1.0.5/","live2d_position":"right","live2d_width":"280px","live2d_height":"250px","sponsor_enabled":false,"sponsor_title":"感谢您的支持","sponsor_image":"/img/avatar.webp","sponsor_description":"如果您觉得这个博客对您有帮助，欢迎赞助支持！","sponsor_button_text":"❤️ 赞助支持","global_avatar":"/img/avatar.webp","attachment_default_visibility":"public","attachment_max_size":524288000,"attachment_allowed_types":"jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz","passage_summarize_enabled":true,"beian_enabled":false,"icp_number":"","police_record_code":"","police_record_content":""}
