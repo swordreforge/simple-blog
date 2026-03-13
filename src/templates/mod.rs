@@ -666,10 +666,10 @@ pub fn create_passage_context() -> TeraContext {
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
 
     // 外观设置
-    let mut navbar_glass_color = "rgba(220, 138, 221, 0.15)".to_string();
-    let mut navbar_text_color = "#333333".to_string();
-    let mut card_glass_color = "rgba(220, 138, 221, 0.2)".to_string();
-    let mut footer_glass_color = "rgba(220, 138, 221, 0.25)".to_string();
+    let mut _navbar_glass_color = "rgba(220, 138, 221, 0.15)".to_string();
+    let mut _navbar_text_color = "#333333".to_string();
+    let mut _card_glass_color = "rgba(220, 138, 221, 0.2)".to_string();
+    let mut _footer_glass_color = "rgba(220, 138, 221, 0.25)".to_string();
 
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
@@ -688,16 +688,16 @@ pub fn create_passage_context() -> TeraContext {
             }
             // 外观设置
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "navbar_glass_color") {
-                navbar_glass_color = setting.value;
+                _navbar_glass_color = setting.value;
             }
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "navbar_text_color") {
-                navbar_text_color = setting.value;
+                _navbar_text_color = setting.value;
             }
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "card_glass_color") {
-                card_glass_color = setting.value;
+                _card_glass_color = setting.value;
             }
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "footer_glass_color") {
-                footer_glass_color = setting.value;
+                _footer_glass_color = setting.value;
             }
         }
     }

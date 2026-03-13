@@ -43,14 +43,15 @@ impl AppCache {
     }
 
     /// 获取或加载缓存值（防止缓存击穿）
-    /// 
+    ///
     /// # 参数
     /// - `key`: 缓存键
     /// - `loader`: 加载函数，当缓存未命中时调用
     /// - `ttl`: 缓存过期时间（秒）
-    /// 
+    ///
     /// # 返回
     /// 返回缓存值或加载的值
+    #[allow(dead_code)]
     pub async fn get_or_load<F, Fut>(
         &self,
         key: &str,
@@ -88,9 +89,10 @@ impl AppCache {
     /// - `keys`: 缓存键列表
     /// - `loader`: 加载函数，接收未命中的键列表
     /// - `ttl`: 缓存过期时间（秒）
-    /// 
+    ///
     /// # 返回
     /// 返回键值对映射
+    #[allow(dead_code)]
     pub async fn get_or_load_many<F, Fut>(
         &self,
         keys: &[String],

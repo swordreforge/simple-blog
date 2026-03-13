@@ -134,6 +134,7 @@ impl SummarizeService {
     /// # 返回
     ///
     /// 返回限制长度的摘要。
+    #[allow(dead_code)]
     pub fn generate_summary_with_limit(content: &str, max_length: usize) -> String {
         let summary = Self::generate_summary(content);
         

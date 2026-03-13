@@ -94,6 +94,7 @@ impl CacheManager {
         config: CacheConfig,
     ) -> Result<Self, CacheError> {
         let valkey_url_owned = valkey_url.map(|s| s.to_string());
+        #[allow(clippy::type_complexity)]
         let (primary, fallback, valkey_backend): (
             Arc<dyn CacheBackend>,
             Option<Arc<dyn CacheBackend>>,

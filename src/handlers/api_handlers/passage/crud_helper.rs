@@ -5,6 +5,7 @@ use crate::db::repositories::PassageRepository;
 use crate::cache::CacheError;
 
 /// 从数据库获取文章列表（用于缓存加载函数）
+#[allow(clippy::too_many_arguments)]
 pub async fn fetch_passage_list_from_db(
     passage_repo: std::sync::Arc<PassageRepository>,
     use_cursor: bool,

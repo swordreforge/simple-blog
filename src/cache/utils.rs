@@ -17,6 +17,7 @@ use super::backend::CacheError;
 /// # 缓存防护
 /// - 防止缓存击穿：使用互斥锁防止并发请求同时查询数据库
 /// - 防止缓存穿透：缓存空值（__NULL__）
+#[allow(dead_code)]
 pub async fn get_passage_cache<F, Fut>(
     manager: Option<&crate::cache::manager::CacheManager>,
     key: &str,
@@ -47,6 +48,7 @@ where
 /// # 缓存防护
 /// - 防止缓存击穿：使用互斥锁防止并发请求同时查询数据库
 /// - 防止缓存穿透：缓存空值（__NULL__）
+#[allow(dead_code)]
 pub async fn get_passage_list_cache<F, Fut>(
     manager: Option<&crate::cache::manager::CacheManager>,
     key: &str,
@@ -78,6 +80,7 @@ where
 /// # 缓存防护
 /// - 防止缓存雪崩：使用 TTL 抖动（10% 抖动）
 /// - 防止缓存穿透：支持缓存空值
+#[allow(dead_code)]
 pub async fn set_passage_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
     key: &str,
