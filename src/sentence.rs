@@ -30,7 +30,7 @@ pub fn filter_sentences(sentences: &[String]) -> Vec<String> {
         .iter()
         .filter(|s| {
             let len = s.chars().count();
-            len >= 5 && len <= 200
+            (5..=200).contains(&len)
         })
         .cloned()
         .collect()

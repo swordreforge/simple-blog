@@ -14,8 +14,7 @@ pub fn cosine_similarity(tokens1: &[String], tokens2: &[String]) -> f64 {
         return 0.0;
     }
 
-    let jaccard = intersection as f64 / (set1.len() + set2.len() - intersection) as f64;
-    jaccard
+    intersection as f64 / (set1.len() + set2.len() - intersection) as f64
 }
 
 pub fn build_similarity_matrix(tokenized_sentences: &[Vec<String>]) -> Vec<Vec<f64>> {
@@ -33,7 +32,7 @@ pub fn build_similarity_matrix(tokenized_sentences: &[Vec<String>]) -> Vec<Vec<f
     matrix
 }
 
-pub fn normalize_matrix(matrix: &mut Vec<Vec<f64>>) {
+pub fn normalize_matrix(matrix: &mut [Vec<f64>]) {
     for row in matrix.iter_mut() {
         let sum: f64 = row.iter().sum();
         if sum > 0.0 {
