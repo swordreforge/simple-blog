@@ -159,6 +159,7 @@ pub async fn save(
         content: html_content,
         original_content: Some(req_data.content),
         summary: Some(summary),
+        summarize: None,  // 将在创建时自动生成
         author: "admin".to_string(),
         tags: tags_json,
         category,

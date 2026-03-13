@@ -73,6 +73,9 @@ once_cell = { version = "1.21", default-features = false, features = ["std", "al
 # 文件嵌入
 rust-embed = { version = "8.11", default-features = false, features = ["include-exclude", "debug-embed"] }
 
+# 中文文本摘要库（本地路径）
+rustblog-wip-for-summarize-in-zh-cn = { path = "./summarize-in-zh-cn" }
+
 # JWT 认证
 jsonwebtoken = { version = "10.3", default-features = false, features = ["use_pem", "rust_crypto"] }
 

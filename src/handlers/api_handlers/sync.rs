@@ -165,6 +165,7 @@ async fn sync_markdown_file_async(
             content: html_content,
             original_content: Some(content.clone()),
             summary,
+            summarize: None,  // 将在更新时自动生成
             author: existing.author,
             tags: existing.tags, // 保留原有标签
             category: existing.category, // 保留原有分类
@@ -193,6 +194,7 @@ async fn sync_markdown_file_async(
             content: html_content,
             original_content: Some(content.clone()),
             summary,
+            summarize: None,  // 将在创建时自动生成
             author: "Admin".to_string(),
             tags: tags_json.clone(),
             category: "未分类".to_string(),

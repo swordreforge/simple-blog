@@ -632,6 +632,7 @@ pub async fn create(
         content: html_content,
         original_content: Some(req_json.content.clone()),
         summary,
+        summarize: None,  // 将在创建时自动生成
         author: req_json.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
         tags: tags_json,
         category: req_json.category.clone().unwrap_or_else(|| "未分类".to_string()),

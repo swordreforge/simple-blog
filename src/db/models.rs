@@ -292,6 +292,7 @@ pub struct Passage {
     pub content: String,
     pub original_content: Option<String>,
     pub summary: Option<String>,
+    pub summarize: Option<String>,  // 自动生成的摘要
     pub author: String,
     pub tags: String,  // JSON 数组字符串
     pub category: String,
@@ -316,6 +317,7 @@ impl Passage {
             content,
             original_content: None,
             summary: None,
+            summarize: None,
             author: "Anonymous".to_string(),
             tags: "[]".to_string(),
             category: "未分类".to_string(),

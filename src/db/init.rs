@@ -190,6 +190,16 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             }
         ).unwrap_or(false);
 
+        // 检查是否有 summarize 列
+        let has_summarize_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('passages') WHERE name = 'summarize'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
         // 如果表已存在但没有 uuid 列，则添加该列
         if !has_uuid_column {
             println!("⚠️  检测到旧版数据库结构，正在迁移 passages 表...");
@@ -221,6 +231,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
                     content TEXT NOT NULL,
                     original_content TEXT,
                     summary TEXT,
+                    summarize TEXT,
                     author TEXT DEFAULT '管理员',
                     tags TEXT DEFAULT '[]',
                     category TEXT DEFAULT '未分类',
@@ -238,8 +249,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             
             // 复制数据
             conn.execute(
-                "INSERT INTO passages_new (id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 
-                 SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+                "INSERT INTO passages_new (id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 
+                 SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
                  FROM passages",
                 [],
             )?;
@@ -256,6 +267,11 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             // 为现有文章设置默认封面
             conn.execute("UPDATE passages SET cover_image = '/img/passage-cover.webp' WHERE cover_image IS NULL", [])?;
             println!("✅ 已添加 cover_image 列");
+        } else if !has_summarize_column {
+            // 如果有 uuid 和 cover_image 列但没有 summarize 列，直接添加 summarize 列
+            println!("⚠️  检测到缺少 summarize 列，正在添加...");
+            conn.execute("ALTER TABLE passages ADD COLUMN summarize TEXT", [])?;
+            println!("✅ 已添加 summarize 列");
         }
     }
 
@@ -268,6 +284,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             content TEXT NOT NULL,
             original_content TEXT,
             summary TEXT,
+            summarize TEXT,
             author TEXT DEFAULT '管理员',
             tags TEXT DEFAULT '[]',
             category TEXT DEFAULT '未分类',

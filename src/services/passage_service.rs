@@ -71,6 +71,7 @@ impl PassageService {
             content: html_content,
             original_content: Some(content),
             summary,
+            summarize: None,  // 将在创建时自动生成
             author,
             tags,
             category,

@@ -68,15 +68,20 @@ impl PassageRepository {
         // 生成 Flake UUID（使用基于主机名的唯一 machine ID）
         let uuid = crate::id_generator::generate_unique_id();
         
+        // 自动生成摘要
+        use crate::services::summarize_service::SummarizeService;
+        let summarize = SummarizeService::generate_summary_from_markdown(&passage.content);
+        
         let _ = conn.execute(
-            "INSERT INTO passages (uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO passages (uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 &uuid,
                 &passage.title,
                 &passage.content,
                 &passage.original_content,
                 &passage.summary,
+                &summarize,
                 &passage.author,
                 &passage.tags,
                 &passage.category,
@@ -99,7 +104,7 @@ impl PassageRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Passage, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE id = ?"
         )?;
         
@@ -111,17 +116,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
-                author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                summarize: row.get(6)?,
+                author: row.get(7)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?;
         
@@ -132,7 +138,7 @@ impl PassageRepository {
     pub async fn get_by_uuid(&self, uuid: &str) -> Result<Passage, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE uuid = ?"
         )?;
         
@@ -144,17 +150,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
-                author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                summarize: row.get(6)?,
+                author: row.get(7)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?;
         
@@ -165,7 +172,7 @@ impl PassageRepository {
     pub async fn get_by_file_path(&self, file_path: &str) -> Result<Passage, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE file_path = ?"
         )?;
         
@@ -177,17 +184,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
-                author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                summarize: row.get(6)?,
+                author: row.get(7)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?;
         
@@ -198,7 +206,7 @@ impl PassageRepository {
     pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
         
@@ -210,17 +218,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
+                summarize: row.get(6)?,
                 author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -231,7 +240,7 @@ impl PassageRepository {
     pub async fn get_published(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
              FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
         )?;
 
@@ -243,17 +252,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
+                summarize: row.get(6)?,
                 author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
 
@@ -283,7 +293,7 @@ impl PassageRepository {
             };
             
             let query = r#"
-                SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
                 FROM passages 
                 WHERE status = 'published' AND (created_at < ? OR (created_at = ? AND id < ?))
                 ORDER BY created_at DESC, id DESC
@@ -299,17 +309,18 @@ impl PassageRepository {
                     content: row.get(3)?,
                     original_content: row.get(4)?,
                     summary: row.get(5)?,
+                summarize: row.get(6)?,
                     author: row.get(6)?,
-                    tags: row.get(7)?,
-                    category: row.get(8)?,
-                    status: row.get(9)?,
-                    file_path: row.get(10)?,
-                    visibility: row.get(11)?,
-                    is_scheduled: row.get(12)?,
-                    published_at: row.get(13)?,
-                    cover_image: row.get(14)?,
-                    created_at: row.get(15)?,
-                    updated_at: row.get(16)?,
+                    tags: row.get(8)?,
+                    category: row.get(9)?,
+                    status: row.get(10)?,
+                    file_path: row.get(11)?,
+                    visibility: row.get(12)?,
+                    is_scheduled: row.get(13)?,
+                    published_at: row.get(14)?,
+                    cover_image: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
                 })
             })?.collect::<Result<Vec<_>, _>>()?;
 
@@ -323,7 +334,7 @@ impl PassageRepository {
         } else {
             // 第一页，没有游标
             let query = r#"
-                SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
                 FROM passages 
                 WHERE status = 'published'
                 ORDER BY created_at DESC, id DESC
@@ -339,17 +350,18 @@ impl PassageRepository {
                     content: row.get(3)?,
                     original_content: row.get(4)?,
                     summary: row.get(5)?,
+                summarize: row.get(6)?,
                     author: row.get(6)?,
-                    tags: row.get(7)?,
-                    category: row.get(8)?,
-                    status: row.get(9)?,
-                    file_path: row.get(10)?,
-                    visibility: row.get(11)?,
-                    is_scheduled: row.get(12)?,
-                    published_at: row.get(13)?,
-                    cover_image: row.get(14)?,
-                    created_at: row.get(15)?,
-                    updated_at: row.get(16)?,
+                    tags: row.get(8)?,
+                    category: row.get(9)?,
+                    status: row.get(10)?,
+                    file_path: row.get(11)?,
+                    visibility: row.get(12)?,
+                    is_scheduled: row.get(13)?,
+                    published_at: row.get(14)?,
+                    cover_image: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
                 })
             })?.collect::<Result<Vec<_>, _>>()?;
 
@@ -384,7 +396,7 @@ impl PassageRepository {
 
                     let query = r#"
 
-                        SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                        SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
 
                         FROM passages
 
@@ -416,27 +428,29 @@ impl PassageRepository {
 
                             summary: row.get(5)?,
 
-                            author: row.get(6)?,
+                            summarize: row.get(6)?,
 
-                            tags: row.get(7)?,
+                            author: row.get(7)?,
 
-                            category: row.get(8)?,
+                            tags: row.get(8)?,
 
-                            status: row.get(9)?,
+                            category: row.get(9)?,
 
-                            file_path: row.get(10)?,
+                            status: row.get(10)?,
 
-                            visibility: row.get(11)?,
+                            file_path: row.get(11)?,
 
-                            is_scheduled: row.get(12)?,
+                            visibility: row.get(12)?,
 
-                            published_at: row.get(13)?,
+                            is_scheduled: row.get(13)?,
 
-                            cover_image: row.get(14)?,
+                            published_at: row.get(14)?,
 
-                            created_at: row.get(15)?,
+                            cover_image: row.get(15)?,
 
-                            updated_at: row.get(16)?,
+                            created_at: row.get(16)?,
+
+                            updated_at: row.get(17)?,
 
                         })
 
@@ -478,7 +492,7 @@ impl PassageRepository {
 
         let where_clause = conditions.join(" AND ");
         let sql = format!(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
              FROM passages WHERE {} ORDER BY created_at DESC LIMIT ? OFFSET ?",
             where_clause
         );
@@ -497,17 +511,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
+                summarize: row.get(6)?,
                 author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
 
@@ -553,14 +568,20 @@ impl PassageRepository {
     pub async fn update(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
         let id = passage.id.ok_or("文章 ID 不能为空")?;
         let conn = self.pool.get()?;
+        
+        // 自动生成摘要
+        use crate::services::summarize_service::SummarizeService;
+        let summarize = SummarizeService::generate_summary_from_markdown(&passage.content);
+        
         conn.execute(
-            "UPDATE passages SET title = ?, content = ?, original_content = ?, summary = ?, author = ?, tags = ?, category = ?, status = ?, file_path = ?, visibility = ?, is_scheduled = ?, published_at = ?, cover_image = ?, updated_at = ? 
+            "UPDATE passages SET title = ?, content = ?, original_content = ?, summary = ?, summarize = ?, author = ?, tags = ?, category = ?, status = ?, file_path = ?, visibility = ?, is_scheduled = ?, published_at = ?, cover_image = ?, updated_at = ? 
              WHERE id = ?",
             params![
                 &passage.title,
                 &passage.content,
                 &passage.original_content,
                 &passage.summary,
+                &summarize,
                 &passage.author,
                 &passage.tags,
                 &passage.category,
@@ -672,7 +693,7 @@ impl PassageRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!(
-            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE id IN ({})",
             placeholders
         );
@@ -686,17 +707,18 @@ impl PassageRepository {
                 content: row.get(3)?,
                 original_content: row.get(4)?,
                 summary: row.get(5)?,
+                summarize: row.get(6)?,
                 author: row.get(6)?,
-                tags: row.get(7)?,
-                category: row.get(8)?,
-                status: row.get(9)?,
-                file_path: row.get(10)?,
-                visibility: row.get(11)?,
-                is_scheduled: row.get(12)?,
-                published_at: row.get(13)?,
-                cover_image: row.get(14)?,
-                created_at: row.get(15)?,
-                updated_at: row.get(16)?,
+                tags: row.get(8)?,
+                category: row.get(9)?,
+                status: row.get(10)?,
+                file_path: row.get(11)?,
+                visibility: row.get(12)?,
+                is_scheduled: row.get(13)?,
+                published_at: row.get(14)?,
+                cover_image: row.get(15)?,
+                created_at: row.get(16)?,
+                updated_at: row.get(17)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         Ok(passages)
@@ -2226,6 +2248,7 @@ mod tests {
             content: "<p>Test content</p>".to_string(),
             original_content: Some("# Test\n\nContent".to_string()),
             summary: Some("Test summary".to_string()),
+            summarize: Some("Test summarize".to_string()),
             author: "Test Author".to_string(),
             tags: "[\"tag1\", \"tag2\"]".to_string(),
             category: "Test Category".to_string(),
