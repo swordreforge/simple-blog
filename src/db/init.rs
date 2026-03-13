@@ -597,12 +597,13 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ("template_article_title_prefix", "文章", "string", "文章标题前缀", "template"),
             ("template_switch_notice", "true", "boolean", "是否显示切换界面提示", "template"),
             ("template_switch_notice_text", "回来继续阅读", "string", "切换标签页时显示的提示文字", "template"),
-            ("external_link_warning", "true", "boolean", "是否启用外部链接跳转警告", "template"),
-            ("external_link_whitelist", "github.com,gitee.com,stackoverflow.com", "string", "外部链接白名单（逗号分隔的域名）", "template"),
-            ("external_link_warning_text", "您即将离开本站，前往外部链接", "string", "外部链接警告提示文字", "template"),
+                        ("external_link_warning", "true", "boolean", "是否启用外部链接跳转警告", "template"),
+                        ("external_link_whitelist", "github.com,gitee.com,stackoverflow.com", "string", "外部链接白名单（逗号分隔的域名）", "template"),
+                        ("external_link_warning_text", "您即将离开本站，前往外部链接", "string", "外部链接警告提示文字", "template"),
+                        ("passage_summarize_enabled", "true", "boolean", "是否启用文章摘要功能", "template"),
             
-            // Live2D 设置
-            ("live2d_enabled", "false", "boolean", "是否启用 Live2D 看板娘", "template"),
+                        // Live2D 设置
+                        ("live2d_enabled", "false", "boolean", "是否启用 Live2D 看板娘", "template"),
             ("live2d_show_on_index", "true", "boolean", "是否在首页显示 Live2D", "template"),
             ("live2d_show_on_passage", "true", "boolean", "是否在文章页显示 Live2D", "template"),
             ("live2d_show_on_collect", "true", "boolean", "是否在归档页显示 Live2D", "template"),
@@ -685,6 +686,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
             ("external_link_warning", "true", "boolean", "是否启用外部链接跳转警告", "template"),
             ("external_link_whitelist", "github.com,gitee.com,stackoverflow.com", "string", "外部链接白名单（逗号分隔的域名）", "template"),
             ("external_link_warning_text", "您即将离开本站，前往外部链接", "string", "外部链接警告提示文字", "template"),
+            ("passage_summarize_enabled", "true", "boolean", "是否启用文章摘要功能", "template"),
             
             // Live2D 设置
             ("live2d_enabled", "false", "boolean", "是否启用 Live2D 看板娘", "template"),

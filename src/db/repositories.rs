@@ -64,14 +64,19 @@ impl PassageRepository {
     /// 创建文章
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        
+
         // 生成 Flake UUID（使用基于主机名的唯一 machine ID）
         let uuid = crate::id_generator::generate_unique_id();
-        
-        // 自动生成摘要
+
+        // 检查是否启用文章摘要功能
         use crate::services::summarize_service::SummarizeService;
-        let summarize = SummarizeService::generate_summary_from_markdown(&passage.content);
-        
+        let summarize = match SettingRepository::get(&conn, "passage_summarize_enabled") {
+            Ok(Some(setting)) if setting.value == "true" => {
+                Some(SummarizeService::generate_summary_from_markdown(&passage.content))
+            }
+            _ => None,
+        };
+
         let _ = conn.execute(
             "INSERT INTO passages (uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -568,11 +573,16 @@ impl PassageRepository {
     pub async fn update(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
         let id = passage.id.ok_or("文章 ID 不能为空")?;
         let conn = self.pool.get()?;
-        
-        // 自动生成摘要
+
+        // 检查是否启用文章摘要功能
         use crate::services::summarize_service::SummarizeService;
-        let summarize = SummarizeService::generate_summary_from_markdown(&passage.content);
-        
+        let summarize = match SettingRepository::get(&conn, "passage_summarize_enabled") {
+            Ok(Some(setting)) if setting.value == "true" => {
+                Some(SummarizeService::generate_summary_from_markdown(&passage.content))
+            }
+            _ => None,
+        };
+
         conn.execute(
             "UPDATE passages SET title = ?, content = ?, original_content = ?, summary = ?, summarize = ?, author = ?, tags = ?, category = ?, status = ?, file_path = ?, visibility = ?, is_scheduled = ?, published_at = ?, cover_image = ?, updated_at = ? 
              WHERE id = ?",
