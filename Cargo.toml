@@ -101,24 +101,76 @@ profiling = ["pprof"]
 simd = ["simd-json"]
 
 [profile.release]
-opt-level = 3
+opt-level = "z"
 lto = "fat"
 codegen-units = 1
 panic = "abort"
 overflow-checks = false
 debug = false
+strip = true
 debug-assertions = false
 incremental = false
 
 [profile.release.build-override]
 opt-level = "z"
 codegen-units = 1
+strip = true
 
+# 加密和数据库库保留 overflow-checks 以确保安全性
+[profile.release.package.p256]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+[profile.release.package.ecdsa]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+[profile.release.package.elliptic-curve]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.aes-gcm]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.argon2]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.sha2]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.rusqlite]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+# 其他第三方库使用极致压缩（禁用 overflow-checks）
 [profile.release.package."*"]
 opt-level = "z"
 codegen-units = 1
+strip = true
 debug = false
 debug-assertions = false
+overflow-checks = false
 
 [profile.dev]
 opt-level = 0

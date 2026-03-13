@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 actix-web = { version = "4.12.1", default-features = false, features = ["macros", "compress-brotli", "cookies"] }
 actix-files = "0.6.9"
-actix-multipart = { version = "0.7.2", default-features = false, features = ["derive"] }
+actix-multipart = { version = "0.7.2", default-features = false }
 serde = { version = "1.0", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
 simd-json = { version = "0.17", default-features = false, features = ["serde_impl"], optional = true }
@@ -40,7 +40,7 @@ spki = "0.7"
 pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
 
 # 文件上传
-mime_guess = { version = "2.0" }
+mime_guess = "2.0"
 
 # URL 解码
 urlencoding = "2.1"
@@ -55,8 +55,7 @@ async-trait = "0.1"
 id3 = { version = "0.6", default-features = false }
 metaflac = { version = "0.2", default-features = false }
 
-# Snowflake ID 生成
-snowflake-id-generator = "0.4"
+
 
 # 命令行参数解析
 clap = { version = "4.5", default-features = false, features = ["std", "derive", "help", "color"] }
@@ -88,7 +87,7 @@ glob = "0.3"
 
 # 结构化日志
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
 
 # 性能分析
