@@ -55,8 +55,7 @@ async-trait = "0.1"
 id3 = { version = "0.6", default-features = false }
 metaflac = { version = "0.2", default-features = false }
 
-# Snowflake ID 生成
-snowflake-id-generator = "0.4"
+
 
 # 命令行参数解析
 clap = { version = "4.5", default-features = false, features = ["std", "derive", "help", "color"] }
