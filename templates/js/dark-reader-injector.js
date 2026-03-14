@@ -57,24 +57,75 @@
           body.style.removeProperty('--darkreader-inline-bgimage');
           body.style.backgroundImage = originalBgImage;
           body.style.setProperty('background-image', originalBgImage, 'important');
+          
+          // 强制重绘
+          body.style.display = 'none';
+          body.offsetHeight; // 触发 reflow
+          body.style.display = '';
         };
         
         // 立即执行一次
         restoreBgImage();
         
-        // 使用 MutationObserver 监听并持续恢复
+        // 使用 MutationObserver 监听所有相关变化
         const observer = new MutationObserver((mutations) => {
+          let shouldRestore = false;
+          
           mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'data-darkreader-inline-bgimage') {
-              restoreBgImage();
+            if (mutation.type === 'attributes') {
+              // 监听 style 属性和 data-darkreader-inline-bgimage 属性
+              if (mutation.attributeName === 'data-darkreader-inline-bgimage' || 
+                  mutation.attributeName === 'style') {
+                shouldRestore = true;
+              }
+            } else if (mutation.type === 'childList') {
+              // 监听子节点变化（Dark Reader 可能添加新的样式元素）
+              mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  const element = node;
+                  if (element.tagName === 'STYLE' && element.classList.contains('darkreader')) {
+                    shouldRestore = true;
+                  }
+                }
+              });
             }
           });
+          
+          if (shouldRestore) {
+            // 使用 requestAnimationFrame 确保在下一帧恢复
+            requestAnimationFrame(() => {
+              restoreBgImage();
+              // 再次确保恢复成功
+              setTimeout(() => restoreBgImage(), 0);
+            });
+          }
         });
         
+        // 监听所有属性变化和子节点变化
         observer.observe(body, {
           attributes: true,
-          attributeFilter: ['data-darkreader-inline-bgimage', 'style']
+          attributeFilter: ['data-darkreader-inline-bgimage', 'style', 'class'],
+          childList: true,
+          subtree: true
         });
+        
+        // 监听整个文档的样式变化
+        document.addEventListener('DOMSubtreeModified', restoreBgImage);
+        
+        // 监听窗口大小变化和滚动事件
+        window.addEventListener('resize', restoreBgImage);
+        window.addEventListener('scroll', restoreBgImage);
+        
+        // 使用 setInterval 定期检查并恢复（兜底方案）
+        const intervalId = setInterval(() => {
+          const currentBgImage = body.style.backgroundImage;
+          if (currentBgImage !== originalBgImage) {
+            restoreBgImage();
+          }
+        }, 100);
+        
+        // 保存 intervalId 以便清理
+        body.dataset.bgProtectionInterval = intervalId;
       }
       
       DarkReader.setFetchMethod(window.fetch);
