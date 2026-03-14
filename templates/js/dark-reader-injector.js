@@ -210,10 +210,12 @@
                 color: #e0e0e0 !important;
             }
             
-            /* 强制导航栏使用暗色背景，但不改变文字颜色 */
+            /* 强制导航栏使用暗色背景，但保留毛玻璃效果 */
             nav, .navbar, header {
-                background-color: rgba(26, 26, 26, 0.95) !important;
-                border-color: #404040 !important;
+                background-color: var(--navbar-glass-color, rgba(60, 60, 60, 0.6)) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
             }
             
             /* 强制侧边栏使用暗色 */
