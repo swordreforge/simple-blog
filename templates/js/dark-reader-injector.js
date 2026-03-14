@@ -47,7 +47,8 @@
         body.style.setProperty('--original-bg-image', originalBgImage, 'important');
       }
       
-      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), 
+      DarkReader.setFetchMethod(window.fetch);
+      DarkReader.enable(n);
       
       // 添加 CSS 规则保护背景图片
       const protectBgStyle = document.createElement('style');
@@ -66,9 +67,11 @@
           background-image: var(--original-bg-image, inherit) !important;
         }
       `;
-      document.head.appendChild(protectBgStyle),
+      document.head.appendChild(protectBgStyle);
       
-      console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
+      console.log("[DarkReader] 暗色模式已启用");
+      a();
+      l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
     } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
