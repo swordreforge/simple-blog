@@ -20,14 +20,12 @@
     darkSchemeMatches: !0,
     immediateFetch: !1,
     ignoreInlineStyle: ["*"],
-    ignoreImageAnalysis: ["body"],
+    ignoreImageAnalysis: ['*'],
     disableStyleSheetsProxy: !0,
     ignoreInlineAnalysis: ["*"],
     disablePDFViewer: !1,
     disableStyleSheets: !1,
-    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure"],
-    mode: 0,
-    detectSystemColorScheme: !1
+    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure"]
   };
 
   function t() {
@@ -36,140 +34,7 @@
 
   function e() {
     if (t()) try {
-      // 移除可能存在的 darkreader-lock 标签
-      const lock = document.querySelector('meta[name="darkreader-lock"]');
-      if (lock) lock.remove();
-      
-      // 保存原始背景图片
-      const body = document.body;
-      const computedStyle = window.getComputedStyle(body);
-      const originalBgImage = body.style.backgroundImage || computedStyle.backgroundImage;
-      
-      // 检查是否有背景图片
-      if (originalBgImage && originalBgImage !== 'none' && originalBgImage !== '') {
-        // 保存原始背景图片 URL
-        body.style.setProperty('--original-bg-image', originalBgImage, 'important');
-        
-        // 在 Dark Reader 启用后立即恢复背景图片
-        const restoreBgImage = () => {
-          // 强制移除 Dark Reader 注入的背景图片相关属性
-          body.removeAttribute('data-darkreader-inline-bgimage');
-          body.style.removeProperty('--darkreader-inline-bgimage');
-          body.style.backgroundImage = originalBgImage;
-          body.style.setProperty('background-image', originalBgImage, 'important');
-          
-          // 强制重绘
-          body.style.display = 'none';
-          body.offsetHeight; // 触发 reflow
-          body.style.display = '';
-        };
-        
-        // 立即执行一次
-        restoreBgImage();
-        
-        // 使用 MutationObserver 监听所有相关变化
-        const observer = new MutationObserver((mutations) => {
-          let shouldRestore = false;
-          
-          mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes') {
-              // 监听 style 属性和 data-darkreader-inline-bgimage 属性
-              if (mutation.attributeName === 'data-darkreader-inline-bgimage' || 
-                  mutation.attributeName === 'style') {
-                shouldRestore = true;
-              }
-            } else if (mutation.type === 'childList') {
-              // 监听子节点变化（Dark Reader 可能添加新的样式元素）
-              mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                  const element = node;
-                  if (element.tagName === 'STYLE' && element.classList.contains('darkreader')) {
-                    shouldRestore = true;
-                  }
-                }
-              });
-            }
-          });
-          
-          if (shouldRestore) {
-            // 使用 requestAnimationFrame 确保在下一帧恢复
-            requestAnimationFrame(() => {
-              restoreBgImage();
-              // 再次确保恢复成功
-              setTimeout(() => restoreBgImage(), 0);
-            });
-          }
-        });
-        
-        // 监听所有属性变化和子节点变化
-        observer.observe(body, {
-          attributes: true,
-          attributeFilter: ['data-darkreader-inline-bgimage', 'style', 'class'],
-          childList: true,
-          subtree: true
-        });
-        
-        // 监听整个文档的样式变化
-        document.addEventListener('DOMSubtreeModified', restoreBgImage);
-        
-        // 监听窗口大小变化和滚动事件
-        window.addEventListener('resize', restoreBgImage);
-        window.addEventListener('scroll', restoreBgImage);
-        
-        // 使用 setInterval 定期检查并恢复（兜底方案）
-        const intervalId = setInterval(() => {
-          const currentBgImage = body.style.backgroundImage;
-          if (currentBgImage !== originalBgImage) {
-            restoreBgImage();
-          }
-        }, 100);
-        
-        // 保存 intervalId 以便清理
-        body.dataset.bgProtectionInterval = intervalId;
-      }
-      
-      DarkReader.setFetchMethod(window.fetch);
-      DarkReader.enable(n);
-      
-      // 添加 CSS 规则保护背景图片
-      const protectBgStyle = document.createElement('style');
-      protectBgStyle.id = 'darkreader-bg-protection';
-      protectBgStyle.textContent = `
-        /* 强制保留背景图片，覆盖 Dark Reader */
-        body {
-          background-image: var(--original-bg-image, inherit) !important;
-          --darkreader-inline-bgimage: var(--original-bg-image, inherit) !important;
-        }
-        /* 移除 Dark Reader 的背景图片覆盖 - 使用更高优先级 */
-        body[data-darkreader-inline-bgimage] {
-          background-image: var(--original-bg-image, inherit) !important;
-          --darkreader-inline-bgimage: var(--original-bg-image, inherit) !important;
-        }
-        /* 使用属性选择器确保覆盖 */
-        body[*="darkreader-inline-bgimage"] {
-          background-image: var(--original-bg-image, inherit) !important;
-        }
-        /* 移除 blob URL，使用原始图片 */
-        body[*="blob:"] {
-          background-image: var(--original-bg-image, inherit) !important;
-        }
-        /* 保护所有图片不被反转 */
-        img, picture, figure, svg {
-          filter: none !important;
-        }
-        /* 移除 Dark Reader 对图片的滤镜 */
-        [data-darkreader-inline-bgimage] img,
-        [data-darkreader-inline-bgimage] picture,
-        [data-darkreader-inline-bgimage] figure {
-          filter: none !important;
-          background-image: none !important;
-        }
-      `;
-      document.head.appendChild(protectBgStyle);
-      
-      console.log("[DarkReader] 暗色模式已启用");
-      a();
-      l("dark")
+      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
     } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
