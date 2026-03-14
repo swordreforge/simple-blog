@@ -9,7 +9,7 @@
     // Dark Reader 配置
     const darkReaderConfig = {
         brightness: 100,
-        contrast: 90,
+        contrast: 100, // 提高对比度到100，避免颜色偏差
         grayscale: 0,
         sepia: 0,
         useFont: false,
@@ -20,11 +20,25 @@
         lightSchemeMatches: false, // 始终使用暗色模式
         darkSchemeMatches: true,
         immediateFetch: true,
-        ignoreInlineStyle: [],
+        ignoreInlineStyle: ['*'], // 忽略所有内联样式，避免强制颜色修改
         ignoreImageAnalysis: [],
-        disableStyleSheetsProxy: false,
-        ignoreInlineAnalysis: [],
-        disablePDFViewer: false
+        disableStyleSheetsProxy: true, // 禁用样式代理，保留原始CSS
+        ignoreInlineAnalysis: ['*'], // 忽略内联分析
+        disablePDFViewer: false,
+        // 保留原始颜色，不要强制修改
+        disableStyleSheets: false,
+        // 忽略特定元素的颜色修改
+        ignoreSelectors: [
+            '.nav-icon',
+            '.nav-item',
+            '.navigation',
+            '.navbar',
+            'nav',
+            '[class*="nav"]',
+            '[class*="menu"]',
+            '.shortcut-hint',
+            'svg'
+        ]
     };
 
     // 检查Dark Reader是否已加载
@@ -110,6 +124,15 @@
                 color: #e0e0e0 !important;
             }
             
+            /* 保护导航元素的颜色，不被强制修改 */
+            nav, .navbar, .nav-item, .nav-icon, 
+            [class*="nav-"], [class*="menu-"], 
+            .navigation, .shortcut-hint {
+                color: inherit !important;
+                stroke: currentColor !important;
+                fill: none !important;
+            }
+            
             /* 强制所有输入框使用暗色 */
             input, textarea, select {
                 background-color: #2d2d2d !important;
@@ -138,12 +161,12 @@
                 border-color: #404040 !important;
             }
             
-            /* 强制所有链接使用合适的颜色 */
-            a {
+            /* 只为实际内容区域的链接设置颜色，不影响导航 */
+            .article-content a, .content a, .post-content a {
                 color: #4a9eff !important;
             }
             
-            a:hover {
+            .article-content a:hover, .content a:hover, .post-content a:hover {
                 color: #3a8eef !important;
             }
             
@@ -160,10 +183,9 @@
                 border-color: #404040 !important;
             }
             
-            /* 强制导航栏使用暗色 */
+            /* 强制导航栏使用暗色背景，但不改变文字颜色 */
             nav, .navbar, header {
                 background-color: rgba(26, 26, 26, 0.95) !important;
-                color: #e0e0e0 !important;
                 border-color: #404040 !important;
             }
             
