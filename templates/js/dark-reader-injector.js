@@ -34,20 +34,21 @@
   }
 
   function e() {
-    if (t()) try {
-      // 直接使用 window.fetch，让浏览器处理所有跨域请求
-      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
-    } catch (n) {
-      console.error("[DarkReader] 启用失败:", n), r()
-    } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
+    // 直接使用自定义 CSS 暗色主题，不使用 Dark Reader 避免图片和背景图片处理
+    console.log("[DarkReader] 使用自定义 CSS 暗色模式"), r()
   }
 
   function o() {
-    if (t()) try {
-      DarkReader.disable(), console.log("[DarkReader] 暗色模式已禁用"), l("light")
-    } catch (n) {
-      console.error("[DarkReader] 禁用失败:", n)
-    }
+    // 移除自定义 CSS 暗色主题
+    const customStyles = document.getElementById('dark-reader-custom-styles');
+    if (customStyles) customStyles.remove();
+    const fallbackStyles = document.getElementById('dark-reader-fallback-styles');
+    if (fallbackStyles) fallbackStyles.remove();
+    document.documentElement.classList.remove('dark-mode');
+    document.documentElement.style.removeProperty('color-scheme');
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    themeColor && themeColor.setAttribute('content', '#ffffff');
+    console.log("[DarkReader] 暗色模式已禁用"), l("light")
   }
 
   function r() {
