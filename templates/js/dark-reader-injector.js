@@ -125,23 +125,35 @@
             }
             
             /* 保护导航元素的颜色，不被强制修改 */
-            nav, .navbar, .nav-item, .nav-icon, 
-            [class*="nav-"], [class*="menu-"], 
+            nav, .navbar, .nav-item, .nav-icon,
+            [class*="nav-"], [class*="menu-"],
             .navigation, .shortcut-hint {
                 color: inherit !important;
                 stroke: currentColor !important;
                 fill: none !important;
             }
-            
+
+            /* 为导航栏按钮应用毛玻璃效果 */
+            nav button, .navbar button,
+            .nav button, [class*="nav-"] button,
+            #loginBtn, #userCenterToggle,
+            .shortcuts-help-btn {
+                background-color: var(--navbar-glass-color, rgba(60, 60, 60, 0.6)) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                color: inherit !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            }
+
             /* 强制所有输入框使用暗色 */
             input, textarea, select {
                 background-color: #2d2d2d !important;
                 color: #e0e0e0 !important;
                 border-color: #404040 !important;
             }
-            
-            /* 强制所有按钮使用暗色 */
-            button {
+
+            /* 强制非导航栏按钮使用暗色 */
+            button:not(nav button):not(.navbar button):not(.nav button):not([class*="nav-"] button):not(#loginBtn):not(#userCenterToggle):not(.shortcuts-help-btn) {
                 background-color: #3d3d3d !important;
                 color: #e0e0e0 !important;
             }
