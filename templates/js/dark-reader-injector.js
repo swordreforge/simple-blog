@@ -34,11 +34,8 @@
   }
 
   function e() {
-    if (t()) try {
-      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
-    } catch (n) {
-      console.error("[DarkReader] 启用失败:", n), r()
-    } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
+    // 直接使用备用方案，不使用 Dark Reader 避免图片处理问题
+    console.log("[DarkReader] 使用自定义 CSS 暗色模式"), r()
   }
 
   function o() {
