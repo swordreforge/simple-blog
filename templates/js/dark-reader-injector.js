@@ -25,7 +25,8 @@
     ignoreInlineAnalysis: ["*"],
     disablePDFViewer: !1,
     disableStyleSheets: !1,
-    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure"]
+    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure"],
+    mode: 0
   };
 
   function t() {
