@@ -176,32 +176,20 @@
                 transition: background-color 5000s ease-in-out 0s !important;
             }
 
-            /* 强制非导航栏按钮使用暗色 */
-            button:not(nav button):not(.navbar button):not(.nav button):not([class*="nav-"] button):not(#loginBtn):not(#userCenterToggle):not(.shortcuts-help-btn):not(.btn-primary):not(.btn-secondary):not(.user-center-item):not(.logout-item) {
-                background-color: #3d3d3d !important;
-                color: #e0e0e0 !important;
-            }
-
-            /* 为主要按钮（btn-primary）添加特殊样式 */
-            .btn-primary, button[type="submit"] {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-                color: #ffffff !important;
-                border: none !important;
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+            /* 为所有按钮应用透明毛玻璃效果 */
+            button {
+                background-color: var(--navbar-glass-color, rgba(60, 60, 60, 0.6)) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                color: inherit !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
                 transition: all 0.3s ease !important;
             }
 
-            .btn-primary:hover, button[type="submit"]:hover {
-                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
-                transform: translateY(-2px) !important;
-            }
-
-            /* 为次要按钮（btn-secondary）添加样式 */
-            .btn-secondary {
-                background-color: #4a5568 !important;
-                color: #ffffff !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            /* 按钮悬停效果 */
+            button:hover {
+                background-color: rgba(80, 80, 80, 0.8) !important;
+                border-color: rgba(255, 255, 255, 0.3) !important;
             }
             
             /* 强制所有表格使用暗色 */
