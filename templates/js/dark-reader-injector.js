@@ -57,13 +57,19 @@
         /* 强制保留背景图片，覆盖 Dark Reader */
         body {
           background-image: var(--original-bg-image, inherit) !important;
+          --darkreader-inline-bgimage: var(--original-bg-image, inherit) !important;
         }
+        /* 移除 Dark Reader 的背景图片覆盖 - 使用更高优先级 */
         body[data-darkreader-inline-bgimage] {
           background-image: var(--original-bg-image, inherit) !important;
+          --darkreader-inline-bgimage: var(--original-bg-image, inherit) !important;
         }
-        /* 移除 Dark Reader 的背景图片覆盖 */
-        [data-darkreader-inline-bgimage="none"],
-        body[data-darkreader-inline-bgimage="none"] {
+        /* 使用属性选择器确保覆盖 */
+        body[*="darkreader-inline-bgimage"] {
+          background-image: var(--original-bg-image, inherit) !important;
+        }
+        /* 移除 blob URL，使用原始图片 */
+        body[*="blob:"] {
           background-image: var(--original-bg-image, inherit) !important;
         }
       `;
