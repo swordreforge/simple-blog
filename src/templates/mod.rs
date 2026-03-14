@@ -161,8 +161,8 @@ impl Default for TemplateSettings {
             floating_text_enabled: false,
             
             // Admin 相关
-            navbar_glass_color: "rgba(220, 138, 221, 0.15)".to_string(),
-            navbar_text_color: "#333333".to_string(),
+            navbar_glass_color: "rgba(60, 60, 60, 0.6)".to_string(),
+            navbar_text_color: "#ffffff".to_string(),
             card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
             footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
             dark_mode_enabled: false,
@@ -255,8 +255,8 @@ impl Default for AppearanceSettings {
             blur_amount: "20px".to_string(),
             saturate_amount: "180%".to_string(),
             dark_mode_enabled: false,
-            navbar_glass_color: "rgba(220, 138, 221, 0.15)".to_string(),
-            navbar_text_color: "#333333".to_string(),
+            navbar_glass_color: "rgba(60, 60, 60, 0.6)".to_string(),
+            navbar_text_color: "#ffffff".to_string(),
             card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
             footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
             floating_text_enabled: false,
@@ -674,8 +674,8 @@ pub fn create_passage_context() -> TeraContext {
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
 
     // 外观设置
-    let mut _navbar_glass_color = "rgba(220, 138, 221, 0.15)".to_string();
-    let mut _navbar_text_color = "#333333".to_string();
+    let mut _navbar_glass_color = "rgba(60, 60, 60, 0.6)".to_string();
+    let mut _navbar_text_color = "#ffffff".to_string();
     let mut _card_glass_color = "rgba(220, 138, 221, 0.2)".to_string();
     let mut _footer_glass_color = "rgba(220, 138, 221, 0.25)".to_string();
 
