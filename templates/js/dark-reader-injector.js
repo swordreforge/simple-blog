@@ -20,7 +20,7 @@
     darkSchemeMatches: !0,
     immediateFetch: !1,
     ignoreInlineStyle: ["*"],
-    ignoreImageAnalysis: ['*'],
+    ignoreImageAnalysis: [],
     disableStyleSheetsProxy: !0,
     ignoreInlineAnalysis: ["*"],
     disablePDFViewer: !1,
@@ -34,7 +34,19 @@
 
   function e() {
     if (t()) try {
-      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
+      // 设置自定义 fetch 方法来处理跨域和图片问题
+      DarkReader.setFetchMethod(async (url) => {
+        try {
+          // 忽略 loliapi.com 的图片请求
+          if (url.includes('loliapi.com')) {
+            throw new Error('Ignoring external image');
+          }
+          return await window.fetch(url);
+        } catch (error) {
+          throw error;
+        }
+      });
+      DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
     } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
