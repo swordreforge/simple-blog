@@ -72,6 +72,17 @@
         body[*="blob:"] {
           background-image: var(--original-bg-image, inherit) !important;
         }
+        /* 保护所有图片不被反转 */
+        img, picture, figure, svg {
+          filter: none !important;
+        }
+        /* 移除 Dark Reader 对图片的滤镜 */
+        [data-darkreader-inline-bgimage] img,
+        [data-darkreader-inline-bgimage] picture,
+        [data-darkreader-inline-bgimage] figure {
+          filter: none !important;
+          background-image: none !important;
+        }
       `;
       document.head.appendChild(protectBgStyle);
       
