@@ -37,9 +37,11 @@
       // 设置自定义 fetch 方法来处理跨域和图片问题
       DarkReader.setFetchMethod(async (url) => {
         try {
-          // 忽略 loliapi.com 的图片请求
-          if (url.includes('loliapi.com')) {
-            throw new Error('Ignoring external image');
+          // 忽略所有跨域请求
+          const currentOrigin = window.location.origin;
+          const urlOrigin = new URL(url).origin;
+          if (urlOrigin !== currentOrigin) {
+            throw new Error('Ignoring cross-origin request');
           }
           return await window.fetch(url);
         } catch (error) {
