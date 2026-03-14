@@ -1,0 +1,38 @@
+
+function closeModalWithAnimation(e) {
+    e && (e.classList.add("closing"), setTimeout(() => {
+        e.classList.remove("active", "closing")
+    }, 300))
+}
+
+function closeAllModals() {
+    document.querySelectorAll(".modal.active").forEach(e => {
+        closeModalWithAnimation(e)
+    })
+}
+document.addEventListener("DOMContentLoaded", function() {
+    fetch("/api/settings/appearance").then(e => e.json()).then(o => {
+        function e() {
+            var e = window.innerWidth <= 768 && o.mobile_background_image ? o.mobile_background_image : o.background_image;
+            e && (document.body.style.backgroundImage = `url('${e}')`)
+        }
+        localStorage.setItem("appearanceSettings", JSON.stringify(o)), o.dark_mode_enabled && document.documentElement.classList.add("dark-mode"), (o.navbar_glass_color || o.card_glass_color || o.footer_glass_color || o.navbar_text_color) && (document.documentElement.style.setProperty("--navbar-glass-color", o.navbar_glass_color || "rgba(255, 255, 255, 0.85)"), document.documentElement.style.setProperty("--navbar-text-color", o.navbar_text_color || "rgba(255, 255, 255, 0.9)"), document.documentElement.style.setProperty("--card-glass-color", o.card_glass_color || "rgba(255, 255, 255, 0.75)"), document.documentElement.style.setProperty("--footer-glass-color", o.footer_glass_color || "rgba(255, 255, 255, 0.9)")), e(), window.addEventListener("resize", e)
+    }).catch(e => {
+        console.error("加载外观设置失败:", e)
+    });
+    const e = document.getElementById("userCenterToggle"),
+        o = document.getElementById("userCenterModal"),
+        t = o ? o.querySelector(".modal-close") : null;
+    var n;
+    e && o && (e.addEventListener("click", function(e) {
+        e.stopPropagation(), closeAllModals(), o.classList.add("active")
+    }), t && t.addEventListener("click", function() {
+        closeModalWithAnimation(o)
+    }), (n = o.querySelector(".modal-content")) && n.addEventListener("click", function(e) {
+        e.stopPropagation()
+    }), o.addEventListener("click", function() {
+        closeModalWithAnimation(o)
+    })), document.addEventListener("keydown", function(e) {
+        "Escape" === e.key && closeAllModals()
+    })
+});

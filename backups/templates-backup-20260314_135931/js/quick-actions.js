@@ -1,0 +1,2 @@
+document.addEventListener("DOMContentLoaded",function(){const d=document.getElementById("quickActionsBtn"),a=document.getElementById("quickActionsPanel");let b=!1;d&&d.addEventListener("click",function(c){c.stopPropagation();a.classList.contains("show")?(b=!0,a.classList.remove("show"),setTimeout(()=>{b=!1},500)):a.classList.add("show")});document.addEventListener("click",function(c){d.contains(c.target)||a.contains(c.target)||a.classList.contains("show")&&!b&&(b=!0,a.classList.remove("show"),setTimeout(()=>
+{b=!1},500))})});
