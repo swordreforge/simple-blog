@@ -20,12 +20,12 @@
     darkSchemeMatches: !0,
     immediateFetch: !1,
     ignoreInlineStyle: ["*"],
-    ignoreImageAnalysis: [],
+    ignoreImageAnalysis: ["body"],
     disableStyleSheetsProxy: !0,
     ignoreInlineAnalysis: ["*"],
     disablePDFViewer: !1,
     disableStyleSheets: !1,
-    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure", "body"],
+    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure"],
     mode: 0,
     detectSystemColorScheme: !1
   };
@@ -36,6 +36,9 @@
 
   function e() {
     if (t()) try {
+      // 移除可能存在的 darkreader-lock 标签
+      const lock = document.querySelector('meta[name="darkreader-lock"]');
+      if (lock) lock.remove();
       DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
