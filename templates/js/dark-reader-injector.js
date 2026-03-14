@@ -137,12 +137,19 @@
             nav button, .navbar button,
             .nav button, [class*="nav-"] button,
             #loginBtn, #userCenterToggle,
-            .shortcuts-help-btn {
+            .shortcuts-help-btn,
+            .user-center-item, .logout-item {
                 background-color: var(--navbar-glass-color, rgba(60, 60, 60, 0.6)) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
                 color: inherit !important;
                 border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            }
+
+            /* 用户中心按钮悬停效果 */
+            .user-center-item:hover, .logout-item:hover {
+                background-color: rgba(80, 80, 80, 0.8) !important;
+                border-color: rgba(255, 255, 255, 0.3) !important;
             }
 
             /* 强制所有输入框使用暗色 */
