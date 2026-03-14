@@ -785,6 +785,14 @@ pub async fn update(
     use crate::services::summarize_service::SummarizeService;
     passage.summary = Some(SummarizeService::generate_summary_from_markdown(&passage.content));
 
+    // 异步清除缓存，不阻塞主响应
+    let cache_manager = state.cache.manager().cloned();
+    tokio::spawn(async move {
+        if let Some(manager) = cache_manager {
+            crate::cache::invalidate_all_passage_cache(Some(&manager)).await;
+        }
+    });
+
     if let Some(ref author) = req_json.author {
         passage.author = author.clone();
     }

@@ -26,7 +26,7 @@ pub struct ValkeyCacheBackend {
 impl ValkeyCacheBackend {
     /// 创建新的 Valkey 缓存后端
     pub async fn new(url: &str, key_prefix: Option<String>) -> Result<Self, CacheError> {
-        Self::new_with_timeout(url, key_prefix, Duration::from_secs(8)).await
+        Self::new_with_timeout(url, key_prefix, Duration::from_secs(15)).await
     }
 
     /// 创建新的 Valkey 缓存后端（带超时配置）
