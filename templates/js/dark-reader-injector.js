@@ -34,21 +34,8 @@
 
   function e() {
     if (t()) try {
-      // 设置自定义 fetch 方法来处理跨域和图片问题
-      DarkReader.setFetchMethod(async (url) => {
-        try {
-          // 忽略所有跨域请求，抛出错误让 Dark Reader 跳过
-          const currentOrigin = window.location.origin;
-          const urlOrigin = new URL(url).origin;
-          if (urlOrigin !== currentOrigin) {
-            throw new Error('Ignoring cross-origin request');
-          }
-          return await window.fetch(url);
-        } catch (error) {
-          throw error;
-        }
-      });
-      DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
+      // 直接使用 window.fetch，让浏览器处理所有跨域请求
+      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
     } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
