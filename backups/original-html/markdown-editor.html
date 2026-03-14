@@ -2,19 +2,21 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark">
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#000000" />
     <meta
       name="description"
       content="在线Markdown编辑器 - 实时预览、语法高亮、快捷键支持。一个强大的Markdown编辑工具，支持代码高亮、图片上传、自动保存等功能。"
     />
     <title>在线Markdown编辑器</title>
+    <!-- Dark Reader 专业暗色库 -->
+    <script src="/js/dark-reader-injector.js"></script>
     <style>
       * {
         margin: 0;
@@ -55,7 +57,7 @@
         right: 0;
         padding: 15px env(safe-area-inset-right) 15px env(safe-area-inset-left);
         width: 100%;
-        background: var(--navbar-glass-color, rgba(255, 255, 255, 0.85));
+        background: var(--navbar-glass-color, rgba(60, 60, 60, 0.6));
         backdrop-filter: blur(10px) saturate(180%);
         -webkit-backdrop-filter: blur(10px) saturate(180%);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -795,15 +797,13 @@
     <div class="toast" id="toast"></div>
 
     <!-- 引入必要的库 -->
-    <!--script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"-->
     <script src="/js/npm/marked@14.1.4/marked.min.js"></script>
     <!-- Highlight.js 代码高亮 -->
     <link rel="stylesheet" href="/css/tokyo-night-dark.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+    <!--script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script-->
     <link rel="stylesheet" href="/css/katex.min.css" />
     <script src="/js/npm/katex-0.16.27/dist/katex.min.js"></script>
     <script src="/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js"></script>
-    <!--script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"-->
     <script defer src="/js/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
     <script defer>
       // 初始化 Mermaid（在脚本加载时立即执行）

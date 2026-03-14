@@ -1,19 +1,16 @@
 <!doctype html>
 <html lang="zh-CN">
-  <meta charset="UTF-8" /><meta
+  <meta charset="UTF-8" /><meta name="color-scheme" content="dark" /><meta
     name="viewport"
     content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover"
   /><meta name="mobile-web-app-capable" content="yes" /><meta
     name="apple-mobile-web-app-status-bar-style"
     content="black-translucent"
-  /><meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" /><meta
-    name="theme-color"
-    content="#000000"
-    media="(prefers-color-scheme: dark)"
-  /><meta
+  /><meta name="theme-color" content="#000000" /><meta
     name="description"
     content="了解{{ title }} - 关于我们的团队、愿景和技术理念。探索我们的特色功能、联系方式以及如何使用这个技术博客平台。"
   /><title>{{ title }} - 关于</title
+  ><script src="/js/dark-reader-injector.js"></script
   ><style>
     * {
 	margin: 0;
@@ -69,7 +66,7 @@ nav {
 	right: 0;
 	padding: 15px env(safe-area-inset-right) 15px env(safe-area-inset-left);
 	width: 100%;
-	background: var(--navbar-glass-color, rgba(255, 255, 255, .85));
+	background: var(--navbar-glass-color, rgba(60, 60, 60, 0.6));
 	backdrop-filter: blur(10px) saturate(180%);
 	-webkit-backdrop-filter: blur(10px) saturate(180%);
 	border-bottom: 1px solid rgba(255, 255, 255, .1);
@@ -767,6 +764,128 @@ body.about-focus-mode .about-focus-selected {
 	display: none !important
 }
 
+/* 快捷操作按钮和面板样式 */
+.quick-actions-btn {
+	position: fixed !important;
+	right: 20px !important;
+	bottom: 80px !important;
+	width: 56px;
+	height: 56px;
+	background: rgba(0, 0, 0, 0);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, .3);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: rgba(255, 255, 255, .9);
+	text-decoration: none;
+	transition: all .4s cubic-bezier(.68, -.55, .265, 1.55);
+	cursor: pointer;
+	z-index: 1000;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, .1)
+}
+
+.quick-actions-btn:hover {
+	background: rgba(255, 255, 255, .2);
+	border-color: rgba(255, 255, 255, .5);
+	transform: scale(1.1);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, .15)
+}
+
+.quick-actions-btn:active {
+	transform: scale(.95)
+}
+
+.quick-actions-btn svg {
+	width: 24px;
+	height: 24px;
+	transition: transform .3s ease
+}
+
+.quick-actions-btn:hover svg {
+	transform: rotate(90deg)
+}
+
+.quick-actions-panel {
+	position: fixed !important;
+	right: 20px !important;
+	bottom: 80px !important;
+	width: 56px;
+	height: 56px;
+	background: rgba(0, 0, 0, 0);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, .3);
+	border-radius: 28px;
+	opacity: 0;
+	visibility: hidden;
+	transform: scale(1);
+	transform-origin: bottom right;
+	transition: all .5s cubic-bezier(.68, -.55, .265, 1.55);
+	z-index: 999;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
+	overflow: hidden;
+	pointer-events: none
+}
+
+.quick-actions-panel.show {
+	opacity: 1;
+	visibility: visible;
+	width: 200px;
+	height: auto;
+	border-radius: 16px;
+	pointer-events: auto;
+	transform: scale(1)
+}
+
+.quick-actions-content {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	overflow-y: auto;
+	opacity: 0;
+	transform: scale(.8);
+	transition: all .3s ease
+}
+
+.quick-actions-panel.show .quick-actions-content {
+	opacity: 1;
+	transform: scale(1)
+}
+
+.quick-action-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	background: rgba(255, 255, 255, .05);
+	border: 1px solid rgba(255, 255, 255, .1);
+	border-radius: 10px;
+	color: rgba(255, 255, 255, .9);
+	text-decoration: none;
+	transition: all .2s ease;
+	font-size: .9em;
+	white-space: nowrap
+}
+
+.quick-action-item:hover {
+	background: rgba(255, 255, 255, .1);
+	border-color: rgba(255, 255, 255, .2);
+	transform: translateX(-3px)
+}
+
+.quick-action-item svg {
+	width: 18px;
+	height: 18px;
+	flex-shrink: 0
+}
+
 @media (max-width:768px) {
 	nav {
 		padding: 10px env(safe-area-inset-right) 10px env(safe-area-inset-left)
@@ -810,127 +929,6 @@ body.about-focus-mode .about-focus-selected {
 		display: block
 	}
 
-	.quick-actions-btn {
-		position: fixed !important;
-		right: 20px !important;
-		bottom: 80px !important;
-		width: 56px;
-		height: 56px;
-		background: rgba(0, 0, 0, 0);
-		backdrop-filter: blur(20px) saturate(180%);
-		-webkit-backdrop-filter: blur(20px) saturate(180%);
-		border: 1px solid rgba(255, 255, 255, .3);
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: rgba(255, 255, 255, .9);
-		text-decoration: none;
-		transition: all .4s cubic-bezier(.68, -.55, .265, 1.55);
-		cursor: pointer;
-		z-index: 1000;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, .1)
-	}
-
-	.quick-actions-btn:hover {
-		background: rgba(255, 255, 255, .2);
-		border-color: rgba(255, 255, 255, .5);
-		transform: scale(1.1);
-		box-shadow: 0 6px 16px rgba(0, 0, 0, .15)
-	}
-
-	.quick-actions-btn:active {
-		transform: scale(.95)
-	}
-
-	.quick-actions-btn svg {
-		width: 24px;
-		height: 24px;
-		transition: transform .3s ease
-	}
-
-	.quick-actions-btn:hover svg {
-		transform: rotate(90deg)
-	}
-
-	.quick-actions-panel {
-		position: fixed !important;
-		right: 20px !important;
-		bottom: 80px !important;
-		width: 56px;
-		height: 56px;
-		background: rgba(0, 0, 0, 0);
-		backdrop-filter: blur(20px) saturate(180%);
-		-webkit-backdrop-filter: blur(20px) saturate(180%);
-		border: 1px solid rgba(255, 255, 255, .3);
-		border-radius: 28px;
-		opacity: 0;
-		visibility: hidden;
-		transform: scale(1);
-		transform-origin: bottom right;
-		transition: all .5s cubic-bezier(.68, -.55, .265, 1.55);
-		z-index: 999;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, .15);
-		overflow: hidden;
-		pointer-events: none
-	}
-
-	.quick-actions-panel.show {
-		opacity: 1;
-		visibility: visible;
-		width: 200px;
-		height: auto;
-		border-radius: 16px;
-		pointer-events: auto;
-		transform: scale(1)
-	}
-
-	.quick-actions-content {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		padding: 16px;
-		width: 100%;
-		height: 100%;
-		box-sizing: border-box;
-		overflow-y: auto;
-		opacity: 0;
-		transform: scale(.8);
-		transition: all .3s ease
-	}
-
-	.quick-actions-panel.show .quick-actions-content {
-		opacity: 1;
-		transform: scale(1)
-	}
-
-	.quick-action-item {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 10px 14px;
-		background: rgba(255, 255, 255, .05);
-		border: 1px solid rgba(255, 255, 255, .1);
-		border-radius: 10px;
-		color: rgba(255, 255, 255, .9);
-		text-decoration: none;
-		transition: all .2s ease;
-		font-size: .9em;
-		white-space: nowrap
-	}
-
-	.quick-action-item:hover {
-		background: rgba(255, 255, 255, .1);
-		border-color: rgba(255, 255, 255, .2);
-		transform: translateX(-3px)
-	}
-
-	.quick-action-item svg {
-		width: 18px;
-		height: 18px;
-		flex-shrink: 0
-	}
-
 	@media (max-width:768px) {
 		.quick-actions-btn {
 			width: 48px;
@@ -970,7 +968,7 @@ body.about-focus-mode .about-focus-selected {
     </style>
   ><link
     rel="stylesheet"
-    href="/css/modal-animations.css"
+    href="/css/animations.css"
     media="print"
     onload="this.media = 'all'"
   /><link

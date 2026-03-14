@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
    <meta charset="UTF-8">
+   <meta name="color-scheme" content="dark">
    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
    <meta name="mobile-web-app-capable" content="yes">
    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+   <meta name="theme-color" content="#000000" />
    <meta name="description" content="{{ title }} - 管理员后台。管理文章、分类、标签、评论，配置网站设置，管理用户权限和附件资源。">
    <title>{{ title }} - 管理员</title>
+   <!-- Dark Reader 专业暗色库 -->
+   <script src="/js/dark-reader-injector.js"></script>
    <style>:root {
 	--navbar-glass-color: {
 			{
@@ -126,7 +128,7 @@ nav {
 	right: 0;
 	padding: 15px env(safe-area-inset-right) 15px env(safe-area-inset-left);
 	width: 100%;
-	background: var(--navbar-glass-color, rgba(255, 255, 255, .85));
+	background: var(--navbar-glass-color, rgba(60, 60, 60, 0.6));
 	backdrop-filter: blur(10px) saturate(180%);
 	-webkit-backdrop-filter: blur(10px) saturate(180%);
 	border-bottom: 1px solid rgba(255, 255, 255, .1);
@@ -4324,6 +4326,10 @@ body.admin-focus-mode .modal-header {
                            <p style="font-size:.85em;color:#666;margin-top:5px">外部链接警告提示文字
                         </div>
                         <div class="form-group">
+                           <label for="passageSummarizeEnabled"><input type="checkbox" id="passageSummarizeEnabled" style="margin-right:8px"> 启用文章摘要功能</label>
+                           <p style="font-size:.85em;color:#666;margin-top:5px">自动为文章生成中文摘要（基于 TextRank 算法）
+                        </div>
+                        <div class="form-group">
                            <label for="live2dEnabled"><input type="checkbox" id="live2dEnabled" style="margin-right:8px"> 启用 Live2D 看板娘</label>
                            <p style="font-size:.85em;color:#666;margin-top:5px">在页面显示 Live2D 看板娘
                         </div>
@@ -5162,6 +5168,6 @@ body.admin-focus-mode .modal-header {
 	transform: none;
 	box-shadow: none
 }</style>
-   <script type="module" src="/js/admin-inline-2.js?v=2"></script><script src="/js/ecc-encrypt.js" defer></script><script src="/js/login.js" defer></script><script src="/js/modal-animations.js" defer></script><script src="/js/keyboard-shortcuts.js" defer></script><script src="/js/markdown-preview-modal.js?v=3" defer></script><script>!function(){const t= {{ live2d_enabled }},o= {{ live2d_show_on_admin }};if(!t||!o)return;const s={waifuPath:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json",cdnPath:"{{ live2d_cdn_path }}",cubism2Path:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js",cubism5Path:"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",modelId: {{ live2d_model_id }},modelPath:"{{ live2d_model_path }}",tools:["switch-model","switch-texture","photo","info","quit"],drag:!0,logLevel:"error",position:"{{ live2d_position }}",width:"{{ live2d_width }}",height:"{{ live2d_height }}"};window.addEventListener("load",function(){setTimeout(function(){try{if(document.querySelector('script[src*="autoload.js"]'))return;const t=document.createElement("script");t.src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js",t.async=!0,t.onload=function(){if(console.log("Live2D 看板娘加载完成"),"function"==typeof initWidget)try{initWidget(s)}catch(t){console.warn("Live2D 看板娘初始化失败:",t)}},t.onerror=function(){console.warn("Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用")},document.body.appendChild(t)}catch(t){console.warn("Live2D 看板娘初始化错误:",t)}},1e3)})}()</script><script type="module" src="/js/admin-inline-4.js"></script>
+   <script type="module" src="/js/admin-inline-2.js?v=3"></script><script src="/js/ecc-encrypt.js" defer></script><script src="/js/login.js" defer></script><script src="/js/modal-animations.js" defer></script><script src="/js/keyboard-shortcuts.js" defer></script><script src="/js/markdown-preview-modal.js?v=3" defer></script><script>!function(){const t= {{ live2d_enabled }},o= {{ live2d_show_on_admin }};if(!t||!o)return;const s={waifuPath:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/waifu-tips.json",cdnPath:"{{ live2d_cdn_path }}",cubism2Path:"https://fastly.jsdelivr.net/npm/live2d-widget@1.0.0/dist/live2d.min.js",cubism5Path:"https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js",modelId: {{ live2d_model_id }},modelPath:"{{ live2d_model_path }}",tools:["switch-model","switch-texture","photo","info","quit"],drag:!0,logLevel:"error",position:"{{ live2d_position }}",width:"{{ live2d_width }}",height:"{{ live2d_height }}"};window.addEventListener("load",function(){setTimeout(function(){try{if(document.querySelector('script[src*="autoload.js"]'))return;const t=document.createElement("script");t.src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0/dist/autoload.js",t.async=!0,t.onload=function(){if(console.log("Live2D 看板娘加载完成"),"function"==typeof initWidget)try{initWidget(s)}catch(t){console.warn("Live2D 看板娘初始化失败:",t)}},t.onerror=function(){console.warn("Live2D 看板娘加载失败，可能是网络问题或 CDN 不可用")},document.body.appendChild(t)}catch(t){console.warn("Live2D 看板娘初始化错误:",t)}},1e3)})}()</script><script type="module" src="/js/admin-inline-4.js"></script>
    <link rel="stylesheet" href="/css/music-player.css" media="print" onload='this.media="all"'>
    <script src="/js/music-player.js" defer></script>

@@ -2,19 +2,21 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark">
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#000000" />
     <meta
       name="description"
       content="{{ title }} - 探索技术世界，分享编程经验，记录学习历程。一个专注于技术博客的个人网站，提供高质量的技术文章和编程资源。"
     />
     <title>{{ title }}</title>
+    <!-- Dark Reader 专业暗色库 -->
+    <script src="/js/dark-reader-injector.js"></script>
     <!-- Disable favicon -->
     <link rel="icon" href="data:," />
     <style>
@@ -58,7 +60,7 @@
         right: 0;
         padding: 15px env(safe-area-inset-right) 15px env(safe-area-inset-left);
         width: 100%;
-        background: var(--navbar-glass-color, rgba(255, 255, 255, 0.85));
+        background: var(--navbar-glass-color, rgba(60, 60, 60, 0.6));
         backdrop-filter: blur(10px) saturate(180%);
         -webkit-backdrop-filter: blur(10px) saturate(180%);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -786,7 +788,7 @@
       }
     </style>
     <!-- 模态框动画样式 -->
-    <link rel="stylesheet" href="/css/modal-animations.css" defer />
+    <link rel="stylesheet" href="/css/animations.css" defer />
     <!-- 飘字效果样式 -->
     <link rel="stylesheet" href="/css/floating-text.css" defer />
   </head>

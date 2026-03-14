@@ -2,20 +2,24 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="dark">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#000000" />
 <meta name="description" content="{{ summary | default(value='阅读技术文章、分享编程经验、探索技术边界 - ' ~ title) }}">
 <meta name="keywords" content="{{ tags | default(value='技术博客,编程,开发') }}">
 <title>{{ title }} - 文章阅读</title>
+<!-- Dark Reader 专业暗色库 -->
+<script src="/js/dark-reader-injector.js"></script>
 <!-- Disable favicon -->
 <link rel="icon" href="data:,">
 <!-- Highlight.js CSS (关键) -->
 <link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
 <!-- 文章页面基础样式 (关键) -->
 <link rel="stylesheet" href="/css/passage-base.css">
+<!-- 模态框动画样式 (关键) -->
+<link rel="stylesheet" href="/css/modal-animations.css">
 <!-- 核心动画 CSS (关键 - 包含 @keyframes) -->
 <!-- 内联关键动画 CSS，减少 HTTP 请求 -->
 <style>
@@ -97,7 +101,7 @@ nav {
   align-items: center;
   height: var(--header-height);
   padding: 0 5px;
-  background: var(--navbar-glass-color, rgba(255, 255, 255, 0.85));
+  background: var(--navbar-glass-color, rgba(60, 60, 60, 0.6));
   backdrop-filter: blur(10px) saturate(180%);
   -webkit-backdrop-filter: blur(10px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -683,6 +687,74 @@ nav a.current {
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 2px solid var(--primary-color);
+}
+
+/* 文章摘要样式 */
+.article-summary {
+  margin: 20px 0;
+  padding: 0;
+  background: transparent;
+}
+
+.summary-content {
+  border: 1px solid #007bff;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 123, 255, 0.05);
+  border-bottom: 1px solid #007bff;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 0.95em;
+}
+
+.summary-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-toggle:hover {
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.summary-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.article-summary.expanded .summary-toggle svg {
+  transform: rotate(0deg);
+}
+
+.article-summary:not(.expanded) .summary-toggle svg {
+  transform: rotate(180deg);
+}
+
+.summary-text {
+  padding: 16px;
+  line-height: 1.6;
+  color: var(--text-light);
+  font-size: 0.95em;
+}
+
+.article-summary:not(.expanded) .summary-text {
+  display: none;
 }
 
 .article-title {
@@ -2601,7 +2673,7 @@ body.focus-mode-right .sidebar {
 <link rel="stylesheet" href="/css/glass-effect.css" media="print" onload="this.media='all'">
 
 <!-- 模态框动画样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="/css/animations.css" media="print" onload="this.media='all'">
 
 <!-- 键盘快捷键样式 (延迟加载) -->
 <link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
@@ -5632,6 +5704,11 @@ function renderArticle(articleData) {
   // 加载附件列表
   loadAttachments(articleData.date, articleEl);
 
+  // 加载文章摘要
+  if (window.ArticleSummary && typeof window.ArticleSummary.processArticle === 'function') {
+    window.ArticleSummary.processArticle(articleEl, articleData);
+  }
+
   // 显示赞助区域（如果启用）
   const sponsorSection = articleEl.querySelector('.sponsor-section-template');
   if (sponsorSection) {
@@ -7809,19 +7886,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- 顶栏滚动隐藏逻辑 -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('[顶栏滚动隐藏逻辑] DOMContentLoaded 触发');
-
   const nav = document.querySelector('nav');
   const contentArea = document.querySelector('.content-area');
   const articleContainer = document.querySelector('.article-container');
   const mainContainer = document.querySelector('.main-container');
   const footer = document.querySelector('footer');
-
-  console.log('[顶栏滚动隐藏逻辑] nav 元素:', nav);
-  console.log('[顶栏滚动隐藏逻辑] contentArea 元素:', contentArea);
-  console.log('[顶栏滚动隐藏逻辑] articleContainer 元素:', articleContainer);
-  console.log('[顶栏滚动隐藏逻辑] mainContainer 元素:', mainContainer);
-  console.log('[顶栏滚动隐藏逻辑] footer 元素:', footer);
 
   if (articleContainer) {
     console.log('[顶栏滚动隐藏逻辑] articleContainer 当前样式:', {
@@ -7850,23 +7919,14 @@ document.addEventListener('DOMContentLoaded', function() {
   let hasTriggered = false; // 标记是否已经触发过
 
   if (nav && articleContainer && mainContainer) {
-    console.log('[顶栏滚动隐藏逻辑] 所有元素都找到了，添加滚动监听');
-
     articleContainer.addEventListener('scroll', function() {
       scrollEventCount++;
-      console.log('[顶栏滚动隐藏逻辑] 滚动事件触发 (第' + scrollEventCount + '次)');
-
       if (!ticking && !hasTriggered) {
         window.requestAnimationFrame(function() {
           const currentScrollY = articleContainer.scrollTop;
-
-          console.log('[顶栏滚动隐藏逻辑] 当前滚动位置:', currentScrollY, '上次滚动位置:', lastScrollY);
-
           // 只在滚动超过10px时触发一次
           if (currentScrollY > 10) {
-            console.log('[顶栏滚动隐藏逻辑] 滚动超过10px，触发隐藏顶栏和底栏');
-            hasTriggered = true;
-            
+            hasTriggered = true;   
             // 先添加过渡效果，然后隐藏
             nav.style.transform = 'translateY(-100%)';
             nav.style.opacity = '0';
@@ -7878,7 +7938,6 @@ document.addEventListener('DOMContentLoaded', function() {
               nav.style.display = 'none';
               footer.style.display = 'none';
               mainContainer.style.height = '100vh';
-              console.log('[顶栏滚动隐藏逻辑] mainContainer 新高度:', window.getComputedStyle(mainContainer).height);
             }, 400);
           }
 
@@ -7890,19 +7949,12 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    console.log('[顶栏滚动隐藏逻辑] 滚动监听器已添加');
-    console.log('[顶栏滚动隐藏逻辑] 等待滚动事件...');
-
     // 5秒后检查是否触发过滚动事件
     setTimeout(function() {
-      console.log('[顶栏滚动隐藏逻辑] 5秒内滚动事件触发次数:', scrollEventCount);
       if (scrollEventCount === 0) {
-        console.warn('[顶栏滚动隐藏逻辑] 5秒内没有触发滚动事件，可能articleContainer不可滚动');
       }
     }, 5000);
-
   } else {
-    console.error('[顶栏滚动隐藏逻辑] 未找到元素 - nav:', nav, 'articleContainer:', articleContainer, 'mainContainer:', mainContainer);
   }
 });
 </script>
@@ -7913,6 +7965,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/js/passage-shortcuts.js" defer></script>
 <!-- 文本聚焦模式脚本 -->
 <script src="/js/passage-focus-mode.js" defer></script>
+<!-- 文章摘要脚本 -->
+<script src="/js/article-summary.js" defer></script>
 
 <!-- 音乐播放器样式 (延迟加载) -->
 <link rel="stylesheet" href="/css/music-player.css" media="print" onload="this.media='all'">
