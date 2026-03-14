@@ -160,7 +160,7 @@
             }
 
             /* 强制非导航栏按钮使用暗色 */
-            button:not(nav button):not(.navbar button):not(.nav button):not([class*="nav-"] button):not(#loginBtn):not(#userCenterToggle):not(.shortcuts-help-btn):not(.btn-primary):not(.btn-secondary) {
+            button:not(nav button):not(.navbar button):not(.nav button):not([class*="nav-"] button):not(#loginBtn):not(#userCenterToggle):not(.shortcuts-help-btn):not(.btn-primary):not(.btn-secondary):not(.user-center-item):not(.logout-item) {
                 background-color: #3d3d3d !important;
                 color: #e0e0e0 !important;
             }
