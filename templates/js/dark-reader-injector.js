@@ -159,6 +159,23 @@
                 border-color: #404040 !important;
             }
 
+            /* 覆盖浏览器自动填充的黄色背景 */
+            input:-webkit-autofill,
+            input:-webkit-autofill:hover,
+            input:-webkit-autofill:focus,
+            textarea:-webkit-autofill,
+            textarea:-webkit-autofill:hover,
+            textarea:-webkit-autofill:focus,
+            select:-webkit-autofill,
+            select:-webkit-autofill:hover,
+            select:-webkit-autofill:focus {
+                -webkit-box-shadow: 0 0 0 30px #2d2d2d inset !important;
+                -webkit-text-fill-color: #e0e0e0 !important;
+                background-color: #2d2d2d !important;
+                color: #e0e0e0 !important;
+                transition: background-color 5000s ease-in-out 0s !important;
+            }
+
             /* 强制非导航栏按钮使用暗色 */
             button:not(nav button):not(.navbar button):not(.nav button):not([class*="nav-"] button):not(#loginBtn):not(#userCenterToggle):not(.shortcuts-help-btn):not(.btn-primary):not(.btn-secondary):not(.user-center-item):not(.logout-item) {
                 background-color: #3d3d3d !important;
