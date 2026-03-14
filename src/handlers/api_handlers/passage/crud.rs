@@ -780,9 +780,11 @@ pub async fn update(
             }
         }
     }
-    if let Some(ref summary) = req_json.summary {
-        passage.summary = Some(summary.clone());
-    }
+
+    // 自动生成摘要（总是重新生成，不使用前端提供的摘要）
+    use crate::services::summarize_service::SummarizeService;
+    passage.summary = Some(SummarizeService::generate_summary_from_markdown(&passage.content));
+
     if let Some(ref author) = req_json.author {
         passage.author = author.clone();
     }
