@@ -429,16 +429,17 @@ main {
 }
 
 .welcome-card {
-	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	background: rgba(30, 30, 30, 0.2);
+	backdrop-filter: blur(20px) saturate(130%);
+	-webkit-backdrop-filter: blur(20px) saturate(130%);
+	border: 1px solid rgba(255, 255, 255, .12);
 	padding: 30px;
 	border-radius: 20px;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	flex-wrap: wrap
+	flex-wrap: wrap;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
 }
 
 .welcome-text h2 {
@@ -456,17 +457,18 @@ main {
 	width: 80px;
 	height: 80px;
 	border-radius: 50%;
-	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	background: rgba(30, 30, 30, 0.2);
+	backdrop-filter: blur(20px) saturate(130%);
+	-webkit-backdrop-filter: blur(20px) saturate(130%);
+	border: 1px solid rgba(255, 255, 255, .12);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
-	color: #333;
+	color: rgba(255, 255, 255, 1);
 	font-size: 2em;
-	font-weight: 700
+	font-weight: 700;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
 }
 
 .admin-avatar .avatar-image {
@@ -483,20 +485,21 @@ main {
 }
 
 .stat-card {
-	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	background: rgba(30, 30, 30, 0.2);
+	backdrop-filter: blur(20px) saturate(130%);
+	-webkit-backdrop-filter: blur(20px) saturate(130%);
+	border: 1px solid rgba(255, 255, 255, .12);
 	padding: 25px;
 	border-radius: 15px;
 	transition: all .3s ease;
 	position: relative;
-	overflow: hidden
+	overflow: hidden;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
 }
 
 .stat-card:hover {
 	transform: translateY(-5px);
-	border-color: rgba(255, 255, 255, .5)
+	border-color: rgba(255, 255, 255, .25)
 }
 
 .stat-card::before {
