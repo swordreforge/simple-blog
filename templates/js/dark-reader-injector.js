@@ -37,17 +37,15 @@
       // 设置自定义 fetch 方法来处理跨域和图片问题
       DarkReader.setFetchMethod(async (url) => {
         try {
-          // 忽略所有跨域请求
+          // 忽略所有跨域请求，抛出错误让 Dark Reader 跳过
           const currentOrigin = window.location.origin;
           const urlOrigin = new URL(url).origin;
           if (urlOrigin !== currentOrigin) {
-            // 返回一个空的响应对象，避免控制台警告
-            return new Response(null, { status: 200, statusText: 'OK' });
+            throw new Error('Ignoring cross-origin request');
           }
           return await window.fetch(url);
         } catch (error) {
-          // 返回空响应而不是抛出错误
-          return new Response(null, { status: 200, statusText: 'OK' });
+          throw error;
         }
       });
       DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
