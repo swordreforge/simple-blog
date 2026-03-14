@@ -20,13 +20,12 @@
     darkSchemeMatches: !0,
     immediateFetch: !1,
     ignoreInlineStyle: ["*"],
-    ignoreImageAnalysis: [],
+    ignoreImageAnalysis: ['*'],
     disableStyleSheetsProxy: !0,
     ignoreInlineAnalysis: ["*"],
     disablePDFViewer: !1,
     disableStyleSheets: !1,
-    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img"],
-    mode: 0
+    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img", "picture", "figure"]
   };
 
   function t() {
@@ -34,8 +33,11 @@
   }
 
   function e() {
-    // 直接使用备用方案，不使用 Dark Reader 避免图片处理问题
-    console.log("[DarkReader] 使用自定义 CSS 暗色模式"), r()
+    if (t()) try {
+      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
+    } catch (n) {
+      console.error("[DarkReader] 启用失败:", n), r()
+    } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
   }
 
   function o() {
@@ -76,7 +78,7 @@
       await new Promise((n, e) => {
         if (t()) return void n();
         const o = document.createElement("script");
-        o.src = "/js/npm/darkreader@4.9.92/darkreader.min.js", o.onload = n, o.onerror = e, document.head.appendChild(o)
+        o.src = "/js/npm/darkreader@4.9.120/darkreader.min.js", o.onload = n, o.onerror = e, document.head.appendChild(o)
       }), e(), new MutationObserver(e => {
         e.forEach(e => {
           "childList" === e.type && e.addedNodes.forEach(e => {
