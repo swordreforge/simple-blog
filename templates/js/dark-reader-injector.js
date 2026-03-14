@@ -189,10 +189,25 @@
             }
             
             /* 强制所有卡片使用暗色 */
-            .card, .panel, .modal {
+            .card, .panel {
                 background-color: #252525 !important;
                 color: #e0e0e0 !important;
                 border-color: #404040 !important;
+            }
+
+            /* 保留模态框的毛玻璃效果 */
+            .modal {
+                background-color: rgba(0, 0, 0, 0.5) !important;
+                color: #e0e0e0 !important;
+            }
+
+            /* 保留模态框内容的毛玻璃效果 */
+            .modal-content {
+                background: rgba(0, 0, 0, 0) !important;
+                backdrop-filter: blur(40px) saturate(200%) !important;
+                -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+                border: 1px solid rgba(255, 255, 255, 0.5) !important;
+                color: #e0e0e0 !important;
             }
             
             /* 强制导航栏使用暗色背景，但不改变文字颜色 */
