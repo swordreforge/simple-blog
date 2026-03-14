@@ -227,7 +227,10 @@
                 background-color: var(--footer-glass-color, rgba(45, 45, 45, 0.6)) !important;
                 backdrop-filter: blur(10px) !important;
                 -webkit-backdrop-filter: blur(10px) !important;
-                color: #e0e0e0 !important;
+                color: #ffffff !important;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
+                             0 0 20px rgba(255, 255, 255, 0.3),
+                             0 0 30px rgba(255, 255, 255, 0.1) !important;
                 border-color: rgba(255, 255, 255, 0.1) !important;
             }
             
