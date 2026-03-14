@@ -1,5 +1,11 @@
 ! function() {
   "use strict";
+  // 全局捕获并忽略 Dark Reader 的图片加载错误
+  window.addEventListener('unhandledrejection', function(event) {
+    if (event.reason && event.reason.toString().includes('Unable to load image')) {
+      event.preventDefault(); // 阻止错误显示在控制台
+    }
+  });
   const n = {
     brightness: 100,
     contrast: 100,
@@ -28,15 +34,6 @@
 
   function e() {
     if (t()) try {
-      // 捕获并忽略图片加载相关的错误
-      const originalError = console.error;
-      console.error = function(...args) {
-        const message = args.join(' ');
-        if (message.includes('Unable to load image') || message.includes('SVG')) {
-          return; // 忽略图片加载错误
-        }
-        originalError.apply(console, args);
-      };
       DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
@@ -85,18 +82,7 @@
       }), e(), new MutationObserver(e => {
         e.forEach(e => {
           "childList" === e.type && e.addedNodes.forEach(e => {
-            if (e.nodeType === Node.ELEMENT_NODE && t()) {
-              // 捕获并忽略图片加载相关的错误
-              const originalError = console.error;
-              console.error = function(...args) {
-                const message = args.join(' ');
-                if (message.includes('Unable to load image') || message.includes('SVG')) {
-                  return; // 忽略图片加载错误
-                }
-                originalError.apply(console, args);
-              };
-              DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n)
-            }
+            e.nodeType === Node.ELEMENT_NODE && t() && (DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n))
           })
         })
       }).observe(document.body, {
