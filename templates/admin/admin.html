@@ -1022,14 +1022,12 @@ main {
 	margin-top: 20px;
 	padding: 15px 20px;
 	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	border: 1px solid rgba(255, 255, 255, .12);
 	border-radius: 12px
 }
 
 .pagination-info {
-	color: #333;
+	color: rgba(255, 255, 255, 0.85);
 	font-size: .95em
 }
 
@@ -1045,9 +1043,7 @@ main {
 	gap: 6px;
 	padding: 8px 16px;
 	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	border: 1px solid rgba(255, 255, 255, .12);
 	color: rgba(255, 255, 255, .9);
 	border-radius: 8px;
 	font-size: .9em;
@@ -1058,7 +1054,7 @@ main {
 
 .pagination-btn:hover:not(:disabled) {
 	background: rgba(0, 0, 0, 0);
-	border-color: rgba(255, 255, 255, .5);
+	border-color: rgba(255, 255, 255, .25);
 	transform: translateY(-2px)
 }
 
@@ -1080,9 +1076,7 @@ main {
 	align-items: center;
 	justify-content: center;
 	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	border: 1px solid rgba(255, 255, 255, .12);
 	color: rgba(255, 255, 255, .9);
 	border-radius: 8px;
 	font-size: .9em;
@@ -1093,12 +1087,12 @@ main {
 
 .pagination-page:hover:not(.active):not(.ellipsis) {
 	background: rgba(0, 0, 0, 0);
-	border-color: rgba(255, 255, 255, .5)
+	border-color: rgba(255, 255, 255, .25)
 }
 
 .pagination-page.active {
 	background: rgba(255, 255, 255, .35);
-	border-color: rgba(255, 255, 255, .7);
+	border-color: rgba(255, 255, 255, .5);
 	font-weight: 600
 }
 
