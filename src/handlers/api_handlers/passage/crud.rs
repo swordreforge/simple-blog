@@ -4,7 +4,7 @@ use crate::db::models::Passage;
 use crate::view_batch::{ViewRecord, is_local_ip};
 use chrono::Utc;
 
-use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name, extract_summary};
+use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
 use super::validation::{ensure_tags_exist, ensure_category_exist};
 
 /// 文章响应

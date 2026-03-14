@@ -1,34 +1,9 @@
-use regex::Regex;
 use pulldown_cmark::{Parser, html, Options};
 use once_cell::sync::Lazy;
 use std::time::Duration;
 use moka::sync::Cache;
 use std::fs;
 use std::path::Path;
-
-/// 从 HTML 内容中提取摘要
-pub fn extract_summary(html_content: &str) -> String {
-    // 移除 HTML 标签
-    let re = match Regex::new(r"<[^>]*>") {
-        Ok(r) => r,
-        Err(_) => {
-            // 如果正则表达式创建失败，直接返回原文
-            return html_content.chars().take(200).collect();
-        }
-    };
-    let text = re.replace_all(html_content, "");
-
-    // 移除多余的空白字符
-    let text: String = text.split_whitespace().collect::<Vec<&str>>().join(" ");
-
-    // 按字符截取前 200 个字符（支持中文）
-    let chars: Vec<char> = text.chars().collect();
-    if chars.len() > 200 {
-        format!("{}...", chars[..200].iter().collect::<String>())
-    } else {
-        text
-    }
-}
 
 /// 将 Markdown 转换为 HTML（带缓存，使用 moka 无锁缓存）
 pub fn convert_markdown_to_html(markdown: &str) -> String {

@@ -957,6 +957,7 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
 }
 
 /// 将 Markdown 转换为 HTML
+#[cfg(debug_assertions)]
 fn convert_markdown_to_html(markdown: &str) -> String {
     use pulldown_cmark::{Parser, html, Options};
 

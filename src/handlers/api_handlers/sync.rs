@@ -249,31 +249,6 @@ fn extract_date_from_path(file_path: &str) -> Option<DateTime<Utc>> {
     None
 }
 
-/// 提取摘要
-fn extract_summary(html_content: &str) -> Option<String> {
-    use regex::Regex;
-
-    // 移除 HTML 标签
-    let re = match Regex::new(r"<[^>]*>") {
-        Ok(r) => r,
-        Err(_) => {
-            // 如果正则表达式创建失败，直接返回原文
-            return Some(html_content.chars().take(200).collect());
-        }
-    };
-    let text = re.replace_all(html_content, "");
-
-    // 移除多余的空白
-    let text: String = text.split_whitespace().collect::<Vec<&str>>().join(" ");
-
-    // 截取前 200 个字符
-    if text.chars().count() > 200 {
-        Some(text.chars().take(200).collect::<String>() + "...")
-    } else {
-        Some(text)
-    }
-}
-
 /// 更新文章
 async fn update_passage(
     _passage_repo: &PassageRepository,
