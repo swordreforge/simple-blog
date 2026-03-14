@@ -42,9 +42,39 @@
       
       // 保存原始背景图片
       const body = document.body;
-      const originalBgImage = body.style.backgroundImage || window.getComputedStyle(body).backgroundImage;
-      if (originalBgImage && originalBgImage !== 'none') {
+      const computedStyle = window.getComputedStyle(body);
+      const originalBgImage = body.style.backgroundImage || computedStyle.backgroundImage;
+      
+      // 检查是否有背景图片
+      if (originalBgImage && originalBgImage !== 'none' && originalBgImage !== '') {
+        // 保存原始背景图片 URL
         body.style.setProperty('--original-bg-image', originalBgImage, 'important');
+        
+        // 在 Dark Reader 启用后立即恢复背景图片
+        const restoreBgImage = () => {
+          // 强制移除 Dark Reader 注入的背景图片相关属性
+          body.removeAttribute('data-darkreader-inline-bgimage');
+          body.style.removeProperty('--darkreader-inline-bgimage');
+          body.style.backgroundImage = originalBgImage;
+          body.style.setProperty('background-image', originalBgImage, 'important');
+        };
+        
+        // 立即执行一次
+        restoreBgImage();
+        
+        // 使用 MutationObserver 监听并持续恢复
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-darkreader-inline-bgimage') {
+              restoreBgImage();
+            }
+          });
+        });
+        
+        observer.observe(body, {
+          attributes: true,
+          attributeFilter: ['data-darkreader-inline-bgimage', 'style']
+        });
       }
       
       DarkReader.setFetchMethod(window.fetch);
