@@ -597,12 +597,11 @@ main {
 }
 
 .timeline-container {
-	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	background: rgba(30, 30, 30, 0.2);
+	border: 1px solid rgba(255, 255, 255, .12);
 	border-radius: 12px;
-	padding: 25px
+	padding: 25px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
 }
 
 .timeline-title {
@@ -610,7 +609,7 @@ main {
 	color: rgba(255, 255, 255, .9);
 	margin-bottom: 25px;
 	padding-bottom: 10px;
-	border-bottom: 2px solid rgba(255, 255, 255, .3);
+	border-bottom: 2px solid rgba(255, 255, 255, .12);
 	position: relative
 }
 
@@ -636,7 +635,7 @@ main {
 	top: 0;
 	bottom: 0;
 	width: 3px;
-	background: rgba(255, 255, 255, .3);
+	background: rgba(255, 255, 255, .12);
 	border-radius: 3px
 }
 
@@ -659,7 +658,7 @@ main {
 	height: 15px;
 	border-radius: 50%;
 	background: rgba(255, 255, 255, .6);
-	border: 3px solid rgba(255, 255, 255, .3);
+	border: 3px solid rgba(255, 255, 255, .12);
 	z-index: 1
 }
 
@@ -678,9 +677,7 @@ main {
 .timeline-bar {
 	height: 8px;
 	background: rgba(0, 0, 0, 0);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
-	border: 1px solid rgba(255, 255, 255, .3);
+	border: 1px solid rgba(255, 255, 255, .12);
 	border-radius: 4px;
 	margin-top: 8px;
 	overflow: hidden
@@ -689,10 +686,8 @@ main {
 .timeline-fill {
 	height: 100%;
 	background: rgba(255, 255, 255, .6);
-	backdrop-filter: blur(20px) saturate(180%);
-	-webkit-backdrop-filter: blur(20px) saturate(180%);
 	border-radius: 4px;
-	width: 0;
+	width: 0
 	transition: width 1.5s ease-out
 }
 
