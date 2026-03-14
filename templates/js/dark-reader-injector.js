@@ -41,11 +41,13 @@
           const currentOrigin = window.location.origin;
           const urlOrigin = new URL(url).origin;
           if (urlOrigin !== currentOrigin) {
-            throw new Error('Ignoring cross-origin request');
+            // 返回一个空的响应对象，避免控制台警告
+            return new Response(null, { status: 200, statusText: 'OK' });
           }
           return await window.fetch(url);
         } catch (error) {
-          throw error;
+          // 返回空响应而不是抛出错误
+          return new Response(null, { status: 200, statusText: 'OK' });
         }
       });
       DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
