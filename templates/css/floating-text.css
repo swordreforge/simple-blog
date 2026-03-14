@@ -1,3 +1,8 @@
+/* 主动声明页面支持暗色模式 */
+:root {
+  color-scheme: dark;
+}
+
 /* 飘字效果样式 - Canvas 实现 */
 
 /* Canvas 容器 */

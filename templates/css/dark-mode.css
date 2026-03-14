@@ -2,16 +2,35 @@
    全局暗色模式样式
    ======================================== */
 
-/* 毛玻璃颜色 CSS 变量 */
+/* 主动声明页面支持暗色模式 */
 :root {
-  --navbar-glass-color: rgba(255, 255, 255, 0.35);
-  --card-glass-color: rgba(255, 255, 255, 0.3);
-  --footer-glass-color: rgba(255, 255, 255, 0.4);
+  color-scheme: dark;
+
+  /* 全局颜色变量 - 暗色模式 */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3d3d3d;
+  --bg-card: #252525;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --text-muted: #707070;
+  --border-color: #404040;
+  --accent-color: #4a9eff;
+  --accent-hover: #3a8eef;
+  --success-color: #00b894;
+  --warning-color: #fdcb6e;
+  --error-color: #e74c3c;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --shadow-light: rgba(0, 0, 0, 0.3);
+
+  /* 暗色模式下的毛玻璃颜色 - 灰色调 */
+  --navbar-glass-color: rgba(60, 60, 60, 0.6);
+  --card-glass-color: rgba(35, 35, 35, 0.1);
+  --footer-glass-color: rgba(45, 45, 45, 0.2);
 }
 
-/* 当 html 元素有 dark-mode 类时应用暗色主题 */
+/* 当 html 元素有 dark-mode 类时应用暗色主题（向后兼容） */
 html.dark-mode {
-  /* 全局颜色变量 */
   --bg-primary: #1a1a1a;
   --bg-secondary: #2d2d2d;
   --bg-tertiary: #3d3d3d;

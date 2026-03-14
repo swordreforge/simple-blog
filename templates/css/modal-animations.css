@@ -1,3 +1,8 @@
+/* 主动声明页面支持暗色模式 */
+:root {
+  color-scheme: dark;
+}
+
 /* 模态框动画样式 - 统一版本 */
 .modal {
   display: none;

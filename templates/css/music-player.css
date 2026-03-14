@@ -1,3 +1,8 @@
+/* 主动声明页面支持暗色模式 */
+:root {
+  color-scheme: dark;
+}
+
 /* 音乐播放器样式 */
 .music-player {
   position: fixed;
