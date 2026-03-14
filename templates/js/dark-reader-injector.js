@@ -222,7 +222,7 @@
             }
             
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/darkreader@4.9.92/darkreader.min.js';
+            script.src = '/js/npm/darkreader@4.9.92/darkreader.min.js';
             script.onload = resolve;
             script.onerror = reject;
             document.head.appendChild(script);

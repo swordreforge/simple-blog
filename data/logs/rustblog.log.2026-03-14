@@ -1,0 +1,117 @@
+2026-03-14T03:01:23.714672Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:01:23.721423Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-14T03:01:23.721432Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-14T03:01:23.721438Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-14T03:11:53.767591Z  INFO ThreadId(01) actix_server::server: SIGINT received; starting forced shutdown
+2026-03-14T03:11:53.767697Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767704Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767724Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767731Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767739Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767750Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767757Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767766Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767813Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767821Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767837Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767852Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-14T03:11:53.767862Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767891Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767899Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767915Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767919Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767924Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767930Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.767944Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.768028Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.768053Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:53.768579Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-14T03:11:55.663647Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:11:55.669525Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-14T03:11:55.669536Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-14T03:11:55.669544Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-14T03:15:13.501500Z  INFO ThreadId(01) actix_server::server: SIGINT received; starting forced shutdown
+2026-03-14T03:15:13.501584Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501591Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-14T03:15:13.501602Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501613Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501621Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501640Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501679Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501693Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501701Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501721Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501726Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501732Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501742Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501751Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501760Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501768Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501779Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501821Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501834Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501843Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.501855Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.502308Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:13.502508Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-14T03:15:16.438892Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:15:16.445709Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-14T03:15:16.445722Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-14T03:15:16.445729Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-14T03:24:01.638688Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:24:09.400137Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:24:09.404711Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-14T03:24:09.404722Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-14T03:24:09.404728Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-14T03:33:58.697836Z  INFO ThreadId(01) actix_server::server: SIGINT received; starting forced shutdown
+2026-03-14T03:33:58.697933Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697937Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-14T03:33:58.697931Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697948Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697965Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697974Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697980Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697984Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697986Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.697990Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698006Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698005Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698009Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698033Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698141Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698143Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698150Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698159Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698173Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698176Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698196Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698271Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-14T03:33:58.698641Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-14T03:35:00.641298Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:35:00.649523Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-14T03:35:00.649536Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-14T03:35:00.649544Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-14T03:36:27.904870Z  INFO ThreadId(01) actix_server::server: SIGINT received; starting forced shutdown
+2026-03-14T03:36:27.904944Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.904955Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.904956Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.904967Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.904985Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905009Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905100Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905117Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905125Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905134Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905149Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905165Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905173Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905208Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905215Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905252Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905264Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905284Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905346Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905365Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905380Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-14T03:36:27.905837Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-14T03:36:27.905853Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
