@@ -1,5 +1,69 @@
-/* ESBuild compressed */
-var Z=Object.defineProperty;var H=Object.getOwnPropertySymbols;var ee=Object.prototype.hasOwnProperty,te=Object.prototype.propertyIsEnumerable;var D=(e,t,n)=>t in e?Z(e,t,{enumerable:!0,configurable:!0,writable:!0,value:n}):e[t]=n,T=(e,t)=>{for(var n in t||(t={}))ee.call(t,n)&&D(e,n,t[n]);if(H)for(var n of H(t))te.call(t,n)&&D(e,n,t[n]);return e};var s=(e,t,n)=>new Promise((o,a)=>{var i=l=>{try{r(n.next(l))}catch(c){a(c)}},d=l=>{try{r(n.throw(l))}catch(c){a(c)}},r=l=>l.done?o(l.value):Promise.resolve(l.value).then(i,d);r((n=n.apply(e,t)).next())});let F={},U=null,G=null;function N(){return s(this,null,function*(){try{var e,t=localStorage.getItem("auth_token"),n={"Content-Type":"application/json"},o=(t&&(n.Authorization="Bearer "+t),yield fetch("/api/settings/appearance",{headers:n}));o.ok?(e=yield o.json(),F=T({},e),document.getElementById("backgroundImage").value=e.background_image,document.getElementById("mobileBackgroundImage").value=e.mobile_background_image,document.getElementById("globalOpacity").value=e.global_opacity||"0.15",document.getElementById("opacityValue").textContent=e.global_opacity||"0.15",document.getElementById("backgroundSize").value=e.background_size||"cover",document.getElementById("backgroundPosition").value=e.background_position||"center",document.getElementById("backgroundRepeat").value=e.background_repeat||"no-repeat",document.getElementById("backgroundAttachment").value=e.background_attachment||"fixed",document.getElementById("blurAmount").value=e.blur_amount||"20px",document.getElementById("saturateAmount").value=e.saturate_amount||"180%",document.getElementById("darkModeEnabled").checked=e.dark_mode_enabled||!1,document.getElementById("navbarGlassColor").value=e.navbar_glass_color||"rgba(255, 255, 255, 0.85)",document.getElementById("navbarTextColor").value=e.navbar_text_color||"#333333",document.getElementById("cardGlassColor").value=e.card_glass_color||"rgba(255, 255, 255, 0.75)",document.getElementById("footerGlassColor").value=e.footer_glass_color||"rgba(255, 255, 255, 0.9)",document.getElementById("floatingTextEnabled").checked=e.floating_text_enabled||!1,document.getElementById("floatingTexts").value=e.floating_texts&&Array.isArray(e.floating_texts)?e.floating_texts.join(", "):"perfect, good, excellent, extraordinary, legend",$(),A(e.dark_mode_enabled||!1),R(e.navbar_glass_color,e.card_glass_color,e.footer_glass_color),f()):console.error("\u52A0\u8F7D\u8BBE\u7F6E\u5931\u8D25:",o.statusText)}catch(a){console.error("\u52A0\u8F7D\u8BBE\u7F6E\u5931\u8D25:",a)}})}function ne(){return s(this,null,function*(){try{var e,t,n=localStorage.getItem("auth_token"),o={"Content-Type":"application/json"},a=(n&&(o.Authorization="Bearer "+n),{background_image:document.getElementById("backgroundImage").value,mobile_background_image:document.getElementById("mobileBackgroundImage").value,global_opacity:document.getElementById("globalOpacity").value,background_size:document.getElementById("backgroundSize").value,background_position:document.getElementById("backgroundPosition").value,background_repeat:document.getElementById("backgroundRepeat").value,background_attachment:document.getElementById("backgroundAttachment").value,blur_amount:document.getElementById("blurAmount").value,saturate_amount:document.getElementById("saturateAmount").value,dark_mode_enabled:document.getElementById("darkModeEnabled").checked,navbar_glass_color:document.getElementById("navbarGlassColor").value,navbar_text_color:document.getElementById("navbarTextColor").value,card_glass_color:document.getElementById("cardGlassColor").value,footer_glass_color:document.getElementById("footerGlassColor").value,floating_text_enabled:document.getElementById("floatingTextEnabled").checked,floating_texts:document.getElementById("floatingTexts").value.split(",").map(l=>l.trim()).filter(l=>0<l.length)}),i={};for(const l in a){var d=F[l],r=a[l];r!==d&&(i[l]=r)}Object.keys(i).length===0?showToast("\u6CA1\u6709\u68C0\u6D4B\u5230\u4EFB\u4F55\u53D8\u5316","warning"):(e=yield fetch("/api/settings/appearance",{method:"PATCH",headers:o,body:JSON.stringify(i)})).ok?(showToast("\u8BBE\u7F6E\u4FDD\u5B58\u6210\u529F\uFF01","success"),Object.assign(F,i),"dark_mode_enabled"in i&&A(i.dark_mode_enabled),f()):(t=yield e.json(),showToast("\u4FDD\u5B58\u5931\u8D25\uFF1A"+(t.error||"\u672A\u77E5\u9519\u8BEF"),"error"))}catch(l){console.error("\u4FDD\u5B58\u8BBE\u7F6E\u5931\u8D25:",l),showToast("\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}})}function oe(){confirm("\u786E\u5B9A\u8981\u91CD\u7F6E\u4E3A\u9ED8\u8BA4\u8BBE\u7F6E\u5417\uFF1F")&&(document.getElementById("backgroundImage").value="/img/test.webp",document.getElementById("globalOpacity").value="0.15",document.getElementById("opacityValue").textContent="0.15",document.getElementById("backgroundSize").value="cover",document.getElementById("backgroundPosition").value="center",document.getElementById("backgroundRepeat").value="no-repeat",document.getElementById("backgroundAttachment").value="fixed",document.getElementById("blurAmount").value="20px",document.getElementById("saturateAmount").value="180%",document.getElementById("darkModeEnabled").checked=!1,document.getElementById("navbarGlassColor").value="rgba(255, 255, 255, 0.85)",document.getElementById("navbarTextColor").value="#333333",document.getElementById("cardGlassColor").value="rgba(255, 255, 255, 0.75)",document.getElementById("footerGlassColor").value="rgba(255, 255, 255, 0.9)",document.getElementById("floatingTextEnabled").checked=!1,document.getElementById("floatingTexts").value="perfect, good, excellent, extraordinary, legend",$(),A(!1),R("rgba(255, 255, 255, 0.85)","rgba(255, 255, 255, 0.75)","rgba(255, 255, 255, 0.9)"),f())}function f(){var e,t,n,o,a,i,d,r,l,c=document.getElementById("previewBox");c&&(l=document.getElementById("backgroundImage").value,r=document.getElementById("mobileBackgroundImage").value,e=document.getElementById("globalOpacity").value,t=document.getElementById("backgroundSize").value,n=document.getElementById("backgroundPosition").value,o=document.getElementById("backgroundRepeat").value,a=document.getElementById("backgroundAttachment").value,i=document.getElementById("blurAmount").value,d=document.getElementById("saturateAmount").value,r=window.innerWidth<=768&&r?r:l,c.style.backgroundImage=`url('${r}')`,c.style.backgroundSize=t,c.style.backgroundPosition=n,c.style.backgroundRepeat=o,c.style.backgroundAttachment=a,c.style.setProperty("--blur-amount",i),c.style.setProperty("--saturate-amount",d),c.style.setProperty("--global-opacity",e),(l=document.createElement("style")).textContent=`
+let originalAppearanceSettings = {},
+    currentAction = null,
+    currentItemId = null;
+async function loadSettings() {
+    try {
+        var e, t = localStorage.getItem("auth_token"),
+            n = {
+                "Content-Type": "application/json"
+            },
+            o = (t && (n.Authorization = "Bearer " + t), await fetch("/api/settings/appearance", {
+                headers: n
+            }));
+        o.ok ? (e = await o.json(), originalAppearanceSettings = {
+            ...e
+        }, document.getElementById("backgroundImage").value = e.background_image, document.getElementById("mobileBackgroundImage").value = e.mobile_background_image, document.getElementById("globalOpacity").value = e.global_opacity || "0.15", document.getElementById("opacityValue").textContent = e.global_opacity || "0.15", document.getElementById("backgroundSize").value = e.background_size || "cover", document.getElementById("backgroundPosition").value = e.background_position || "center", document.getElementById("backgroundRepeat").value = e.background_repeat || "no-repeat", document.getElementById("backgroundAttachment").value = e.background_attachment || "fixed", document.getElementById("blurAmount").value = e.blur_amount || "20px", document.getElementById("saturateAmount").value = e.saturate_amount || "180%", document.getElementById("darkModeEnabled").checked = e.dark_mode_enabled || !1, document.getElementById("navbarGlassColor").value = e.navbar_glass_color || "rgba(255, 255, 255, 0.85)", document.getElementById("navbarTextColor").value = e.navbar_text_color || "#333333", document.getElementById("cardGlassColor").value = e.card_glass_color || "rgba(255, 255, 255, 0.75)", document.getElementById("footerGlassColor").value = e.footer_glass_color || "rgba(255, 255, 255, 0.9)", document.getElementById("floatingTextEnabled").checked = e.floating_text_enabled || !1, document.getElementById("floatingTexts").value = e.floating_texts && Array.isArray(e.floating_texts) ? e.floating_texts.join(", ") : "perfect, good, excellent, extraordinary, legend", updateColorPickers(), applyDarkMode(e.dark_mode_enabled || !1), applyGlassColors(e.navbar_glass_color, e.card_glass_color, e.footer_glass_color), updatePreview()) : console.error("加载设置失败:", o.statusText)
+    } catch (e) {
+        console.error("加载设置失败:", e)
+    }
+}
+async function saveSettings() {
+    try {
+        var e, t, n = localStorage.getItem("auth_token"),
+            o = {
+                "Content-Type": "application/json"
+            },
+            a = (n && (o.Authorization = "Bearer " + n), {
+                background_image: document.getElementById("backgroundImage").value,
+                mobile_background_image: document.getElementById("mobileBackgroundImage").value,
+                global_opacity: document.getElementById("globalOpacity").value,
+                background_size: document.getElementById("backgroundSize").value,
+                background_position: document.getElementById("backgroundPosition").value,
+                background_repeat: document.getElementById("backgroundRepeat").value,
+                background_attachment: document.getElementById("backgroundAttachment").value,
+                blur_amount: document.getElementById("blurAmount").value,
+                saturate_amount: document.getElementById("saturateAmount").value,
+                dark_mode_enabled: document.getElementById("darkModeEnabled").checked,
+                navbar_glass_color: document.getElementById("navbarGlassColor").value,
+                navbar_text_color: document.getElementById("navbarTextColor").value,
+                card_glass_color: document.getElementById("cardGlassColor").value,
+                footer_glass_color: document.getElementById("footerGlassColor").value,
+                floating_text_enabled: document.getElementById("floatingTextEnabled").checked,
+                floating_texts: document.getElementById("floatingTexts").value.split(",").map(e => e.trim()).filter(e => 0 < e.length)
+            }),
+            i = {};
+        for (const l in a) {
+            var d = originalAppearanceSettings[l],
+                r = a[l];
+            r !== d && (i[l] = r)
+        }
+        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/appearance", {
+            method: "PATCH",
+            headers: o,
+            body: JSON.stringify(i)
+        })).ok ? (showToast("设置保存成功！", "success"), Object.assign(originalAppearanceSettings, i), "dark_mode_enabled" in i && applyDarkMode(i.dark_mode_enabled), updatePreview()) : (t = await e.json(), showToast("保存失败：" + (t.error || "未知错误"), "error"))
+    } catch (e) {
+        console.error("保存设置失败:", e), showToast("保存失败，请稍后重试", "error")
+    }
+}
+
+function resetSettings() {
+    confirm("确定要重置为默认设置吗？") && (document.getElementById("backgroundImage").value = "/img/test.webp", document.getElementById("globalOpacity").value = "0.15", document.getElementById("opacityValue").textContent = "0.15", document.getElementById("backgroundSize").value = "cover", document.getElementById("backgroundPosition").value = "center", document.getElementById("backgroundRepeat").value = "no-repeat", document.getElementById("backgroundAttachment").value = "fixed", document.getElementById("blurAmount").value = "20px", document.getElementById("saturateAmount").value = "180%", document.getElementById("darkModeEnabled").checked = !1, document.getElementById("navbarGlassColor").value = "rgba(255, 255, 255, 0.85)", document.getElementById("navbarTextColor").value = "#333333", document.getElementById("cardGlassColor").value = "rgba(255, 255, 255, 0.75)", document.getElementById("footerGlassColor").value = "rgba(255, 255, 255, 0.9)", document.getElementById("floatingTextEnabled").checked = !1, document.getElementById("floatingTexts").value = "perfect, good, excellent, extraordinary, legend", updateColorPickers(), applyDarkMode(!1), applyGlassColors("rgba(255, 255, 255, 0.85)", "rgba(255, 255, 255, 0.75)", "rgba(255, 255, 255, 0.9)"), updatePreview())
+}
+
+function updatePreview() {
+    var e, t, n, o, a, i, d, r, l, s = document.getElementById("previewBox");
+    s && (l = document.getElementById("backgroundImage").value, r = document.getElementById("mobileBackgroundImage").value, e = document.getElementById("globalOpacity").value, t = document.getElementById("backgroundSize").value, n = document.getElementById("backgroundPosition").value, o = document.getElementById("backgroundRepeat").value, a = document.getElementById("backgroundAttachment").value, i = document.getElementById("blurAmount").value, d = document.getElementById("saturateAmount").value, r = window.innerWidth <= 768 && r ? r : l, s.style.backgroundImage = `url('${r}')`, s.style.backgroundSize = t, s.style.backgroundPosition = n, s.style.backgroundRepeat = o, s.style.backgroundAttachment = a, s.style.setProperty("--blur-amount", i), s.style.setProperty("--saturate-amount", d), s.style.setProperty("--global-opacity", e), (l = document.createElement("style")).textContent = `
     #previewBox::before {
       background-image: url('${r}') !important;
       background-size: ${t} !important;
@@ -13,192 +77,1349 @@ var Z=Object.defineProperty;var H=Object.getOwnPropertySymbols;var ee=Object.pro
       backdrop-filter: blur(${i}) saturate(${d}) !important;
       -webkit-backdrop-filter: blur(${i}) saturate(${d}) !important;
     }
-  `,(c=document.getElementById("preview-style"))&&c.remove(),l.id="preview-style",document.head.appendChild(l))}function A(e){e?document.documentElement.classList.add("dark-mode"):document.documentElement.classList.remove("dark-mode")}function $(){const e=document.getElementById("navbarGlassColor").value,t=document.getElementById("navbarTextColor").value,n=document.getElementById("cardGlassColor").value,o=document.getElementById("footerGlassColor").value;if(e.startsWith("rgba")){const a=w(e);a&&(document.getElementById("navbarGlassColorPicker").value=x(a.r,a.g,a.b))}if(t.startsWith("#"))document.getElementById("navbarTextColorPicker").value=t;else if(t.startsWith("rgb")){const a=w(t);a&&(document.getElementById("navbarTextColorPicker").value=x(a.r,a.g,a.b))}if(n.startsWith("rgba")){const a=w(n);a&&(document.getElementById("cardGlassColorPicker").value=x(a.r,a.g,a.b))}if(o.startsWith("rgba")){const a=w(o);a&&(document.getElementById("footerGlassColorPicker").value=x(a.r,a.g,a.b))}}function R(e,t,n){document.documentElement.style.setProperty("--navbar-glass-color",e),document.documentElement.style.setProperty("--card-glass-color",t),document.documentElement.style.setProperty("--footer-glass-color",n)}function w(e){return(e=e.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/))?{r:parseInt(e[1]),g:parseInt(e[2]),b:parseInt(e[3]),a:e[4]?parseFloat(e[4]):1}:null}function x(e,t,n){var o=a=>(a=a.toString(16)).length===1?"0"+a:a;return"#"+o(e)+o(t)+o(n)}document.addEventListener("DOMContentLoaded",function(){return s(this,null,function*(){yield N(),yield V(),yield ie(),yield C();const e=document.getElementById("globalOpacity"),t=document.getElementById("opacityValue");e&&t&&e.addEventListener("input",function(){t.textContent=this.value,f()});var n=document.getElementById("saveSettingsBtn");n&&n.addEventListener("click",ne),(n=document.getElementById("saveTemplateSettingsBtn"))&&n.addEventListener("click",ae),(n=document.getElementById("saveMusicSettingsBtn"))&&n.addEventListener("click",de),re();const o=document.getElementById("musicPlayerColorPicker"),a=document.getElementById("musicPlayerColor"),i=(o&&a&&o.addEventListener("input",function(){var r=w(a.value);r&&(r=`rgba(${this.value.match(/\w\w/g).map(l=>parseInt(l,16)).join(", ")}, ${r.a})`,a.value=r)}),document.getElementById("live2dEnabled")),d=document.getElementById("live2dConfig");i&&d&&i.addEventListener("change",function(){d.style.display=this.checked?"block":"none"}),(n=document.getElementById("resetSettingsBtn"))&&n.addEventListener("click",oe),[{picker:"navbarGlassColorPicker",input:"navbarGlassColor"},{picker:"navbarTextColorPicker",input:"navbarTextColor"},{picker:"cardGlassColorPicker",input:"cardGlassColor"},{picker:"footerGlassColorPicker",input:"footerGlassColor"}].forEach(({picker:r,input:l})=>{const c=document.getElementById(r),u=document.getElementById(l);c&&u&&(c.addEventListener("input",function(){const m=u.value;if(m.startsWith("rgba")){var I=w(m);if(I){const X=`rgba(${this.value.match(/\w\w/g).map(Q=>parseInt(Q,16)).join(", ")}, ${I.a})`;u.value=X}}else u.value=this.value}),u.addEventListener("input",function(){$()}))}),["backgroundImage","mobileBackgroundImage","backgroundSize","backgroundPosition","backgroundRepeat","backgroundAttachment","blurAmount","saturateAmount"].forEach(r=>{(r=document.getElementById(r))&&(r.addEventListener("input",f),r.addEventListener("change",f))}),window.addEventListener("resize",f),(n=document.querySelector('[data-tab="settings"]'))&&n.addEventListener("click",function(){N(),V()})})});let P={};function V(){return s(this,null,function*(){try{var e,t=localStorage.getItem("auth_token"),n={"Content-Type":"application/json"},o=(t&&(n.Authorization="Bearer "+t),yield fetch("/api/settings/template",{method:"GET",headers:n}));o.ok?(e=yield o.json(),P=T({},e),document.getElementById("templateName").value=e.name||"",document.getElementById("templateGreting").value=e.greting||"",document.getElementById("templateYear").value=e.year||"",document.getElementById("templateFoodes").value=e.foodes||"",document.getElementById("globalAvatar").value=e.global_avatar||"/img/avatar.webp",document.getElementById("templateArticleTitle").checked=e.article_title||!1,document.getElementById("templateArticleTitlePrefix").value=e.article_title_prefix||"",document.getElementById("templateSwitchNotice").checked=e.switch_notice||!1,document.getElementById("templateSwitchNoticeText").value=e.switch_notice_text||"",document.getElementById("externalLinkWarning").checked=e.external_link_warning||!1,document.getElementById("externalLinkWhitelist").value=e.external_link_whitelist||"",document.getElementById("externalLinkWarningText").value=e.external_link_warning_text||"",document.getElementById("passageSummarizeEnabled").checked=e.passage_summarize_enabled||!1,document.getElementById("live2dEnabled").checked=e.live2d_enabled||!1,document.getElementById("live2dShowOnIndex").checked=e.live2d_show_on_index!==!1,document.getElementById("live2dShowOnPassage").checked=e.live2d_show_on_passage!==!1,document.getElementById("live2dShowOnCollect").checked=e.live2d_show_on_collect!==!1,document.getElementById("live2dShowOnAbout").checked=e.live2d_show_on_about!==!1,document.getElementById("live2dShowOnAdmin").checked=e.live2d_show_on_admin||!1,document.getElementById("live2dModelId").value=e.live2d_model_id||"1",document.getElementById("live2dModelPath").value=e.live2d_model_path||"",document.getElementById("live2dCDNPath").value=e.live2d_cdn_path||"https://unpkg.com/live2d-widget-model@1.0.5/",document.getElementById("live2dPosition").value=e.live2d_position||"right",document.getElementById("live2dWidth").value=e.live2d_width||"280px",document.getElementById("live2dHeight").value=e.live2d_height||"250px",document.getElementById("live2dConfig").style.display=e.live2d_enabled?"block":"none",document.getElementById("sponsorEnabled").checked=e.sponsor_enabled||!1,document.getElementById("sponsorTitle").value=e.sponsor_title||"\u611F\u8C22\u60A8\u7684\u652F\u6301",document.getElementById("sponsorImage").value=e.sponsor_image||"/img/avatar.webp",document.getElementById("sponsorDescription").value=e.sponsor_description||"\u5982\u679C\u60A8\u89C9\u5F97\u8FD9\u4E2A\u535A\u5BA2\u5BF9\u60A8\u6709\u5E2E\u52A9\uFF0C\u6B22\u8FCE\u8D5E\u52A9\u652F\u6301\uFF01",document.getElementById("sponsorButtonText").value=e.sponsor_button_text||"\u2764\uFE0F \u8D5E\u52A9\u652F\u6301",document.getElementById("beianEnabled").checked=e.beian_enabled||!1,document.getElementById("icpNumber").value=e.icp_number||"",document.getElementById("policeRecordCode").value=e.police_record_code||"",document.getElementById("policeRecordContent").value=e.police_record_content||""):console.error("\u52A0\u8F7D\u6A21\u677F\u8BBE\u7F6E\u5931\u8D25")}catch(a){console.error("\u52A0\u8F7D\u6A21\u677F\u8BBE\u7F6E\u5931\u8D25:",a)}})}function ae(){return s(this,null,function*(){try{var e,t,n=localStorage.getItem("auth_token"),o={"Content-Type":"application/json"},a=(n&&(o.Authorization="Bearer "+n),{name:document.getElementById("templateName").value,greting:document.getElementById("templateGreting").value,year:document.getElementById("templateYear").value,foodes:document.getElementById("templateFoodes").value,global_avatar:document.getElementById("globalAvatar").value,article_title:document.getElementById("templateArticleTitle").checked,article_title_prefix:document.getElementById("templateArticleTitlePrefix").value,switch_notice:document.getElementById("templateSwitchNotice").checked,switch_notice_text:document.getElementById("templateSwitchNoticeText").value,external_link_warning:document.getElementById("externalLinkWarning").checked,external_link_whitelist:document.getElementById("externalLinkWhitelist").value,external_link_warning_text:document.getElementById("externalLinkWarningText").value,passage_summarize_enabled:document.getElementById("passageSummarizeEnabled").checked,live2d_enabled:document.getElementById("live2dEnabled").checked,live2d_show_on_index:document.getElementById("live2dShowOnIndex").checked,live2d_show_on_passage:document.getElementById("live2dShowOnPassage").checked,live2d_show_on_collect:document.getElementById("live2dShowOnCollect").checked,live2d_show_on_about:document.getElementById("live2dShowOnAbout").checked,live2d_show_on_admin:document.getElementById("live2dShowOnAdmin").checked,live2d_model_id:document.getElementById("live2dModelId").value,live2d_model_path:document.getElementById("live2dModelPath").value,live2d_cdn_path:document.getElementById("live2dCDNPath").value,live2d_position:document.getElementById("live2dPosition").value,live2d_width:document.getElementById("live2dWidth").value,live2d_height:document.getElementById("live2dHeight").value,sponsor_enabled:document.getElementById("sponsorEnabled").checked,sponsor_title:document.getElementById("sponsorTitle").value,sponsor_image:document.getElementById("sponsorImage").value,sponsor_description:document.getElementById("sponsorDescription").value,sponsor_button_text:document.getElementById("sponsorButtonText").value,beian_enabled:document.getElementById("beianEnabled").checked,icp_number:document.getElementById("icpNumber").value,police_record_code:document.getElementById("policeRecordCode").value,police_record_content:document.getElementById("policeRecordContent").value}),i={};for(const d in a)a[d]!==P[d]&&(i[d]=a[d]);Object.keys(i).length===0?showToast("\u6CA1\u6709\u68C0\u6D4B\u5230\u4EFB\u4F55\u53D8\u5316","warning"):(e=yield fetch("/api/settings/template",{method:"PATCH",headers:o,body:JSON.stringify(i)})).ok?(showToast("\u6A21\u677F\u8BBE\u7F6E\u4FDD\u5B58\u6210\u529F\uFF01","success"),Object.assign(P,i)):(t=yield e.json(),showToast("\u4FDD\u5B58\u5931\u8D25\uFF1A"+(t.error||"\u672A\u77E5\u9519\u8BEF"),"error"))}catch(d){console.error("\u4FDD\u5B58\u6A21\u677F\u8BBE\u7F6E\u5931\u8D25:",d),showToast("\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}})}let z={};function ie(){return s(this,null,function*(){try{var e,t,n=localStorage.getItem("auth_token"),o={"Content-Type":"application/json"},a=(n&&(o.Authorization="Bearer "+n),yield fetch("/api/settings/music",{method:"GET",headers:o}));a.ok?(e=yield a.json(),z=T({},e),document.getElementById("musicEnabled").checked=e.enabled||!1,document.getElementById("musicAutoPlay").checked=e.auto_play||!1,document.getElementById("musicControlSize").value=e.control_size||"medium",document.getElementById("musicPlayerColor").value=e.player_color||"rgba(66, 133, 244, 0.9)",document.getElementById("musicPosition").value=e.position||"bottom-right",document.getElementById("musicCustomCSS").value=e.custom_css||"",(t=w(e.player_color||"rgba(66, 133, 244, 0.9)"))&&(document.getElementById("musicPlayerColorPicker").value=x(t.r,t.g,t.b))):console.error("\u52A0\u8F7D\u97F3\u4E50\u8BBE\u7F6E\u5931\u8D25")}catch(i){console.error("\u52A0\u8F7D\u97F3\u4E50\u8BBE\u7F6E\u5931\u8D25:",i)}})}function de(){return s(this,null,function*(){try{var e,t,n=localStorage.getItem("auth_token"),o={"Content-Type":"application/json"},a=(n&&(o.Authorization="Bearer "+n),{enabled:document.getElementById("musicEnabled").checked,auto_play:document.getElementById("musicAutoPlay").checked,control_size:document.getElementById("musicControlSize").value,player_color:document.getElementById("musicPlayerColor").value,position:document.getElementById("musicPosition").value,custom_css:document.getElementById("musicCustomCSS").value}),i={};for(const d in a)a[d]!==z[d]&&(i[d]=a[d]);Object.keys(i).length===0?showToast("\u6CA1\u6709\u68C0\u6D4B\u5230\u4EFB\u4F55\u53D8\u5316","warning"):(e=yield fetch("/api/settings/music",{method:"PATCH",headers:o,body:JSON.stringify(i)})).ok?(showToast("\u97F3\u4E50\u8BBE\u7F6E\u4FDD\u5B58\u6210\u529F\uFF01","success"),Object.assign(z,i)):(t=yield e.json(),showToast("\u4FDD\u5B58\u5931\u8D25\uFF1A"+(t.error||"\u672A\u77E5\u9519\u8BEF"),"error"))}catch(d){console.error("\u4FDD\u5B58\u97F3\u4E50\u8BBE\u7F6E\u5931\u8D25:",d),showToast("\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}})}let g=[],y=!1,E=null;function re(){const e=document.getElementById("musicDropZone"),t=document.getElementById("musicFileUpload"),n=document.querySelector(".browse-link");var o;function a(i){i.preventDefault(),i.stopPropagation()}e&&t&&(e.addEventListener("click",()=>{t.click()}),n&&n.addEventListener("click",i=>{i.stopPropagation(),t.click()}),t.addEventListener("change",i=>{j(i.target.files),t.value=""}),["dragenter","dragover","dragleave","drop"].forEach(i=>{e.addEventListener(i,a,!1)}),["dragenter","dragover"].forEach(i=>{e.addEventListener(i,()=>{e.classList.add("dragover")},!1)}),e.addEventListener("dragleave",i=>{e.contains(i.relatedTarget)||e.classList.remove("dragover")},!1),e.addEventListener("drop",i=>{e.classList.remove("dragover"),j(i.dataTransfer.files)},!1),(o=document.getElementById("clearUploadBtn"))&&o.addEventListener("click",()=>{y?showToast("\u6B63\u5728\u4E0A\u4F20\u4E2D\uFF0C\u8BF7\u5148\u53D6\u6D88\u4E0A\u4F20","warning"):(g=[],p())}),(o=document.getElementById("uploadAllMusicBtn"))&&o.addEventListener("click",ce),o=document.getElementById("cancelUploadBtn"))&&o.addEventListener("click",me)}function j(e){e&&e.length!==0&&((e=Array.from(e).filter(t=>{var n="."+t.name.split(".").pop().toLowerCase();return(n=["audio/mpeg","audio/mp3","audio/wav","audio/wave","audio/ogg","audio/x-m4a","audio/mp4"].includes(t.type)||[".mp3",".wav",".ogg",".m4a"].includes(n))||showToast("\u8DF3\u8FC7\u4E0D\u652F\u6301\u7684\u6587\u4EF6: "+t.name,"warning"),n})).length!==0?(e.forEach(t=>{g.some(n=>n.file.name===t.name&&n.file.size===t.size)||g.push({file:t,id:Date.now()+Math.random(),status:"pending",progress:0,error:null})}),p()):showToast("\u6CA1\u6709\u6709\u6548\u7684\u97F3\u9891\u6587\u4EF6","warning"))}function p(){var e=document.getElementById("musicUploadList"),t=document.getElementById("musicUploadItems");e&&t&&(g.length!==0?(e.style.display="block",t.innerHTML=g.map((n,o)=>`
-    <div class="upload-item" data-id="${n.id}">
+  `, (s = document.getElementById("preview-style")) && s.remove(), l.id = "preview-style", document.head.appendChild(l))
+}
+
+function applyDarkMode(e) {
+    e ? document.documentElement.classList.add("dark-mode") : document.documentElement.classList.remove("dark-mode")
+}
+
+function updateColorPickers() {
+    const e = document.getElementById("navbarGlassColor").value,
+        t = document.getElementById("navbarTextColor").value,
+        n = document.getElementById("cardGlassColor").value,
+        o = document.getElementById("footerGlassColor").value;
+    if (e.startsWith("rgba")) {
+        const t = parseRgba(e);
+        t && (document.getElementById("navbarGlassColorPicker").value = rgbaToHex(t.r, t.g, t.b))
+    }
+    if (t.startsWith("#")) document.getElementById("navbarTextColorPicker").value = t;
+    else if (t.startsWith("rgb")) {
+        const e = parseRgba(t);
+        e && (document.getElementById("navbarTextColorPicker").value = rgbaToHex(e.r, e.g, e.b))
+    }
+    if (n.startsWith("rgba")) {
+        const e = parseRgba(n);
+        e && (document.getElementById("cardGlassColorPicker").value = rgbaToHex(e.r, e.g, e.b))
+    }
+    if (o.startsWith("rgba")) {
+        const e = parseRgba(o);
+        e && (document.getElementById("footerGlassColorPicker").value = rgbaToHex(e.r, e.g, e.b))
+    }
+}
+
+function applyGlassColors(e, t, n) {
+    document.documentElement.style.setProperty("--navbar-glass-color", e), document.documentElement.style.setProperty("--card-glass-color", t), document.documentElement.style.setProperty("--footer-glass-color", n)
+}
+
+function parseRgba(e) {
+    return (e = e.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)) ? {
+        r: parseInt(e[1]),
+        g: parseInt(e[2]),
+        b: parseInt(e[3]),
+        a: e[4] ? parseFloat(e[4]) : 1
+    } : null
+}
+
+function rgbaToHex(e, t, n) {
+    var o = e => 1 === (e = e.toString(16)).length ? "0" + e : e;
+    return "#" + o(e) + o(t) + o(n)
+}
+document.addEventListener("DOMContentLoaded", async function() {
+    await loadSettings(), await loadTemplateSettings(), await loadMusicSettings(), await loadMusicPlaylist();
+    const e = document.getElementById("globalOpacity"),
+        t = document.getElementById("opacityValue");
+    e && t && e.addEventListener("input", function() {
+        t.textContent = this.value, updatePreview()
+    });
+    var n = document.getElementById("saveSettingsBtn");
+    n && n.addEventListener("click", saveSettings), (n = document.getElementById("saveTemplateSettingsBtn")) && n.addEventListener("click", saveTemplateSettings), (n = document.getElementById("saveMusicSettingsBtn")) && n.addEventListener("click", saveMusicSettings), initMusicDragDrop();
+    const o = document.getElementById("musicPlayerColorPicker"),
+        a = document.getElementById("musicPlayerColor"),
+        i = (o && a && o.addEventListener("input", function() {
+            var e = parseRgba(a.value);
+            e && (e = `rgba(${this.value.match(/\w\w/g).map(e=>parseInt(e,16)).join(", ")}, ${e.a})`, a.value = e)
+        }), document.getElementById("live2dEnabled")),
+        d = document.getElementById("live2dConfig");
+    i && d && i.addEventListener("change", function() {
+        d.style.display = this.checked ? "block" : "none"
+    }), (n = document.getElementById("resetSettingsBtn")) && n.addEventListener("click", resetSettings), [{
+        picker: "navbarGlassColorPicker",
+        input: "navbarGlassColor"
+    }, {
+        picker: "navbarTextColorPicker",
+        input: "navbarTextColor"
+    }, {
+        picker: "cardGlassColorPicker",
+        input: "cardGlassColor"
+    }, {
+        picker: "footerGlassColorPicker",
+        input: "footerGlassColor"
+    }].forEach(({
+        picker: e,
+        input: t
+    }) => {
+        const n = document.getElementById(e),
+            o = document.getElementById(t);
+        n && o && (n.addEventListener("input", function() {
+            const e = o.value;
+            if (e.startsWith("rgba")) {
+                var t = parseRgba(e);
+                if (t) {
+                    const e = `rgba(${this.value.match(/\w\w/g).map(e=>parseInt(e,16)).join(", ")}, ${t.a})`;
+                    o.value = e
+                }
+            } else o.value = this.value
+        }), o.addEventListener("input", function() {
+            updateColorPickers()
+        }))
+    }), ["backgroundImage", "mobileBackgroundImage", "backgroundSize", "backgroundPosition", "backgroundRepeat", "backgroundAttachment", "blurAmount", "saturateAmount"].forEach(e => {
+        (e = document.getElementById(e)) && (e.addEventListener("input", updatePreview), e.addEventListener("change", updatePreview))
+    }), window.addEventListener("resize", updatePreview), (n = document.querySelector('[data-tab="settings"]')) && n.addEventListener("click", function() {
+        loadSettings(), loadTemplateSettings()
+    })
+});
+let originalTemplateSettings = {};
+async function loadTemplateSettings() {
+    try {
+        var e, t = localStorage.getItem("auth_token"),
+            n = {
+                "Content-Type": "application/json"
+            },
+            o = (t && (n.Authorization = "Bearer " + t), await fetch("/api/settings/template", {
+                method: "GET",
+                headers: n
+            }));
+        o.ok ? (e = await o.json(), originalTemplateSettings = {
+            ...e
+        }, document.getElementById("templateName").value = e.name || "", document.getElementById("templateGreting").value = e.greting || "", document.getElementById("templateYear").value = e.year || "", document.getElementById("templateFoodes").value = e.foodes || "", document.getElementById("globalAvatar").value = e.global_avatar || "/img/avatar.webp", document.getElementById("templateArticleTitle").checked = e.article_title || !1, document.getElementById("templateArticleTitlePrefix").value = e.article_title_prefix || "", document.getElementById("templateSwitchNotice").checked = e.switch_notice || !1, document.getElementById("templateSwitchNoticeText").value = e.switch_notice_text || "", document.getElementById("externalLinkWarning").checked = e.external_link_warning || !1, document.getElementById("externalLinkWhitelist").value = e.external_link_whitelist || "", document.getElementById("externalLinkWarningText").value = e.external_link_warning_text || "", document.getElementById("passageSummarizeEnabled").checked = e.passage_summarize_enabled || !1, document.getElementById("live2dEnabled").checked = e.live2d_enabled || !1, document.getElementById("live2dShowOnIndex").checked = !1 !== e.live2d_show_on_index, document.getElementById("live2dShowOnPassage").checked = !1 !== e.live2d_show_on_passage, document.getElementById("live2dShowOnCollect").checked = !1 !== e.live2d_show_on_collect, document.getElementById("live2dShowOnAbout").checked = !1 !== e.live2d_show_on_about, document.getElementById("live2dShowOnAdmin").checked = e.live2d_show_on_admin || !1, document.getElementById("live2dModelId").value = e.live2d_model_id || "1", document.getElementById("live2dModelPath").value = e.live2d_model_path || "", document.getElementById("live2dCDNPath").value = e.live2d_cdn_path || "https://unpkg.com/live2d-widget-model@1.0.5/", document.getElementById("live2dPosition").value = e.live2d_position || "right", document.getElementById("live2dWidth").value = e.live2d_width || "280px", document.getElementById("live2dHeight").value = e.live2d_height || "250px", document.getElementById("live2dConfig").style.display = e.live2d_enabled ? "block" : "none", document.getElementById("sponsorEnabled").checked = e.sponsor_enabled || !1, document.getElementById("sponsorTitle").value = e.sponsor_title || "感谢您的支持", document.getElementById("sponsorImage").value = e.sponsor_image || "/img/avatar.webp", document.getElementById("sponsorDescription").value = e.sponsor_description || "如果您觉得这个博客对您有帮助，欢迎赞助支持！", document.getElementById("sponsorButtonText").value = e.sponsor_button_text || "❤️ 赞助支持", document.getElementById("beianEnabled").checked = e.beian_enabled || !1, document.getElementById("icpNumber").value = e.icp_number || "", document.getElementById("policeRecordCode").value = e.police_record_code || "", document.getElementById("policeRecordContent").value = e.police_record_content || "") : console.error("加载模板设置失败")
+    } catch (e) {
+        console.error("加载模板设置失败:", e)
+    }
+}
+async function saveTemplateSettings() {
+    try {
+        var e, t, n = localStorage.getItem("auth_token"),
+            o = {
+                "Content-Type": "application/json"
+            },
+            a = (n && (o.Authorization = "Bearer " + n), {
+                name: document.getElementById("templateName").value,
+                greting: document.getElementById("templateGreting").value,
+                year: document.getElementById("templateYear").value,
+                foodes: document.getElementById("templateFoodes").value,
+                global_avatar: document.getElementById("globalAvatar").value,
+                article_title: document.getElementById("templateArticleTitle").checked,
+                article_title_prefix: document.getElementById("templateArticleTitlePrefix").value,
+                switch_notice: document.getElementById("templateSwitchNotice").checked,
+                switch_notice_text: document.getElementById("templateSwitchNoticeText").value,
+                external_link_warning: document.getElementById("externalLinkWarning").checked,
+                external_link_whitelist: document.getElementById("externalLinkWhitelist").value,
+                external_link_warning_text: document.getElementById("externalLinkWarningText").value,
+                passage_summarize_enabled: document.getElementById("passageSummarizeEnabled").checked,
+                live2d_enabled: document.getElementById("live2dEnabled").checked,
+                live2d_show_on_index: document.getElementById("live2dShowOnIndex").checked,
+                live2d_show_on_passage: document.getElementById("live2dShowOnPassage").checked,
+                live2d_show_on_collect: document.getElementById("live2dShowOnCollect").checked,
+                live2d_show_on_about: document.getElementById("live2dShowOnAbout").checked,
+                live2d_show_on_admin: document.getElementById("live2dShowOnAdmin").checked,
+                live2d_model_id: document.getElementById("live2dModelId").value,
+                live2d_model_path: document.getElementById("live2dModelPath").value,
+                live2d_cdn_path: document.getElementById("live2dCDNPath").value,
+                live2d_position: document.getElementById("live2dPosition").value,
+                live2d_width: document.getElementById("live2dWidth").value,
+                live2d_height: document.getElementById("live2dHeight").value,
+                sponsor_enabled: document.getElementById("sponsorEnabled").checked,
+                sponsor_title: document.getElementById("sponsorTitle").value,
+                sponsor_image: document.getElementById("sponsorImage").value,
+                sponsor_description: document.getElementById("sponsorDescription").value,
+                sponsor_button_text: document.getElementById("sponsorButtonText").value,
+                beian_enabled: document.getElementById("beianEnabled").checked,
+                icp_number: document.getElementById("icpNumber").value,
+                police_record_code: document.getElementById("policeRecordCode").value,
+                police_record_content: document.getElementById("policeRecordContent").value
+            }),
+            i = {};
+        for (const d in a) a[d] !== originalTemplateSettings[d] && (i[d] = a[d]);
+        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/template", {
+            method: "PATCH",
+            headers: o,
+            body: JSON.stringify(i)
+        })).ok ? (showToast("模板设置保存成功！", "success"), Object.assign(originalTemplateSettings, i)) : (t = await e.json(), showToast("保存失败：" + (t.error || "未知错误"), "error"))
+    } catch (e) {
+        console.error("保存模板设置失败:", e), showToast("保存失败，请稍后重试", "error")
+    }
+}
+let originalMusicSettings = {};
+async function loadMusicSettings() {
+    try {
+        var e, t, n = localStorage.getItem("auth_token"),
+            o = {
+                "Content-Type": "application/json"
+            },
+            a = (n && (o.Authorization = "Bearer " + n), await fetch("/api/settings/music", {
+                method: "GET",
+                headers: o
+            }));
+        a.ok ? (e = await a.json(), originalMusicSettings = {
+            ...e
+        }, document.getElementById("musicEnabled").checked = e.enabled || !1, document.getElementById("musicAutoPlay").checked = e.auto_play || !1, document.getElementById("musicControlSize").value = e.control_size || "medium", document.getElementById("musicPlayerColor").value = e.player_color || "rgba(66, 133, 244, 0.9)", document.getElementById("musicPosition").value = e.position || "bottom-right", document.getElementById("musicCustomCSS").value = e.custom_css || "", (t = parseRgba(e.player_color || "rgba(66, 133, 244, 0.9)")) && (document.getElementById("musicPlayerColorPicker").value = rgbaToHex(t.r, t.g, t.b))) : console.error("加载音乐设置失败")
+    } catch (e) {
+        console.error("加载音乐设置失败:", e)
+    }
+}
+async function saveMusicSettings() {
+    try {
+        var e, t, n = localStorage.getItem("auth_token"),
+            o = {
+                "Content-Type": "application/json"
+            },
+            a = (n && (o.Authorization = "Bearer " + n), {
+                enabled: document.getElementById("musicEnabled").checked,
+                auto_play: document.getElementById("musicAutoPlay").checked,
+                control_size: document.getElementById("musicControlSize").value,
+                player_color: document.getElementById("musicPlayerColor").value,
+                position: document.getElementById("musicPosition").value,
+                custom_css: document.getElementById("musicCustomCSS").value
+            }),
+            i = {};
+        for (const d in a) a[d] !== originalMusicSettings[d] && (i[d] = a[d]);
+        0 === Object.keys(i).length ? showToast("没有检测到任何变化", "warning") : (e = await fetch("/api/settings/music", {
+            method: "PATCH",
+            headers: o,
+            body: JSON.stringify(i)
+        })).ok ? (showToast("音乐设置保存成功！", "success"), Object.assign(originalMusicSettings, i)) : (t = await e.json(), showToast("保存失败：" + (t.error || "未知错误"), "error"))
+    } catch (e) {
+        console.error("保存音乐设置失败:", e), showToast("保存失败，请稍后重试", "error")
+    }
+}
+let musicUploadQueue = [],
+    isUploading = !1,
+    uploadAbortController = null;
+
+function initMusicDragDrop() {
+    const t = document.getElementById("musicDropZone"),
+        n = document.getElementById("musicFileUpload"),
+        e = document.querySelector(".browse-link");
+    var o;
+
+    function a(e) {
+        e.preventDefault(), e.stopPropagation()
+    }
+    t && n && (t.addEventListener("click", () => {
+        n.click()
+    }), e && e.addEventListener("click", e => {
+        e.stopPropagation(), n.click()
+    }), n.addEventListener("change", e => {
+        handleFileSelect(e.target.files), n.value = ""
+    }), ["dragenter", "dragover", "dragleave", "drop"].forEach(e => {
+        t.addEventListener(e, a, !1)
+    }), ["dragenter", "dragover"].forEach(e => {
+        t.addEventListener(e, () => {
+            t.classList.add("dragover")
+        }, !1)
+    }), t.addEventListener("dragleave", e => {
+        t.contains(e.relatedTarget) || t.classList.remove("dragover")
+    }, !1), t.addEventListener("drop", e => {
+        t.classList.remove("dragover"), handleFileSelect(e.dataTransfer.files)
+    }, !1), (o = document.getElementById("clearUploadBtn")) && o.addEventListener("click", () => {
+        isUploading ? showToast("正在上传中，请先取消上传", "warning") : (musicUploadQueue = [], updateUploadListUI())
+    }), (o = document.getElementById("uploadAllMusicBtn")) && o.addEventListener("click", startBatchUpload), o = document.getElementById("cancelUploadBtn")) && o.addEventListener("click", cancelBatchUpload)
+}
+
+function handleFileSelect(e) {
+    e && 0 !== e.length && (0 !== (e = Array.from(e).filter(e => {
+        var t = "." + e.name.split(".").pop().toLowerCase();
+        return (t = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/wave", "audio/ogg", "audio/x-m4a", "audio/mp4"].includes(e.type) || [".mp3", ".wav", ".ogg", ".m4a"].includes(t)) || showToast("跳过不支持的文件: " + e.name, "warning"), t
+    })).length ? (e.forEach(t => {
+        musicUploadQueue.some(e => e.file.name === t.name && e.file.size === t.size) || musicUploadQueue.push({
+            file: t,
+            id: Date.now() + Math.random(),
+            status: "pending",
+            progress: 0,
+            error: null
+        })
+    }), updateUploadListUI()) : showToast("没有有效的音频文件", "warning"))
+}
+
+function updateUploadListUI() {
+    var e = document.getElementById("musicUploadList"),
+        t = document.getElementById("musicUploadItems");
+    e && t && (0 !== musicUploadQueue.length ? (e.style.display = "block", t.innerHTML = musicUploadQueue.map((e, t) => `
+    <div class="upload-item" data-id="${e.id}">
       <div class="upload-item-cover">
-        <div class="cover-preview ${n.coverFile?"has-cover":""}" onclick="triggerCoverSelect('${n.id}')">
-          ${n.coverFile?`<img src="${n.coverPreview}" alt="\u5C01\u9762">
-             <div class="cover-remove-btn" onclick="event.stopPropagation(); removeCover('${n.id}')">\xD7</div>`:'<span class="cover-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>\uFE0F</span>'}
-          <div class="cover-upload-hint">\u70B9\u51FB\u4E0A\u4F20\u5C01\u9762</div>
+        <div class="cover-preview ${e.coverFile?"has-cover":""}" onclick="triggerCoverSelect('${e.id}')">
+          ${e.coverFile?`<img src="${e.coverPreview}" alt="封面">
+             <div class="cover-remove-btn" onclick="event.stopPropagation(); removeCover('${e.id}')">×</div>`:'<span class="cover-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>️</span>'}
+          <div class="cover-upload-hint">点击上传封面</div>
         </div>
-        <input type="file" class="cover-input" id="coverInput-${n.id}" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="handleCoverSelect('${n.id}', this)">
+        <input type="file" class="cover-input" id="coverInput-${e.id}" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onchange="handleCoverSelect('${e.id}', this)">
       </div>
       <div class="upload-item-icon" style="display: none;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></div>
       <div class="upload-item-info">
-        <div class="upload-item-name">${n.file.name}</div>
+        <div class="upload-item-name">${e.file.name}</div>
         <div class="upload-item-meta">
-          <span>${le(n.file.size)}</span>
-          <span>${n.file.type||"audio/*"}</span>
+          <span>${formatFileSize(e.file.size)}</span>
+          <span>${e.file.type||"audio/*"}</span>
         </div>
       </div>
       <div class="upload-item-progress">
         <div class="progress-bar">
-          <div class="progress-fill" style="width: ${n.progress}%"></div>
+          <div class="progress-fill" style="width: ${e.progress}%"></div>
         </div>
-        <div class="progress-text">${n.progress}%</div>
+        <div class="progress-text">${e.progress}%</div>
       </div>
-      <div class="upload-item-status ${n.status}">
-        ${se(n.status)}
+      <div class="upload-item-status ${e.status}">
+        ${getStatusText(e.status)}
       </div>
       <div class="upload-item-action">
-        <button class="remove-upload-btn" onclick="removeUploadItem('${n.id}')" ${n.status==="uploading"?"disabled":""}>\xD7</button>
+        <button class="remove-upload-btn" onclick="removeUploadItem('${e.id}')" ${"uploading"===e.status?"disabled":""}>×</button>
       </div>
     </div>
-  `).join("")):e.style.display="none")}function le(e){var t;return e===0?"0 B":(t=Math.floor(Math.log(e)/Math.log(1024)),Math.round(e/Math.pow(1024,t)*100)/100+" "+["B","KB","MB","GB"][t])}function se(e){return{pending:"\u7B49\u5F85\u4E0A\u4F20",uploading:"\u4E0A\u4F20\u4E2D",success:"\u4E0A\u4F20\u6210\u529F",error:"\u4E0A\u4F20\u5931\u8D25"}[e]||e}function Ce(e){y?showToast("\u6B63\u5728\u4E0A\u4F20\u4E2D\uFF0C\u8BF7\u5148\u53D6\u6D88\u4E0A\u4F20","warning"):(g=g.filter(t=>t.id!=e),p())}function _e(e){(e=document.getElementById("coverInput-"+e))&&e.click()}function Te(e,t){const n=t.files[0];var o;n&&(["image/jpeg","image/jpg","image/png","image/gif","image/webp"].includes(n.type)?5242880<n.size?(showToast("\u5C01\u9762\u56FE\u7247\u5927\u5C0F\u4E0D\u80FD\u8D85\u8FC7 5MB","error"),t.value=""):((o=new FileReader).onload=function(a){var i=g.find(d=>d.id==e);i&&(i.coverFile=n,i.coverPreview=a.target.result,p())},o.readAsDataURL(n)):(showToast("\u8BF7\u9009\u62E9\u6709\u6548\u7684\u56FE\u7247\u6587\u4EF6\uFF08JPG\u3001PNG\u3001GIF\u3001WebP\uFF09","error"),t.value=""))}function Me(e){var t=g.find(n=>n.id==e);t&&(t.coverFile=null,t.coverPreview=null,(t=document.getElementById("coverInput-"+e))&&(t.value=""),p())}function ce(){return s(this,null,function*(){if(y)showToast("\u6B63\u5728\u4E0A\u4F20\u4E2D...","info");else{var e=g.filter(o=>o.status==="pending");if(e.length===0)showToast("\u6CA1\u6709\u7B49\u5F85\u4E0A\u4F20\u7684\u6587\u4EF6","warning");else{y=!0,E=new AbortController;var t=document.getElementById("uploadAllMusicBtn"),n=document.getElementById("cancelUploadBtn");t&&(t.disabled=!0),n&&(n.disabled=!1);let o=0,a=0;for(const i of e){if(!y)break;i.status="uploading",p();try{yield ue(i,E.signal),i.status="success",i.progress=100,o++}catch(d){i.status="error",i.error=d.message,a++,console.error(`\u4E0A\u4F20\u6587\u4EF6 ${i.file.name} \u5931\u8D25:`,d)}p()}y=!1,E=null,t&&(t.disabled=!1),n&&(n.disabled=!0),0<o&&(showToast(`\u6210\u529F\u4E0A\u4F20 ${o} \u4E2A\u6587\u4EF6`,"success"),C()),0<a&&showToast(a+" \u4E2A\u6587\u4EF6\u4E0A\u4F20\u5931\u8D25","error"),setTimeout(()=>{g=g.filter(i=>i.status!=="success"),p()},2e3)}}})}function ue(e,t){return new Promise((n,o)=>{var a=new FormData,i=(a.append("file",e.file),e.file.name.replace(/\.[^/.]+$/,"")),i=(a.append("title",i),a.append("artist","\u672A\u77E5\u827A\u672F\u5BB6"),e.coverFile&&a.append("cover",e.coverFile),localStorage.getItem("auth_token"));const d=new XMLHttpRequest;d.upload.addEventListener("progress",r=>{r.lengthComputable&&(r=Math.round(r.loaded/r.total*100),e.progress=r,p())}),d.addEventListener("load",()=>{if(200<=d.status&&d.status<300)n();else try{var r=JSON.parse(d.responseText);o(new Error(r.error||"\u4E0A\u4F20\u5931\u8D25"))}catch(l){o(new Error("\u4E0A\u4F20\u5931\u8D25: "+d.status))}}),d.addEventListener("error",()=>{o(new Error("\u7F51\u7EDC\u9519\u8BEF"))}),d.addEventListener("abort",()=>{o(new Error("\u4E0A\u4F20\u5DF2\u53D6\u6D88"))}),t.addEventListener("abort",()=>{d.abort()}),d.open("POST","/api/music/upload"),i&&d.setRequestHeader("Authorization","Bearer "+i),d.send(a)})}function me(){var e,t;y&&(E&&E.abort(),y=!1,E=null,g.forEach(n=>{n.status==="uploading"&&(n.status="pending",n.progress=0)}),p(),showToast("\u5DF2\u53D6\u6D88\u4E0A\u4F20","info"),e=document.getElementById("uploadAllMusicBtn"),t=document.getElementById("cancelUploadBtn"),e&&(e.disabled=!1),t)&&(t.disabled=!0)}function Le(){return s(this,null,function*(){var e=document.getElementById("musicFileUpload");e.files&&e.files.length!==0?(j(e.files),e.value=""):showToast("\u8BF7\u9009\u62E9\u8981\u4E0A\u4F20\u7684\u97F3\u4E50\u6587\u4EF6","warning")})}function C(){return s(this,null,function*(){try{var e=localStorage.getItem("auth_token"),t={"Content-Type":"application/json"},n=(e&&(t.Authorization="Bearer "+e),yield fetch("/api/music/playlist",{method:"GET",headers:t}));n.ok?ge(yield n.json()):console.error("\u52A0\u8F7D\u64AD\u653E\u5217\u8868\u5931\u8D25")}catch(o){console.error("\u52A0\u8F7D\u64AD\u653E\u5217\u8868\u5931\u8D25:",o)}})}function ge(e){var t=document.getElementById("musicPlaylistContainer");t&&(e&&e.length!==0?t.innerHTML=e.map((n,o)=>{let a=n.title,i=a.match(/^\d+_/);return i&&(a=a.substring(i[0].length)),`
+  `).join("")) : e.style.display = "none")
+}
+
+function formatFileSize(e) {
+    var t;
+    return 0 === e ? "0 B" : (t = Math.floor(Math.log(e) / Math.log(1024)), Math.round(e / Math.pow(1024, t) * 100) / 100 + " " + ["B", "KB", "MB", "GB"][t])
+}
+
+function getStatusText(e) {
+    return {
+        pending: "等待上传",
+        uploading: "上传中",
+        success: "上传成功",
+        error: "上传失败"
+    } [e] || e
+}
+
+function removeUploadItem(t) {
+    isUploading ? showToast("正在上传中，请先取消上传", "warning") : (musicUploadQueue = musicUploadQueue.filter(e => e.id != t), updateUploadListUI())
+}
+
+function triggerCoverSelect(e) {
+    (e = document.getElementById("coverInput-" + e)) && e.click()
+}
+
+function handleCoverSelect(n, e) {
+    const o = e.files[0];
+    var t;
+    o && (["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"].includes(o.type) ? 5242880 < o.size ? (showToast("封面图片大小不能超过 5MB", "error"), e.value = "") : ((t = new FileReader).onload = function(e) {
+        var t = musicUploadQueue.find(e => e.id == n);
+        t && (t.coverFile = o, t.coverPreview = e.target.result, updateUploadListUI())
+    }, t.readAsDataURL(o)) : (showToast("请选择有效的图片文件（JPG、PNG、GIF、WebP）", "error"), e.value = ""))
+}
+
+function removeCover(t) {
+    var e = musicUploadQueue.find(e => e.id == t);
+    e && (e.coverFile = null, e.coverPreview = null, (e = document.getElementById("coverInput-" + t)) && (e.value = ""), updateUploadListUI())
+}
+async function startBatchUpload() {
+    if (isUploading) showToast("正在上传中...", "info");
+    else {
+        var n = musicUploadQueue.filter(e => "pending" === e.status);
+        if (0 === n.length) showToast("没有等待上传的文件", "warning");
+        else {
+            isUploading = !0, uploadAbortController = new AbortController;
+            var o = document.getElementById("uploadAllMusicBtn"),
+                a = document.getElementById("cancelUploadBtn");
+            o && (o.disabled = !0), a && (a.disabled = !1);
+            let e = 0,
+                t = 0;
+            for (const i of n) {
+                if (!isUploading) break;
+                i.status = "uploading", updateUploadListUI();
+                try {
+                    await uploadSingleMusicFile(i, uploadAbortController.signal), i.status = "success", i.progress = 100, e++
+                } catch (n) {
+                    i.status = "error", i.error = n.message, t++, console.error(`上传文件 ${i.file.name} 失败:`, n)
+                }
+                updateUploadListUI()
+            }
+            isUploading = !1, uploadAbortController = null, o && (o.disabled = !1), a && (a.disabled = !0), 0 < e && (showToast(`成功上传 ${e} 个文件`, "success"), loadMusicPlaylist()), 0 < t && showToast(t + " 个文件上传失败", "error"), setTimeout(() => {
+                musicUploadQueue = musicUploadQueue.filter(e => "success" !== e.status), updateUploadListUI()
+            }, 2e3)
+        }
+    }
+}
+
+function uploadSingleMusicFile(i, d) {
+    return new Promise((t, n) => {
+        var e = new FormData,
+            o = (e.append("file", i.file), i.file.name.replace(/\.[^/.]+$/, "")),
+            o = (e.append("title", o), e.append("artist", "未知艺术家"), i.coverFile && e.append("cover", i.coverFile), localStorage.getItem("auth_token"));
+        const a = new XMLHttpRequest;
+        a.upload.addEventListener("progress", e => {
+            e.lengthComputable && (e = Math.round(e.loaded / e.total * 100), i.progress = e, updateUploadListUI())
+        }), a.addEventListener("load", () => {
+            if (200 <= a.status && a.status < 300) t();
+            else try {
+                var e = JSON.parse(a.responseText);
+                n(new Error(e.error || "上传失败"))
+            } catch (e) {
+                n(new Error("上传失败: " + a.status))
+            }
+        }), a.addEventListener("error", () => {
+            n(new Error("网络错误"))
+        }), a.addEventListener("abort", () => {
+            n(new Error("上传已取消"))
+        }), d.addEventListener("abort", () => {
+            a.abort()
+        }), a.open("POST", "/api/music/upload"), o && a.setRequestHeader("Authorization", "Bearer " + o), a.send(e)
+    })
+}
+
+function cancelBatchUpload() {
+    var e, t;
+    isUploading && (uploadAbortController && uploadAbortController.abort(), isUploading = !1, uploadAbortController = null, musicUploadQueue.forEach(e => {
+        "uploading" === e.status && (e.status = "pending", e.progress = 0)
+    }), updateUploadListUI(), showToast("已取消上传", "info"), e = document.getElementById("uploadAllMusicBtn"), t = document.getElementById("cancelUploadBtn"), e && (e.disabled = !1), t) && (t.disabled = !0)
+}
+async function uploadMusicFile() {
+    var e = document.getElementById("musicFileUpload");
+    e.files && 0 !== e.files.length ? (handleFileSelect(e.files), e.value = "") : showToast("请选择要上传的音乐文件", "warning")
+}
+async function loadMusicPlaylist() {
+    try {
+        var e = localStorage.getItem("auth_token"),
+            t = {
+                "Content-Type": "application/json"
+            },
+            n = (e && (t.Authorization = "Bearer " + e), await fetch("/api/music/playlist", {
+                method: "GET",
+                headers: t
+            }));
+        n.ok ? updateMusicPlaylistUI(await n.json()) : console.error("加载播放列表失败")
+    } catch (e) {
+        console.error("加载播放列表失败:", e)
+    }
+}
+
+function updateMusicPlaylistUI(e) {
+    var t = document.getElementById("musicPlaylistContainer");
+    t && (e && 0 !== e.length ? t.innerHTML = e.map((e, t) => {
+        let n = e.title,
+            o = n.match(/^\d+_/);
+        return o && (n = n.substring(o[0].length)), `
     <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.05);">
       <div style="width: 50px; height: 50px; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.05); display: flex; align-items: center; justify-content: center;">
-        ${n.cover_image?`<img src="${n.cover_image}" alt="${n.title}" style="width: 100%; height: 100%; object-fit: cover;">`:'<span style="font-size: 24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>'}
+        ${e.cover_image?`<img src="${e.cover_image}" alt="${e.title}" style="width: 100%; height: 100%; object-fit: cover;">`:'<span style="font-size: 24px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg></span>'}
       </div>
       <div style="flex: 1;">
-        <div style="font-weight: 500;">${a}</div>
-        <div style="font-size: 0.85em; color: #666;">${n.artist}</div>
+        <div style="font-weight: 500;">${n}</div>
+        <div style="font-size: 0.85em; color: #666;">${e.artist}</div>
       </div>
-      <div style="font-size: 0.85em; color: #999;">${n.duration}</div>
+      <div style="font-size: 0.85em; color: #999;">${e.duration}</div>
       <div style="display: flex; gap: 5px;">
-        <button onclick="editMusicTitle(${n.id}, '${a.replace(/'/g,"\\'")}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">\u7F16\u8F91\u6807\u9898</button>
-        <button onclick="changeMusicCover(${n.id})" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">\u66F4\u6362\u5C01\u9762</button>
-        <button onclick="deleteMusicTrack(${n.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">\u5220\u9664</button>
+        <button onclick="editMusicTitle(${e.id}, '${n.replace(/'/g,"\\'")}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">编辑标题</button>
+        <button onclick="changeMusicCover(${e.id})" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">更换封面</button>
+        <button onclick="deleteMusicTrack(${e.id})" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">删除</button>
       </div>
     </div>
-    `}).join(""):t.innerHTML='<div style="text-align: center; color: #999; padding: 20px;">\u6682\u65E0\u97F3\u4E50\u6587\u4EF6</div>')}window.deleteMusicTrack=function(e){return s(this,null,function*(){if(confirm("\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u9996\u97F3\u4E50\u5417\uFF1F"))try{var t=localStorage.getItem("auth_token"),n={"Content-Type":"application/json"},o=(t&&(n.Authorization="Bearer "+t),yield fetch("/api/music/"+e,{method:"DELETE",headers:n}));if(o.ok)showToast("\u5220\u9664\u6210\u529F\uFF01","success"),C();else{const a=yield o.json();showToast("\u5220\u9664\u5931\u8D25\uFF1A"+(a.error||"\u672A\u77E5\u9519\u8BEF"),"error")}}catch(a){console.error("\u5220\u9664\u97F3\u4E50\u5931\u8D25:",a),showToast("\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}})},window.changeMusicCover=function(e){return s(this,null,function*(){var t=document.createElement("input");t.type="file",t.accept="image/jpeg,image/jpg,image/png,image/gif,image/webp",t.onchange=n=>s(this,null,function*(){const o=n.target.files[0];if(o)if(["image/jpeg","image/jpg","image/png","image/gif","image/webp"].includes(o.type))if(5242880<o.size)showToast("\u56FE\u7247\u5927\u5C0F\u4E0D\u80FD\u8D85\u8FC7 5MB","error");else{var a=new FormData;a.append("cover",o);try{const d=localStorage.getItem("auth_token"),r={};d&&(r.Authorization="Bearer "+d);var i=yield fetch(`/api/music/${e}/cover`,{method:"POST",body:a,headers:r});if(i.ok)yield i.json(),showToast("\u5C01\u9762\u66F4\u65B0\u6210\u529F\uFF01","success"),C();else{const l=yield i.json();showToast("\u5C01\u9762\u66F4\u65B0\u5931\u8D25\uFF1A"+(l.message||"\u672A\u77E5\u9519\u8BEF"),"error")}}catch(d){console.error("\u66F4\u65B0\u5C01\u9762\u5931\u8D25:",d),showToast("\u66F4\u65B0\u5C01\u9762\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}}else showToast("\u8BF7\u9009\u62E9\u6709\u6548\u7684\u56FE\u7247\u6587\u4EF6\uFF08JPEG, PNG, GIF, WebP\uFF09","error")}),t.click()})},window.editMusicTitle=function(e,t){const n=document.createElement("div"),o=(n.style.cssText=`
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-  `,n.innerHTML=`
+    `
+    }).join("") : t.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无音乐文件</div>')
+}
+window.deleteMusicTrack = async function(e) {
+    if (confirm("确定要删除这首音乐吗？")) try {
+        var t = localStorage.getItem("auth_token"),
+            n = {
+                "Content-Type": "application/json"
+            },
+            o = (t && (n.Authorization = "Bearer " + t), await fetch("/api/music/" + e, {
+                method: "DELETE",
+                headers: n
+            }));
+        if (o.ok) showToast("删除成功！", "success"), loadMusicPlaylist();
+        else {
+            const e = await o.json();
+            showToast("删除失败：" + (e.error || "未知错误"), "error")
+        }
+    } catch (e) {
+        console.error("删除音乐失败:", e), showToast("删除失败，请稍后重试", "error")
+    }
+}, window.changeMusicCover = async function(a) {
+    var e = document.createElement("input");
+    e.type = "file", e.accept = "image/jpeg,image/jpg,image/png,image/gif,image/webp", e.onchange = async e => {
+        const t = e.target.files[0];
+        if (t)
+            if (["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"].includes(t.type))
+                if (5242880 < t.size) showToast("图片大小不能超过 5MB", "error");
+                else {
+                    var n = new FormData;
+                    n.append("cover", t);
+                    try {
+                        const e = localStorage.getItem("auth_token"),
+                            t = {};
+                        e && (t.Authorization = "Bearer " + e);
+                        var o = await fetch(`/api/music/${a}/cover`, {
+                            method: "POST",
+                            body: n,
+                            headers: t
+                        });
+                        if (o.ok) await o.json(), showToast("封面更新成功！", "success"), loadMusicPlaylist();
+                        else {
+                            const a = await o.json();
+                            showToast("封面更新失败：" + (a.message || "未知错误"), "error")
+                        }
+                    } catch (e) {
+                        console.error("更新封面失败:", e), showToast("更新封面失败，请稍后重试", "error")
+                    }
+                }
+        else showToast("请选择有效的图片文件（JPEG, PNG, GIF, WebP）", "error")
+    }, e.click()
+}, window.editMusicTitle = function(o, e) {
+    const a = document.createElement("div"),
+        i = (a.style.cssText = "\n    position: fixed;\n    top: 0;\n    left: 0;\n    width: 100%;\n    height: 100%;\n    background: rgba(0, 0, 0, 0.5);\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    z-index: 10000;\n  ", a.innerHTML = `
     <div style="background: white; padding: 30px; border-radius: 10px; width: 400px; max-width: 90%;">
-      <h3 style="margin: 0 0 20px 0;">\u7F16\u8F91\u6807\u9898</h3>
-      <input type="text" id="musicTitleInput" value="${t}" 
+      <h3 style="margin: 0 0 20px 0;">编辑标题</h3>
+      <input type="text" id="musicTitleInput" value="${e}" 
              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px; box-sizing: border-box;">
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button id="cancelBtn" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">\u53D6\u6D88</button>
-        <button id="saveBtn" style="padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">\u4FDD\u5B58</button>
+        <button id="cancelBtn" style="padding: 8px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">取消</button>
+        <button id="saveBtn" style="padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">保存</button>
       </div>
     </div>
-  `,document.body.appendChild(n),n.querySelector("#musicTitleInput")),a=n.querySelector("#cancelBtn"),i=n.querySelector("#saveBtn"),d=(a.onclick=()=>{document.body.removeChild(n)},i.onclick=()=>s(this,null,function*(){var r=o.value.trim();if(r)try{const c=localStorage.getItem("auth_token"),u={"Content-Type":"application/json"};c&&(u.Authorization="Bearer "+c);var l=yield fetch(`/api/music/${e}?action=title`,{method:"PUT",body:JSON.stringify({title:r}),headers:u});if(l.ok)yield l.json(),showToast("\u6807\u9898\u66F4\u65B0\u6210\u529F\uFF01","success"),document.body.removeChild(n),C();else{const m=yield l.json();showToast("\u6807\u9898\u66F4\u65B0\u5931\u8D25\uFF1A"+(m.message||"\u672A\u77E5\u9519\u8BEF"),"error")}}catch(c){console.error("\u66F4\u65B0\u6807\u9898\u5931\u8D25:",c),showToast("\u66F4\u65B0\u6807\u9898\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}else showToast("\u6807\u9898\u4E0D\u80FD\u4E3A\u7A7A","error")}),n.onclick=r=>{r.target===n&&document.body.removeChild(n)},r=>{r.key==="Escape"&&(document.body.removeChild(n),document.removeEventListener("keydown",d))});document.addEventListener("keydown",d)};let v=[],k=[];function M(){return s(this,null,function*(){try{var e=localStorage.getItem("auth_token"),t={"Content-Type":"application/json"},n=(e&&(t.Authorization="Bearer "+e),yield fetch("/api/about/main-cards/admin",{method:"GET",headers:t}));n.ok?(v=yield n.json(),q(),pe()):showToast("\u52A0\u8F7D\u4E3B\u5361\u7247\u5931\u8D25","error")}catch(o){console.error("\u52A0\u8F7D\u4E3B\u5361\u7247\u5931\u8D25:",o),showToast("\u52A0\u8F7D\u4E3B\u5361\u7247\u5931\u8D25","error")}})}function q(){var e=document.getElementById("mainCardsTableBody");e&&(v.length!==0?e.innerHTML=v.map(t=>`
+  `, document.body.appendChild(a), a.querySelector("#musicTitleInput")),
+        t = a.querySelector("#cancelBtn"),
+        n = a.querySelector("#saveBtn"),
+        d = (t.onclick = () => {
+            document.body.removeChild(a)
+        }, n.onclick = async () => {
+            var e = i.value.trim();
+            if (e) try {
+                const i = localStorage.getItem("auth_token"),
+                    n = {
+                        "Content-Type": "application/json"
+                    };
+                i && (n.Authorization = "Bearer " + i);
+                var t = await fetch(`/api/music/${o}?action=title`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        title: e
+                    }),
+                    headers: n
+                });
+                if (t.ok) await t.json(), showToast("标题更新成功！", "success"), document.body.removeChild(a), loadMusicPlaylist();
+                else {
+                    const o = await t.json();
+                    showToast("标题更新失败：" + (o.message || "未知错误"), "error")
+                }
+            } catch (e) {
+                console.error("更新标题失败:", e), showToast("更新标题失败，请稍后重试", "error")
+            } else showToast("标题不能为空", "error")
+        }, a.onclick = e => {
+            e.target === a && document.body.removeChild(a)
+        }, e => {
+            "Escape" === e.key && (document.body.removeChild(a), document.removeEventListener("keydown", d))
+        });
+    document.addEventListener("keydown", d)
+};
+let mainCards = [],
+    subCards = [];
+async function loadMainCards() {
+    try {
+        var e = localStorage.getItem("auth_token"),
+            t = {
+                "Content-Type": "application/json"
+            },
+            n = (e && (t.Authorization = "Bearer " + e), await fetch("/api/about/main-cards/admin", {
+                method: "GET",
+                headers: t
+            }));
+        n.ok ? (mainCards = await n.json(), updateMainCardsTable(), updateMainCardFilter()) : showToast("加载主卡片失败", "error")
+    } catch (e) {
+        console.error("加载主卡片失败:", e), showToast("加载主卡片失败", "error")
+    }
+}
+
+function updateMainCardsTable() {
+    var e = document.getElementById("mainCardsTableBody");
+    e && (0 !== mainCards.length ? e.innerHTML = mainCards.map(e => `
     <tr>
-      <td>${t.sort_order}</td>
-      <td>${t.icon||""}</td>
-      <td>${t.title}</td>
-      <td>${t.layout_type}</td>
-      <td>${he(t.id)}</td>
+      <td>${e.sort_order}</td>
+      <td>${e.icon||""}</td>
+      <td>${e.title}</td>
+      <td>${e.layout_type}</td>
+      <td>${getSubCardCount(e.id)}</td>
       <td>
-        <span style="color: ${t.is_enabled?"#28a745":"#dc3545"}; font-weight: bold;">
-          ${t.is_enabled?"\u2713 \u542F\u7528":"\u2715 \u7981\u7528"}
+        <span style="color: ${e.is_enabled?"#28a745":"#dc3545"}; font-weight: bold;">
+          ${e.is_enabled?"✓ 启用":"✕ 禁用"}
         </span>
       </td>
       <td>
-        <button class="btn-secondary" onclick="editMainCard(${t.id})">\u7F16\u8F91</button>
-        <button class="btn-secondary" onclick="toggleMainCardEnabled(${t.id}, ${t.is_enabled})">
-          ${t.is_enabled?"\u7981\u7528":"\u542F\u7528"}
+        <button class="btn-secondary" onclick="editMainCard(${e.id})">编辑</button>
+        <button class="btn-secondary" onclick="toggleMainCardEnabled(${e.id}, ${e.is_enabled})">
+          ${e.is_enabled?"禁用":"启用"}
         </button>
-        <button class="btn-danger" onclick="deleteMainCard(${t.id})">\u5220\u9664</button>
+        <button class="btn-danger" onclick="deleteMainCard(${e.id})">删除</button>
       </td>
     </tr>
-  `).join(""):e.innerHTML='<tr><td colspan="7" style="text-align: center; color: #999;">\u6682\u65E0\u4E3B\u5361\u7247</td></tr>')}function he(e){return k.filter(t=>t.main_card_id===e).length}function pe(){var e,t=document.getElementById("subCardMainCardFilter");t&&(e=t.value,t.innerHTML='<option value="">\u5168\u90E8\u4E3B\u5361\u7247</option>'+v.map(n=>`<option value="${n.id}">${n.title}</option>`).join(""),t.value=e)}function L(){return s(this,null,function*(){try{var e=localStorage.getItem("auth_token"),t={"Content-Type":"application/json"},n=(e&&(t.Authorization="Bearer "+e),yield fetch("/api/about/sub-cards/admin",{method:"GET",headers:t}));n.ok?(k=yield n.json(),W(),q()):showToast("\u52A0\u8F7D\u6B21\u5361\u7247\u5931\u8D25","error")}catch(o){console.error("\u52A0\u8F7D\u6B21\u5361\u7247\u5931\u8D25:",o),showToast("\u52A0\u8F7D\u6B21\u5361\u7247\u5931\u8D25","error")}})}function W(){var e=document.getElementById("subCardsTableBody");if(e){const n=document.getElementById("subCardMainCardFilter").value;var t=k;(t=n?k.filter(o=>o.main_card_id===parseInt(n)):t).length!==0?e.innerHTML=t.map(o=>(v.find(a=>a.id===o.main_card_id),`
+  `).join("") : e.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无主卡片</td></tr>')
+}
+
+function getSubCardCount(t) {
+    return subCards.filter(e => e.main_card_id === t).length
+}
+
+function updateMainCardFilter() {
+    var e, t = document.getElementById("subCardMainCardFilter");
+    t && (e = t.value, t.innerHTML = '<option value="">全部主卡片</option>' + mainCards.map(e => `<option value="${e.id}">${e.title}</option>`).join(""), t.value = e)
+}
+async function loadSubCards() {
+    try {
+        var e = localStorage.getItem("auth_token"),
+            t = {
+                "Content-Type": "application/json"
+            },
+            n = (e && (t.Authorization = "Bearer " + e), await fetch("/api/about/sub-cards/admin", {
+                method: "GET",
+                headers: t
+            }));
+        n.ok ? (subCards = await n.json(), updateSubCardsTable(), updateMainCardsTable()) : showToast("加载次卡片失败", "error")
+    } catch (e) {
+        console.error("加载次卡片失败:", e), showToast("加载次卡片失败", "error")
+    }
+}
+
+function updateSubCardsTable() {
+    var e = document.getElementById("subCardsTableBody");
+    if (e) {
+        const n = document.getElementById("subCardMainCardFilter").value;
+        var t = subCards;
+        0 !== (t = n ? subCards.filter(e => e.main_card_id === parseInt(n)) : t).length ? e.innerHTML = t.map(t => (mainCards.find(e => e.id === t.main_card_id), `
       <tr>
-        <td>${o.sort_order}</td>
-        <td>${o.icon||""}</td>
-        <td>${o.title}</td>
-        <td>${o.description.substring(0,30)}${30<o.description.length?"...":""}</td>
-        <td>${o.link_url||"-"}</td>
+        <td>${t.sort_order}</td>
+        <td>${t.icon||""}</td>
+        <td>${t.title}</td>
+        <td>${t.description.substring(0,30)}${30<t.description.length?"...":""}</td>
+        <td>${t.link_url||"-"}</td>
         <td>
-          <span style="color: ${o.is_enabled?"#28a745":"#dc3545"}; font-weight: bold;">
-            ${o.is_enabled?"\u2713 \u542F\u7528":"\u2715 \u7981\u7528"}
+          <span style="color: ${t.is_enabled?"#28a745":"#dc3545"}; font-weight: bold;">
+            ${t.is_enabled?"✓ 启用":"✕ 禁用"}
           </span>
         </td>
         <td>
-          <button class="btn-secondary" onclick="editSubCard(${o.id})">\u7F16\u8F91</button>
-          <button class="btn-secondary" onclick="toggleSubCardEnabled(${o.id}, ${o.is_enabled})">
-            ${o.is_enabled?"\u7981\u7528":"\u542F\u7528"}
+          <button class="btn-secondary" onclick="editSubCard(${t.id})">编辑</button>
+          <button class="btn-secondary" onclick="toggleSubCardEnabled(${t.id}, ${t.is_enabled})">
+            ${t.is_enabled?"禁用":"启用"}
           </button>
-          <button class="btn-danger" onclick="deleteSubCard(${o.id})">\u5220\u9664</button>
+          <button class="btn-danger" onclick="deleteSubCard(${t.id})">删除</button>
         </td>
       </tr>
-    `)).join(""):e.innerHTML='<tr><td colspan="7" style="text-align: center; color: #999;">\u6682\u65E0\u6B21\u5361\u7247</td></tr>'}}function ve(){return s(this,null,function*(){const e=document.getElementById("subCardMainCardFilter").value;var t;e?(document.getElementById("subCardModalTitle").textContent="\u6DFB\u52A0\u6B21\u5361\u7247",document.getElementById("subCardForm").reset(),document.getElementById("subCardId").value="",(t=document.getElementById("subCardMainCardId")).innerHTML='<option value="">\u8BF7\u9009\u62E9\u4E3B\u5361\u7247</option>'+v.map(n=>`<option value="${n.id}">${n.title}</option>`).join(""),t.value=e,document.getElementById("subCardSortOrder").value=k.filter(n=>n.main_card_id===parseInt(e)).length+1,document.getElementById("subCardEnabled").checked=!0,openModal("subCardModal")):showToast("\u8BF7\u5148\u9009\u62E9\u4E00\u4E2A\u4E3B\u5361\u7247","warning")})}window.addMainCard=function(){return s(this,null,function*(){document.getElementById("mainCardModalTitle").textContent="\u6DFB\u52A0\u4E3B\u5361\u7247",document.getElementById("mainCardForm").reset(),document.getElementById("mainCardId").value="",document.getElementById("mainCardSortOrder").value=v.length+1,document.getElementById("mainCardEnabled").checked=!0,openModal("mainCardModal")})},window.editMainCard=function(e){return s(this,null,function*(){var t=v.find(n=>n.id===e);t&&(document.getElementById("mainCardModalTitle").textContent="\u7F16\u8F91\u4E3B\u5361\u7247",document.getElementById("mainCardId").value=t.id,document.getElementById("mainCardTitle").value=t.title||"",document.getElementById("mainCardIcon").value=t.icon||"",document.getElementById("mainCardLayoutType").value=t.layout_type||"grid",document.getElementById("mainCardCustomCss").value=t.custom_css||"",document.getElementById("mainCardSortOrder").value=t.sort_order||0,document.getElementById("mainCardEnabled").checked=t.is_enabled,openModal("mainCardModal"))})},window.deleteMainCard=function(e){return s(this,null,function*(){U="delete-main-card",G=e,document.getElementById("confirmMessage").textContent="\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u4E2A\u4E3B\u5361\u7247\u5417\uFF1F\u6240\u6709\u5173\u8054\u7684\u6B21\u5361\u7247\u4E5F\u4F1A\u88AB\u5220\u9664\u3002\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002",openModal("confirmModal")})},window.toggleMainCardEnabled=function(e,t){return s(this,null,function*(){try{var n=localStorage.getItem("auth_token");(yield fetch("/api/about/main-cards/enabled?id="+e,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:"Bearer "+n},body:JSON.stringify({enabled:!t})})).ok?M():showToast("\u64CD\u4F5C\u5931\u8D25","error")}catch(o){console.error("\u5207\u6362\u72B6\u6001\u5931\u8D25:",o),showToast("\u64CD\u4F5C\u5931\u8D25","error")}})},window.editSubCard=function(e){return s(this,null,function*(){var t,n=k.find(o=>o.id===e);n&&(document.getElementById("subCardModalTitle").textContent="\u7F16\u8F91\u6B21\u5361\u7247",document.getElementById("subCardId").value=n.id,(t=document.getElementById("subCardMainCardId")).innerHTML='<option value="">\u8BF7\u9009\u62E9\u4E3B\u5361\u7247</option>'+v.map(o=>`<option value="${o.id}">${o.title}</option>`).join(""),t.value=n.main_card_id,document.getElementById("subCardTitle").value=n.title||"",document.getElementById("subCardDescription").value=n.description||"",document.getElementById("subCardIcon").value=n.icon||"",document.getElementById("subCardLinkUrl").value=n.link_url||"",document.getElementById("subCardCustomCss").value=n.custom_css||"",document.getElementById("subCardSortOrder").value=n.sort_order||0,document.getElementById("subCardEnabled").checked=n.is_enabled,openModal("subCardModal"))})},window.deleteSubCard=function(e){return s(this,null,function*(){U="delete-sub-card",G=e,document.getElementById("confirmMessage").textContent="\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u4E2A\u6B21\u5361\u7247\u5417\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u64A4\u9500\u3002",openModal("confirmModal")})},window.toggleSubCardEnabled=function(e,t){return s(this,null,function*(){try{var n=localStorage.getItem("auth_token");(yield fetch("/api/about/sub-cards/enabled?id="+e,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:"Bearer "+n},body:JSON.stringify({enabled:!t})})).ok?L():showToast("\u64CD\u4F5C\u5931\u8D25","error")}catch(o){console.error("\u5207\u6362\u72B6\u6001\u5931\u8D25:",o),showToast("\u64CD\u4F5C\u5931\u8D25","error")}})},document.addEventListener("DOMContentLoaded",function(){var e=document.getElementById("addMainCardBtn");e&&e.addEventListener("click",addMainCard),(e=document.getElementById("addSubCardBtn"))&&e.addEventListener("click",ve),(e=document.getElementById("refreshAboutCardsBtn"))&&e.addEventListener("click",function(){M(),L()}),(e=document.getElementById("subCardMainCardFilter"))&&e.addEventListener("change",W),(e=document.querySelector('[data-tab="about"]'))&&e.addEventListener("click",function(){M(),L(),B()}),Be()});const J=document.getElementById("mainCardForm"),K=(J&&J.addEventListener("submit",function(e){return s(this,null,function*(){e.preventDefault();var t=document.getElementById("mainCardId").value,n=document.getElementById("mainCardTitle").value,o=document.getElementById("mainCardIcon").value,a=document.getElementById("mainCardLayoutType").value,i=document.getElementById("mainCardCustomCss").value,d=parseInt(document.getElementById("mainCardSortOrder").value),r=document.getElementById("mainCardEnabled").checked;try{const l={"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("auth_token")};let c="/api/about/main-cards",u="POST";t&&(c="/api/about/main-cards/update?id="+t,u="PUT"),(yield fetch(c,{method:u,headers:l,body:JSON.stringify({title:n,icon:o,layout_type:a,custom_css:i,sort_order:d,is_enabled:r})})).ok?(showToast(t?"\u66F4\u65B0\u6210\u529F":"\u6DFB\u52A0\u6210\u529F","success"),closeModal("mainCardModal"),M()):showToast("\u64CD\u4F5C\u5931\u8D25","error")}catch(l){console.error("\u64CD\u4F5C\u5931\u8D25:",l),showToast("\u64CD\u4F5C\u5931\u8D25","error")}})}),document.getElementById("subCardForm"));function S(e){var t;return e?((t=document.createElement("div")).textContent=e,t.innerHTML):""}K&&K.addEventListener("submit",function(e){return s(this,null,function*(){e.preventDefault();var t=document.getElementById("subCardId").value,n=parseInt(document.getElementById("subCardMainCardId").value),o=document.getElementById("subCardTitle").value,a=document.getElementById("subCardDescription").value,i=document.getElementById("subCardIcon").value,d=document.getElementById("subCardLinkUrl").value,r=document.getElementById("subCardCustomCss").value,l=parseInt(document.getElementById("subCardSortOrder").value),c=document.getElementById("subCardEnabled").checked;try{const u={"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("auth_token")};let m="/api/about/sub-cards",I="POST";t&&(m="/api/about/sub-cards/update?id="+t,I="PUT"),(yield fetch(m,{method:I,headers:u,body:JSON.stringify({main_card_id:n,title:o,description:a,icon:i,link_url:d,custom_css:r,sort_order:l,is_enabled:c})})).ok?(showToast(t?"\u66F4\u65B0\u6210\u529F":"\u6DFB\u52A0\u6210\u529F","success"),closeModal("subCardModal"),L()):showToast("\u64CD\u4F5C\u5931\u8D25","error")}catch(u){console.error("\u64CD\u4F5C\u5931\u8D25:",u),showToast("\u64CD\u4F5C\u5931\u8D25","error")}})});let b=[],h=[];function B(){return s(this,null,function*(){try{var e,t={Authorization:"Bearer "+localStorage.getItem("auth_token")},n=yield fetch("/api/admin/friend-links?include_disabled=true",{headers:t});n.ok?(e=yield n.json()).success?(b=e.data,ye()):showToast(e.message||"\u52A0\u8F7D\u53CB\u94FE\u5217\u8868\u5931\u8D25","error"):showToast("\u52A0\u8F7D\u53CB\u94FE\u5217\u8868\u5931\u8D25","error")}catch(o){console.error("\u52A0\u8F7D\u53CB\u94FE\u5217\u8868\u5931\u8D25:",o),showToast("\u52A0\u8F7D\u53CB\u94FE\u5217\u8868\u5931\u8D25","error")}})}function ye(){var e=document.getElementById("friendLinksTableBody");(b.length===0?(e.innerHTML=`
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 40px;">
-          <div style="opacity: 0.5;">\u6682\u65E0\u53CB\u60C5\u94FE\u63A5</div>
-          <div style="margin-top: 10px;">
-            <button class="btn-primary" onclick="openAddFriendLinkModal()">\u6DFB\u52A0\u7B2C\u4E00\u4E2A\u53CB\u94FE</button>
-          </div>
-        </td>
-      </tr>
-    `,_):(e.innerHTML=b.map(t=>`
-    <tr style="${t.is_enabled?"":"opacity: 0.6;"}">
+    `)).join("") : e.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">暂无次卡片</td></tr>'
+    }
+}
+async function addSubCard() {
+    const t = document.getElementById("subCardMainCardFilter").value;
+    var e;
+    t ? (document.getElementById("subCardModalTitle").textContent = "添加次卡片", document.getElementById("subCardForm").reset(), document.getElementById("subCardId").value = "", (e = document.getElementById("subCardMainCardId")).innerHTML = '<option value="">请选择主卡片</option>' + mainCards.map(e => `<option value="${e.id}">${e.title}</option>`).join(""), e.value = t, document.getElementById("subCardSortOrder").value = subCards.filter(e => e.main_card_id === parseInt(t)).length + 1, document.getElementById("subCardEnabled").checked = !0, openModal("subCardModal")) : showToast("请先选择一个主卡片", "warning")
+}
+window.addMainCard = async function() {
+    document.getElementById("mainCardModalTitle").textContent = "添加主卡片", document.getElementById("mainCardForm").reset(), document.getElementById("mainCardId").value = "", document.getElementById("mainCardSortOrder").value = mainCards.length + 1, document.getElementById("mainCardEnabled").checked = !0, openModal("mainCardModal")
+}, window.editMainCard = async function(t) {
+    var e = mainCards.find(e => e.id === t);
+    e && (document.getElementById("mainCardModalTitle").textContent = "编辑主卡片", document.getElementById("mainCardId").value = e.id, document.getElementById("mainCardTitle").value = e.title || "", document.getElementById("mainCardIcon").value = e.icon || "", document.getElementById("mainCardLayoutType").value = e.layout_type || "grid", document.getElementById("mainCardCustomCss").value = e.custom_css || "", document.getElementById("mainCardSortOrder").value = e.sort_order || 0, document.getElementById("mainCardEnabled").checked = e.is_enabled, openModal("mainCardModal"))
+}, window.deleteMainCard = async function(e) {
+    currentAction = "delete-main-card", currentItemId = e, document.getElementById("confirmMessage").textContent = "确定要删除这个主卡片吗？所有关联的次卡片也会被删除。此操作不可撤销。", openModal("confirmModal")
+}, window.toggleMainCardEnabled = async function(e, t) {
+    try {
+        var n = localStorage.getItem("auth_token");
+        (await fetch("/api/about/main-cards/enabled?id=" + e, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + n
+            },
+            body: JSON.stringify({
+                enabled: !t
+            })
+        })).ok ? loadMainCards() : showToast("操作失败", "error")
+    } catch (e) {
+        console.error("切换状态失败:", e), showToast("操作失败", "error")
+    }
+}, window.editSubCard = async function(t) {
+    var e, n = subCards.find(e => e.id === t);
+    n && (document.getElementById("subCardModalTitle").textContent = "编辑次卡片", document.getElementById("subCardId").value = n.id, (e = document.getElementById("subCardMainCardId")).innerHTML = '<option value="">请选择主卡片</option>' + mainCards.map(e => `<option value="${e.id}">${e.title}</option>`).join(""), e.value = n.main_card_id, document.getElementById("subCardTitle").value = n.title || "", document.getElementById("subCardDescription").value = n.description || "", document.getElementById("subCardIcon").value = n.icon || "", document.getElementById("subCardLinkUrl").value = n.link_url || "", document.getElementById("subCardCustomCss").value = n.custom_css || "", document.getElementById("subCardSortOrder").value = n.sort_order || 0, document.getElementById("subCardEnabled").checked = n.is_enabled, openModal("subCardModal"))
+}, window.deleteSubCard = async function(e) {
+    currentAction = "delete-sub-card", currentItemId = e, document.getElementById("confirmMessage").textContent = "确定要删除这个次卡片吗？此操作不可撤销。", openModal("confirmModal")
+}, window.toggleSubCardEnabled = async function(e, t) {
+    try {
+        var n = localStorage.getItem("auth_token");
+        (await fetch("/api/about/sub-cards/enabled?id=" + e, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + n
+            },
+            body: JSON.stringify({
+                enabled: !t
+            })
+        })).ok ? loadSubCards() : showToast("操作失败", "error")
+    } catch (e) {
+        console.error("切换状态失败:", e), showToast("操作失败", "error")
+    }
+}, document.addEventListener("DOMContentLoaded", function() {
+    var e = document.getElementById("addMainCardBtn");
+    e && e.addEventListener("click", addMainCard), (e = document.getElementById("addSubCardBtn")) && e.addEventListener("click", addSubCard), (e = document.getElementById("refreshAboutCardsBtn")) && e.addEventListener("click", function() {
+        loadMainCards(), loadSubCards()
+    }), (e = document.getElementById("subCardMainCardFilter")) && e.addEventListener("change", updateSubCardsTable), (e = document.querySelector('[data-tab="about"]')) && e.addEventListener("click", function() {
+        loadMainCards(), loadSubCards(), loadFriendLinks()
+    }), initializeFriendLinksManagement()
+});
+const mainCardForm = document.getElementById("mainCardForm"),
+    subCardForm = (mainCardForm && mainCardForm.addEventListener("submit", async function(n) {
+        n.preventDefault();
+        var o = document.getElementById("mainCardId").value,
+            a = document.getElementById("mainCardTitle").value,
+            i = document.getElementById("mainCardIcon").value,
+            d = document.getElementById("mainCardLayoutType").value,
+            r = document.getElementById("mainCardCustomCss").value,
+            l = parseInt(document.getElementById("mainCardSortOrder").value),
+            s = document.getElementById("mainCardEnabled").checked;
+        try {
+            const n = {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + localStorage.getItem("auth_token")
+            };
+            let e = "/api/about/main-cards",
+                t = "POST";
+            o && (e = "/api/about/main-cards/update?id=" + o, t = "PUT"), (await fetch(e, {
+                method: t,
+                headers: n,
+                body: JSON.stringify({
+                    title: a,
+                    icon: i,
+                    layout_type: d,
+                    custom_css: r,
+                    sort_order: l,
+                    is_enabled: s
+                })
+            })).ok ? (showToast(o ? "更新成功" : "添加成功", "success"), closeModal("mainCardModal"), loadMainCards()) : showToast("操作失败", "error")
+        } catch (n) {
+            console.error("操作失败:", n), showToast("操作失败", "error")
+        }
+    }), document.getElementById("subCardForm"));
+
+function escapeHtml(e) {
+    var t;
+    return e ? ((t = document.createElement("div")).textContent = e, t.innerHTML) : ""
+}
+subCardForm && subCardForm.addEventListener("submit", async function(n) {
+    n.preventDefault();
+    var o = document.getElementById("subCardId").value,
+        a = parseInt(document.getElementById("subCardMainCardId").value),
+        i = document.getElementById("subCardTitle").value,
+        d = document.getElementById("subCardDescription").value,
+        r = document.getElementById("subCardIcon").value,
+        l = document.getElementById("subCardLinkUrl").value,
+        s = document.getElementById("subCardCustomCss").value,
+        c = parseInt(document.getElementById("subCardSortOrder").value),
+        u = document.getElementById("subCardEnabled").checked;
+    try {
+        const n = {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + localStorage.getItem("auth_token")
+        };
+        let e = "/api/about/sub-cards",
+            t = "POST";
+        o && (e = "/api/about/sub-cards/update?id=" + o, t = "PUT"), (await fetch(e, {
+            method: t,
+            headers: n,
+            body: JSON.stringify({
+                main_card_id: a,
+                title: i,
+                description: d,
+                icon: r,
+                link_url: l,
+                custom_css: s,
+                sort_order: c,
+                is_enabled: u
+            })
+        })).ok ? (showToast(o ? "更新成功" : "添加成功", "success"), closeModal("subCardModal"), loadSubCards()) : showToast("操作失败", "error")
+    } catch (n) {
+        console.error("操作失败:", n), showToast("操作失败", "error")
+    }
+});
+let friendLinks = [],
+    selectedFriendLinkIds = [];
+async function loadFriendLinks() {
+    try {
+        var e, t = {
+                Authorization: "Bearer " + localStorage.getItem("auth_token")
+            },
+            n = await fetch("/api/admin/friend-links?include_disabled=true", {
+                headers: t
+            });
+        n.ok ? (e = await n.json()).success ? (friendLinks = e.data, updateFriendLinksTable()) : showToast(e.message || "加载友链列表失败", "error") : showToast("加载友链列表失败", "error")
+    } catch (e) {
+        console.error("加载友链列表失败:", e), showToast("加载友链列表失败", "error")
+    }
+}
+
+function updateFriendLinksTable() {
+    var e = document.getElementById("friendLinksTableBody");
+    (0 === friendLinks.length ? (e.innerHTML = '\n      <tr>\n        <td colspan="7" style="text-align: center; padding: 40px;">\n          <div style="opacity: 0.5;">暂无友情链接</div>\n          <div style="margin-top: 10px;">\n            <button class="btn-primary" onclick="openAddFriendLinkModal()">添加第一个友链</button>\n          </div>\n        </td>\n      </tr>\n    ', updateBatchDeleteButton) : (e.innerHTML = friendLinks.map(e => `
+    <tr style="${e.is_enabled?"":"opacity: 0.6;"}">
       <td>
-        <input type="checkbox" class="friend-link-checkbox" data-id="${t.id}"
+        <input type="checkbox" class="friend-link-checkbox" data-id="${e.id}"
                style="width: auto;"
-               ${h.includes(t.id)?"checked":""}>
+               ${selectedFriendLinkIds.includes(e.id)?"checked":""}>
       </td>
       <td>
-        <img src="${t.avatar_url||"/img/avatar.webp"}" alt="${t.nickname}"
+        <img src="${e.avatar_url||"/img/avatar.webp"}" alt="${e.nickname}"
              style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"
              onerror="this.src='/img/avatar.webp'">
       </td>
-      <td><strong>${S(t.nickname)}</strong></td>
+      <td><strong>${escapeHtml(e.nickname)}</strong></td>
       <td>
-        <a href="${S(t.link_url)}" target="_blank" rel="noopener noreferrer"
+        <a href="${escapeHtml(e.link_url)}" target="_blank" rel="noopener noreferrer"
            style="color: #007bff; max-width: 200px; display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          ${S(t.link_url)}
+          ${escapeHtml(e.link_url)}
         </a>
       </td>
       <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-        ${S(t.motto||"-")}
+        ${escapeHtml(e.motto||"-")}
       </td>
       <td>
-        <span style="color: ${t.is_enabled?"#28a745":"#dc3545"}; font-weight: bold;">
-          ${t.is_enabled?"\u2713 \u542F\u7528":"\u2715 \u7981\u7528"}
+        <span style="color: ${e.is_enabled?"#28a745":"#dc3545"}; font-weight: bold;">
+          ${e.is_enabled?"✓ 启用":"✕ 禁用"}
         </span>
       </td>
       <td>
-        <button class="btn-secondary" onclick="toggleFriendLinkStatus(${t.id})" title="${t.is_enabled?"\u7981\u7528":"\u542F\u7528"}">
-          ${t.is_enabled?"\u7981\u7528":"\u542F\u7528"}
+        <button class="btn-secondary" onclick="toggleFriendLinkStatus(${e.id})" title="${e.is_enabled?"禁用":"启用"}">
+          ${e.is_enabled?"禁用":"启用"}
         </button>
-        <button class="btn-primary" onclick="openEditFriendLinkModal(${t.id})" title="\u7F16\u8F91">\u7F16\u8F91</button>
-        <button class="btn-danger" onclick="deleteFriendLink(${t.id})" title="\u5220\u9664">\u5220\u9664</button>
+        <button class="btn-primary" onclick="openEditFriendLinkModal(${e.id})" title="编辑">编辑</button>
+        <button class="btn-danger" onclick="deleteFriendLink(${e.id})" title="删除">删除</button>
       </td>
     </tr>
-  `).join(""),document.querySelectorAll(".friend-link-checkbox").forEach(t=>{t.addEventListener("change",function(){be(parseInt(this.getAttribute("data-id")))})}),_(),Y))()}function be(e){var t=h.indexOf(e);-1<t?h.splice(t,1):h.push(e),_(),Y()}function fe(){const e=document.getElementById("selectAllFriendLinks");h=e.checked?b.map(t=>t.id):[],document.querySelectorAll(".friend-link-checkbox").forEach(t=>{t.checked=e.checked}),_()}function Y(){var e=document.getElementById("selectAllFriendLinks"),t=document.querySelectorAll(".friend-link-checkbox");t.length===0?(e.checked=!1,e.disabled=!0):(e.disabled=!1,e.checked=0<t.length&&h.length===b.length)}function _(){var e=document.getElementById("batchDeleteFriendLinksBtn"),t=document.getElementById("friendLinkSelectedCount");0<h.length?(e.style.display="inline-flex",t.textContent=h.length):e.style.display="none"}function we(){return s(this,null,function*(){if(h.length!==0){if(confirm(`\u786E\u5B9A\u8981\u5220\u9664\u9009\u4E2D\u7684 ${h.length} \u4E2A\u53CB\u94FE\u5417\uFF1F
-\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D\uFF01`))try{var e=localStorage.getItem("auth_token"),t=yield(yield fetch("/api/admin/friend-links/batch-delete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+e},body:JSON.stringify({ids:h})})).json();t.success?(showToast(t.message||"\u6279\u91CF\u5220\u9664\u6210\u529F","success"),h=[],_(),yield B()):showToast(t.message||"\u6279\u91CF\u5220\u9664\u5931\u8D25","error")}catch(n){console.error("\u6279\u91CF\u5220\u9664\u5931\u8D25:",n),showToast("\u6279\u91CF\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5","error")}}else showToast("\u8BF7\u5148\u9009\u62E9\u8981\u5220\u9664\u7684\u53CB\u94FE","warning")})}function Ee(){document.getElementById("friendLinkModalTitle").textContent="\u6DFB\u52A0\u53CB\u60C5\u94FE\u63A5",document.getElementById("friendLinkId").value="",document.getElementById("friendLinkNickname").value="",document.getElementById("friendLinkUrl").value="",document.getElementById("friendLinkAvatar").value="",document.getElementById("friendLinkMotto").value="",document.getElementById("friendLinkSortOrder").value="0",document.getElementById("friendLinkEnabled").checked=!0,openModal("friendLinkModal")}function ke(e){return s(this,null,function*(){e.preventDefault();var t=document.getElementById("friendLinkId").value,n=!!t,o={nickname:document.getElementById("friendLinkNickname").value.trim(),link_url:document.getElementById("friendLinkUrl").value.trim(),avatar_url:document.getElementById("friendLinkAvatar").value.trim(),motto:document.getElementById("friendLinkMotto").value.trim(),sort_order:parseInt(document.getElementById("friendLinkSortOrder").value)||0,is_enabled:document.getElementById("friendLinkEnabled").checked};if(o.nickname&&o.link_url)try{const a={"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("auth_token")},i=n?"/api/admin/friend-links/"+t:"/api/admin/friend-links",d=n?"PUT":"POST",r=yield fetch(i,{method:d,headers:a,body:JSON.stringify(o)}),l=yield r.json();l.success?(showToast(n?"\u53CB\u94FE\u66F4\u65B0\u6210\u529F":"\u53CB\u94FE\u6DFB\u52A0\u6210\u529F","success"),closeModal("friendLinkModal"),yield B()):showToast(l.message||"\u64CD\u4F5C\u5931\u8D25","error")}catch(a){console.error("\u4FDD\u5B58\u53CB\u94FE\u5931\u8D25:",a),showToast("\u64CD\u4F5C\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5","error")}else showToast("\u6635\u79F0\u548C\u94FE\u63A5\u5730\u5740\u4E0D\u80FD\u4E3A\u7A7A","error")})}function Be(){var e=document.getElementById("addFriendLinkBtn");e&&e.addEventListener("click",Ee),(e=document.getElementById("refreshFriendLinksBtn"))&&e.addEventListener("click",B),(e=document.getElementById("selectAllFriendLinks"))&&e.addEventListener("change",fe),(e=document.getElementById("batchDeleteFriendLinksBtn"))&&e.addEventListener("click",we),(e=document.getElementById("friendLinkForm"))&&e.addEventListener("submit",ke)}window.openEditFriendLinkModal=function(e){var t=b.find(n=>n.id===e);t?(document.getElementById("friendLinkModalTitle").textContent="\u7F16\u8F91\u53CB\u60C5\u94FE\u63A5",document.getElementById("friendLinkId").value=t.id,document.getElementById("friendLinkNickname").value=t.nickname,document.getElementById("friendLinkUrl").value=t.link_url,document.getElementById("friendLinkAvatar").value=t.avatar_url,document.getElementById("friendLinkMotto").value=t.motto,document.getElementById("friendLinkSortOrder").value=t.sort_order,document.getElementById("friendLinkEnabled").checked=t.is_enabled,openModal("friendLinkModal")):showToast("\u53CB\u94FE\u4E0D\u5B58\u5728","error")},window.toggleFriendLinkStatus=function(e){return s(this,null,function*(){var t=b.find(a=>a.id===e);if(t)try{var n={"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("auth_token")},o=yield(yield fetch("/api/admin/friend-links/batch-update-status",{method:"POST",headers:n,body:JSON.stringify({ids:[e],is_enabled:!t.is_enabled})})).json();o.success?(showToast(o.message||"\u72B6\u6001\u66F4\u65B0\u6210\u529F","success"),yield B()):showToast(o.message||"\u72B6\u6001\u66F4\u65B0\u5931\u8D25","error")}catch(a){console.error("\u5207\u6362\u72B6\u6001\u5931\u8D25:",a),showToast("\u64CD\u4F5C\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5","error")}})},window.deleteFriendLink=function(e){var t=b.find(n=>n.id===e);t&&confirm(`\u786E\u5B9A\u8981\u5220\u9664\u53CB\u94FE "${t.nickname}" \u5417\uFF1F
-\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D\uFF01`)&&(t=localStorage.getItem("auth_token"),fetch("/api/admin/friend-links/"+e,{method:"DELETE",headers:{Authorization:"Bearer "+t}}).then(n=>n.json()).then(n=>{n.success?(showToast("\u53CB\u94FE\u5220\u9664\u6210\u529F","success"),B()):showToast(n.message||"\u5220\u9664\u5931\u8D25","error")}).catch(n=>{console.error("\u5220\u9664\u53CB\u94FE\u5931\u8D25:",n),showToast("\u5220\u9664\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5","error")}))};const O={currentPath:"img",currentRoot:"img",selectedFile:null,filesToUpload:[],getAuthHeader(){var e=localStorage.getItem("auth_token");return e?"Bearer "+e:""},init(){this.bindEvents(),this.loadTree(),this.loadFiles()},bindEvents(){document.getElementById("fmUploadBtn").addEventListener("click",()=>this.openUploadModal()),document.getElementById("fmCreateDirBtn").addEventListener("click",()=>this.openCreateDirModal()),document.getElementById("fmBackBtn").addEventListener("click",()=>this.goBack()),document.getElementById("confirmCreateDirBtn").addEventListener("click",()=>{var e=document.getElementById("dirNameInput");(e=e&&e.value.trim())&&(this.createDirectory(e),document.getElementById("createDirModal").classList.remove("active"))}),document.getElementById("confirmRenameBtn").addEventListener("click",()=>{var e=document.getElementById("renameInput");(e=e&&e.value.trim())&&(this.renameFile(e),document.getElementById("renameModal").classList.remove("active"))}),document.addEventListener("click",e=>{e.target.closest(".fm-context-menu")||e.target.closest(".fm-file-item")||this.hideContextMenu()}),document.addEventListener("keydown",e=>{e.key==="Escape"&&this.hideContextMenu()})},loadTree(){return s(this,null,function*(){try{var e=document.getElementById("fmTree");e.innerHTML="";for(const n of["img","markdown","attachments","music"]){var t=this.createTreeItem(n,!0);e.appendChild(t),yield this.loadSubDirectories(n,t)}}catch(n){console.error("\u52A0\u8F7D\u76EE\u5F55\u6811\u5931\u8D25:",n)}})},loadSubDirectories(e,t){return s(this,null,function*(){try{var n=yield(yield fetch("/api/files?path="+encodeURIComponent(e),{headers:{Authorization:this.getAuthHeader()}})).json();if(n.success&&n.data.files){var o=n.data.files.filter(r=>r.is_dir);if(0<o.length){var a=document.createElement("div");a.className="fm-tree-children";for(const r of o){var i=e+"/"+r.name,d=this.createTreeItem(r.name,!1,i);a.appendChild(d),yield this.loadSubDirectories(i,d)}t.appendChild(a)}}}catch(r){console.error("\u52A0\u8F7D\u5B50\u76EE\u5F55\u5931\u8D25:",r)}})},createTreeItem(e,t,n=null){const o=document.createElement("div");o.className="fm-tree-item",t&&e===this.currentRoot&&o.classList.add("active");var a=document.createElement("span");a.className="fm-tree-icon",a.innerHTML=t?'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>':'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>',o.appendChild(a),(t=document.createElement("span")).textContent=e,o.appendChild(t);const i=n||e;return o.addEventListener("click",d=>{d.stopPropagation(),this.navigateTo(i),document.querySelectorAll(".fm-tree-item").forEach(r=>r.classList.remove("active")),o.classList.add("active")}),o},loadFiles(){return s(this,null,function*(){try{var e=yield(yield fetch("/api/files?path="+encodeURIComponent(this.currentPath),{headers:{Authorization:this.getAuthHeader()}})).json();e.success?(this.renderFiles(e.data.files),this.updateBreadcrumb(e.data.current_path),this.updateBackButton(e.data.parent_path),this.updateFileCount(e.data.files.length)):showToast(e.message,"error")}catch(t){console.error("\u52A0\u8F7D\u6587\u4EF6\u5931\u8D25:",t),showToast("\u52A0\u8F7D\u6587\u4EF6\u5931\u8D25","error")}})},renderFiles(e){var t=document.getElementById("fmFileList"),n=document.getElementById("fmEmptyState");e.length===0?(t.innerHTML="",n.style.display="flex"):(n.style.display="none",n=[...e].sort((o,a)=>o.is_dir&&!a.is_dir?-1:!o.is_dir&&a.is_dir?1:o.name.localeCompare(a.name)),t.innerHTML=n.map(o=>this.createFileItem(o)).join(""),t.querySelectorAll(".fm-file-item").forEach(o=>{o.addEventListener("click",a=>{a.stopPropagation(),a=o.dataset.path,o.dataset.isDir==="true"?this.navigateTo(a):this.openFile(a)}),o.addEventListener("contextmenu",a=>{a.preventDefault();var i=o.dataset.path,d=o.dataset.isDir==="true";this.showContextMenu(a,i,d)})}))},createFileItem(e){let t=this.getFileIcon("default"),n;n=e.is_dir?(t='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',"directory"):[".jpg",".jpeg",".png",".gif",".webp",".bmp",".svg",".ico",".tiff",".tif",".avif",".jxl"].includes(e.extension)?(t=`<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='<svg width=\\'16\\' height=\\'16\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'3\\' ry=\\'3\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><path d=\\'21 15l-5-5L5 21\\'></path></svg>'">`,"image"):[".mp3",".flac",".wav",".ogg",".m4a",".aac",".wma",".opus",".ape",".wv",".tta"].includes(e.extension)?(t=this.getFileIcon("audio"),"audio"):[".mp4",".webm",".mkv",".avi",".mov",".wmv",".flv",".m4v",".3gp",".ts",".m2ts"].includes(e.extension)?(t=this.getFileIcon("video"),"video"):e.extension===".md"?(t=this.getFileIcon("markdown"),"markdown"):e.extension===".pdf"?(t=this.getFileIcon("pdf"),"pdf"):[".doc",".docx",".odt",".rtf"].includes(e.extension)?(t=this.getFileIcon("word"),"word"):[".xls",".xlsx",".ods",".csv"].includes(e.extension)?(t=this.getFileIcon("excel"),"excel"):[".ppt",".pptx",".odp"].includes(e.extension)?(t=this.getFileIcon("ppt"),"ppt"):[".zip",".rar",".7z",".tar",".gz",".bz2",".xz"].includes(e.extension)?(t=this.getFileIcon("archive"),"archive"):[".html",".htm",".css",".js",".ts",".jsx",".tsx",".vue",".svelte",".json",".xml",".yaml",".yml",".toml",".ini",".cfg",".conf"].includes(e.extension)?(t=this.getFileIcon("code"),"code"):[".txt",".log"].includes(e.extension)?(t=this.getFileIcon("text"),"text"):[".ttf",".otf",".woff",".woff2",".eot"].includes(e.extension)?(t=this.getFileIcon("font"),"font"):[".db",".sqlite",".sqlite3",".mdb",".sql"].includes(e.extension)?(t=this.getFileIcon("database"),"database"):[".exe",".app",".dmg",".msi",".deb",".rpm",".sh",".bat",".cmd",".ps1"].includes(e.extension)?(t=this.getFileIcon("executable"),"executable"):(t=this.getFileIcon("default"),"file");var o=this.formatFileSize(e.size);return`
+  `).join(""), document.querySelectorAll(".friend-link-checkbox").forEach(e => {
+        e.addEventListener("change", function() {
+            toggleFriendLinkSelection(parseInt(this.getAttribute("data-id")))
+        })
+    }), updateBatchDeleteButton(), updateSelectAllCheckbox))()
+}
+
+function toggleFriendLinkSelection(e) {
+    var t = selectedFriendLinkIds.indexOf(e); - 1 < t ? selectedFriendLinkIds.splice(t, 1) : selectedFriendLinkIds.push(e), updateBatchDeleteButton(), updateSelectAllCheckbox()
+}
+
+function toggleSelectAllFriendLinks() {
+    const t = document.getElementById("selectAllFriendLinks");
+    selectedFriendLinkIds = t.checked ? friendLinks.map(e => e.id) : [], document.querySelectorAll(".friend-link-checkbox").forEach(e => {
+        e.checked = t.checked
+    }), updateBatchDeleteButton()
+}
+
+function updateSelectAllCheckbox() {
+    var e = document.getElementById("selectAllFriendLinks"),
+        t = document.querySelectorAll(".friend-link-checkbox");
+    0 === t.length ? (e.checked = !1, e.disabled = !0) : (e.disabled = !1, e.checked = 0 < t.length && selectedFriendLinkIds.length === friendLinks.length)
+}
+
+function updateBatchDeleteButton() {
+    var e = document.getElementById("batchDeleteFriendLinksBtn"),
+        t = document.getElementById("friendLinkSelectedCount");
+    0 < selectedFriendLinkIds.length ? (e.style.display = "inline-flex", t.textContent = selectedFriendLinkIds.length) : e.style.display = "none"
+}
+async function batchDeleteFriendLinks() {
+    if (0 !== selectedFriendLinkIds.length) {
+        if (confirm(`确定要删除选中的 ${selectedFriendLinkIds.length} 个友链吗？
+此操作不可恢复！`)) try {
+            var e = localStorage.getItem("auth_token"),
+                t = await (await fetch("/api/admin/friend-links/batch-delete", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer " + e
+                    },
+                    body: JSON.stringify({
+                        ids: selectedFriendLinkIds
+                    })
+                })).json();
+            t.success ? (showToast(t.message || "批量删除成功", "success"), selectedFriendLinkIds = [], updateBatchDeleteButton(), await loadFriendLinks()) : showToast(t.message || "批量删除失败", "error")
+        } catch (e) {
+            console.error("批量删除失败:", e), showToast("批量删除失败，请重试", "error")
+        }
+    } else showToast("请先选择要删除的友链", "warning")
+}
+
+function openAddFriendLinkModal() {
+    document.getElementById("friendLinkModalTitle").textContent = "添加友情链接", document.getElementById("friendLinkId").value = "", document.getElementById("friendLinkNickname").value = "", document.getElementById("friendLinkUrl").value = "", document.getElementById("friendLinkAvatar").value = "", document.getElementById("friendLinkMotto").value = "", document.getElementById("friendLinkSortOrder").value = "0", document.getElementById("friendLinkEnabled").checked = !0, openModal("friendLinkModal")
+}
+async function saveFriendLink(e) {
+    e.preventDefault();
+    var t = document.getElementById("friendLinkId").value,
+        n = !!t,
+        o = {
+            nickname: document.getElementById("friendLinkNickname").value.trim(),
+            link_url: document.getElementById("friendLinkUrl").value.trim(),
+            avatar_url: document.getElementById("friendLinkAvatar").value.trim(),
+            motto: document.getElementById("friendLinkMotto").value.trim(),
+            sort_order: parseInt(document.getElementById("friendLinkSortOrder").value) || 0,
+            is_enabled: document.getElementById("friendLinkEnabled").checked
+        };
+    if (o.nickname && o.link_url) try {
+        const e = {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + localStorage.getItem("auth_token")
+            },
+            a = n ? "/api/admin/friend-links/" + t : "/api/admin/friend-links",
+            i = n ? "PUT" : "POST",
+            d = await fetch(a, {
+                method: i,
+                headers: e,
+                body: JSON.stringify(o)
+            }),
+            r = await d.json();
+        r.success ? (showToast(n ? "友链更新成功" : "友链添加成功", "success"), closeModal("friendLinkModal"), await loadFriendLinks()) : showToast(r.message || "操作失败", "error")
+    } catch (e) {
+        console.error("保存友链失败:", e), showToast("操作失败，请重试", "error")
+    } else showToast("昵称和链接地址不能为空", "error")
+}
+
+function initializeFriendLinksManagement() {
+    var e = document.getElementById("addFriendLinkBtn");
+    e && e.addEventListener("click", openAddFriendLinkModal), (e = document.getElementById("refreshFriendLinksBtn")) && e.addEventListener("click", loadFriendLinks), (e = document.getElementById("selectAllFriendLinks")) && e.addEventListener("change", toggleSelectAllFriendLinks), (e = document.getElementById("batchDeleteFriendLinksBtn")) && e.addEventListener("click", batchDeleteFriendLinks), (e = document.getElementById("friendLinkForm")) && e.addEventListener("submit", saveFriendLink)
+}
+window.openEditFriendLinkModal = function(t) {
+    var e = friendLinks.find(e => e.id === t);
+    e ? (document.getElementById("friendLinkModalTitle").textContent = "编辑友情链接", document.getElementById("friendLinkId").value = e.id, document.getElementById("friendLinkNickname").value = e.nickname, document.getElementById("friendLinkUrl").value = e.link_url, document.getElementById("friendLinkAvatar").value = e.avatar_url, document.getElementById("friendLinkMotto").value = e.motto, document.getElementById("friendLinkSortOrder").value = e.sort_order, document.getElementById("friendLinkEnabled").checked = e.is_enabled, openModal("friendLinkModal")) : showToast("友链不存在", "error")
+}, window.toggleFriendLinkStatus = async function(t) {
+    var e = friendLinks.find(e => e.id === t);
+    if (e) try {
+        var n = {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + localStorage.getItem("auth_token")
+            },
+            o = await (await fetch("/api/admin/friend-links/batch-update-status", {
+                method: "POST",
+                headers: n,
+                body: JSON.stringify({
+                    ids: [t],
+                    is_enabled: !e.is_enabled
+                })
+            })).json();
+        o.success ? (showToast(o.message || "状态更新成功", "success"), await loadFriendLinks()) : showToast(o.message || "状态更新失败", "error")
+    } catch (t) {
+        console.error("切换状态失败:", t), showToast("操作失败，请重试", "error")
+    }
+}, window.deleteFriendLink = function(t) {
+    var e = friendLinks.find(e => e.id === t);
+    e && confirm(`确定要删除友链 "${e.nickname}" 吗？
+此操作不可恢复！`) && (e = localStorage.getItem("auth_token"), fetch("/api/admin/friend-links/" + t, {
+        method: "DELETE",
+        headers: {
+            Authorization: "Bearer " + e
+        }
+    }).then(e => e.json()).then(e => {
+        e.success ? (showToast("友链删除成功", "success"), loadFriendLinks()) : showToast(e.message || "删除失败", "error")
+    }).catch(e => {
+        console.error("删除友链失败:", e), showToast("删除失败，请重试", "error")
+    }))
+};
+const FileManager = {
+        currentPath: "img",
+        currentRoot: "img",
+        selectedFile: null,
+        filesToUpload: [],
+        getAuthHeader() {
+            var e = localStorage.getItem("auth_token");
+            return e ? "Bearer " + e : ""
+        },
+        init() {
+            this.bindEvents(), this.loadTree(), this.loadFiles()
+        },
+        bindEvents() {
+            document.getElementById("fmUploadBtn").addEventListener("click", () => this.openUploadModal()), document.getElementById("fmCreateDirBtn").addEventListener("click", () => this.openCreateDirModal()), document.getElementById("fmBackBtn").addEventListener("click", () => this.goBack()), document.getElementById("confirmCreateDirBtn").addEventListener("click", () => {
+                var e = document.getElementById("dirNameInput");
+                (e = e && e.value.trim()) && (this.createDirectory(e), document.getElementById("createDirModal").classList.remove("active"))
+            }), document.getElementById("confirmRenameBtn").addEventListener("click", () => {
+                var e = document.getElementById("renameInput");
+                (e = e && e.value.trim()) && (this.renameFile(e), document.getElementById("renameModal").classList.remove("active"))
+            }), document.addEventListener("click", e => {
+                e.target.closest(".fm-context-menu") || e.target.closest(".fm-file-item") || this.hideContextMenu()
+            }), document.addEventListener("keydown", e => {
+                "Escape" === e.key && this.hideContextMenu()
+            })
+        },
+        async loadTree() {
+            try {
+                var e = document.getElementById("fmTree");
+                e.innerHTML = "";
+                for (const n of ["img", "markdown", "attachments", "music"]) {
+                    var t = this.createTreeItem(n, !0);
+                    e.appendChild(t), await this.loadSubDirectories(n, t)
+                }
+            } catch (e) {
+                console.error("加载目录树失败:", e)
+            }
+        },
+        async loadSubDirectories(e, t) {
+            try {
+                var n = await (await fetch("/api/files?path=" + encodeURIComponent(e), {
+                    headers: {
+                        Authorization: this.getAuthHeader()
+                    }
+                })).json();
+                if (n.success && n.data.files) {
+                    var o = n.data.files.filter(e => e.is_dir);
+                    if (0 < o.length) {
+                        var a = document.createElement("div");
+                        a.className = "fm-tree-children";
+                        for (const t of o) {
+                            var i = e + "/" + t.name,
+                                d = this.createTreeItem(t.name, !1, i);
+                            a.appendChild(d), await this.loadSubDirectories(i, d)
+                        }
+                        t.appendChild(a)
+                    }
+                }
+            } catch (e) {
+                console.error("加载子目录失败:", e)
+            }
+        },
+        createTreeItem(e, t, n = null) {
+            const o = document.createElement("div");
+            o.className = "fm-tree-item", t && e === this.currentRoot && o.classList.add("active");
+            var a = document.createElement("span");
+            a.className = "fm-tree-icon", a.innerHTML = t ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>', o.appendChild(a), (t = document.createElement("span")).textContent = e, o.appendChild(t);
+            const i = n || e;
+            return o.addEventListener("click", e => {
+                e.stopPropagation(), this.navigateTo(i), document.querySelectorAll(".fm-tree-item").forEach(e => e.classList.remove("active")), o.classList.add("active")
+            }), o
+        },
+        async loadFiles() {
+            try {
+                var e = await (await fetch("/api/files?path=" + encodeURIComponent(this.currentPath), {
+                    headers: {
+                        Authorization: this.getAuthHeader()
+                    }
+                })).json();
+                e.success ? (this.renderFiles(e.data.files), this.updateBreadcrumb(e.data.current_path), this.updateBackButton(e.data.parent_path), this.updateFileCount(e.data.files.length)) : showToast(e.message, "error")
+            } catch (e) {
+                console.error("加载文件失败:", e), showToast("加载文件失败", "error")
+            }
+        },
+        renderFiles(e) {
+            var t = document.getElementById("fmFileList"),
+                n = document.getElementById("fmEmptyState");
+            0 === e.length ? (t.innerHTML = "", n.style.display = "flex") : (n.style.display = "none", n = [...e].sort((e, t) => e.is_dir && !t.is_dir ? -1 : !e.is_dir && t.is_dir ? 1 : e.name.localeCompare(t.name)), t.innerHTML = n.map(e => this.createFileItem(e)).join(""), t.querySelectorAll(".fm-file-item").forEach(o => {
+                o.addEventListener("click", e => {
+                    e.stopPropagation(), e = o.dataset.path, "true" === o.dataset.isDir ? this.navigateTo(e) : this.openFile(e)
+                }), o.addEventListener("contextmenu", e => {
+                    e.preventDefault();
+                    var t = o.dataset.path,
+                        n = "true" === o.dataset.isDir;
+                    this.showContextMenu(e, t, n)
+                })
+            }))
+        },
+        createFileItem(e) {
+            let t = this.getFileIcon("default"),
+                n;
+            n = e.is_dir ? (t = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>', "directory") : [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico", ".tiff", ".tif", ".avif", ".jxl"].includes(e.extension) ? (t = `<img src="/${e.path}" alt="${e.name}" onerror="this.parentElement.innerHTML='<svg width=\\'16\\' height=\\'16\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'3\\' ry=\\'3\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><path d=\\'21 15l-5-5L5 21\\'></path></svg>'">`, "image") : [".mp3", ".flac", ".wav", ".ogg", ".m4a", ".aac", ".wma", ".opus", ".ape", ".wv", ".tta"].includes(e.extension) ? (t = this.getFileIcon("audio"), "audio") : [".mp4", ".webm", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".m4v", ".3gp", ".ts", ".m2ts"].includes(e.extension) ? (t = this.getFileIcon("video"), "video") : ".md" === e.extension ? (t = this.getFileIcon("markdown"), "markdown") : ".pdf" === e.extension ? (t = this.getFileIcon("pdf"), "pdf") : [".doc", ".docx", ".odt", ".rtf"].includes(e.extension) ? (t = this.getFileIcon("word"), "word") : [".xls", ".xlsx", ".ods", ".csv"].includes(e.extension) ? (t = this.getFileIcon("excel"), "excel") : [".ppt", ".pptx", ".odp"].includes(e.extension) ? (t = this.getFileIcon("ppt"), "ppt") : [".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"].includes(e.extension) ? (t = this.getFileIcon("archive"), "archive") : [".html", ".htm", ".css", ".js", ".ts", ".jsx", ".tsx", ".vue", ".svelte", ".json", ".xml", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf"].includes(e.extension) ? (t = this.getFileIcon("code"), "code") : [".txt", ".log"].includes(e.extension) ? (t = this.getFileIcon("text"), "text") : [".ttf", ".otf", ".woff", ".woff2", ".eot"].includes(e.extension) ? (t = this.getFileIcon("font"), "font") : [".db", ".sqlite", ".sqlite3", ".mdb", ".sql"].includes(e.extension) ? (t = this.getFileIcon("database"), "database") : [".exe", ".app", ".dmg", ".msi", ".deb", ".rpm", ".sh", ".bat", ".cmd", ".ps1"].includes(e.extension) ? (t = this.getFileIcon("executable"), "executable") : (t = this.getFileIcon("default"), "file");
+            var o = this.formatFileSize(e.size);
+            return `
       <div class="fm-file-item ${n}" data-path="${e.path}" data-is-dir="${e.is_dir}">
         <div class="fm-file-icon">${t}</div>
         <div class="fm-file-name">${e.name}</div>
-        <div class="fm-file-meta">${e.is_dir?"\u6587\u4EF6\u5939":o}</div>
+        <div class="fm-file-meta">${e.is_dir?"文件夹":o}</div>
       </div>
-    `},getFileIcon(e){return{image:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3" ry="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',video:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/><rect x="2" y="2" width="20" height="20" rx="3" ry="3"/></svg>',audio:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3" fill="currentColor"/><circle cx="18" cy="16" r="3" fill="currentColor"/></svg>',document:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',archive:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',markdown:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l-2 2 2 2"/><path d="M14 13l2 2-2 2"/></svg>',code:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>',pdf:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7" y="17" font-size="6" font-weight="bold" fill="currentColor">PDF</text></svg>',word:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="4" y="17" font-size="5" font-weight="bold" fill="currentColor">DOC</text></svg>',excel:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="7" y="10" width="10" height="2"/><rect x="7" y="14" width="10" height="2"/><rect x="7" y="18" width="10" height="2"/></svg>',ppt:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="11" width="8" height="6" rx="1"/></svg>',text:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',font:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="6" y="18" font-size="10" font-weight="bold" fill="currentColor">Aa</text></svg>',database:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',executable:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="14" r="3"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>'}[e]||'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>'},formatFileSize(e){var t;return e===0?"0 B":(t=Math.floor(Math.log(e)/Math.log(1024)),parseFloat((e/Math.pow(1024,t)).toFixed(2))+" "+["B","KB","MB","GB"][t])},updateBreadcrumb(e){document.getElementById("fmBreadcrumb").textContent=e||"/"},updateBackButton(e){document.getElementById("fmBackBtn").disabled=!e},updateFileCount(e){document.getElementById("fmInfo").textContent=e+" \u4E2A\u9879\u76EE"},navigateTo(e){this.currentPath=e,this.loadFiles()},goBack(){var e=this.getParentPath(this.currentPath);e&&this.navigateTo(e)},getParentPath(e){return e===this.currentRoot?null:((e=e.split("/")).pop(),e.join("/")||this.currentRoot)},openFile(e){const t=e.split("/").pop().split(".").pop().toLowerCase();if(["jpg","jpeg","png","gif","webp","bmp","svg"].includes(t)){const o="/"+e;this.showImagePreview(o)}else{if(t==="md"){let o=e;if(o.startsWith("/")){var n=o.indexOf("/markdown/");if(n===-1)return console.error("\u65E0\u6548\u7684 Markdown \u8DEF\u5F84:",e),void this.showToast("\u65E0\u6548\u7684 Markdown \u8DEF\u5F84","error");o=o.substring(n+10)}else{if(!o.startsWith("markdown/"))return console.error("\u65E0\u6548\u7684 Markdown \u8DEF\u5F84:",e),void this.showToast("\u65E0\u6548\u7684 Markdown \u8DEF\u5F84","error");o=o.substring(9)}return o&&o!=="/"&&o.trim()!==""?void(window.MarkdownPreviewModal?window.MarkdownPreviewModal.open(o):console.error("MarkdownPreviewModal not available")):(console.error("\u63D0\u53D6\u540E\u7684 Markdown \u8DEF\u5F84\u65E0\u6548:",o),void this.showToast("\u65E0\u6548\u7684 Markdown \u8DEF\u5F84","error"))}this.downloadFile(e)}},showImagePreview(e){const t=document.createElement("div");t.style.cssText=`
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    `;var n=document.createElement("img");n.src=e,n.style.cssText=`
-      max-width: 90%;
-      max-height: 90%;
-      object-fit: contain;
-      border-radius: 8px;
-    `,(e=document.createElement("div")).textContent="\u70B9\u51FB\u5173\u95ED",e.style.cssText=`
-      position: absolute;
-      bottom: 30px;
-      color: white;
-      font-size: 16px;
-      opacity: 0.7;
-    `,t.appendChild(n),t.appendChild(e),t.addEventListener("click",()=>{document.body.removeChild(t)});const o=a=>{a.key==="Escape"&&(document.body.removeChild(t),document.removeEventListener("keydown",o))};document.addEventListener("keydown",o),document.body.appendChild(t)},downloadFile(e){return s(this,null,function*(){try{var t=yield fetch("/api/files/download?path="+encodeURIComponent(e),{headers:{Authorization:this.getAuthHeader()}});if(t.ok){var n=e.split("/").pop(),o=yield t.blob(),a=window.URL.createObjectURL(o),i=document.createElement("a");i.href=a,i.download=n,document.body.appendChild(i),i.click(),document.body.removeChild(i),window.URL.revokeObjectURL(a)}else{const d=yield t.json();showToast(d.message||"\u4E0B\u8F7D\u5931\u8D25","error")}}catch(d){console.error("\u4E0B\u8F7D\u5931\u8D25:",d),showToast("\u4E0B\u8F7D\u5931\u8D25","error")}})},showContextMenu(e,t,n){this.selectedFile={path:t,isDir:n};var o=document.querySelector(".fm-context-menu");o&&o.remove();const a=document.createElement("div");a.className="fm-context-menu",a.style.left=e.pageX+"px",a.style.top=e.pageY+"px",o=t.split("/").pop().split(".").pop().toLowerCase(),["jpg","jpeg","png","gif","webp","bmp","svg"].includes(o),[{action:"open",label:"\u6253\u5F00",icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>'},{action:"download",label:"\u4E0B\u8F7D",icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',hide:n},{action:"rename",label:"\u91CD\u547D\u540D",icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>'},{action:"delete",label:"\u5220\u9664",icon:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>\uFE0F',danger:!0}].forEach(i=>{var d;i.hide||((d=document.createElement("div")).className="fm-context-menu-item"+(i.danger?" danger":""),d.innerHTML=`<span>${i.icon}</span>`+i.label,d.addEventListener("click",()=>{this.handleContextAction(i.action),this.hideContextMenu()}),a.appendChild(d))}),document.body.appendChild(a),a.classList.add("active")},hideContextMenu(){var e=document.querySelector(".fm-context-menu");e&&e.remove()},handleContextAction(e){if(this.selectedFile)switch(e){case"open":this.selectedFile.isDir?this.navigateTo(this.selectedFile.path):this.openFile(this.selectedFile.path);break;case"download":this.downloadFile(this.selectedFile.path);break;case"rename":this.openRenameModal();break;case"delete":this.openDeleteModal()}},openUploadModal(){const e=document.createElement("input");e.type="file",e.multiple=!0,e.style.display="none",e.addEventListener("change",t=>{0<(t=Array.from(t.target.files)).length&&this.uploadFiles(t),e.remove()}),document.body.appendChild(e),e.click()},uploadFiles(e){return s(this,null,function*(){for(const t of e)try{const n=new FormData;n.append("file",t),(yield(yield fetch("/api/files?path="+encodeURIComponent(this.currentPath),{method:"POST",headers:{Authorization:this.getAuthHeader()},body:n})).json()).success?showToast("\u6210\u529F\u4E0A\u4F20 "+t.name,"success"):showToast(`\u4E0A\u4F20 ${t.name} \u5931\u8D25`,"error")}catch(n){console.error("\u4E0A\u4F20\u5931\u8D25:",n),showToast(`\u4E0A\u4F20 ${t.name} \u5931\u8D25`,"error")}this.loadFiles(),this.loadTree()})},openCreateDirModal(){var e=document.getElementById("createDirModal");const t=document.getElementById("dirNameInput");t&&(t.value="",e.classList.add("active"),setTimeout(()=>{t.focus()},100))},createDirectory(e){return s(this,null,function*(){try{var t=yield(yield fetch("/api/files/create-dir",{method:"POST",headers:{"Content-Type":"application/json",Authorization:this.getAuthHeader()},body:JSON.stringify({path:this.currentPath,name:e})})).json();t.success?(showToast("\u6587\u4EF6\u5939\u521B\u5EFA\u6210\u529F","success"),this.loadFiles(),this.loadTree()):showToast(t.message,"error")}catch(n){console.error("\u521B\u5EFA\u76EE\u5F55\u5931\u8D25:",n),showToast("\u521B\u5EFA\u6587\u4EF6\u5939\u5931\u8D25","error")}})},openRenameModal(){if(this.selectedFile){var e=this.selectedFile.path.split("/").pop(),t=document.getElementById("renameModal");const n=document.getElementById("renameInput");n&&(n.value=e,t.classList.add("active"),setTimeout(()=>{n.focus(),n.select()},100))}},renameFile(e){return s(this,null,function*(){if(this.selectedFile)try{var t=yield(yield fetch("/api/files",{method:"PUT",headers:{"Content-Type":"application/json",Authorization:this.getAuthHeader()},body:JSON.stringify({old_path:this.selectedFile.path,new_name:e})})).json();t.success?(showToast("\u91CD\u547D\u540D\u6210\u529F","success"),this.loadFiles(),this.loadTree()):showToast(t.message,"error")}catch(n){console.error("\u91CD\u547D\u540D\u5931\u8D25:",n),showToast("\u91CD\u547D\u540D\u5931\u8D25","error")}})},openDeleteModal(){var e;this.selectedFile&&(e=this.selectedFile.path.split("/").pop(),confirm(`\u786E\u5B9A\u8981\u5220\u9664 "${e}" \u5417\uFF1F\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D\uFF01`))&&this.deleteFile()},deleteFile(){return s(this,null,function*(){if(this.selectedFile)try{var e=yield(yield fetch("/api/files?path="+encodeURIComponent(this.selectedFile.path),{method:"DELETE",headers:{Authorization:this.getAuthHeader()}})).json();e.success?(showToast("\u5220\u9664\u6210\u529F","success"),this.loadFiles(),this.loadTree()):showToast(e.message,"error")}catch(t){console.error("\u5220\u9664\u5931\u8D25:",t),showToast("\u5220\u9664\u5931\u8D25","error")}})}},Ie={currentArticleId:null,init(){var e=document.getElementById("uploadAttachmentBtn");e&&e.addEventListener("click",()=>this.uploadAttachment())},uploadAttachment(){return s(this,null,function*(){const e=document.getElementById("attachmentFile"),t=document.getElementById("uploadAttachmentArticleId"),n=document.getElementById("uploadAttachmentProgress"),o=document.getElementById("uploadAttachmentResult"),a=document.getElementById("uploadAttachmentProgressBar"),i=document.getElementById("uploadAttachmentStatus"),d=document.getElementById("uploadAttachmentFileInfo");if(e.files&&e.files.length!==0){var r=e.files[0],l=(this.currentArticleId=t.dataset.articleId,n.style.display="block",o.style.display="none",a.style.width="0%",i.textContent="\u6B63\u5728\u4E0A\u4F20...",new FormData);l.append("file",r),l.append("passage_id",this.currentArticleId);try{const c=localStorage.getItem("auth_token"),u=yield fetch("/api/admin/attachments",{method:"POST",headers:c?{Authorization:"Bearer "+c}:{},body:l}),m=yield u.json();a.style.width="100%",m.success?(i.textContent="\u4E0A\u4F20\u6210\u529F\uFF01",o.style.display="block",d.innerHTML=`
-          <div><strong>\u6587\u4EF6\u540D\uFF1A</strong>${m.data.fileName}</div>
-          <div><strong>\u6587\u4EF6\u5927\u5C0F\uFF1A</strong>${this.formatFileSize(m.data.size)}</div>
-          <div><strong>\u6587\u4EF6\u7C7B\u578B\uFF1A</strong>${m.data.type}</div>
-          <div><strong>\u8BBF\u95EEURL\uFF1A</strong><a href="${m.data.url}" target="_blank" style="color: #007bff;">${m.data.url}</a></div>
-        `,showToast("\u9644\u4EF6\u4E0A\u4F20\u6210\u529F\uFF01","success"),setTimeout(()=>{closeModal("uploadAttachmentModal")},3e3)):(i.textContent="\u4E0A\u4F20\u5931\u8D25\uFF1A"+(m.message||"\u672A\u77E5\u9519\u8BEF"),showToast("\u9644\u4EF6\u4E0A\u4F20\u5931\u8D25\uFF1A"+(m.message||"\u672A\u77E5\u9519\u8BEF"),"error"))}catch(c){console.error("\u4E0A\u4F20\u9644\u4EF6\u5931\u8D25:",c),a.style.width="100%",i.textContent="\u4E0A\u4F20\u5931\u8D25\uFF1A\u7F51\u7EDC\u9519\u8BEF",showToast("\u9644\u4EF6\u4E0A\u4F20\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5","error")}}else showToast("\u8BF7\u9009\u62E9\u8981\u4E0A\u4F20\u7684\u6587\u4EF6","error")})},formatFileSize(e){var t;return e===0?"0 Bytes":(t=Math.floor(Math.log(e)/Math.log(1024)),Math.round(e/Math.pow(1024,t)*100)/100+" "+["Bytes","KB","MB","GB"][t])}};document.addEventListener("DOMContentLoaded",()=>{Ie.init();var e=document.querySelector('[data-tab="filemanager"]');e&&e.addEventListener("click",()=>{setTimeout(()=>{O.initialized||(O.init(),O.initialized=!0)},100)})});
+    `
+        },
+        getFileIcon(e) {
+            return {
+                image: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3" ry="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+                video: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/><rect x="2" y="2" width="20" height="20" rx="3" ry="3"/></svg>',
+                audio: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3" fill="currentColor"/><circle cx="18" cy="16" r="3" fill="currentColor"/></svg>',
+                document: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+                archive: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+                markdown: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l-2 2 2 2"/><path d="M14 13l2 2-2 2"/></svg>',
+                code: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>',
+                pdf: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="7" y="17" font-size="6" font-weight="bold" fill="currentColor">PDF</text></svg>',
+                word: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="4" y="17" font-size="5" font-weight="bold" fill="currentColor">DOC</text></svg>',
+                excel: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="7" y="10" width="10" height="2"/><rect x="7" y="14" width="10" height="2"/><rect x="7" y="18" width="10" height="2"/></svg>',
+                ppt: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><rect x="8" y="11" width="8" height="6" rx="1"/></svg>',
+                text: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',
+                font: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="6" y="18" font-size="10" font-weight="bold" fill="currentColor">Aa</text></svg>',
+                database: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+                executable: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="14" r="3"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>'
+            } [e] || '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>'
+        },
+        formatFileSize(e) {
+            var t;
+            return 0 === e ? "0 B" : (t = Math.floor(Math.log(e) / Math.log(1024)), parseFloat((e / Math.pow(1024, t)).toFixed(2)) + " " + ["B", "KB", "MB", "GB"][t])
+        },
+        updateBreadcrumb(e) {
+            document.getElementById("fmBreadcrumb").textContent = e || "/"
+        },
+        updateBackButton(e) {
+            document.getElementById("fmBackBtn").disabled = !e
+        },
+        updateFileCount(e) {
+            document.getElementById("fmInfo").textContent = e + " 个项目"
+        },
+        navigateTo(e) {
+            this.currentPath = e, this.loadFiles()
+        },
+        goBack() {
+            var e = this.getParentPath(this.currentPath);
+            e && this.navigateTo(e)
+        },
+        getParentPath(e) {
+            return e === this.currentRoot ? null : ((e = e.split("/")).pop(), e.join("/") || this.currentRoot)
+        },
+        openFile(t) {
+            const e = t.split("/").pop().split(".").pop().toLowerCase();
+            if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(e)) {
+                const e = "/" + t;
+                this.showImagePreview(e)
+            } else {
+                if ("md" === e) {
+                    let e = t;
+                    if (e.startsWith("/")) {
+                        var n = e.indexOf("/markdown/");
+                        if (-1 === n) return console.error("无效的 Markdown 路径:", t), void this.showToast("无效的 Markdown 路径", "error");
+                        e = e.substring(n + 10)
+                    } else {
+                        if (!e.startsWith("markdown/")) return console.error("无效的 Markdown 路径:", t), void this.showToast("无效的 Markdown 路径", "error");
+                        e = e.substring(9)
+                    }
+                    return e && "/" !== e && "" !== e.trim() ? void(window.MarkdownPreviewModal ? window.MarkdownPreviewModal.open(e) : console.error("MarkdownPreviewModal not available")) : (console.error("提取后的 Markdown 路径无效:", e), void this.showToast("无效的 Markdown 路径", "error"))
+                }
+                this.downloadFile(t)
+            }
+        },
+        showImagePreview(e) {
+            const t = document.createElement("div");
+            t.style.cssText = "\n      position: fixed;\n      top: 0;\n      left: 0;\n      width: 100%;\n      height: 100%;\n      background: rgba(0, 0, 0, 0.9);\n      z-index: 10000;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      cursor: pointer;\n    ";
+            var n = document.createElement("img");
+            n.src = e, n.style.cssText = "\n      max-width: 90%;\n      max-height: 90%;\n      object-fit: contain;\n      border-radius: 8px;\n    ", (e = document.createElement("div")).textContent = "点击关闭", e.style.cssText = "\n      position: absolute;\n      bottom: 30px;\n      color: white;\n      font-size: 16px;\n      opacity: 0.7;\n    ", t.appendChild(n), t.appendChild(e), t.addEventListener("click", () => {
+                document.body.removeChild(t)
+            });
+            const o = e => {
+                "Escape" === e.key && (document.body.removeChild(t), document.removeEventListener("keydown", o))
+            };
+            document.addEventListener("keydown", o), document.body.appendChild(t)
+        },
+        async downloadFile(e) {
+            try {
+                var t = await fetch("/api/files/download?path=" + encodeURIComponent(e), {
+                    headers: {
+                        Authorization: this.getAuthHeader()
+                    }
+                });
+                if (t.ok) {
+                    var n = e.split("/").pop(),
+                        o = await t.blob(),
+                        a = window.URL.createObjectURL(o),
+                        i = document.createElement("a");
+                    i.href = a, i.download = n, document.body.appendChild(i), i.click(), document.body.removeChild(i), window.URL.revokeObjectURL(a)
+                } else {
+                    const e = await t.json();
+                    showToast(e.message || "下载失败", "error")
+                }
+            } catch (e) {
+                console.error("下载失败:", e), showToast("下载失败", "error")
+            }
+        },
+        showContextMenu(e, t, n) {
+            this.selectedFile = {
+                path: t,
+                isDir: n
+            };
+            var o = document.querySelector(".fm-context-menu");
+            o && o.remove();
+            const a = document.createElement("div");
+            a.className = "fm-context-menu", a.style.left = e.pageX + "px", a.style.top = e.pageY + "px", o = t.split("/").pop().split(".").pop().toLowerCase(), ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(o), [{
+                action: "open",
+                label: "打开",
+                icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>'
+            }, {
+                action: "download",
+                label: "下载",
+                icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+                hide: n
+            }, {
+                action: "rename",
+                label: "重命名",
+                icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>'
+            }, {
+                action: "delete",
+                label: "删除",
+                icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>️',
+                danger: !0
+            }].forEach(e => {
+                var t;
+                e.hide || ((t = document.createElement("div")).className = "fm-context-menu-item" + (e.danger ? " danger" : ""), t.innerHTML = `<span>${e.icon}</span>` + e.label, t.addEventListener("click", () => {
+                    this.handleContextAction(e.action), this.hideContextMenu()
+                }), a.appendChild(t))
+            }), document.body.appendChild(a), a.classList.add("active")
+        },
+        hideContextMenu() {
+            var e = document.querySelector(".fm-context-menu");
+            e && e.remove()
+        },
+        handleContextAction(e) {
+            if (this.selectedFile) switch (e) {
+                case "open":
+                    this.selectedFile.isDir ? this.navigateTo(this.selectedFile.path) : this.openFile(this.selectedFile.path);
+                    break;
+                case "download":
+                    this.downloadFile(this.selectedFile.path);
+                    break;
+                case "rename":
+                    this.openRenameModal();
+                    break;
+                case "delete":
+                    this.openDeleteModal()
+            }
+        },
+        openUploadModal() {
+            const t = document.createElement("input");
+            t.type = "file", t.multiple = !0, t.style.display = "none", t.addEventListener("change", e => {
+                0 < (e = Array.from(e.target.files)).length && this.uploadFiles(e), t.remove()
+            }), document.body.appendChild(t), t.click()
+        },
+        async uploadFiles(e) {
+            for (const t of e) try {
+                const e = new FormData;
+                e.append("file", t), (await (await fetch("/api/files?path=" + encodeURIComponent(this.currentPath), {
+                    method: "POST",
+                    headers: {
+                        Authorization: this.getAuthHeader()
+                    },
+                    body: e
+                })).json()).success ? showToast("成功上传 " + t.name, "success") : showToast(`上传 ${t.name} 失败`, "error")
+            } catch (e) {
+                console.error("上传失败:", e), showToast(`上传 ${t.name} 失败`, "error")
+            }
+            this.loadFiles(), this.loadTree()
+        },
+        openCreateDirModal() {
+            var e = document.getElementById("createDirModal");
+            const t = document.getElementById("dirNameInput");
+            t && (t.value = "", e.classList.add("active"), setTimeout(() => {
+                t.focus()
+            }, 100))
+        },
+        async createDirectory(e) {
+            try {
+                var t = await (await fetch("/api/files/create-dir", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: this.getAuthHeader()
+                    },
+                    body: JSON.stringify({
+                        path: this.currentPath,
+                        name: e
+                    })
+                })).json();
+                t.success ? (showToast("文件夹创建成功", "success"), this.loadFiles(), this.loadTree()) : showToast(t.message, "error")
+            } catch (e) {
+                console.error("创建目录失败:", e), showToast("创建文件夹失败", "error")
+            }
+        },
+        openRenameModal() {
+            if (this.selectedFile) {
+                var e = this.selectedFile.path.split("/").pop(),
+                    t = document.getElementById("renameModal");
+                const n = document.getElementById("renameInput");
+                n && (n.value = e, t.classList.add("active"), setTimeout(() => {
+                    n.focus(), n.select()
+                }, 100))
+            }
+        },
+        async renameFile(e) {
+            if (this.selectedFile) try {
+                var t = await (await fetch("/api/files", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: this.getAuthHeader()
+                    },
+                    body: JSON.stringify({
+                        old_path: this.selectedFile.path,
+                        new_name: e
+                    })
+                })).json();
+                t.success ? (showToast("重命名成功", "success"), this.loadFiles(), this.loadTree()) : showToast(t.message, "error")
+            } catch (e) {
+                console.error("重命名失败:", e), showToast("重命名失败", "error")
+            }
+        },
+        openDeleteModal() {
+            var e;
+            this.selectedFile && (e = this.selectedFile.path.split("/").pop(), confirm(`确定要删除 "${e}" 吗？此操作不可恢复！`)) && this.deleteFile()
+        },
+        async deleteFile() {
+            if (this.selectedFile) try {
+                var e = await (await fetch("/api/files?path=" + encodeURIComponent(this.selectedFile.path), {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: this.getAuthHeader()
+                    }
+                })).json();
+                e.success ? (showToast("删除成功", "success"), this.loadFiles(), this.loadTree()) : showToast(e.message, "error")
+            } catch (e) {
+                console.error("删除失败:", e), showToast("删除失败", "error")
+            }
+        }
+    },
+    AttachmentUploader = {
+        currentArticleId: null,
+        init() {
+            var e = document.getElementById("uploadAttachmentBtn");
+            e && e.addEventListener("click", () => this.uploadAttachment())
+        },
+        async uploadAttachment() {
+            const e = document.getElementById("attachmentFile"),
+                t = document.getElementById("uploadAttachmentArticleId"),
+                n = document.getElementById("uploadAttachmentProgress"),
+                o = document.getElementById("uploadAttachmentResult"),
+                a = document.getElementById("uploadAttachmentProgressBar"),
+                i = document.getElementById("uploadAttachmentStatus"),
+                d = document.getElementById("uploadAttachmentFileInfo");
+            if (e.files && 0 !== e.files.length) {
+                var r = e.files[0],
+                    l = (this.currentArticleId = t.dataset.articleId, n.style.display = "block", o.style.display = "none", a.style.width = "0%", i.textContent = "正在上传...", new FormData);
+                l.append("file", r), l.append("passage_id", this.currentArticleId);
+                try {
+                    const e = localStorage.getItem("auth_token"),
+                        t = await fetch("/api/admin/attachments", {
+                            method: "POST",
+                            headers: e ? {
+                                Authorization: "Bearer " + e
+                            } : {},
+                            body: l
+                        }),
+                        n = await t.json();
+                    a.style.width = "100%", n.success ? (i.textContent = "上传成功！", o.style.display = "block", d.innerHTML = `
+          <div><strong>文件名：</strong>${n.data.fileName}</div>
+          <div><strong>文件大小：</strong>${this.formatFileSize(n.data.size)}</div>
+          <div><strong>文件类型：</strong>${n.data.type}</div>
+          <div><strong>访问URL：</strong><a href="${n.data.url}" target="_blank" style="color: #007bff;">${n.data.url}</a></div>
+        `, showToast("附件上传成功！", "success"), setTimeout(() => {
+                        closeModal("uploadAttachmentModal")
+                    }, 3e3)) : (i.textContent = "上传失败：" + (n.message || "未知错误"), showToast("附件上传失败：" + (n.message || "未知错误"), "error"))
+                } catch (e) {
+                    console.error("上传附件失败:", e), a.style.width = "100%", i.textContent = "上传失败：网络错误", showToast("附件上传失败，请稍后重试", "error")
+                }
+            } else showToast("请选择要上传的文件", "error")
+        },
+        formatFileSize(e) {
+            var t;
+            return 0 === e ? "0 Bytes" : (t = Math.floor(Math.log(e) / Math.log(1024)), Math.round(e / Math.pow(1024, t) * 100) / 100 + " " + ["Bytes", "KB", "MB", "GB"][t])
+        }
+    };
+document.addEventListener("DOMContentLoaded", () => {
+    AttachmentUploader.init();
+    var e = document.querySelector('[data-tab="filemanager"]');
+    e && e.addEventListener("click", () => {
+        setTimeout(() => {
+            FileManager.initialized || (FileManager.init(), FileManager.initialized = !0)
+        }, 100)
+    })
+});
