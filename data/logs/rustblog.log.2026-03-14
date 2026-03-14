@@ -1,0 +1,4 @@
+2026-03-14T03:01:23.714672Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-14T03:01:23.721423Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-14T03:01:23.721432Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-14T03:01:23.721438Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
