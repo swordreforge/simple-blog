@@ -1709,14 +1709,13 @@ html.dark-mode .submit-comment-btn:hover {
 }
 
 .comment-item {
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(30, 30, 30, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 20px;
   transition: all 0.3s ease;
   animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08)
 }
 
 .comment-item:hover {
@@ -1748,19 +1747,19 @@ html.dark-mode .submit-comment-btn:hover {
 
 .comment-username {
   font-weight: 600;
-  color: var(--text-dark);
+  color: rgba(255, 255, 255, 1)
 }
 
 .comment-date {
-  color: var(--text-light);
-  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85em
 }
 
 .comment-content {
-  color: var(--text-dark);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.6;
   white-space: pre-wrap;
-  word-wrap: break-word;
+  word-wrap: break-word
 }
 
 /* 加载状态 */
@@ -2171,10 +2170,8 @@ body.fullscreen .content-area {
   transform: translateY(-50%) !important;
   width: 56px;
   height: 56px;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, .3);
+  background: rgba(30, 30, 30, 0.2);
+  border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -2188,10 +2185,10 @@ body.fullscreen .content-area {
 }
 
 .quick-actions-btn:hover {
-  background: rgba(255, 255, 255, .2);
-  border-color: rgba(255, 255, 255, .5);
+  background: rgba(0, 123, 255, 0.15);
+  border-color: rgba(0, 123, 255, 0.3);
   transform: translateY(-50%) scale(1.1) !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .15)
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.15)
 }
 
 .quick-actions-btn:active {
@@ -2215,10 +2212,8 @@ body.fullscreen .content-area {
   transform: translateY(-50%) !important;
   width: 56px;
   height: 56px;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, .3);
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 28px;
   opacity: 0;
   visibility: hidden;
@@ -2265,7 +2260,7 @@ body.fullscreen .content-area {
   gap: 10px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, .05);
-  border: 1px solid rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 10px;
   color: rgba(255, 255, 255, .9);
   text-decoration: none;
@@ -2275,8 +2270,8 @@ body.fullscreen .content-area {
 }
 
 .quick-action-item:hover {
-  background: rgba(255, 255, 255, .1);
-  border-color: rgba(255, 255, 255, .2);
+  background: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.2);
   transform: translateX(-3px)
 }
 
@@ -2515,10 +2510,8 @@ body.focus-mode-right .sidebar {
 }
 
 .toast {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 16px 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -2527,7 +2520,7 @@ body.focus-mode-right .sidebar {
   gap: 12px;
   animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
   min-width: 280px;
-  max-width: 100%;
+  max-width: 100%
 }
 
 .toast.success {
@@ -2554,16 +2547,16 @@ body.focus-mode-right .sidebar {
 
 .toast-message {
   flex: 1;
-  color: #1f2937;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   line-height: 1.4;
-  word-wrap: break-word;
+  word-wrap: break-word
 }
 
 .toast-close {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   font-size: 18px;
   padding: 0;
@@ -2573,11 +2566,11 @@ body.focus-mode-right .sidebar {
   align-items: center;
   justify-content: center;
   transition: color 0.2s ease;
-  flex-shrink: 0;
+  flex-shrink: 0
 }
 
 .toast-close:hover {
-  color: #4b5563;
+  color: rgba(255, 255, 255, 1)
 }
 
 @media (max-width: 768px) {
