@@ -39,7 +39,36 @@
       // 移除可能存在的 darkreader-lock 标签
       const lock = document.querySelector('meta[name="darkreader-lock"]');
       if (lock) lock.remove();
-      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
+      
+      // 保存原始背景图片
+      const body = document.body;
+      const originalBgImage = body.style.backgroundImage || window.getComputedStyle(body).backgroundImage;
+      if (originalBgImage && originalBgImage !== 'none') {
+        body.style.setProperty('--original-bg-image', originalBgImage, 'important');
+      }
+      
+      DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), 
+      
+      // 添加 CSS 规则保护背景图片
+      const protectBgStyle = document.createElement('style');
+      protectBgStyle.id = 'darkreader-bg-protection';
+      protectBgStyle.textContent = `
+        /* 强制保留背景图片，覆盖 Dark Reader */
+        body {
+          background-image: var(--original-bg-image, inherit) !important;
+        }
+        body[data-darkreader-inline-bgimage] {
+          background-image: var(--original-bg-image, inherit) !important;
+        }
+        /* 移除 Dark Reader 的背景图片覆盖 */
+        [data-darkreader-inline-bgimage="none"],
+        body[data-darkreader-inline-bgimage="none"] {
+          background-image: var(--original-bg-image, inherit) !important;
+        }
+      `;
+      document.head.appendChild(protectBgStyle),
+      
+      console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
     } else console.warn("[DarkReader] Dark Reader库未加载，使用备用方案"), r()
