@@ -222,11 +222,13 @@
                 color: #e0e0e0 !important;
             }
             
-            /* 强制页脚使用暗色 */
+            /* 强制页脚使用暗色但保留毛玻璃效果 */
             footer {
-                background-color: #1a1a1a !important;
-                color: #a0a0a0 !important;
-                border-color: #404040 !important;
+                background-color: var(--footer-glass-color, rgba(45, 45, 45, 0.6)) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                color: #e0e0e0 !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
             }
             
             /* 强制滚动条使用暗色 */
