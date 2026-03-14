@@ -28,6 +28,15 @@
 
   function e() {
     if (t()) try {
+      // 捕获并忽略图片加载相关的错误
+      const originalError = console.error;
+      console.error = function(...args) {
+        const message = args.join(' ');
+        if (message.includes('Unable to load image') || message.includes('SVG')) {
+          return; // 忽略图片加载错误
+        }
+        originalError.apply(console, args);
+      };
       DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n), console.log("[DarkReader] 暗色模式已启用"), a(), l("dark")
     } catch (n) {
       console.error("[DarkReader] 启用失败:", n), r()
@@ -76,7 +85,18 @@
       }), e(), new MutationObserver(e => {
         e.forEach(e => {
           "childList" === e.type && e.addedNodes.forEach(e => {
-            e.nodeType === Node.ELEMENT_NODE && t() && (DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n))
+            if (e.nodeType === Node.ELEMENT_NODE && t()) {
+              // 捕获并忽略图片加载相关的错误
+              const originalError = console.error;
+              console.error = function(...args) {
+                const message = args.join(' ');
+                if (message.includes('Unable to load image') || message.includes('SVG')) {
+                  return; // 忽略图片加载错误
+                }
+                originalError.apply(console, args);
+              };
+              DarkReader.setFetchMethod(window.fetch), DarkReader.enable(n)
+            }
           })
         })
       }).observe(document.body, {
