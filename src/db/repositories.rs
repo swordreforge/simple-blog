@@ -1487,23 +1487,39 @@ impl UserRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<User, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, username, password, email, role, status, created_at, updated_at 
+            "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users WHERE id = ?"
         )?;
-        
+
         let user = stmt.query_row(params![id], |row| {
+            let role_str: String = row.get(4)?;
+            let role = match role_str.as_str() {
+                "admin" => UserRole::Admin,
+                "editor" => UserRole::Editor,
+                "subscriber" | "user" => UserRole::Subscriber,
+                _ => UserRole::Subscriber,
+            };
+
+            let status_str: String = row.get(5)?;
+            let status = match status_str.as_str() {
+                "active" => UserStatus::Active,
+                "disabled" | "inactive" | "banned" => UserStatus::Disabled,
+                
+                _ => UserStatus::Active,
+            };
+
             Ok(User {
                 id: Some(row.get(0)?),
                 username: row.get(1)?,
                 password: row.get(2)?,
                 email: row.get(3)?,
-                role: row.get(4)?,
-                status: row.get(5)?,
+                role,
+                status,
                 created_at: row.get(6)?,
                 updated_at: row.get(7)?,
             })
         })?;
-        
+
         Ok(user)
     }
 
@@ -1511,23 +1527,39 @@ impl UserRepository {
     pub async fn get_by_username(&self, username: &str) -> Result<User, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, username, password, email, role, status, created_at, updated_at 
+            "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users WHERE username = ?"
         )?;
-        
+
         let user = stmt.query_row(params![username], |row| {
+            let role_str: String = row.get(4)?;
+            let role = match role_str.as_str() {
+                "admin" => UserRole::Admin,
+                "editor" => UserRole::Editor,
+                "subscriber" | "user" => UserRole::Subscriber,
+                _ => UserRole::Subscriber,
+            };
+
+            let status_str: String = row.get(5)?;
+            let status = match status_str.as_str() {
+                "active" => UserStatus::Active,
+                "disabled" | "inactive" | "banned" => UserStatus::Disabled,
+                
+                _ => UserStatus::Active,
+            };
+
             Ok(User {
                 id: Some(row.get(0)?),
                 username: row.get(1)?,
                 password: row.get(2)?,
                 email: row.get(3)?,
-                role: row.get(4)?,
-                status: row.get(5)?,
+                role,
+                status,
                 created_at: row.get(6)?,
                 updated_at: row.get(7)?,
             })
         })?;
-        
+
         Ok(user)
     }
 
@@ -1535,23 +1567,39 @@ impl UserRepository {
     pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<User>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, username, password, email, role, status, created_at, updated_at 
+            "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
-        
+
         let users = stmt.query_map(params![limit, offset], |row| {
+            let role_str: String = row.get(4)?;
+            let role = match role_str.as_str() {
+                "admin" => UserRole::Admin,
+                "editor" => UserRole::Editor,
+                "subscriber" | "user" => UserRole::Subscriber,
+                _ => UserRole::Subscriber,
+            };
+
+            let status_str: String = row.get(5)?;
+            let status = match status_str.as_str() {
+                "active" => UserStatus::Active,
+                "disabled" | "inactive" | "banned" => UserStatus::Disabled,
+                
+                _ => UserStatus::Active,
+            };
+
             Ok(User {
                 id: Some(row.get(0)?),
                 username: row.get(1)?,
                 password: row.get(2)?,
                 email: row.get(3)?,
-                role: row.get(4)?,
-                status: row.get(5)?,
+                role,
+                status,
                 created_at: row.get(6)?,
                 updated_at: row.get(7)?,
             })
         })?.collect::<Result<Vec<_>, _>>()?;
-        
+
         Ok(users)
     }
 
