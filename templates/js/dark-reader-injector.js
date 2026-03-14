@@ -20,12 +20,13 @@
     darkSchemeMatches: !0,
     immediateFetch: !1,
     ignoreInlineStyle: ["*"],
-    ignoreImageAnalysis: ['*.svg', '*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.ico', 'data:image/*'],
+    ignoreImageAnalysis: [],
     disableStyleSheetsProxy: !0,
     ignoreInlineAnalysis: ["*"],
     disablePDFViewer: !1,
     disableStyleSheets: !1,
-    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg"]
+    ignoreSelectors: [".nav-icon", ".nav-item", ".navigation", ".navbar", "nav", '[class*="nav"]', '[class*="menu"]', ".shortcut-hint", "svg", "img"],
+    mode: 0
   };
 
   function t() {
