@@ -22,10 +22,13 @@ pub struct UploadData {
     pub content_type: String,
 }
 
+/// 文件上传缓冲区大小 (64KB)
+const UPLOAD_BUFFER_SIZE: usize = 65536;
+
 /// 文件上传处理器（流式写入）
 pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
     use futures_util::stream::StreamExt;
-    
+
     // 获取日期参数（可选）
     let year = query.get("year").cloned().unwrap_or_else(|| Utc::now().format("%Y").to_string());
     let month = query.get("month").cloned().unwrap_or_else(|| Utc::now().format("%m").to_string());
@@ -118,7 +121,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
         }
         
         // 使用 tokio 异步文件写入（流式写入，降低内存使用）
-        let mut file = match tokio::fs::File::create(&file_path).await {
+        let file = match tokio::fs::File::create(&file_path).await {
             Ok(f) => f,
             Err(e) => {
                 return HttpResponse::InternalServerError().json(UploadResponse {
@@ -129,9 +132,12 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 });
             }
         };
-        
+
+        // 使用 BufWriter 提升写入性能
+        use tokio::io::{AsyncWriteExt, BufWriter};
+        let mut writer = BufWriter::with_capacity(UPLOAD_BUFFER_SIZE, file);
+
         // 使用 tokio io 异步写入
-        use tokio::io::AsyncWriteExt;
         let mut bytes_written = 0u64;
         use futures_util::stream::StreamExt;
         while let Some(chunk) = field.next().await {
@@ -139,7 +145,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 Ok(c) => c,
                 Err(_) => break,
             };
-            if let Err(e) = file.write_all(&chunk).await {
+            if let Err(e) = writer.write_all(&chunk).await {
                 return HttpResponse::InternalServerError().json(UploadResponse {
                     success: false,
                     message: format!("写入文件失败: {}", e),
@@ -149,9 +155,9 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
             }
             bytes_written += chunk.len() as u64;
         }
-        
+
         // 确保所有数据刷新到磁盘
-        if let Err(e) = file.flush().await {
+        if let Err(e) = writer.flush().await {
             return HttpResponse::InternalServerError().json(UploadResponse {
                 success: false,
                 message: format!("刷新文件失败: {}", e),

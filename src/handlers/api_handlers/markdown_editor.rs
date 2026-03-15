@@ -127,27 +127,83 @@ pub async fn save(
     
     
     
-                serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string())
+                serde_json::to_string(&tag_list).unwrap_or("[]".to_string())
     
-            }
     
-        } else {
     
-            "[]".to_string()
+                    
     
-        };
     
-        
     
-        // 设置默认分类
+                            }
     
-        let category = req_data.category.as_deref().unwrap_or("未分类").to_string();
     
-        
     
-        // 设置默认摘要
+                    
     
-        let summary = req_data.summary.as_deref().unwrap_or("暂无摘要").to_string();
+    
+    
+                        } else {
+    
+    
+    
+                    
+    
+    
+    
+                            String::from("[]")
+    
+    
+    
+                    
+    
+    
+    
+                        };
+    
+    
+    
+                        
+    
+    
+    
+                    
+    
+    
+    
+                        // 设置默认分类
+    
+    
+    
+                    
+    
+    
+    
+                        let category = req_data.category.as_deref().map(String::from).unwrap_or_else(|| String::from("未分类"));
+    
+    
+    
+                    
+    
+    
+    
+                        
+    
+    
+    
+                    
+    
+    
+    
+                        // 设置默认摘要
+    
+    
+    
+                    
+    
+    
+    
+                        let summary = req_data.summary.as_deref().map(String::from).unwrap_or_else(|| String::from("暂无摘要"));
     
         
     
@@ -160,7 +216,7 @@ pub async fn save(
         original_content: Some(req_data.content),
         summary: Some(summary),
         summarize: None,  // 将在创建时自动生成
-        author: "admin".to_string(),
+        author: String::from("admin"),
         tags: tags_json,
         category,
         status: crate::db::models::PassageStatus::Published,
@@ -168,7 +224,7 @@ pub async fn save(
         visibility: crate::db::models::PassageVisibility::Public,
         is_scheduled: false,
         published_at: None,
-        cover_image: Some("/img/passage-cover.webp".to_string()),
+        cover_image: Some(String::from("/img/passage-cover.webp")),
         created_at: now,
         updated_at: now,
     };
@@ -178,7 +234,7 @@ pub async fn save(
     match passage_repo.create(&passage).await {
         Ok(_) => HttpResponse::Ok().json(SaveArticleResponse {
             success: true,
-            message: "文章保存成功".to_string(),
+            message: String::from("文章保存成功"),
             data: Some(ArticleData {
                 id: passage.id.unwrap_or(0),
                 title: passage.title,

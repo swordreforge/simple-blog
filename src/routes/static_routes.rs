@@ -139,15 +139,24 @@ async fn handle_favicon() -> Result<HttpResponse> {
         "templates/favicon.ico",
         "favicon.ico",
     ];
-    
+
     for path in favicon_paths {
         if Path::new(path).exists() {
+            let metadata = std::fs::metadata(path)?;
+            let modified = metadata.modified()?;
+            let etag = match modified.duration_since(std::time::UNIX_EPOCH) {
+                Ok(duration) => format!("{:x}-{:x}", metadata.len(), duration.as_secs()),
+                Err(_) => format!("{:x}", metadata.len()),
+            };
+
             return Ok(HttpResponse::Ok()
                 .content_type("image/x-icon")
+                .insert_header(("Cache-Control", "public, max-age=86400"))
+                .insert_header(("ETag", etag))
                 .body(std::fs::read(path)?));
         }
     }
-    
+
     // 如果不存在，返回 204 No Content（避免浏览器重复请求）
     Ok(HttpResponse::NoContent().finish())
 }

@@ -304,6 +304,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_passages_uuid ON passages(uuid)", [])?;
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_passages_file_path ON passages(file_path)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status ON passages(status)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_uuid ON passages(uuid)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_category ON passages(category)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_created_at ON passages(created_at)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status_created ON passages(status, created_at DESC)", [])?;
@@ -367,6 +368,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_passage_date ON article_views(passage_uuid, view_date)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_ip_date ON article_views(ip, view_date)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_date ON article_views(view_date)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_view_time ON article_views(view_time)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_country ON article_views(country)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_article_views_city_region ON article_views(city, region)", [])?;
     // 添加复合索引优化统计查询

@@ -743,7 +743,7 @@ impl PassageRepository {
                 strftime('%Y', created_at) as year,
                 strftime('%m', created_at) as month,
                 COUNT(*) as count
-            FROM passages 
+            FROM passages
             WHERE status = 'published'
             GROUP BY year, month
             ORDER BY year DESC, month DESC
@@ -767,7 +767,7 @@ impl PassageRepository {
         let mut stmt = conn.prepare(
             r#"
             WITH tag_counts AS (
-                SELECT 
+                SELECT
                     json_each.value as tag_name,
                     COUNT(*) as count
                 FROM passages
@@ -775,7 +775,7 @@ impl PassageRepository {
                 WHERE status = 'published'
                 GROUP BY tag_name
             )
-            SELECT 
+            SELECT
                 ROW_NUMBER() OVER (ORDER BY count DESC) as id,
                 tag_name as name,
                 count

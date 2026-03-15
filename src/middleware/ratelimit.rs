@@ -50,8 +50,8 @@ pub struct RateLimitConfig {
 impl Default for RateLimitConfig {
     fn default() -> Self {
         Self {
-            per_second: 3,
-            per_minute: 10,
+            per_second: 10,
+            per_minute: 100,
         }
     }
 }
@@ -164,13 +164,13 @@ impl actix_web::ResponseError for RateLimitError {
             RateLimitError::TooManyRequestsPerSecond => {
                 HttpResponse::TooManyRequests().json(serde_json::json!({
                     "success": false,
-                    "message": "Too many requests. Maximum 3 requests per second allowed."
+                    "message": "Too many requests. Maximum 10 requests per second allowed."
                 }))
             }
             RateLimitError::TooManyRequestsPerMinute => {
                 HttpResponse::TooManyRequests().json(serde_json::json!({
                     "success": false,
-                    "message": "Too many requests. Maximum 10 requests per minute allowed."
+                    "message": "Too many requests. Maximum 100 requests per minute allowed."
                 }))
             }
         }
@@ -196,12 +196,9 @@ impl FromRequest for RateLimitCheck {
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         // 获取客户端IP
-        let ip = req
-            .connection_info()
-            .peer_addr()
-            .unwrap_or("unknown")
-            .to_string();
-        let key = ip.to_string();
+        let conn_info = req.connection_info();
+        let ip = conn_info.peer_addr().unwrap_or("unknown");
+        let key = String::from(ip);
 
         // 定期清理过期窗口（每 100 次请求清理一次）
         static CLEANUP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
