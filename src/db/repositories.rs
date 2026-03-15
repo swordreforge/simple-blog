@@ -39,8 +39,8 @@ pub fn create_repository(pool: Pool<SqliteConnectionManager>) -> Arc<dyn Reposit
 #[derive(Clone)]
 pub struct PassageRepository {
     pool: Arc<Pool<SqliteConnectionManager>>,
-    count_cache: Arc<std::sync::RwLock<Option<i64>>>,
-    count_published_cache: Arc<std::sync::RwLock<Option<i64>>>,
+    count_cache: Arc<parking_lot::RwLock<Option<i64>>>,
+    count_published_cache: Arc<parking_lot::RwLock<Option<i64>>>,
     cache_valid: Arc<std::sync::atomic::AtomicBool>,
 }
 
@@ -55,8 +55,8 @@ impl PassageRepository {
     pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
         Self {
             pool,
-            count_cache: Arc::new(std::sync::RwLock::new(None)),
-            count_published_cache: Arc::new(std::sync::RwLock::new(None)),
+            count_cache: Arc::new(parking_lot::RwLock::new(None)),
+            count_published_cache: Arc::new(parking_lot::RwLock::new(None)),
             cache_valid: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
@@ -638,10 +638,9 @@ impl PassageRepository {
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         // 尝试从缓存读取
         if self.cache_valid.load(std::sync::atomic::Ordering::Relaxed) {
-            if let Ok(count_opt) = self.count_cache.read() {
-                if let Some(count) = *count_opt {
-                    return Ok(count);
-                }
+            let count_opt = self.count_cache.read();
+            if let Some(count) = *count_opt {
+                return Ok(count);
             }
         }
 
@@ -650,9 +649,8 @@ impl PassageRepository {
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
 
         // 更新缓存
-        if let Ok(mut cache) = self.count_cache.write() {
-            *cache = Some(count);
-        }
+        let mut cache = self.count_cache.write();
+        *cache = Some(count);
         self.cache_valid.store(true, std::sync::atomic::Ordering::Relaxed);
 
         Ok(count)
@@ -662,10 +660,9 @@ impl PassageRepository {
     pub async fn count_published(&self) -> Result<i64, Box<dyn std::error::Error>> {
         // 尝试从缓存读取
         if self.cache_valid.load(std::sync::atomic::Ordering::Relaxed) {
-            if let Ok(count_opt) = self.count_published_cache.read() {
-                if let Some(count) = *count_opt {
-                    return Ok(count);
-                }
+            let count_opt = self.count_published_cache.read();
+            if let Some(count) = *count_opt {
+                return Ok(count);
             }
         }
 
@@ -674,9 +671,8 @@ impl PassageRepository {
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages WHERE status = 'published'", [], |row| row.get(0))?;
 
         // 更新缓存
-        if let Ok(mut cache) = self.count_published_cache.write() {
-            *cache = Some(count);
-        }
+        let mut cache = self.count_published_cache.write();
+        *cache = Some(count);
         self.cache_valid.store(true, std::sync::atomic::Ordering::Relaxed);
 
         Ok(count)

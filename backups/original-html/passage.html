@@ -16,8 +16,6 @@
 <link rel="stylesheet" href="/css/tokyo-night-dark.min.css">
 <!-- 文章页面基础样式 (关键) -->
 <link rel="stylesheet" href="/css/passage-base.css">
-<!-- 模态框动画样式 (关键) -->
-<link rel="stylesheet" href="/css/modal-animations.css">
 <!-- 核心动画 CSS (关键 - 包含 @keyframes) -->
 <!-- 内联关键动画 CSS，减少 HTTP 请求 -->
 <style>
@@ -952,7 +950,7 @@ nav a.current {
 
 .code-block-toolbar .code-language {
   font-size: 0.75em;
-  color: #1a1a1a;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -976,7 +974,7 @@ nav a.current {
   border-radius: 6px;
   font-size: 0.75em;
   font-weight: 600;
-  color: #1a1a1a;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
@@ -1354,11 +1352,10 @@ html.dark-mode .article-content tr:hover {
 .attachments-section {
   margin-top: 30px;
   padding: 20px;
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(30, 30, 30, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
 }
 
 .attachments-header {
@@ -1370,16 +1367,16 @@ html.dark-mode .article-content tr:hover {
 
 .attachments-header h3 {
   font-size: 1.3em;
-  color: var(--text-dark);
+  color: rgba(255, 255, 255, 1);
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px
 }
 
 .attachments-count {
-  color: var(--text-light);
-  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9em
 }
 
 .attachments-list {
@@ -1392,22 +1389,21 @@ html.dark-mode .article-content tr:hover {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background-color: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(30, 30, 30, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   transition: all 0.3s ease;
   cursor: pointer;
   text-decoration: none;
-  color: var(--text-dark);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08)
 }
 
 .attachment-item:hover {
-  background-color: rgba(255, 255, 255, 0.8);
-  border-color: var(--primary-color);
+  background-color: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.15)
 }
 
 .attachment-item:active {
@@ -1474,7 +1470,7 @@ html.dark-mode .article-content tr:hover {
   align-items: center;
   gap: 12px;
   font-size: 0.85em;
-  color: var(--text-light);
+  color: rgba(255, 255, 255, 0.7)
 }
 
 .attachment-size {
@@ -1514,8 +1510,8 @@ html.dark-mode .article-content tr:hover {
   align-items: center;
   justify-content: center;
   padding: 30px;
-  color: var(--text-light);
-  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center
 }
 
 .empty-attachments svg {
@@ -1536,13 +1532,13 @@ html.dark-mode .article-content tr:hover {
 
 .comments-header h3 {
   font-size: 1.5em;
-  color: var(--text-dark);
-  font-weight: 600;
+  color: rgba(255, 255, 255, 1);
+  font-weight: 600
 }
 
 .comments-count {
-  color: var(--text-light);
-  font-size: 0.95em;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95em
 }
 
 /* 评论表单 - GitHub 风格 */
@@ -1551,11 +1547,10 @@ html.dark-mode .article-content tr:hover {
   gap: 12px;
   margin-top: 20px;
   padding: 20px;
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(30, 30, 30, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1)
 }
 
 .comment-user-avatar {
@@ -1580,38 +1575,48 @@ html.dark-mode .article-content tr:hover {
 .comment-username-input {
   width: 100%;
   padding: 10px 14px;
-  border: 1px solid #d0d7de;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   font-size: 14px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(25, 25, 25, 0.5);
   transition: all 0.2s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.9)
 }
 
 .comment-username-input:focus {
   outline: none;
-  border-color: #0969da;
-  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+  border-color: rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1)
+}
+
+.comment-username-input::placeholder {
+  color: rgba(255, 255, 255, 0.5)
 }
 
 .comment-textarea {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid #d0d7de;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   font-size: 14px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(25, 25, 25, 0.5);
   transition: all 0.2s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   line-height: 1.6;
   resize: vertical;
   min-height: 100px;
+  color: rgba(255, 255, 255, 0.9)
 }
 
 .comment-textarea:focus {
   outline: none;
-  border-color: #0969da;
-  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+  border-color: rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1)
+}
+
+.comment-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5)
 }
 
 .comment-actions {
@@ -1625,8 +1630,8 @@ html.dark-mode .article-content tr:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6e7781;
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px
 }
 
 .submit-comment-btn {
@@ -1704,14 +1709,13 @@ html.dark-mode .submit-comment-btn:hover {
 }
 
 .comment-item {
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(30, 30, 30, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 20px;
   transition: all 0.3s ease;
   animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08)
 }
 
 .comment-item:hover {
@@ -1743,19 +1747,19 @@ html.dark-mode .submit-comment-btn:hover {
 
 .comment-username {
   font-weight: 600;
-  color: var(--text-dark);
+  color: rgba(255, 255, 255, 1)
 }
 
 .comment-date {
-  color: var(--text-light);
-  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85em
 }
 
 .comment-content {
-  color: var(--text-dark);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.6;
   white-space: pre-wrap;
-  word-wrap: break-word;
+  word-wrap: break-word
 }
 
 /* 加载状态 */
@@ -2166,10 +2170,8 @@ body.fullscreen .content-area {
   transform: translateY(-50%) !important;
   width: 56px;
   height: 56px;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, .3);
+  background: rgba(30, 30, 30, 0.2);
+  border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -2183,10 +2185,10 @@ body.fullscreen .content-area {
 }
 
 .quick-actions-btn:hover {
-  background: rgba(255, 255, 255, .2);
-  border-color: rgba(255, 255, 255, .5);
+  background: rgba(0, 123, 255, 0.15);
+  border-color: rgba(0, 123, 255, 0.3);
   transform: translateY(-50%) scale(1.1) !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .15)
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.15)
 }
 
 .quick-actions-btn:active {
@@ -2210,10 +2212,8 @@ body.fullscreen .content-area {
   transform: translateY(-50%) !important;
   width: 56px;
   height: 56px;
-  background: rgba(0, 0, 0, 0);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, .3);
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, .12);
   border-radius: 28px;
   opacity: 0;
   visibility: hidden;
@@ -2260,7 +2260,7 @@ body.fullscreen .content-area {
   gap: 10px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, .05);
-  border: 1px solid rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 10px;
   color: rgba(255, 255, 255, .9);
   text-decoration: none;
@@ -2270,8 +2270,8 @@ body.fullscreen .content-area {
 }
 
 .quick-action-item:hover {
-  background: rgba(255, 255, 255, .1);
-  border-color: rgba(255, 255, 255, .2);
+  background: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.2);
   transform: translateX(-3px)
 }
 
@@ -2510,10 +2510,8 @@ body.focus-mode-right .sidebar {
 }
 
 .toast {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 16px 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -2522,7 +2520,7 @@ body.focus-mode-right .sidebar {
   gap: 12px;
   animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
   min-width: 280px;
-  max-width: 100%;
+  max-width: 100%
 }
 
 .toast.success {
@@ -2549,16 +2547,16 @@ body.focus-mode-right .sidebar {
 
 .toast-message {
   flex: 1;
-  color: #1f2937;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   line-height: 1.4;
-  word-wrap: break-word;
+  word-wrap: break-word
 }
 
 .toast-close {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   font-size: 18px;
   padding: 0;
@@ -2568,11 +2566,11 @@ body.focus-mode-right .sidebar {
   align-items: center;
   justify-content: center;
   transition: color 0.2s ease;
-  flex-shrink: 0;
+  flex-shrink: 0
 }
 
 .toast-close:hover {
-  color: #4b5563;
+  color: rgba(255, 255, 255, 1)
 }
 
 @media (max-width: 768px) {
@@ -2671,7 +2669,7 @@ body.focus-mode-right .sidebar {
 <link rel="stylesheet" href="/css/glass-effect.css" media="print" onload="this.media='all'">
 
 <!-- 模态框动画样式 (延迟加载) -->
-<link rel="stylesheet" href="/css/animations.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="/css/modal-animations.css" media="print" onload="this.media='all'">
 
 <!-- 键盘快捷键样式 (延迟加载) -->
 <link rel="stylesheet" href="/css/keyboard-shortcuts.css" media="print" onload="this.media='all'">
@@ -6478,11 +6476,11 @@ document.addEventListener('DOMContentLoaded', () => initApp());
     <div class="modal-body" style="padding: 30px;">
       <form id="loginForm">
         <div class="form-group" style="margin-bottom: 20px;">
-          <label for="loginUsername" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">用户名</label>
+          <label for="loginUsername" style="display: block; margin-bottom: 8px; color: rgba(255, 255, 255, 0.9); font-weight: 500;">用户名</label>
           <input type="text" id="loginUsername" class="form-control" placeholder="请输入用户名" required autocomplete="username" style="width: 100%; padding: 12px 15px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; font-size: 1em; background: rgba(255, 255, 255, 0.9); transition: all 0.3s ease;">
         </div>
         <div class="form-group" style="margin-bottom: 20px;">
-          <label for="loginPassword" style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">密码</label>
+          <label for="loginPassword" style="display: block; margin-bottom: 8px; color: rgba(255, 255, 255, 0.9); font-weight: 500;">密码</label>
           <input type="password" id="loginPassword" class="form-control" placeholder="请输入密码" required autocomplete="current-password" style="width: 100%; padding: 12px 15px; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 8px; font-size: 1em; background: rgba(255, 255, 255, 0.9); transition: all 0.3s ease;">
         </div>
         <div class="form-group" id="loginError" style="display: none; color: #e74c3c; font-size: 0.9em;"></div>

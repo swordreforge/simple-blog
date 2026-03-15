@@ -76,7 +76,7 @@ pub async fn list(
                 created_at: l.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 updated_at: l.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
             }).collect();
-            
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "data": data
@@ -125,31 +125,31 @@ pub async fn get(
 
 /// 创建友链
 pub async fn create(
-    req: web::Json<CreateFriendLinkRequest>,
+    mut req: web::Json<CreateFriendLinkRequest>,
     state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     // 验证必填字段
     if req.nickname.is_empty() || req.link_url.is_empty() {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
-            message: "昵称和链接不能为空".to_string(),
+            message: String::from("昵称和链接不能为空"),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     let link = crate::db::models::FriendLink {
         id: None,
-        nickname: req.nickname.clone(),
-        link_url: req.link_url.clone(),
-        avatar_url: req.avatar_url.clone(),
-        motto: req.motto.clone(),
+        nickname: std::mem::take(&mut req.nickname),
+        link_url: std::mem::take(&mut req.link_url),
+        avatar_url: std::mem::take(&mut req.avatar_url),
+        motto: std::mem::take(&mut req.motto),
         sort_order: req.sort_order.unwrap_or(0),
         is_enabled: req.is_enabled.unwrap_or(true),
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
-    
+
     match friend_link_repo.create(&link).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -157,7 +157,7 @@ pub async fn create(
         })),
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
-            message: "创建友链失败".to_string(),
+            message: String::from("创建友链失败"),
         })
     }
 }
@@ -165,46 +165,45 @@ pub async fn create(
 /// 更新友链
 pub async fn update(
     path: web::Path<i64>,
-    req: web::Json<UpdateFriendLinkRequest>,
+    mut req: web::Json<UpdateFriendLinkRequest>,
     state: web::Data<crate::app_state::AppState>,
 ) -> HttpResponse {
     let id = path.into_inner();
-    
+
     // 验证必填字段
     if req.nickname.is_empty() || req.link_url.is_empty() {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
-            message: "昵称和链接不能为空".to_string(),
+            message: String::from("昵称和链接不能为空"),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     // 获取现有友链
     let existing_link = match friend_link_repo.get_by_id(id).await {
         Ok(Some(link)) => link,
         Ok(None) => return HttpResponse::NotFound().json(CommonResponse {
             success: false,
-            message: "友链不存在".to_string(),
+            message: String::from("友链不存在"),
         }),
         Err(_) => return HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
-            message: "获取友链失败".to_string(),
+            message: String::from("获取友链失败"),
         })
     };
-    
+
     let link = crate::db::models::FriendLink {
         id: Some(id),
-        nickname: req.nickname.clone(),
-        link_url: req.link_url.clone(),
-        avatar_url: req.avatar_url.clone(),
-        motto: req.motto.clone(),
+        nickname: std::mem::take(&mut req.nickname),
+        link_url: std::mem::take(&mut req.link_url),
+        avatar_url: std::mem::take(&mut req.avatar_url),
+        motto: std::mem::take(&mut req.motto),
         sort_order: req.sort_order.unwrap_or(existing_link.sort_order),
         is_enabled: req.is_enabled.unwrap_or(existing_link.is_enabled),
         created_at: existing_link.created_at,
         updated_at: chrono::Utc::now(),
     };
-    
     match friend_link_repo.update(&link).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,

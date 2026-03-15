@@ -4,7 +4,7 @@ use actix_web::{
 };
 use futures_util::future::LocalBoxFuture;
 use std::time::Instant;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// 自定义日志中间件
 pub struct LoggingMiddleware;
@@ -21,15 +21,16 @@ where
     type InitError = ();
     type Future = futures_util::future::Ready<Result<Self::Transform, Self::InitError>>;
 
+    #[inline]
     fn new_transform(&self, service: S) -> Self::Future {
         futures_util::future::ready(Ok(LoggingMiddlewareService {
-            service: Rc::new(service),
+            service: Arc::new(service),
         }))
     }
 }
 
 pub struct LoggingMiddlewareService<S> {
-    service: Rc<S>,
+    service: Arc<S>,
 }
 
 impl<S, B> Service<ServiceRequest> for LoggingMiddlewareService<S>
@@ -45,7 +46,7 @@ where
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        let service = self.service.clone();
+        let service = Arc::clone(&self.service);
         let start_time = Instant::now();
         let method = req.method().clone();
         let path = req.path().to_string();
@@ -80,7 +81,7 @@ where
 
             // 构建完整的查询字符串
             let full_path = if query.is_empty() {
-                path.clone()
+                String::from(&path)
             } else {
                 format!("{}?{}", path, query)
             };

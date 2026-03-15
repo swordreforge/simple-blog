@@ -3,9 +3,10 @@
 
 use super::backend::{CacheBackend, CacheError};
 use async_trait::async_trait;
+use dashmap::DashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::{Mutex, Semaphore};
+use tokio::sync::Semaphore;
 
 /// 空值标记，用于缓存穿透防护
 const NULL_VALUE: &str = "__NULL__";
@@ -16,8 +17,8 @@ const NULL_VALUE_TTL: u64 = 60; // 空值缓存1分钟
 /// 使用本地信号量 + Valkey 分布式锁的双重保护
 #[allow(dead_code)]
 pub struct CacheLock {
-    /// 本地信号量，用于快速防护同一实例内的并发
-    local_locks: Arc<Mutex<std::collections::HashMap<String, Arc<Semaphore>>>>,
+    /// 本地信号量，用于快速防护同一实例内的并发（使用 DashMap 提高性能）
+    local_locks: Arc<DashMap<String, Arc<Semaphore>>>,
     /// 是否启用分布式锁
     enable_distributed: bool,
 }
@@ -26,21 +27,19 @@ pub struct CacheLock {
 impl CacheLock {
     pub fn new(enable_distributed: bool) -> Self {
         Self {
-            local_locks: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            local_locks: Arc::new(DashMap::new()),
             enable_distributed,
         }
     }
 
     /// 获取缓存锁
     pub async fn acquire(&self, key: &str) -> Option<CacheLockGuard> {
-        // 获取或创建本地锁
-        let semaphore = {
-            let mut locks = self.local_locks.lock().await;
-            if !locks.contains_key(key) {
-                locks.insert(key.to_string(), Arc::new(Semaphore::new(1)));
-            }
-            Arc::clone(locks.get(key).unwrap())
-        };
+        // 获取或创建本地锁（使用 DashMap 避免全局锁）
+        let semaphore = self.local_locks
+            .entry(key.to_string())
+            .or_insert_with(|| Arc::new(Semaphore::new(1)))
+            .value()
+            .clone();
 
         // 尝试获取本地锁（非阻塞）
         match semaphore.try_acquire_owned() {
@@ -65,7 +64,7 @@ impl CacheLock {
 pub struct CacheLockGuard {
     key: String,
     permit: Option<tokio::sync::OwnedSemaphorePermit>,
-    local_locks: Arc<Mutex<std::collections::HashMap<String, Arc<Semaphore>>>>,
+    local_locks: Arc<DashMap<String, Arc<Semaphore>>>,
 }
 
 impl Drop for CacheLockGuard {
@@ -79,9 +78,10 @@ impl Drop for CacheLockGuard {
             let locks = Arc::clone(&self.local_locks);
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_secs(5)).await;
-                let mut locks = locks.lock().await;
-                if locks.get(&key).is_none_or(|s| s.available_permits() > 0) {
-                    locks.remove(&key);
+                if let Some(entry) = locks.get(&key) {
+                    if entry.available_permits() > 0 {
+                        locks.remove(&key);
+                    }
                 }
             });
         }

@@ -51,12 +51,14 @@ impl PassageStatus {
     }
 
     /// 检查是否为已发布状态
+    #[inline]
     pub fn is_published(&self) -> bool {
         matches!(self, PassageStatus::Published)
     }
 
     /// 检查是否可见（已发布）
     #[allow(dead_code)]
+    #[inline]
     pub fn is_visible(&self) -> bool {
         matches!(self, PassageStatus::Published)
     }
@@ -121,12 +123,14 @@ impl PassageVisibility {
     }
 
     /// 检查是否为公开可见
+    #[inline]
     pub fn is_public(&self) -> bool {
         matches!(self, PassageVisibility::Public)
     }
 
     /// 检查是否需要认证
     #[allow(dead_code)]
+    #[inline]
     pub fn requires_auth(&self) -> bool {
         matches!(self, PassageVisibility::Private | PassageVisibility::Protected)
     }
@@ -192,12 +196,14 @@ impl UserRole {
 
     /// 检查是否为管理员
     #[allow(dead_code)]
+    #[inline]
     pub fn is_admin(&self) -> bool {
         matches!(self, UserRole::Admin)
     }
 
     /// 检查是否有编辑权限
     #[allow(dead_code)]
+    #[inline]
     pub fn can_edit(&self) -> bool {
         matches!(self, UserRole::Admin | UserRole::Editor)
     }
@@ -263,6 +269,7 @@ impl UserStatus {
 
     /// 检查是否活跃
     #[allow(dead_code)]
+    #[inline]
     pub fn is_active(&self) -> bool {
         matches!(self, UserStatus::Active)
     }
@@ -286,9 +293,17 @@ impl rusqlite::types::FromSql for UserStatus {
 /// 文章模型
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Passage {
+    // 热点字段：经常访问的，放在前面以提高缓存友好性
     pub id: Option<i64>,
-    pub uuid: Option<String>,  // Flake UUID
     pub title: String,
+    pub status: PassageStatus,
+    pub visibility: PassageVisibility,
+    pub is_scheduled: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+
+    // 冷字段：较少访问的，放在后面
+    pub uuid: Option<String>,  // Flake UUID
     pub content: String,
     pub original_content: Option<String>,
     pub summary: Option<String>,
@@ -296,14 +311,9 @@ pub struct Passage {
     pub author: String,
     pub tags: String,  // JSON 数组字符串
     pub category: String,
-    pub status: PassageStatus,
     pub file_path: Option<String>,
-    pub visibility: PassageVisibility,
-    pub is_scheduled: bool,
     pub published_at: Option<DateTime<Utc>>,
     pub cover_image: Option<String>,  // 封面图片路径
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 impl Passage {
@@ -406,14 +416,17 @@ pub struct Comment {
 /// 设置模型
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Setting {
+    // 热点字段：经常访问的，放在前面以提高缓存友好性
     pub id: Option<i64>,
     pub key: String,
     pub value: String,
+    pub category: String,
+    pub updated_at: DateTime<Utc>,
+
+    // 冷字段：较少访问的，放在后面
     pub r#type: String,
     pub description: Option<String>,
-    pub category: String,
     pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 /// 关于页面主卡片模型

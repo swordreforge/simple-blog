@@ -51,10 +51,10 @@ pub struct UserDTO {
 /// 用户登录
 pub async fn login(
     _rate_limit: crate::middleware::ratelimit::RateLimitCheck,
-    req: web::Json<LoginRequest>,
+    mut req: web::Json<LoginRequest>,
     state: web::Data<crate::app_state::AppState>,
 ) -> impl Responder {
-    let username = &req.username;
+    let username = std::mem::take(&mut req.username);
 
     // 获取密码（支持明文和加密两种方式）
     let password = if !req.encrypted_password.is_empty() && !req.session_id.is_empty() && !req.client_public_key.is_empty() {
@@ -72,11 +72,11 @@ pub async fn login(
         }
     } else if !req.password.is_empty() {
         // 使用明文密码（不推荐，仅作为降级方案）
-        req.password.clone()
+        std::mem::take(&mut req.password)
     } else {
         return HttpResponse::BadRequest().json(AuthResponse {
             success: false,
-            message: "密码不能为空".to_string(),
+            message: String::from("密码不能为空"),
             token: None,
             user: None,
         });
@@ -84,12 +84,12 @@ pub async fn login(
 
     // 从数据库获取用户 - 使用依赖注入
     let user_repo = state.user_repository();
-    let user = match user_repo.get_by_username(username).await {
+    let user = match user_repo.get_by_username(&username).await {
         Ok(u) => u,
         Err(_e) => {
             return HttpResponse::Unauthorized().json(AuthResponse {
                 success: false,
-                message: "用户名或密码错误".to_string(),
+                message: String::from("用户名或密码错误"),
                 token: None,
                 user: None,
             });
@@ -125,7 +125,7 @@ pub async fn login(
 
             response.json(AuthResponse {
                 success: true,
-                message: "登录成功".to_string(),
+                message: String::from("登录成功"),
                 token: Some(token),
                 user: Some(UserDTO {
                     id: user_id,
@@ -139,7 +139,7 @@ pub async fn login(
         Ok(false) => {
             HttpResponse::Unauthorized().json(AuthResponse {
                 success: false,
-                message: "用户名或密码错误".to_string(),
+                message: String::from("用户名或密码错误"),
                 token: None,
                 user: None,
             })
@@ -158,14 +158,14 @@ pub async fn login(
 /// 用户注册
 pub async fn register(
     _rate_limit: crate::middleware::ratelimit::RateLimitCheck,
-    req: web::Json<RegisterRequest>,
+    mut req: web::Json<RegisterRequest>,
     state: web::Data<crate::app_state::AppState>,
 ) -> impl Responder {
     use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
 
-    let username = &req.username;
-    let email = &req.email;
-    let role = if let Some(r) = req.role.clone() { r } else { "user".to_string() };
+    let username = std::mem::take(&mut req.username);
+    let email = std::mem::take(&mut req.email);
+    let role = if let Some(r) = req.role.take() { r } else { String::from("user") };
 
     // 获取密码（支持明文和加密两种方式）
     let password = if !req.encrypted_password.is_empty() && !req.session_id.is_empty() && !req.client_public_key.is_empty() {
@@ -183,11 +183,11 @@ pub async fn register(
         }
     } else if !req.password.is_empty() {
         // 使用明文密码（不推荐，仅作为降级方案）
-        req.password.clone()
+        std::mem::take(&mut req.password)
     } else {
         return HttpResponse::BadRequest().json(AuthResponse {
             success: false,
-            message: "密码不能为空".to_string(),
+            message: String::from("密码不能为空"),
             token: None,
             user: None,
         });
@@ -195,11 +195,11 @@ pub async fn register(
 
     // 检查用户名是否已存在 - 使用依赖注入
     let user_repo = state.user_repository();
-    match user_repo.get_by_username(username).await {
+    match user_repo.get_by_username(&username).await {
         Ok(_) => {
             return HttpResponse::BadRequest().json(AuthResponse {
                 success: false,
-                message: "用户名已存在".to_string(),
+                message: String::from("用户名已存在"),
                 token: None,
                 user: None,
             });
@@ -227,48 +227,90 @@ pub async fn register(
     };
 
     // 创建用户
-    let user_role = match role.as_str() {
-        "admin" => crate::db::models::UserRole::Admin,
-        "editor" => crate::db::models::UserRole::Editor,
-        _ => crate::db::models::UserRole::Subscriber,
-    };
 
-    let new_user = crate::db::models::User {
-        id: None,
-        username: username.clone(),
-        email: email.clone(),
-        password: hashed_password,
-        role: user_role,
-        status: crate::db::models::UserStatus::Active,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
-    };
+        let user_role = match role.as_str() {
 
-    match user_repo.create(&new_user).await {
-        Ok(_) => {
-            // 获取创建的用户
-            let user = user_repo.get_by_username(username).await;
-            match user {
-                Ok(u) => {
-                    // 生成 JWT token
-                    let user_id = u.id.unwrap_or(0);
-                    let token = match generate_token(user_id, &u.username, u.role) {
-                        Ok(t) => t,
-                        Err(e) => {
-                            return HttpResponse::InternalServerError().json(AuthResponse {
-                                success: false,
-                                message: format!("生成 token 失败: {}", e),
-                                token: None,
-                                user: None,
-                            });
-                        }
-                    };
+            "admin" => crate::db::models::UserRole::Admin,
 
-                    // 设置 cookie
-                    let mut response = HttpResponse::Ok();
-                    response.cookie(
-                        actix_web::cookie::Cookie::build("auth_token", token.clone())
-                            .path("/")
+            "editor" => crate::db::models::UserRole::Editor,
+
+            _ => crate::db::models::UserRole::Subscriber,
+
+        };
+
+    
+
+        let new_user = crate::db::models::User {
+
+            id: None,
+
+            username: String::from(&username),
+
+            email: String::from(&email),
+
+            password: hashed_password,
+
+            role: user_role,
+
+            status: crate::db::models::UserStatus::Active,
+
+            created_at: chrono::Utc::now(),
+
+            updated_at: chrono::Utc::now(),
+
+        };
+
+    
+
+        match user_repo.create(&new_user).await {
+
+            Ok(_) => {
+
+                // 获取创建的用户
+
+                let user = user_repo.get_by_username(&username).await;
+
+                match user {
+
+                    Ok(u) => {
+
+                        // 生成 JWT token
+
+                        let user_id = u.id.unwrap_or(0);
+
+                        let token = match generate_token(user_id, &u.username, u.role) {
+
+                            Ok(t) => t,
+
+                            Err(e) => {
+
+                                return HttpResponse::InternalServerError().json(AuthResponse {
+
+                                    success: false,
+
+                                    message: format!("生成 token 失败: {}", e),
+
+                                    token: None,
+
+                                    user: None,
+
+                                });
+
+                            }
+
+                        };
+
+    
+
+                        // 设置 cookie
+
+                        let mut response = HttpResponse::Ok();
+
+                        response.cookie(
+
+                            actix_web::cookie::Cookie::build("auth_token", token.clone())
+
+                                .path("/")
                             .http_only(true)
                             .max_age(actix_web::cookie::time::Duration::hours(24))
                             .finish()
@@ -276,7 +318,7 @@ pub async fn register(
 
                     response.json(AuthResponse {
                         success: true,
-                        message: "注册成功".to_string(),
+                        message: String::from("注册成功"),
                         token: Some(token),
                         user: Some(UserDTO {
                             id: user_id,
@@ -290,7 +332,7 @@ pub async fn register(
                 Err(_e) => {
                     HttpResponse::Ok().json(AuthResponse {
                         success: true,
-                        message: "注册成功，但无法获取用户信息".to_string(),
+                        message: String::from("注册成功，但无法获取用户信息"),
                         token: Some(format!("token_{}", username)),
                         user: None,
                     })

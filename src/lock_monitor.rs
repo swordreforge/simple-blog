@@ -169,7 +169,7 @@ impl Drop for LockWaitGuard {
 /// 全局锁监控器管理
 #[allow(dead_code)]
 pub struct GlobalLockMonitor {
-    monitors: std::sync::RwLock<Vec<LockMonitor>>,
+    monitors: parking_lot::RwLock<Vec<LockMonitor>>,
 }
 
 #[allow(dead_code)]
@@ -177,34 +177,23 @@ impl GlobalLockMonitor {
     /// 创建新的全局监控器
     pub fn new() -> Self {
         Self {
-            monitors: std::sync::RwLock::new(Vec::new()),
+            monitors: parking_lot::RwLock::new(Vec::new()),
         }
     }
 
     /// 注册新的锁监控器
     pub fn register(&self, name: String) -> LockMonitor {
         let monitor = LockMonitor::new(name);
-        // 使用 unwrap_or_else 处理锁中毒情况
-        let mut monitors = self.monitors.write().unwrap_or_else(|_| {
-            // 如果锁中毒，创建一个新的 monitors 容器
-            eprintln!("警告：锁监控器写入锁中毒，创建新容器");
-            // 注意：这里返回的引用可能不是原始的，但可以防止崩溃
-            panic!("锁监控器写入锁中毒，无法恢复")
-        });
+        // parking_lot::RwLock 不会锁中毒，直接获取写锁
+        let mut monitors = self.monitors.write();
         monitors.push(monitor.clone());
         monitor
     }
 
     /// 打印所有锁的统计信息
     pub fn print_all_stats(&self) {
-        // 简化错误处理，如果锁中毒则直接返回
-        let monitors = match self.monitors.read() {
-            Ok(m) => m,
-            Err(_) => {
-                eprintln!("警告：锁监控器读取锁中毒，无法打印统计信息");
-                return;
-            }
-        };
+        // parking_lot::RwLock 不会锁中毒，直接获取读锁
+        let monitors = self.monitors.read();
         println!("\n==========================================");
         println!("📊 全局锁监控报告");
         println!("==========================================\n");
@@ -217,14 +206,8 @@ impl GlobalLockMonitor {
 
     /// 检查是否有锁出现严重问题
     pub fn check_health(&self) -> bool {
-        // 简化错误处理，如果锁中毒则返回 true（假设健康）
-        let monitors = match self.monitors.read() {
-            Ok(m) => m,
-            Err(_) => {
-                eprintln!("警告：锁监控器读取锁中毒，无法检查健康状态");
-                return true;
-            }
-        };
+        // parking_lot::RwLock 不会锁中毒，直接获取读锁
+        let monitors = self.monitors.read();
         let mut healthy = true;
 
         for monitor in monitors.iter() {

@@ -722,23 +722,24 @@ impl CacheManager {
             return Ok(Some(value));
         }
 
-        // 2. 使用异步互斥锁防止缓存击穿
+        // 2. 使用 DashMap 防止缓存击穿（比 Mutex<HashMap 性能更好）
         // 注意：这里简化实现，生产环境应该使用分布式锁（如 Valkey SETNX）
         use tokio::sync::Mutex;
         use std::sync::Arc;
 
         // 为每个键创建一个锁
         lazy_static::lazy_static! {
-            static ref CACHE_LOCKS: Mutex<std::collections::HashMap<String, Arc<Mutex<()>>>> =
-                Mutex::new(std::collections::HashMap::new());
+            static ref CACHE_LOCKS: DashMap<String, Arc<Mutex<()>>> =
+                DashMap::new();
         }
 
         let lock = {
-            let mut locks = CACHE_LOCKS.lock().await;
-            if !locks.contains_key(key) {
-                locks.insert(key.to_string(), Arc::new(Mutex::new(())));
-            }
-            Arc::clone(locks.get(key).unwrap())
+            // DashMap 的 entry API 会自动处理并发插入
+            CACHE_LOCKS
+                .entry(key.to_string())
+                .or_insert_with(|| Arc::new(Mutex::new(())))
+                .value()
+                .clone()
         };
 
         // 3. 获取锁
