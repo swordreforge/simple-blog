@@ -15,6 +15,7 @@ md-5 = { version = "0.10", default-features = false, features = ["std"] }
 tokio = { version = "1.49", default-features = false, features = ["rt-multi-thread", "net", "io-util", "fs", "sync", "macros"] }
 tera = { version = "1.20", default-features = false, features = ["builtins"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+chrono-tz = { version = "0.10", default-features = false, features = ["serde"] }
 futures-util = { version = "0.3", default-features = false, features = ["async-await-macro"] }
 
 # SQLite 数据库

@@ -5821,7 +5821,12 @@ async function loadArticleComments(articleId, commentsList, loadingState, emptyS
   if (emptyState) emptyState.style.display = 'none';
 
   try {
-    const response = await fetch(`/api/comments?passage_uuid=${articleId}`);
+    const timezone = getUserTimezone();
+    const response = await fetch(`/api/comments?passage_uuid=${articleId}`, {
+      headers: {
+        'X-Timezone': timezone
+      }
+    });
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -5897,10 +5902,12 @@ async function submitArticleComment(articleId, usernameInput, contentTextarea, c
   }
 
   try {
+    const timezone = getUserTimezone();
     const response = await fetch('/api/comments', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Timezone': timezone
       },
       body: JSON.stringify({
         passage_uuid: articleId,
@@ -7211,6 +7218,16 @@ function initComments() {
   }
 }
 
+// 获取用户时区
+function getUserTimezone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch (e) {
+    console.warn('无法获取用户时区，使用默认时区', e);
+    return 'UTC';
+  }
+}
+
 // 加载评论
 async function loadComments() {
   const commentsList = document.getElementById('commentsList');
@@ -7224,7 +7241,13 @@ async function loadComments() {
   if (emptyComments) emptyComments.style.display = 'none';
 
   try {
-    const response = await fetch(`/api/comments?passage_uuid=${currentPassageUUID}`);
+    // 获取用户时区并发送请求
+    const timezone = getUserTimezone();
+    const response = await fetch(`/api/comments?passage_uuid=${currentPassageUUID}`, {
+      headers: {
+        'X-Timezone': timezone
+      }
+    });
     const result = await response.json();
 
     if (result.success && result.data) {
@@ -7381,10 +7404,12 @@ async function submitComment() {
   if (submitBtn) submitBtn.disabled = true;
 
   try {
+    const timezone = getUserTimezone();
     const response = await fetch('/api/comments', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Timezone': timezone
       },
       body: JSON.stringify({
         username: username,

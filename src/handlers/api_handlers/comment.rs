@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
-use chrono::Local;
+use chrono_tz::Tz;
 
 /// 将 Markdown 转换为 HTML
 fn convert_markdown_to_html(markdown: &str) -> String {
@@ -55,8 +55,17 @@ pub struct CommonResponse {
 pub async fn list(
     query: web::Query<CommentListQuery>,
     state: web::Data<crate::app_state::AppState>,
+    req: HttpRequest,
 ) -> HttpResponse {
     let comment_repo = state.comment_repository();
+    
+    // 从请求头获取时区，默认使用 UTC
+    let user_timezone: Tz = req
+        .headers()
+        .get("X-Timezone")
+        .and_then(|header| header.to_str().ok())
+        .and_then(|tz_str| tz_str.parse::<Tz>().ok())
+        .unwrap_or(Tz::UTC);
     
     // 验证并设置默认值
     let page = query.page.filter(|&p| p > 0).unwrap_or(1);
@@ -77,12 +86,15 @@ pub async fn list(
     
     match (comments, total) {
         (Ok(comments), Ok(total)) => {
-            let data: Vec<CommentResponse> = comments.into_iter().map(|c| CommentResponse {
-                id: c.id.unwrap_or(0),
-                username: c.username,
-                content: c.content,
-                passage_uuid: c.passage_uuid,
-                created_at: c.created_at.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string(),
+            let data: Vec<CommentResponse> = comments.into_iter().map(|c| {
+                let local_time = c.created_at.with_timezone(&user_timezone);
+                CommentResponse {
+                    id: c.id.unwrap_or(0),
+                    username: c.username,
+                    content: c.content,
+                    passage_uuid: c.passage_uuid,
+                    created_at: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                }
             }).collect();
             
             HttpResponse::Ok().json(serde_json::json!({
@@ -106,6 +118,7 @@ pub async fn list(
 pub async fn create(
     req: web::Json<CreateCommentRequest>,
     state: web::Data<crate::app_state::AppState>,
+    http_req: HttpRequest,
 ) -> HttpResponse {
     // 验证必填字段
     if req.username.is_empty() || req.content.is_empty() || req.passage_uuid.is_empty() {
@@ -128,18 +141,29 @@ pub async fn create(
         created_at: chrono::Utc::now(),
     };
 
+    // 从请求头获取时区，默认使用 UTC
+    let user_timezone: Tz = http_req
+        .headers()
+        .get("X-Timezone")
+        .and_then(|header| header.to_str().ok())
+        .and_then(|tz_str| tz_str.parse::<Tz>().ok())
+        .unwrap_or(Tz::UTC);
+
     match comment_repo.create(&comment).await {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-            "success": true,
-            "message": "评论创建成功",
-            "data": CommentResponse {
-                id: comment.id.unwrap_or(0),
-                username: comment.username,
-                content: comment.content,
-                passage_uuid: comment.passage_uuid,
-                created_at: comment.created_at.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string(),
-            }
-        })),
+        Ok(_) => {
+            let local_time = comment.created_at.with_timezone(&user_timezone);
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": "评论创建成功",
+                "data": CommentResponse {
+                    id: comment.id.unwrap_or(0),
+                    username: comment.username,
+                    content: comment.content,
+                    passage_uuid: comment.passage_uuid,
+                    created_at: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                }
+            }))
+        },
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "创建评论失败".to_string(),

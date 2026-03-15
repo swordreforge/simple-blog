@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::fs;
 use std::path::Path;
 use chrono::Utc;
+use chrono_tz::Tz;
 
 /// 保存文章请求
 #[derive(Debug, Deserialize)]
@@ -232,16 +233,29 @@ pub async fn save(
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
     
     match passage_repo.create(&passage).await {
-        Ok(_) => HttpResponse::Ok().json(SaveArticleResponse {
-            success: true,
-            message: String::from("文章保存成功"),
-            data: Some(ArticleData {
-                id: passage.id.unwrap_or(0),
-                title: passage.title,
-                file_path,
-                created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-            }),
-        }),
+        Ok(_) => {
+            // 从请求头获取时区，默认使用 UTC
+            let user_timezone: Tz = http_req
+                .headers()
+                .get("X-Timezone")
+                .and_then(|header| header.to_str().ok())
+                .and_then(|tz_str| tz_str.parse::<Tz>().ok())
+                .unwrap_or(Tz::UTC);
+
+            // 转换为用户本地时区
+            let local_time = passage.created_at.with_timezone(&user_timezone);
+
+            HttpResponse::Ok().json(SaveArticleResponse {
+                success: true,
+                message: String::from("文章保存成功"),
+                data: Some(ArticleData {
+                    id: passage.id.unwrap_or(0),
+                    title: passage.title,
+                    file_path,
+                    created_at: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                }),
+            })
+        },
         Err(e) => HttpResponse::Ok().json(SaveArticleResponse {
             success: false,
             message: format!("保存到数据库失败: {}", e),

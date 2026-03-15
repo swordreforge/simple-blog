@@ -4,6 +4,7 @@ use crate::db::models::Passage;
 use crate::view_batch::{ViewRecord, is_local_ip};
 use crate::utils::format_datetime_optimized;
 use chrono::Utc;
+use chrono_tz::Tz;
 
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
 use super::validation::{ensure_tags_exist, ensure_category_exist};
@@ -663,6 +664,17 @@ pub async fn create(
                     let status = created_passage.status;
                     let title = created_passage.title.clone();
 
+                    // 从请求头获取时区，默认使用 UTC
+                    let user_timezone: Tz = req
+                        .headers()
+                        .get("X-Timezone")
+                        .and_then(|header| header.to_str().ok())
+                        .and_then(|tz_str| tz_str.parse::<Tz>().ok())
+                        .unwrap_or(Tz::UTC);
+
+                    // 转换为用户本地时区
+                    let created_at_local = created_passage.created_at.with_timezone(&user_timezone);
+
                     // 清除缓存
                     if status.is_published() {
                         crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
@@ -683,7 +695,8 @@ pub async fn create(
                         "message": "文章创建成功",
                         "data": {
                             "id": id,
-                            "uuid": uuid
+                            "uuid": uuid,
+                            "created_at": created_at_local.format("%Y-%m-%d %H:%M:%S").to_string()
                         }
                     }))
                 }
