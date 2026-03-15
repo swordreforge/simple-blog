@@ -3,7 +3,6 @@
 //! 用于优化缓存管理器的滑动窗口，减少内存分配和提高性能
 
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 use std::time::Instant;
 
 /// 环形缓冲区条目
@@ -58,7 +57,7 @@ impl<T: Clone> RingBuffer<T> {
         let old_data = unsafe {
             let mut data_guard = self.data.lock();
             let slot = data_guard.get_unchecked_mut(index as usize);
-            std::mem::replace(slot, Some(entry))
+            slot.replace(entry)
         };
 
         old_data
@@ -71,6 +70,7 @@ impl<T: Clone> RingBuffer<T> {
     ///
     /// # 返回
     /// 数据的克隆（如果存在）
+    #[allow(dead_code)]
     pub fn get(&self, index: usize) -> Option<T> {
         if index >= self.capacity {
             return None;
@@ -100,16 +100,19 @@ impl<T: Clone> RingBuffer<T> {
     }
 
     /// 获取缓冲区容量
+    #[allow(dead_code)]
     pub fn capacity(&self) -> usize {
         self.capacity
     }
 
     /// 获取当前写入位置
+    #[allow(dead_code)]
     pub fn write_index(&self) -> u64 {
         self.write_index.load(Ordering::Relaxed)
     }
 
     /// 清空缓冲区
+    #[allow(dead_code)]
     pub fn clear(&self) {
         let mut data_guard = self.data.lock();
         for slot in data_guard.iter_mut() {
@@ -178,7 +181,7 @@ impl OperationHistoryBuffer {
     /// # 返回
     /// 是否应该降级
     pub fn should_degrade(&self, threshold: f32, min_sample_size: usize) -> bool {
-        let (total, failures, rate) = self.calculate_failure_rate();
+        let (total, _failures, rate) = self.calculate_failure_rate();
 
         if total < min_sample_size {
             return false;
@@ -191,6 +194,7 @@ impl OperationHistoryBuffer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
     use std::thread;
     use std::time::Duration;
 
@@ -275,6 +279,11 @@ mod tests {
         }
 
         assert!(buffer.should_degrade(50.0, 5));
+
+        // 验证失败率计算
+        let (total, _failures, rate) = buffer.calculate_failure_rate();
+        assert_eq!(total, 10);
+        assert_eq!(rate, 100.0);
     }
 
     #[test]

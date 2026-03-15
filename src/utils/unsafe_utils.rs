@@ -8,6 +8,7 @@ use std::borrow::Cow;
 
 /// 预分配的日期时间格式化缓冲区大小
 /// 格式: "YYYY-MM-DD HH:MM:SS" = 19 字节
+#[allow(dead_code)]
 const DATETIME_BUFFER_SIZE: usize = 19;
 
 /// 优化的日期时间格式化函数
@@ -23,6 +24,7 @@ const DATETIME_BUFFER_SIZE: usize = 19;
 /// # 安全性
 /// 此函数不使用unsafe，但提供高性能的字符串格式化
 #[inline]
+#[allow(dead_code)]
 pub fn format_datetime_optimized(dt: &DateTime<Utc>) -> String {
     let mut buffer = String::with_capacity(DATETIME_BUFFER_SIZE);
     buffer.push_str(&dt.format("%Y-%m-%d %H:%M:%S").to_string());
@@ -41,6 +43,7 @@ pub fn format_datetime_optimized(dt: &DateTime<Utc>) -> String {
 /// # 返回
 /// Cow<'_, str> - 如果有缓存则返回引用，否则返回拥有的字符串
 #[inline]
+#[allow(dead_code)]
 pub fn format_datetime_cow<'a>(
     dt: &DateTime<Utc>,
     cached: Option<&'a str>,
@@ -61,6 +64,7 @@ pub fn format_datetime_cow<'a>(
 ///
 /// # 返回
 /// 格式化后的字符串向量
+#[allow(dead_code)]
 pub fn format_datetime_batch(dates: &[DateTime<Utc>]) -> Vec<String> {
     dates.iter().map(format_datetime_optimized).collect()
 }
@@ -79,6 +83,7 @@ pub fn format_datetime_batch(dates: &[DateTime<Utc>]) -> Vec<String> {
 /// # 安全性
 /// - 假设输入是有效的UTF-8
 /// - 转义特殊字符：", \\, /, \b, \f, \n, \r, \t
+#[allow(dead_code)]
 pub fn escape_json_string_fast(s: &str) -> String {
     // 首先检查是否需要转义
     let needs_escape = s.bytes().any(|b| {
@@ -127,6 +132,7 @@ pub fn escape_json_string_fast(s: &str) -> String {
 /// # 安全性
 /// - 使用get_unchecked访问字节，但确保索引有效
 #[inline]
+#[allow(dead_code)]
 pub fn eq_simd(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
         return false;
@@ -189,6 +195,7 @@ pub fn eq_simd(a: &str, b: &str) -> bool {
 /// # 返回
 /// 是否找到
 #[inline]
+#[allow(dead_code)]
 pub fn contains_optimized<T: PartialEq>(item: &T, list: &[T]) -> bool {
     // 对于小列表，线性搜索可能更快
     if list.len() <= 8 {

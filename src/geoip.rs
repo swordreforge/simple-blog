@@ -185,11 +185,13 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
 }
 
 /// 清空 GeoIP 缓存
+#[allow(dead_code)]
 pub fn clear_geoip_cache() {
     GEOIP_CACHE.clear();
 }
 
 /// 获取 GeoIP 缓存统计信息
+#[allow(dead_code)]
 pub fn get_geoip_cache_stats() -> usize {
     GEOIP_CACHE.len()
 }
