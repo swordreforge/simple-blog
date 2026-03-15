@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse, HttpRequest, HttpMessage};
 use serde::{Deserialize, Serialize};
 use crate::db::models::Passage;
 use crate::view_batch::{ViewRecord, is_local_ip};
+use crate::utils::format_datetime_optimized;
 use chrono::Utc;
 
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
@@ -200,10 +201,10 @@ pub async fn list(
                         file_path: p.file_path,
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
-                        published_at: p.published_at.map(|d: chrono::DateTime<chrono::Utc>| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                        published_at: p.published_at.map(|d: chrono::DateTime<chrono::Utc>| format_datetime_optimized(&d)),
                         cover_image: p.cover_image,
-                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        created_at: format_datetime_optimized(&p.created_at),
+                        updated_at: format_datetime_optimized(&p.updated_at),
                     })
                     .collect();
 
@@ -300,10 +301,10 @@ pub async fn list(
                         file_path: p.file_path,
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
-                        published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                        published_at: p.published_at.map(|d| format_datetime_optimized(&d)),
                         cover_image: p.cover_image,
-                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        created_at: format_datetime_optimized(&p.created_at),
+                        updated_at: format_datetime_optimized(&p.updated_at),
                     })
                     .collect();
 
@@ -426,7 +427,7 @@ pub async fn get(
                     "success": false,
                     "message": "文章尚未发布",
                     "is_scheduled": true,
-                    "published_at": published_at.format("%Y-%m-%d %H:%M:%S").to_string()
+                    "published_at": format_datetime_optimized(&published_at)
                 }));
             }
         }
@@ -499,10 +500,10 @@ pub async fn get(
         file_path: passage.file_path,
         visibility: passage.visibility,
         is_scheduled: passage.is_scheduled,
-        published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+        published_at: passage.published_at.map(|d| format_datetime_optimized(&d)),
         cover_image: passage.cover_image,
-        created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-        updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+        created_at: format_datetime_optimized(&passage.created_at),
+        updated_at: format_datetime_optimized(&passage.updated_at),
     };
 
     // 生成 ETag
@@ -1166,9 +1167,9 @@ pub async fn get_latest(
                     "tags": passage.tags,
                     "category": passage.category,
                     "cover_image": passage.cover_image,
-                    "published_at": passage.published_at.map(|d: chrono::DateTime<chrono::Utc>| d.format("%Y-%m-%d %H:%M:%S").to_string()),
-                    "created_at": passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                    "updated_at": passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    "published_at": passage.published_at.map(|d: chrono::DateTime<chrono::Utc>| format_datetime_optimized(&d)),
+                    "created_at": format_datetime_optimized(&passage.created_at),
+                    "updated_at": format_datetime_optimized(&passage.updated_at),
                 }
             });
 

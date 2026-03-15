@@ -1,4 +1,5 @@
 use actix_web::{web, HttpResponse, HttpRequest};
+use crate::utils::format_datetime_optimized;
 
 use super::crud::{PassageResponse, UpdatePassageRequest};
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
@@ -350,10 +351,10 @@ pub async fn get_by_query(
                     file_path: passage.file_path,
                     visibility: passage.visibility,
                     is_scheduled: passage.is_scheduled,
-                    published_at: passage.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    published_at: passage.published_at.map(|d| format_datetime_optimized(&d)),
                     cover_image: passage.cover_image,
-                    created_at: passage.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                    updated_at: passage.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    created_at: format_datetime_optimized(&passage.created_at),
+                    updated_at: format_datetime_optimized(&passage.updated_at),
                 };
 
                 HttpResponse::Ok().json(serde_json::json!({
@@ -400,10 +401,10 @@ pub async fn get_by_query(
                         file_path: p.file_path,
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
-                        published_at: p.published_at.map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                        published_at: p.published_at.map(|d| format_datetime_optimized(&d)),
                         cover_image: p.cover_image,
-                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        created_at: format_datetime_optimized(&p.created_at),
+                        updated_at: format_datetime_optimized(&p.updated_at),
                     })
                     .collect();
 

@@ -1,6 +1,7 @@
 use actix_web::{web, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 use crate::db::models::User;
+use crate::utils::format_datetime_optimized;
 use chrono::Utc;
 
 /// 用户信息响应
@@ -117,8 +118,8 @@ pub async fn admin_list(
                     email: u.email,
                     role: u.role,
                     status: u.status,
-                    created_at: u.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                    updated_at: u.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    created_at: format_datetime_optimized(&u.created_at),
+                    updated_at: format_datetime_optimized(&u.updated_at),
                 })
                 .collect();
             
@@ -165,8 +166,8 @@ pub async fn get(
                 email: user.email,
                 role: user.role,
                 status: user.status,
-                created_at: user.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                updated_at: user.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                created_at: format_datetime_optimized(&user.created_at),
+                updated_at: format_datetime_optimized(&user.updated_at),
             };
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,

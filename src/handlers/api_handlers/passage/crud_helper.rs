@@ -3,6 +3,7 @@
 
 use crate::db::repositories::PassageRepository;
 use crate::cache::CacheError;
+use crate::utils::format_datetime_optimized;
 
 /// 从数据库获取文章列表（用于缓存加载函数）
 #[allow(clippy::too_many_arguments)]
@@ -40,10 +41,10 @@ pub async fn fetch_passage_list_from_db(
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
                         published_at: p.published_at
-                            .map(|d: chrono::DateTime<chrono::Utc>| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                            .map(|d: chrono::DateTime<chrono::Utc>| format_datetime_optimized(&d)),
                         cover_image: p.cover_image,
-                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        created_at: format_datetime_optimized(&p.created_at),
+                        updated_at: format_datetime_optimized(&p.updated_at),
                     })
                     .collect();
 
@@ -127,10 +128,10 @@ pub async fn fetch_passage_list_from_db(
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
                         published_at: p.published_at
-                            .map(|d| d.format("%Y-%m-%d %H:%M:%S").to_string()),
+                            .map(|d| format_datetime_optimized(&d)),
                         cover_image: p.cover_image,
-                        created_at: p.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                        updated_at: p.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        created_at: format_datetime_optimized(&p.created_at),
+                        updated_at: format_datetime_optimized(&p.updated_at),
                     })
                     .collect();
 

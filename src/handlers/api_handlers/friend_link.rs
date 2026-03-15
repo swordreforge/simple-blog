@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
+use crate::utils::format_datetime_optimized;
 
 /// 友链列表请求参数
 #[derive(Debug, Deserialize)]
@@ -73,8 +74,8 @@ pub async fn list(
                 motto: l.motto,
                 sort_order: l.sort_order,
                 is_enabled: l.is_enabled,
-                created_at: l.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                updated_at: l.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                created_at: format_datetime_optimized(&l.created_at),
+                updated_at: format_datetime_optimized(&l.updated_at),
             }).collect();
 
             HttpResponse::Ok().json(serde_json::json!({
@@ -108,8 +109,8 @@ pub async fn get(
                 motto: link.motto,
                 sort_order: link.sort_order,
                 is_enabled: link.is_enabled,
-                created_at: link.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                updated_at: link.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                created_at: format_datetime_optimized(&link.created_at),
+                updated_at: format_datetime_optimized(&link.updated_at),
             }
         })),
         Ok(None) => HttpResponse::NotFound().json(CommonResponse {
