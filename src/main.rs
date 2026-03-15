@@ -21,6 +21,7 @@ mod error;
 mod logging;
 mod services;
 mod app_state;
+mod utils;
 
 use actix_web::{App, HttpServer, middleware as actix_middleware, web, http::KeepAlive};
 use clap::Parser;

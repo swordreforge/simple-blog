@@ -2826,6 +2826,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "simd-json",
+ "smallvec",
  "spki",
  "tera",
  "thiserror 2.0.18",

@@ -2,6 +2,7 @@ use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{params, OptionalExtension};
 use std::sync::Arc;
+use smallvec::SmallVec;
 
 use super::models::*;
 
@@ -480,7 +481,8 @@ impl PassageRepository {
 
         // 构建 WHERE 条件
         let mut conditions = vec!["status = 'published'".to_string()];
-        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        // 使用SmallVec优化小数组，减少堆分配（最多6个参数：year, month, day, limit, offset）
+        let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 6]> = SmallVec::new();
 
         if let Some(y) = year {
             conditions.push("strftime('%Y', created_at) = ?".to_string());
@@ -545,7 +547,8 @@ impl PassageRepository {
 
         // 构建 WHERE 条件
         let mut conditions = vec!["status = 'published'".to_string()];
-        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        // 使用SmallVec优化小数组，减少堆分配（最多3个参数：year, month, day）
+        let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 3]> = SmallVec::new();
 
         if let Some(y) = year {
             conditions.push("strftime('%Y', created_at) = ?".to_string());

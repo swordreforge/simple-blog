@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use dashmap::DashMap;
+use crate::utils::OperationHistoryBuffer;
 
 /// 降级配置
 #[derive(Debug, Clone)]
@@ -46,8 +47,8 @@ pub struct CacheManager {
     degradation_config: DegradationConfig,
     primary_healthy: Arc<AtomicBool>,
     consecutive_failures: Arc<AtomicUsize>,
-    // 滑动窗口：使用 DashMap 记录操作时间戳和是否失败（无锁）
-    operation_history: DashMap<u64, (Instant, bool)>,
+    // 滑动窗口：使用环形缓冲区优化性能
+    operation_history: Arc<OperationHistoryBuffer>,
     valkey_backend: Option<Arc<ValkeyCacheBackend>>,
     valkey_url: Option<String>,  // 保存 Valkey URL 用于重连
     health_check_task: Option<Arc<tokio::task::JoinHandle<()>>>,
@@ -72,7 +73,7 @@ impl Clone for CacheManager {
             degradation_config: self.degradation_config.clone(),
             primary_healthy: Arc::clone(&self.primary_healthy),
             consecutive_failures: Arc::clone(&self.consecutive_failures),
-            operation_history: DashMap::clone(&self.operation_history),
+            operation_history: Arc::clone(&self.operation_history),
             valkey_backend: self.valkey_backend.clone(),
             valkey_url: self.valkey_url.clone(),
             health_check_task: self.health_check_task.clone(),
@@ -172,7 +173,11 @@ impl CacheManager {
         let primary_healthy = Arc::new(AtomicBool::new(true));
         let consecutive_failures = Arc::new(AtomicUsize::new(0));
         let degradation_config = DegradationConfig::default();
-        let operation_history = DashMap::new();
+        // 使用环形缓冲区优化滑动窗口性能
+        let operation_history = Arc::new(OperationHistoryBuffer::new(
+            1000,  // 容量
+            degradation_config.sliding_window_seconds,  // 窗口时间
+        ));
         let last_sliding_window_check = Arc::new(AtomicUsize::new(0));
         let enable_cache_lock = true;
         let enable_null_cache = true;
@@ -526,76 +531,27 @@ impl CacheManager {
         true
     }
 
-    /// 检查滑动窗口内的失败率（使用 DashMap 无锁方式）
-    /// 优化：添加最大遍历限制，防止在大量并发请求时卡死
+    /// 检查滑动窗口内的失败率（使用环形缓冲区优化）
     fn check_sliding_window_failure_rate(&self) -> bool {
         if !self.degradation_config.enable_sliding_window {
             return false;
         }
 
-        const MAX_ITERATIONS: usize = 500; // 最大遍历记录数，防止卡死
         const MIN_SAMPLE_SIZE: usize = 10; // 最小样本数，太少不计算
-
-        let window_duration = Duration::from_secs(self.degradation_config.sliding_window_seconds);
-        let now = Instant::now();
         let threshold = self.degradation_config.sliding_window_failure_rate;
 
-        // DashMap 支持并发迭代，无需加锁
-        let mut total_operations = 0usize;
-        let mut failure_count = 0usize;
-        let mut keys_to_remove: Vec<u64> = Vec::new();
-
-        // 限制最大遍历次数，防止在大量并发请求时卡死
-        for (i, entry) in self.operation_history.iter().enumerate() {
-            if i >= MAX_ITERATIONS {
-                break; // 达到最大遍历限制，提前退出
-            }
-
-            let (key, (timestamp, failed)) = entry.pair();
-
-            // 移除窗口外的记录
-            if now.duration_since(*timestamp) > window_duration {
-                keys_to_remove.push(*key);
-                continue;
-            }
-
-            total_operations += 1;
-            if *failed {
-                failure_count += 1;
-            }
-        }
-
-        // 批量删除过期记录
-        for key in keys_to_remove {
-            self.operation_history.remove(&key);
-        }
-
-        // 样本太少不计算失败率
-        if total_operations < MIN_SAMPLE_SIZE {
-            return false;
-        }
-
-        let failure_rate = (failure_count as f32 / total_operations as f32) * 100.0;
-
-        failure_rate >= threshold
+        // 使用环形缓冲区计算失败率
+        self.operation_history.should_degrade(threshold, MIN_SAMPLE_SIZE)
     }
 
-    /// 记录操作结果到滑动窗口（使用 DashMap 无锁方式）
+    /// 记录操作结果到滑动窗口（使用环形缓冲区优化）
     fn record_operation(&self, failed: bool) {
         if !self.degradation_config.enable_sliding_window {
             return;
         }
 
-        // 使用循环计数器作为 key，避免溢出
-        // 当达到 MAX_HISTORY_SIZE 时，会循环使用旧 key
-        const MAX_HISTORY_SIZE: usize = 1000;
-        static OPERATION_COUNTER: AtomicUsize = AtomicUsize::new(0);
-        let key = (OPERATION_COUNTER.fetch_add(1, Ordering::Relaxed) % MAX_HISTORY_SIZE) as u64;
-
-        self.operation_history.insert(key, (Instant::now(), failed));
-
-        // 不需要额外清理，因为 key 会循环重用
-        // 滑动窗口清理在 check_sliding_window_failure_rate 中处理
+        // 使用环形缓冲区记录操作结果
+        self.operation_history.record(failed);
     }
 
     /// 后台健康检查循环
