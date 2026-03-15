@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
+use chrono::Local;
 
 /// 将 Markdown 转换为 HTML
 fn convert_markdown_to_html(markdown: &str) -> String {
@@ -81,7 +82,7 @@ pub async fn list(
                 username: c.username,
                 content: c.content,
                 passage_uuid: c.passage_uuid,
-                created_at: c.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                created_at: c.created_at.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string(),
             }).collect();
             
             HttpResponse::Ok().json(serde_json::json!({
@@ -136,7 +137,7 @@ pub async fn create(
                 username: comment.username,
                 content: comment.content,
                 passage_uuid: comment.passage_uuid,
-                created_at: comment.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                created_at: comment.created_at.with_timezone(&Local).format("%Y-%m-%d %H:%M:%S").to_string(),
             }
         })),
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
