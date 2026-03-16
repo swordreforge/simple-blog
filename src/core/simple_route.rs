@@ -1,4 +1,4 @@
-use super::RouteEntry;
+use super::{RouteEntry, SerializableRoute};
 use actix_web::{HttpRequest, HttpResponse};
 use std::future::Future;
 use std::pin::Pin;
@@ -81,6 +81,38 @@ impl RouteEntry for SimpleRoute {
         let body = self.body.clone();
         let content_type = self.content_type.clone();
         Box::pin(async move { HttpResponse::Ok().content_type(content_type).body(body) })
+    }
+
+    /// 将 SimpleRoute 序列化为 SerializableRoute
+    ///
+    /// # 返回
+    ///
+    /// 返回包含 SimpleRoute 数据的 SerializableRoute
+    fn to_serializable(&self) -> SerializableRoute {
+        SerializableRoute {
+            route_type: "SimpleRoute".to_string(),
+            body: self.body.clone(),
+            content_type: self.content_type.clone(),
+        }
+    }
+
+    /// 从 SerializableRoute 创建 SimpleRoute 实例
+    ///
+    /// # 参数
+    ///
+    /// * `data` - 序列化的路由数据
+    ///
+    /// # 返回
+    ///
+    /// 返回创建的 SimpleRoute 实例
+    fn from_serializable(data: SerializableRoute) -> Box<dyn RouteEntry>
+    where
+        Self: Sized,
+    {
+        Box::new(SimpleRoute {
+            body: data.body,
+            content_type: data.content_type,
+        })
     }
 }
 

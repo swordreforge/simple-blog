@@ -2,7 +2,8 @@
 //!
 //! 提供纯内存的键值存储功能，适用于测试和缓存场景。
 
-use crate::storage::traits::KeyValueStorage;
+use crate::core::route_entry::RouteEntry;
+use crate::storage::traits::{KeyValueStorage, RouteStorage};
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::error::Error;
@@ -151,9 +152,24 @@ impl KeyValueStorage for MemoryStorage {
     }
 }
 
-// MemoryStorage 目前只实现 KeyValueStorage，不实现 RouteStorage
-// 因为 RouteStorage 需要序列化和反序列化 RouteEntry trait 对象
-// 这需要更复杂的设计，将在后续阶段实现
+#[async_trait]
+impl RouteStorage for MemoryStorage {
+    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error>> {
+        // MemoryStorage 不支持持久化路由，返回空 HashMap
+        // 如果需要支持，可以添加额外的存储结构来保存序列化的路由
+        Ok(HashMap::new())
+    }
+
+    async fn save(
+        &self,
+        routes: &HashMap<String, Box<dyn RouteEntry>>,
+    ) -> Result<(), Box<dyn Error>> {
+        // MemoryStorage 不支持持久化路由，返回成功但不做任何操作
+        // 如果需要支持，可以将路由序列化后存储到内部结构中
+        let _ = routes;
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {

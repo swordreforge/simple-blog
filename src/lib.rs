@@ -50,7 +50,7 @@ pub mod actix;
 pub mod core;
 pub mod storage;
 
-pub use core::{RouteEntry, RouteTable, SimpleRoute};
+pub use core::{RouteEntry, RouteTable, SerializableRoute, SimpleRoute};
 pub use storage::{FileStorage, KeyValueStorage, MemoryStorage, RouteStorage};
 
 /// 库版本

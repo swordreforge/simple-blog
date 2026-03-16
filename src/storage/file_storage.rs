@@ -4,21 +4,14 @@
 
 use crate::core::route_entry::RouteEntry;
 use crate::core::simple_route::SimpleRoute;
+use crate::core::SerializableRoute;
 use crate::storage::traits::{KeyValueStorage, RouteStorage};
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
-/// 简单路由的序列化格式
-#[derive(Debug, Serialize, Deserialize)]
-struct SerializableRoute {
-    body: String,
-    content_type: String,
-}
 
 /// 基于文件的持久化存储
 ///
@@ -165,11 +158,14 @@ impl RouteStorage for FileStorage {
             let content = fs::read_to_string(&path).await?;
             let serializable: SerializableRoute = serde_json::from_str(&content)?;
 
-            // 转换为 RouteEntry
-            let route: Box<dyn RouteEntry> = Box::new(SimpleRoute {
-                body: serializable.body,
-                content_type: serializable.content_type,
-            });
+            // 根据路由类型创建对应的 RouteEntry
+            // 目前只支持 SimpleRoute，未来可以扩展支持更多类型
+            let route: Box<dyn RouteEntry> = match serializable.route_type.as_str() {
+                "SimpleRoute" => SimpleRoute::from_serializable(serializable),
+                _ => {
+                    return Err(format!("Unknown route type: {}", serializable.route_type).into());
+                }
+            };
 
             routes.insert(route_key.to_string(), route);
         }
@@ -179,18 +175,22 @@ impl RouteStorage for FileStorage {
 
     async fn save(
         &self,
-        _routes: &HashMap<String, Box<dyn RouteEntry>>,
+        routes: &HashMap<String, Box<dyn RouteEntry>>,
     ) -> Result<(), Box<dyn Error>> {
         self.ensure_base_dir().await?;
 
-        // 注意：这里有一个限制，我们只能序列化 SimpleRoute 类型的路由
-        // 对于其他类型的 RouteEntry，需要更复杂的设计（如类型注册表）
-        // 在这个阶段，我们假设所有路由都是 SimpleRoute
-        // 这是一个简化实现，在后续阶段会改进
+        // 使用新的序列化接口
+        for (path, route) in routes {
+            let serializable = route.to_serializable();
+            let json = serde_json::to_string_pretty(&serializable)?;
 
-        // 暂时返回错误，因为 trait 对象无法直接访问 SimpleRoute 的字段
-        // 这需要在后续阶段实现更完善的序列化机制
-        Err("RouteStorage::save for FileStorage requires full implementation in later phase. Currently only loading is supported.".into())
+            let file_path = self.get_file_path(&format!("{}.json", path));
+            let mut file = fs::File::create(&file_path).await?;
+            file.write_all(json.as_bytes()).await?;
+            file.flush().await?;
+        }
+
+        Ok(())
     }
 }
 
