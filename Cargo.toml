@@ -28,4 +28,4 @@ tempfile = "3"
 default = []
 sqlite = ["sqlx/sqlite"]
 postgres = ["sqlx/postgres"]
-database = ["sqlite", "postgres"]
+database = ["sqlite", "postgres", "chrono", "sqlx"]

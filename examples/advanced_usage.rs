@@ -2,45 +2,54 @@
 //!
 //! 展示如何使用数据库存储、版本控制、路由验证等高级功能。
 
+use dynamic_route_actix::core::{RouteValidator, SerializableRoute};
+
+#[cfg(feature = "database")]
 use actix_web::{HttpRequest, HttpResponse};
-use dynamic_route_actix::core::{
-    RouteRegistry, RouteTypeMetadata, RouteValidator, SerializableRoute, SimpleRoute,
-};
+#[cfg(feature = "database")]
+use dynamic_route_actix::core::{RouteRegistry, SimpleRoute};
+#[cfg(feature = "database")]
+use dynamic_route_actix::RouteEntry;
+#[cfg(feature = "database")]
 use dynamic_route_actix::storage::{
     DatabaseStorage, DatabaseStorageConfig, DatabaseType, RouteStorage,
 };
-#[cfg(all(feature = "database", feature = "sqlite"))]
-use dynamic_route_actix::RouteEntry;
+#[cfg(feature = "database")]
 use std::collections::HashMap;
+#[cfg(feature = "database")]
 use std::future::Future;
+#[cfg(feature = "database")]
 use std::pin::Pin;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("=== 动态路由库高级功能演示 ===\n");
 
     // 演示 1: 数据库存储和版本控制
+    #[cfg(feature = "database")]
     demo_database_storage().await?;
 
     // 演示 2: 路由验证
     demo_route_validation()?;
 
     // 演示 3: 自定义路由类型与版本控制
+    #[cfg(feature = "database")]
     demo_custom_route_with_versioning().await?;
 
     println!("\n=== 演示完成 ===");
     Ok(())
 }
 
+#[cfg(feature = "database")]
 /// 演示 1: 数据库存储和版本控制
-async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error>> {
+async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("演示 1: 数据库存储和版本控制");
     println!("--------------------------------");
 
     // 创建 SQLite 数据库存储
     let config = DatabaseStorageConfig {
         database_type: DatabaseType::SQLite,
-        database_url: "sqlite:routes_demo.db".to_string(),
+        database_url: "sqlite::memory:".to_string(),
         max_connections: 5,
         enable_versioning: true,
         max_versions: Some(5),
@@ -115,7 +124,7 @@ async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// 演示 2: 路由验证
-fn demo_route_validation() -> Result<(), Box<dyn std::error::Error>> {
+fn demo_route_validation() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("演示 2: 路由验证");
     println!("--------------------------------");
 
@@ -154,8 +163,9 @@ fn demo_route_validation() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "database")]
 /// 演示 3: 自定义路由类型与版本控制
-async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::Error>> {
+async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("演示 3: 自定义路由类型与版本控制");
     println!("--------------------------------");
 
@@ -226,7 +236,7 @@ async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::E
     // 创建数据库存储
     let config = DatabaseStorageConfig {
         database_type: DatabaseType::SQLite,
-        database_url: "sqlite:timed_routes.db".to_string(),
+        database_url: "sqlite::memory:".to_string(),
         enable_versioning: true,
         ..Default::default()
     };
