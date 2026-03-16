@@ -54,7 +54,7 @@ pub struct RouteTable {
     shards: [Arc<RwLock<RouteTableShard>>; NUM_SHARDS],
     /// 用于跟踪路由数量的原子计数器
     count: Arc<AtomicUsize>,
-    /// 路由查找缓存（路径 -> Arc<RouteEntry>）
+    /// 路由查找缓存（路径 -> `Arc<RouteEntry>`）
     cache: Arc<RouteCache<Arc<dyn RouteEntry>>>,
 }
 

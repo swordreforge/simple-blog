@@ -154,7 +154,7 @@ impl DynamicShard {
     ///
     /// # 性能优化
     ///
-    /// 由于 SimpleRoute 现在使用 Arc<str> 存储字符串数据，
+    /// 由于 SimpleRoute 现在使用 `Arc<str>` 存储字符串数据，
     /// clone_box 操作的开销已显著降低（仅增加引用计数）。
     pub fn get_all_routes(&mut self) -> HashMap<String, Box<dyn RouteEntry>> {
         self.get_all_routes_with_capacity()

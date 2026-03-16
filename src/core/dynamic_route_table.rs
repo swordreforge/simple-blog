@@ -156,7 +156,7 @@ impl DynamicRouteTable {
     ///
     /// # 性能优化
     ///
-    /// 由于 SimpleRoute 现在使用 Arc<str> 存储字符串数据，
+    /// 由于 SimpleRoute 现在使用 `Arc<str>` 存储字符串数据，
     /// clone_box 操作的开销已显著降低（仅增加引用计数）。
     pub fn get_clone(&self, path: &str) -> Option<Box<dyn RouteEntry>> {
         let manager = self.manager.read().unwrap();

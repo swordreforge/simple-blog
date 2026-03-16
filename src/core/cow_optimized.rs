@@ -9,19 +9,19 @@ use std::sync::Arc;
 
 /// 优化的字符串类型
 ///
-/// 使用 Cow<str> 实现：
+/// 使用 `Cow<str>` 实现：
 /// - 对于静态字符串，使用零拷贝的借用
 /// - 对于需要修改的字符串，才进行堆分配
 pub type OptimizedStr<'a> = Cow<'a, str>;
 
 /// 优化的路径匹配器
 ///
-/// 使用 Cow<str> 避免不必要的字符串分配
+/// 使用 `Cow<str>` 避免不必要的字符串分配
 #[derive(Debug, Clone)]
 pub struct OptimizedMatchResult<'a> {
     /// 匹配的路径（使用 Cow 延迟分配）
     pub path: OptimizedStr<'a>,
-    /// 提取的路径参数（使用 Arc<str> 减少分配）
+    /// 提取的路径参数（使用 `Arc<str>` 减少分配）
     pub params: HashMap<Arc<str>, Arc<str>>,
 }
 
@@ -137,7 +137,7 @@ impl<'a> CowRoutePattern<'a> {
 
     /// 匹配路径（优化版本）
     ///
-    /// 使用 Cow<str> 和 Arc<str> 减少内存分配
+    /// 使用 `Cow<str>` 和 `Arc<str>` 减少内存分配
     pub fn match_path(&self, path: &'a str) -> Option<OptimizedMatchResult<'a>> {
         match self {
             CowRoutePattern::Exact(pattern) => {
@@ -317,7 +317,7 @@ impl<'a> StringFragmentBuilder<'a> {
         result
     }
 
-    /// 构建为 Cow<str>
+    /// 构建为 `Cow<str>`
     pub fn build_cow(&self) -> Cow<'a, str> {
         if self.fragments.len() == 1 {
             match &self.fragments[0] {
@@ -349,7 +349,7 @@ impl<'a> StringFragment<'a> {
 
 /// 路径参数提取器（Cow 优化版本）
 ///
-/// 使用 Cow<str> 避免不必要的字符串分配
+/// 使用 `Cow<str>` 避免不必要的字符串分配
 pub struct ParamExtractor<'a> {
     path: &'a str,
 }
@@ -362,7 +362,7 @@ impl<'a> ParamExtractor<'a> {
 
     /// 提取路径段
     ///
-    /// 返回路径段的 Cow<str> 切片，避免字符串分配
+    /// 返回路径段的 `Cow<str>` 切片，避免字符串分配
     pub fn extract_segments(&self) -> Vec<Cow<'a, str>> {
         self.path
             .split('/')
@@ -371,9 +371,9 @@ impl<'a> ParamExtractor<'a> {
             .collect()
     }
 
-    /// 提取参数（使用 Arc<str>）
+    /// 提取参数（使用 `Arc<str>`）
     ///
-    /// 从路径中提取参数值，返回 Arc<str> 减少分配
+    /// 从路径中提取参数值，返回 `Arc<str>` 减少分配
     pub fn extract_params(&self, pattern: &CowRoutePattern) -> Option<HashMap<Arc<str>, Arc<str>>> {
         if let Some(result) = pattern.match_path(self.path) {
             Some(result.params)
@@ -415,7 +415,7 @@ pub fn join_cow<'a>(segments: &[Cow<'a, str>], separator: &str) -> Cow<'a, str> 
 
 /// 路径规范化（Cow 优化版本）
 ///
-/// 规范化路径，移除多余的斜杠，返回 Cow<str>
+/// 规范化路径，移除多余的斜杠，返回 `Cow<str>`
 pub fn normalize_path(path: &str) -> Cow<'_, str> {
     if path.is_empty() {
         return Cow::Borrowed("/");

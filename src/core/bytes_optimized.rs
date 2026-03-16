@@ -21,7 +21,7 @@ impl OptimizedBytes {
         }
     }
 
-    /// 从 Vec<u8> 创建
+    /// 从 `Vec<u8>` 创建
     pub fn from_vec(vec: Vec<u8>) -> Self {
         Self {
             inner: Bytes::from(vec),
@@ -72,7 +72,7 @@ impl OptimizedBytes {
         self.inner
     }
 
-    /// 转换为 Vec<u8>
+    /// 转换为 `Vec<u8>`
     pub fn into_vec(self) -> Vec<u8> {
         self.inner.to_vec()
     }

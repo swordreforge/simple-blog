@@ -74,7 +74,7 @@ impl ArcRouteEntry {
         }
     }
 
-    /// 从 Box<dyn RouteEntry> 创建 ArcRouteEntry
+    /// 从 `Box<dyn RouteEntry>` 创建 ArcRouteEntry
     ///
     /// # 参数
     ///
