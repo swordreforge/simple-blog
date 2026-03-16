@@ -71,7 +71,7 @@ async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error + Send 
 
     if let Err(e) = storage.save(&routes).await {
         println!("✗ 保存失败: {}", e);
-        return Err(e.into());
+        return Err(e);
     }
     println!("✓ 保存了初始路由: {}", routes.len());
 
@@ -82,7 +82,7 @@ async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error + Send 
         }
         Err(e) => {
             println!("✗ 加载失败: {}", e);
-            return Err(e.into());
+            return Err(e);
         }
     }
 
@@ -94,7 +94,7 @@ async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error + Send 
 
     if let Err(e) = storage.save(&routes).await {
         println!("✗ 更新失败: {}", e);
-        return Err(e.into());
+        return Err(e);
     }
     println!("✓ 更新了 /hello 路由");
 
@@ -188,6 +188,10 @@ async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::E
     }
 
     impl RouteEntry for TimedRoute {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
             let body = self.body.clone();
             let content_type = self.content_type.clone();
@@ -257,7 +261,7 @@ async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::E
 
     if let Err(e) = storage.save(&routes).await {
         println!("✗ 保存失败: {}", e);
-        return Err(e.into());
+        return Err(e);
     }
     println!("✓ 保存了自定义路由");
 

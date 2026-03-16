@@ -2,7 +2,7 @@
 //!
 //! 测试无锁队列和无锁对象池的性能提升效果，对比Mutex版本
 
-use dynamic_route_actix::core::object_pool::{global_lockfree_object_pool, global_object_pool, LockFreeRouteObjectPool, RouteObjectPool};
+use dynamic_route_actix::core::object_pool::{global_lockfree_object_pool, LockFreeRouteObjectPool, RouteObjectPool};
 use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
@@ -203,7 +203,7 @@ fn test_lockfree_vs_mutex_concurrent_comparison() {
         let pool_clone = Arc::clone(&lockfree_pool);
         let thread = thread::spawn(move || {
             for i in 0..OPERATIONS_PER_THREAD {
-                let s = pool_clone.pull_string();
+                let _s = pool_clone.pull_string();
                 pool_clone.push_string(format!("thread-{}-{}", thread_id, i));
             }
         });

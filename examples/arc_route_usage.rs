@@ -16,7 +16,7 @@ fn main() {
 
     // 示例 2: 零成本克隆
     println!("\n2. 零成本克隆演示");
-    let cloned_route = arc_route.clone_box();
+    let _cloned_route = arc_route.clone_box();
     println!("   ✓ 克隆后引用计数: {}", arc_route.ref_count());
     println!("   ✓ 两个路由共享相同的数据");
 

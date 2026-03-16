@@ -3,7 +3,6 @@
 //! 提供对象池和内存复用功能，减少内存分配开销。
 //! 针对频繁分配的路由条目、Trie节点等对象进行优化。
 
-use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -417,7 +416,7 @@ where
     where
         F: Fn() -> T + Send + Sync + 'static,
     {
-        let sub_pool_capacity = (total_capacity + num_shards - 1) / num_shards;
+        let sub_pool_capacity = total_capacity.div_ceil(num_shards);
         let mut sub_pools = Vec::with_capacity(num_shards);
         for _ in 0..num_shards {
             sub_pools.push(Mutex::new(Vec::with_capacity(sub_pool_capacity)));
@@ -437,7 +436,7 @@ where
     /// 如果池中有可用对象，则返回；否则创建新对象
     fn pull(&self) -> T {
         // 尝试从所有子池中获取对象
-        for (i, sub_pool) in self.sub_pools.iter().enumerate() {
+        for sub_pool in self.sub_pools.iter() {
             if let Ok(mut pool) = sub_pool.try_lock() {
                 if let Some(item) = pool.pop() {
                     self.size.fetch_sub(1, Ordering::Relaxed);

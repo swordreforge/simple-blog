@@ -512,7 +512,7 @@ impl BytesConverter {
 
     /// 从十六进制字符串转换
     pub fn from_hex(hex: &str) -> Result<Vec<u8>, String> {
-        if hex.len() % 2 != 0 {
+        if !hex.len().is_multiple_of(2) {
             return Err("Hex string must have even length".to_string());
         }
 

@@ -159,7 +159,6 @@ impl<'a> CowRoutePattern<'a> {
                 let mut path_idx = 0;
                 let pattern_bytes = pattern.as_bytes();
                 let path_bytes = path.as_bytes();
-                let mut param_idx = 0;
 
                 while pattern_idx < pattern_bytes.len() && path_idx < path_bytes.len() {
                     if pattern_bytes[pattern_idx] == b'{' {
@@ -189,8 +188,6 @@ impl<'a> CowRoutePattern<'a> {
                             Arc::from(param_name),
                             Arc::from(param_value),
                         );
-
-                        param_idx += 1;
 
                         if pattern_idx < pattern_bytes.len() && pattern_bytes[pattern_idx] == b'/' {
                             pattern_idx += 1;
@@ -370,7 +367,7 @@ impl<'a> ParamExtractor<'a> {
         self.path
             .split('/')
             .filter(|s| !s.is_empty())
-            .map(|s| Cow::Borrowed(s))
+            .map(Cow::Borrowed)
             .collect()
     }
 
@@ -431,7 +428,7 @@ pub fn normalize_path(path: &str) -> Cow<'_, str> {
 
     // 需要规范化，分配新字符串
     let mut result = String::new();
-    let mut segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
     let mut normalized = Vec::new();
 
     for segment in segments {

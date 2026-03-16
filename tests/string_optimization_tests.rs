@@ -63,8 +63,8 @@ fn bench_path_split(c: &mut Criterion) {
     let mut group = c.benchmark_group("path_split");
     
     let path1 = "/api/v1/users/123/posts/456";
-    let path2 = "/admin/dashboard/settings";
-    let path3 = "/auth/login";
+    let _path2 = "/admin/dashboard/settings";
+    let _path3 = "/auth/login";
     
     // 普通分割
     group.bench_function("regular_split", |b| {

@@ -156,7 +156,7 @@ impl StringPool {
 
     /// 尝试获取字符串，不存在时返回None
     pub fn get(&self, s: &str) -> Option<Arc<str>> {
-        self.pool.get(s).map(|arc| Arc::clone(arc))
+        self.pool.get(s).cloned()
     }
 
     /// 预填充常用字符串
@@ -388,7 +388,7 @@ pub fn split_path_pooled(path: &str) -> Vec<Arc<str>> {
         // 降级到普通分割
         path.split('/')
             .filter(|s| !s.is_empty())
-            .map(|s| Arc::from(s))
+            .map(Arc::from)
             .collect()
     }
 }
@@ -399,7 +399,7 @@ pub fn split_path_pooled(path: &str) -> Vec<Arc<str>> {
 pub fn split_path_small(path: &str) -> Vec<SmallString> {
     path.split('/')
         .filter(|s| !s.is_empty())
-        .map(|s| SmallString::from(s))
+        .map(SmallString::from)
         .collect()
 }
 
@@ -409,7 +409,7 @@ pub fn split_path_small(path: &str) -> Vec<SmallString> {
 pub fn split_path_smart(path: &str) -> Vec<SmartString> {
     path.split('/')
         .filter(|s| !s.is_empty())
-        .map(|s| SmartString::from_str(s))
+        .map(SmartString::from_str)
         .collect()
 }
 

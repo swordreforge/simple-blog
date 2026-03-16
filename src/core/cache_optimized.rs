@@ -59,6 +59,12 @@ pub struct CompactRadixTree {
     root_index: usize,
 }
 
+impl Default for CompactRadixTree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompactRadixTree {
     /// 创建新的紧凑Radix Tree
     pub fn new() -> Self {

@@ -11,6 +11,11 @@ pub struct SimdComparator;
 
 impl SimdComparator {
     /// 比较两个字符串是否相等（使用SIMD优化）
+    ///
+    /// # Safety
+    ///
+    /// 此函数使用 AVX2 指令集，只能在支持 AVX2 的 CPU 上调用。
+    /// 调用前应确保 CPU 支持 AVX2 指令集。
     #[cfg(feature = "simd")]
     #[inline]
     #[target_feature(enable = "avx2")]
@@ -72,6 +77,11 @@ impl SimdComparator {
     }
 
     /// 检查字符串是否以指定前缀开头（使用SIMD优化）
+    ///
+    /// # Safety
+    ///
+    /// 此函数使用 AVX2 指令集，只能在支持 AVX2 的 CPU 上调用。
+    /// 调用前应确保 CPU 支持 AVX2 指令集。
     #[cfg(feature = "simd")]
     #[inline]
     #[target_feature(enable = "avx2")]
@@ -131,6 +141,11 @@ impl SimdComparator {
     }
 
     /// 查找最长公共前缀长度（使用SIMD优化）
+    ///
+    /// # Safety
+    ///
+    /// 此函数使用 AVX2 指令集，只能在支持 AVX2 的 CPU 上调用。
+    /// 调用前应确保 CPU 支持 AVX2 指令集。
     #[cfg(feature = "simd")]
     #[inline]
     #[target_feature(enable = "avx2")]
@@ -205,6 +220,11 @@ impl SimdComparator {
     }
 
     /// 查找字符位置（使用SIMD优化）
+    ///
+    /// # Safety
+    ///
+    /// 此函数使用 AVX2 指令集，只能在支持 AVX2 的 CPU 上调用。
+    /// 调用前应确保 CPU 支持 AVX2 指令集。
     #[cfg(feature = "simd")]
     #[inline]
     #[target_feature(enable = "avx2")]
@@ -290,26 +310,26 @@ impl SimdPathSplitter {
         let bytes = path.as_bytes();
         let len = bytes.len();
         let mut segments = Vec::with_capacity(8);
-        let mut start = 0;
+        let mut segment_start = 0;
 
         // 跳过开头的 '/'
         if len > 0 && bytes[0] == b'/' {
-            start = 1;
+            segment_start = 1;
         }
 
-        for i in start..len {
+        for i in segment_start..len {
             if bytes[i] == b'/' {
-                let segment = unsafe { std::str::from_utf8_unchecked(&bytes[start..i]) };
+                let segment = unsafe { std::str::from_utf8_unchecked(&bytes[segment_start..i]) };
                 if !segment.is_empty() {
                     segments.push(segment);
                 }
-                start = i + 1;
+                segment_start = i + 1;
             }
         }
 
         // 添加最后一个段
-        if start < len {
-            let segment = unsafe { std::str::from_utf8_unchecked(&bytes[start..]) };
+        if segment_start < len {
+            let segment = unsafe { std::str::from_utf8_unchecked(&bytes[segment_start..len]) };
             if !segment.is_empty() {
                 segments.push(segment);
             }

@@ -692,6 +692,6 @@ mod tests {
     fn test_cache_entry_priority_score() {
         let entry = CacheEntry::new("value".to_string(), Duration::from_secs(60));
         let score = entry.priority_score();
-        assert!(score >= 0.0 && score <= 1.0);
+        assert!((0.0..=1.0).contains(&score));
     }
 }

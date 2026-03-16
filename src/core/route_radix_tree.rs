@@ -551,10 +551,10 @@ mod tests {
         let mut radix = RouteRadixTree::new();
         radix.insert("/users/{id}", Box::new(SimpleRoute::new("user", "text/plain")));
 
-        let (route, params) = radix.find("/users/123").unwrap();
+        let (_route, params) = radix.find("/users/123").unwrap();
         assert!(params.iter().any(|(k, v)| k == "id" && v == "123"));
 
-        let (route, params) = radix.find("/users/abc").unwrap();
+        let (_route, params) = radix.find("/users/abc").unwrap();
         assert!(params.iter().any(|(k, v)| k == "id" && v == "abc"));
     }
 
@@ -566,7 +566,7 @@ mod tests {
             Box::new(SimpleRoute::new("post", "text/plain")),
         );
 
-        let (route, params) = radix.find("/users/123/posts/456").unwrap();
+        let (_route, params) = radix.find("/users/123/posts/456").unwrap();
         assert!(params.iter().any(|(k, v)| k == "id" && v == "123"));
         assert!(params.iter().any(|(k, v)| k == "post_id" && v == "456"));
     }
@@ -593,11 +593,11 @@ mod tests {
         radix.insert("/users/{id}", Box::new(SimpleRoute::new("detail", "text/plain")));
 
         // 精确匹配应该优先
-        let (route, params) = radix.find("/users").unwrap();
+        let (_route, params) = radix.find("/users").unwrap();
         assert!(params.is_empty());
 
         // 参数化匹配
-        let (route, params) = radix.find("/users/123").unwrap();
+        let (_route, params) = radix.find("/users/123").unwrap();
         assert!(params.iter().any(|(k, v)| k == "id" && v == "123"));
     }
 
@@ -649,7 +649,7 @@ mod tests {
             Box::new(SimpleRoute::new("comment", "text/plain")),
         );
 
-        let (route, params) = radix
+        let (_route, params) = radix
             .find("/api/v1/users/123/posts/456/comments/789")
             .unwrap();
         assert!(params.iter().any(|(k, v)| k == "user_id" && v == "123"));

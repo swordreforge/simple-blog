@@ -4,8 +4,7 @@
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// 无锁缓存统计信息
 ///
@@ -59,7 +58,7 @@ impl LockfreeCacheStats {
         if delta > 0 {
             self.size.fetch_add(delta as usize, Ordering::Relaxed);
         } else {
-            self.size.fetch_sub(delta.abs() as usize, Ordering::Relaxed);
+            self.size.fetch_sub(delta.unsigned_abs(), Ordering::Relaxed);
         }
     }
 
@@ -102,7 +101,6 @@ struct CacheEntry<T> {
     value: T,
     access_count: AtomicUsize,
     last_access: AtomicU64,
-    created_at: Instant,
 }
 
 impl<T> CacheEntry<T> {
@@ -116,7 +114,6 @@ impl<T> CacheEntry<T> {
                     .unwrap()
                     .as_secs(),
             ),
-            created_at: Instant::now(),
         }
     }
 
@@ -274,6 +271,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
 
     #[test]
     fn test_lockfree_cache_stats() {

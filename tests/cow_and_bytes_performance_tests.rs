@@ -101,13 +101,11 @@ fn bench_cow_path_joining(c: &mut Criterion) {
 fn bench_cow_path_normalization(c: &mut Criterion) {
     let mut group = c.benchmark_group("cow_path_normalization");
 
-    let paths = vec![
-        "/api/v1/users",
+    let paths = ["/api/v1/users",
         "/api//v1//users",
         "/api/./v1/users",
         "/api/v1/../users",
-        "/api/v1/users/../../..",
-    ];
+        "/api/v1/users/../../.."];
 
     for (i, path) in paths.iter().enumerate() {
         group.bench_with_input(
@@ -290,7 +288,7 @@ fn bench_bytes_splitting(c: &mut Criterion) {
     group.bench_function("splitter_next", |b| {
         b.iter(|| {
             let mut splitter = BytesSplitter::new(black_box(data), black_box(delimiter));
-            while let Some(_) = splitter.next() {
+            while splitter.next().is_some() {
                 black_box(());
             }
         });

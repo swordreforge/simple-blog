@@ -164,7 +164,7 @@ fn test_parameterized_route_cache_performance() {
     table.warmup_cache(&user_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>());
 
     // 验证预热：检查缓存大小
-    let cache_size = table.cache_stats().total_accesses; // 使用total_accesses作为缓存条目数的近似
+    let _cache_size = table.cache_stats().total_accesses; // 使用total_accesses作为缓存条目数的近似
 
     // 重置缓存统计
     table.reset_cache_stats();

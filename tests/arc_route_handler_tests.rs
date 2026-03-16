@@ -182,11 +182,11 @@ fn test_arc_vs_string_comparison() {
 
     // 验证Arc确实减少了内存分配
     let start = Instant::now();
-    let string_clones: Vec<String> = (0..10000).map(|_| string_body.clone()).collect();
+    let _string_clones: Vec<String> = (0..10000).map(|_| string_body.clone()).collect();
     let string_alloc_duration = start.elapsed();
 
     let start = Instant::now();
-    let arc_clones: Vec<std::sync::Arc<str>> = (0..10000).map(|_| std::sync::Arc::clone(&arc_body)).collect();
+    let _arc_clones: Vec<std::sync::Arc<str>> = (0..10000).map(|_| std::sync::Arc::clone(&arc_body)).collect();
     let arc_alloc_duration = start.elapsed();
 
     println!("📊 String分配10000次耗时: {:?}", string_alloc_duration);

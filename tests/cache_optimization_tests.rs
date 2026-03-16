@@ -303,7 +303,7 @@ fn test_concurrent_cache_access() {
     }
 
     // 并发读取
-    for i in 0..10 {
+    for _i in 0..10 {
         let cache_clone = Arc::clone(&cache);
         let handle = thread::spawn(move || {
             for j in 0..1000 {

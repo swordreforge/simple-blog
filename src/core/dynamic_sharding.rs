@@ -174,22 +174,17 @@ impl DynamicShard {
 }
 
 /// 负载均衡策略
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum LoadBalanceStrategy {
     /// 基于路由数量的负载均衡
     RouteCount,
     /// 基于访问频率的负载均衡
     AccessFrequency,
     /// 综合负载均衡（路由数量 + 访问频率 + 延迟）
+    #[default]
     Comprehensive,
     /// 轮询均衡
     RoundRobin,
-}
-
-impl Default for LoadBalanceStrategy {
-    fn default() -> Self {
-        Self::Comprehensive
-    }
 }
 
 /// 动态分片配置
@@ -295,8 +290,7 @@ impl DynamicShardManager {
     pub fn select_shard(&self, _path: &str) -> usize {
         match self.config.strategy {
             LoadBalanceStrategy::RoundRobin => {
-                let idx = self.round_robin_index.fetch_add(1, Ordering::Relaxed) % self.shards.len();
-                idx
+                self.round_robin_index.fetch_add(1, Ordering::Relaxed) % self.shards.len()
             }
             LoadBalanceStrategy::RouteCount => {
                 self.select_by_route_count()
@@ -716,7 +710,7 @@ mod tests {
 
         // 初始应该是均衡的
         let imbalance = manager.calculate_imbalance();
-        assert!(imbalance >= 0.0 && imbalance <= 1.0);
+        assert!((0.0..=1.0).contains(&imbalance));
 
         // 创建不均衡负载
         let shard0 = manager.get_shard(0).unwrap();

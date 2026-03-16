@@ -11,7 +11,7 @@ fn test_standard_vs_cache_optimized_single_lookup() {
     const LOOKUP_ITERATIONS: usize = 100_000;
     
     // 创建标准路由表
-    let mut standard_table = RouteTable::new();
+    let standard_table = RouteTable::new();
     for i in 0..ROUTE_COUNT {
         standard_table.insert(
             format!("/route-{}", i),
@@ -69,7 +69,7 @@ fn test_standard_vs_cache_optimized_parameter_lookup() {
     const LOOKUP_ITERATIONS: usize = 10_000;
     
     // 创建标准路由表（带参数）
-    let mut standard_table = RouteTable::new();
+    let standard_table = RouteTable::new();
     for i in 0..ROUTE_COUNT {
         standard_table.insert(
             format!("/api/v{}/user/{{id}}", i % 10),
@@ -247,7 +247,7 @@ fn test_cache_optimized_vs_standard_memory_efficiency() {
     const ROUTE_COUNT: usize = 5000;
     
     // 创建标准路由表
-    let mut standard_table = RouteTable::new();
+    let standard_table = RouteTable::new();
     for i in 0..ROUTE_COUNT {
         standard_table.insert(
             format!("/api/v{}/resource/{}", i % 5, i),

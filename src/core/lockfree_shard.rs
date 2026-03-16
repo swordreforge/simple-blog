@@ -63,10 +63,10 @@ impl LockfreeShardMetrics {
         // 更新平均延迟（使用原子操作）
         let new_latency = latency_ns as usize;
         let total = self.total_access.load(Ordering::Relaxed);
-        if total > 0 {
-            let current_avg = self.avg_latency_ns.load(Ordering::Relaxed);
-            let new_avg = (current_avg * (total - 1) + new_latency) / total;
-            self.avg_latency_ns.store(new_avg, Ordering::Relaxed);
+        let current_avg = self.avg_latency_ns.load(Ordering::Relaxed);
+        let new_avg = (current_avg * total.saturating_sub(1) + new_latency).checked_div(total);
+        if let Some(avg) = new_avg {
+            self.avg_latency_ns.store(avg, Ordering::Relaxed);
         }
     }
 

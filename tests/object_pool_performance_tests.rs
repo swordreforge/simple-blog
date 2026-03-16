@@ -46,13 +46,11 @@ fn test_path_splitting_performance() {
 #[test]
 fn test_path_normalization_performance() {
     const ITERATIONS: usize = 100_000;
-    let test_paths = vec![
-        "/users/",
+    let test_paths = ["/users/",
         "/users//123/",
         "  /api/v1/users/123  ",
         "/",
-        "/api/v1/posts/",
-    ];
+        "/api/v1/posts/"];
     
     // 测试传统路径标准化
     let start = Instant::now();
