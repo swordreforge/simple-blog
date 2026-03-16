@@ -253,6 +253,43 @@ impl RouteTable {
         guard.clear();
         self.count.store(0, Ordering::SeqCst);
     }
+
+    /// 批量插入路由
+    ///
+    /// 一次性插入多个路由，减少锁竞争。
+    ///
+    /// # 参数
+    ///
+    /// * `routes` - 要插入的路由集合
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::{RouteTable, SimpleRoute, RouteEntry};
+    /// use std::collections::HashMap;
+    ///
+    /// let table = RouteTable::new();
+    /// let mut routes: HashMap<String, Box<dyn RouteEntry>> = HashMap::new();
+    /// routes.insert("/route1".to_string(), Box::new(SimpleRoute::new("body1", "text/plain")));
+    /// routes.insert("/route2".to_string(), Box::new(SimpleRoute::new("body2", "text/plain")));
+    ///
+    /// table.batch_insert(routes);
+    /// assert_eq!(table.count(), 2);
+    /// ```
+    pub fn batch_insert(&self, routes: std::collections::HashMap<String, Box<dyn RouteEntry>>) {
+        let mut guard = self.inner.write().unwrap();
+        let mut new_count = 0;
+
+        for (path, route) in routes {
+            let existed = guard.contains_key(&path);
+            guard.insert(path, route);
+            if !existed {
+                new_count += 1;
+            }
+        }
+
+        self.count.fetch_add(new_count, Ordering::SeqCst);
+    }
 }
 
 impl Default for RouteTable {

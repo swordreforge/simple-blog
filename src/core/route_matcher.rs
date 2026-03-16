@@ -14,7 +14,7 @@ pub struct MatchResult {
 }
 
 /// 路由模式类型
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum RoutePattern {
     /// 精确匹配
     Exact(String),
@@ -28,7 +28,26 @@ pub enum RoutePattern {
         prefix: String,
         capture_name: Option<String>,
     },
+    /// 正则表达式匹配（预编译）
+    Regex {
+        pattern: String,
+        regex: Regex,
+    },
 }
+
+impl PartialEq for RoutePattern {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (RoutePattern::Exact(a), RoutePattern::Exact(b)) => a == b,
+            (RoutePattern::Parameterized { pattern: a, .. }, RoutePattern::Parameterized { pattern: b, .. }) => a == b,
+            (RoutePattern::Wildcard { prefix: a, .. }, RoutePattern::Wildcard { prefix: b, .. }) => a == b,
+            (RoutePattern::Regex { pattern: a, .. }, RoutePattern::Regex { pattern: b, .. }) => a == b,
+            _ => false,
+        }
+    }
+}
+
+use regex::Regex;
 
 impl RoutePattern {
     /// 从路径字符串创建路由模式
@@ -74,6 +93,29 @@ impl RoutePattern {
         else {
             RoutePattern::Exact(path.to_string())
         }
+    }
+
+    /// 创建正则表达式模式（用于复杂的匹配需求）
+    ///
+    /// # 参数
+    ///
+    /// * `pattern` - 正则表达式模式字符串
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::core::route_matcher::RoutePattern;
+    ///
+    /// let pattern = RoutePattern::regex(r"/users/\d+");
+    /// assert!(pattern.match_path("/users/123").is_some());
+    /// assert!(pattern.match_path("/users/abc").is_none());
+    /// ```
+    pub fn regex(pattern: &str) -> Result<Self, regex::Error> {
+        let compiled_regex = Regex::new(pattern)?;
+        Ok(RoutePattern::Regex {
+            pattern: pattern.to_string(),
+            regex: compiled_regex,
+        })
     }
 
     /// 提取路径参数名称
@@ -150,36 +192,67 @@ impl RoutePattern {
                 pattern,
                 param_names: _,
             } => {
+                // 优化：避免分割，使用字节级别比较
                 let mut params = HashMap::new();
-                let pattern_parts: Vec<&str> = pattern.split('/').collect();
-                let path_parts: Vec<&str> = path.split('/').collect();
+                let mut pattern_idx = 0;
+                let mut path_idx = 0;
+                let pattern_bytes = pattern.as_bytes();
+                let path_bytes = path.as_bytes();
 
-                if pattern_parts.len() != path_parts.len() {
+                while pattern_idx < pattern_bytes.len() && path_idx < path_bytes.len() {
+                    // 检查是否到达参数开始
+                    if pattern_bytes[pattern_idx] == b'{' {
+                        // 跳过 '{'
+                        pattern_idx += 1;
+                        let param_start = pattern_idx;
+
+                        // 查找参数结束的 '}'
+                        while pattern_idx < pattern_bytes.len() && pattern_bytes[pattern_idx] != b'}' {
+                            pattern_idx += 1;
+                        }
+
+                        if pattern_idx >= pattern_bytes.len() {
+                            return None;
+                        }
+
+                        // 提取参数名
+                        let param_name = &pattern[param_start..pattern_idx];
+                        // 跳过 '}'
+                        pattern_idx += 1;
+
+                        // 查找路径段的结束
+                        let value_start = path_idx;
+                        while path_idx < path_bytes.len() && path_bytes[path_idx] != b'/' {
+                            path_idx += 1;
+                        }
+
+                        let param_value = &path[value_start..path_idx];
+                        params.insert(param_name.to_string(), param_value.to_string());
+
+                        // 检查是否还有下一个段
+                        if pattern_idx < pattern_bytes.len() {
+                            if path_idx < path_bytes.len() && path_bytes[path_idx] == b'/' {
+                                path_idx += 1;
+                            } else {
+                                return None;
+                            }
+                        }
+                    } else if pattern_bytes[pattern_idx] != path_bytes[path_idx] {
+                        // 不匹配
+                        return None;
+                    } else {
+                        pattern_idx += 1;
+                        path_idx += 1;
+                    }
+                }
+
+                // 检查是否都到达末尾
+                if pattern_idx < pattern_bytes.len() || path_idx < path_bytes.len() {
                     return None;
                 }
 
-                let mut matched_path = String::new();
-
-                for (i, (pattern_part, path_part)) in
-                    pattern_parts.iter().zip(path_parts.iter()).enumerate()
-                {
-                    if pattern_part.starts_with('{') && pattern_part.ends_with('}') {
-                        // 路径参数
-                        let param_name = &pattern_part[1..pattern_part.len() - 1];
-                        params.insert(param_name.to_string(), path_part.to_string());
-                    } else if pattern_part != path_part {
-                        // 不匹配
-                        return None;
-                    }
-
-                    if i > 0 {
-                        matched_path.push('/');
-                    }
-                    matched_path.push_str(path_part);
-                }
-
                 Some(MatchResult {
-                    path: matched_path,
+                    path: path.to_string(),
                     params,
                 })
             }
@@ -195,6 +268,22 @@ impl RoutePattern {
                         params.insert(name.clone(), captured.to_string());
                     }
 
+                    Some(MatchResult {
+                        path: path.to_string(),
+                        params,
+                    })
+                } else {
+                    None
+                }
+            }
+            RoutePattern::Regex { pattern: _, regex } => {
+                if let Some(captures) = regex.captures(path) {
+                    let mut params = HashMap::new();
+                    for (name, value) in captures.iter().skip(1).enumerate() {
+                        if let Some(value) = value {
+                            params.insert(format!("param{}", name), value.as_str().to_string());
+                        }
+                    }
                     Some(MatchResult {
                         path: path.to_string(),
                         params,
@@ -258,15 +347,16 @@ impl RouteMatcher {
 
     /// 查找最佳匹配
     ///
-    /// 优先级：精确匹配 > 参数化匹配 > 通配符匹配
+    /// 优先级：精确匹配 > 参数化匹配 > 正则表达式匹配 > 通配符匹配
     pub fn find_best_match(&self, path: &str) -> Option<MatchResult> {
         let mut best_match: Option<(MatchResult, i32)> = None;
 
         for pattern in &self.patterns {
             if let Some(result) = pattern.match_path(path) {
                 let priority = match pattern {
-                    RoutePattern::Exact(_) => 3,
-                    RoutePattern::Parameterized { .. } => 2,
+                    RoutePattern::Exact(_) => 4,
+                    RoutePattern::Parameterized { .. } => 3,
+                    RoutePattern::Regex { .. } => 2,
                     RoutePattern::Wildcard { .. } => 1,
                 };
 

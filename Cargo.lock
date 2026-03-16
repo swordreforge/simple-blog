@@ -552,6 +552,7 @@ dependencies = [
  "chrono",
  "futures-util",
  "notify",
+ "regex",
  "serde",
  "serde_json",
  "sqlx",

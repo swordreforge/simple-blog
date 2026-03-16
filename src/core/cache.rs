@@ -88,15 +88,27 @@ where
     ///
     /// 如果条目存在且未过期，返回 `Some(T)`；否则返回 `None`
     pub fn get(&self, key: &str) -> Option<T> {
+        // 先使用读锁尝试获取
+        {
+            let guard = self.entries.read().unwrap();
+            if let Some(entry) = guard.get(key) {
+                if !entry.is_expired() {
+                    return Some(entry.value.clone());
+                }
+            }
+        }
+
+        // 如果不存在或已过期，使用写锁删除
         let mut guard = self.entries.write().unwrap();
         if let Some(entry) = guard.get(key) {
             if entry.is_expired() {
                 guard.remove(key);
                 return None;
             }
-            return Some(entry.value.clone());
+            Some(entry.value.clone())
+        } else {
+            None
         }
-        None
     }
 
     /// 移除缓存条目
@@ -165,9 +177,8 @@ impl BatchOperations {
     /// BatchOperations::batch_insert(&table, routes);
     /// ```
     pub fn batch_insert(table: &crate::RouteTable, routes: HashMap<String, Box<dyn RouteEntry>>) {
-        for (path, route) in routes {
-            table.insert(path, route);
-        }
+        // 使用优化的批量插入方法
+        table.batch_insert(routes);
     }
 
     /// 批量删除路由
