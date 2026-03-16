@@ -1,4 +1,5 @@
 use super::RouteEntry;
+use super::route_trie::RouteTrie;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -9,7 +10,7 @@ const NUM_SHARDS: usize = 16;
 
 /// 路由表分片
 struct RouteTableShard {
-    inner: HashMap<String, Box<dyn RouteEntry>>,
+    inner: RouteTrie,
     /// 用于跟踪此分片中的路由数量
     count: usize,
 }
@@ -17,7 +18,7 @@ struct RouteTableShard {
 impl RouteTableShard {
     fn new() -> Self {
         Self {
-            inner: HashMap::new(),
+            inner: RouteTrie::new(),
             count: 0,
         }
     }
@@ -103,8 +104,8 @@ impl RouteTable {
     pub fn insert(&self, path: String, route: Box<dyn RouteEntry>) {
         let shard_idx = Self::shard_index(&path);
         let mut guard = self.shards[shard_idx].write().unwrap();
-        let existed = guard.inner.contains_key(&path);
-        guard.inner.insert(path, route);
+        let existed = guard.inner.contains(&path);
+        guard.inner.insert(&path, route);
         if !existed {
             guard.count += 1;
             self.count.fetch_add(1, Ordering::SeqCst);
@@ -174,7 +175,7 @@ impl RouteTable {
     {
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
-        guard.inner.get(path).map(f)
+        guard.inner.find(path).map(|(route, _params)| f(route))
     }
 
     /// 获取指定路径的路由处理器的克隆
@@ -202,7 +203,7 @@ impl RouteTable {
     pub fn get_clone(&self, path: &str) -> Option<Box<dyn RouteEntry>> {
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
-        guard.inner.get(path).map(|route| route.clone_box())
+        guard.inner.find(path).map(|(route, _params)| route.clone_box())
     }
 
     /// 获取路由的数量
@@ -249,7 +250,7 @@ impl RouteTable {
     pub fn contains(&self, path: &str) -> bool {
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
-        guard.inner.contains_key(path)
+        guard.inner.contains(path)
     }
 
     /// 获取所有路由的路径列表
@@ -274,7 +275,7 @@ impl RouteTable {
         let mut paths = Vec::new();
         for shard in &self.shards {
             let guard = shard.read().unwrap();
-            paths.extend(guard.inner.keys().cloned());
+            paths.extend(guard.inner.list_paths());
         }
         paths
     }
@@ -343,8 +344,8 @@ impl RouteTable {
             let mut new_count = 0;
 
             for (path, route) in routes {
-                let existed = guard.inner.contains_key(&path);
-                guard.inner.insert(path, route);
+                let existed = guard.inner.contains(&path);
+                guard.inner.insert(&path, route);
                 if !existed {
                     new_count += 1;
                 }

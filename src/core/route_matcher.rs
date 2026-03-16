@@ -382,6 +382,83 @@ impl Default for RouteMatcher {
     }
 }
 
+/// 基于Trie树的路由匹配器
+///
+/// 使用前缀树数据结构提供O(k)复杂度的路由匹配，其中k为路径段数。
+pub struct TrieBasedMatcher {
+    trie: crate::core::route_trie::RouteTrie,
+}
+
+impl TrieBasedMatcher {
+    /// 创建新的基于Trie的路由匹配器
+    pub fn new() -> Self {
+        Self {
+            trie: crate::core::route_trie::RouteTrie::new(),
+        }
+    }
+
+    /// 添加路由模式
+    pub fn add_pattern(&mut self, pattern: RoutePattern) {
+        // 将RoutePattern转换为路由处理器
+        let route = crate::core::simple_route::SimpleRoute::new("pattern", "text/plain");
+        let pattern_str = match &pattern {
+            RoutePattern::Exact(s) => s.clone(),
+            RoutePattern::Parameterized { pattern, .. } => pattern.clone(),
+            RoutePattern::Wildcard { prefix, .. } => {
+                if prefix.ends_with('/') {
+                    format!("{}*", prefix)
+                } else {
+                    format!("{}/{}", prefix, "*")
+                }
+            }
+            RoutePattern::Regex { pattern, .. } => pattern.clone(),
+        };
+        self.trie.insert(&pattern_str, Box::new(route));
+    }
+
+    /// 匹配路径
+    ///
+    /// # 参数
+    ///
+    /// * `path` - 要匹配的路径
+    ///
+    /// # 返回
+    ///
+    /// 返回匹配结果，如果找到则返回参数列表
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::core::route_matcher::{TrieBasedMatcher, RoutePattern};
+    ///
+    /// let mut matcher = TrieBasedMatcher::new();
+    /// matcher.add_pattern(RoutePattern::from("/users/{id}"));
+    ///
+    /// let params = matcher.match_path("/users/123");
+    /// assert!(params.is_some());
+    /// assert!(params.unwrap().iter().any(|(k, v)| k == "id" && v == "123"));
+    /// ```
+    pub fn match_path(&self, path: &str) -> Option<Vec<(String, String)>> {
+        self.trie.find(path).map(|(_route, params)| params)
+    }
+
+    /// 路由数量
+    pub fn count(&self) -> usize {
+        self.trie.count()
+    }
+
+    /// 检查是否包含路径
+    pub fn contains(&self, path: &str) -> bool {
+        self.trie.contains(path)
+    }
+}
+
+impl Default for TrieBasedMatcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -499,5 +576,61 @@ mod tests {
         let result = pattern.match_path("/path/with-dash/123");
         assert!(result.is_some());
         assert_eq!(result.unwrap().params.get("id"), Some(&"123".to_string()));
+    }
+
+    // TrieBasedMatcher测试
+    #[test]
+    fn test_trie_matcher_basic() {
+        let mut matcher = TrieBasedMatcher::new();
+        matcher.add_pattern(RoutePattern::from("/users/{id}"));
+
+        let params = matcher.match_path("/users/123");
+        assert!(params.is_some());
+        assert!(params.unwrap().iter().any(|(k, v)| k == "id" && v == "123"));
+    }
+
+    #[test]
+    fn test_trie_matcher_multiple_params() {
+        let mut matcher = TrieBasedMatcher::new();
+        matcher.add_pattern(RoutePattern::from("/users/{id}/posts/{post_id}"));
+
+        let params = matcher.match_path("/users/123/posts/456");
+        assert!(params.is_some());
+        let p = params.unwrap();
+        assert!(p.iter().any(|(k, v)| k == "id" && v == "123"));
+        assert!(p.iter().any(|(k, v)| k == "post_id" && v == "456"));
+    }
+
+    #[test]
+    fn test_trie_matcher_wildcard() {
+        let mut matcher = TrieBasedMatcher::new();
+        matcher.add_pattern(RoutePattern::from("/static/*"));
+
+        let params = matcher.match_path("/static/css/style.css");
+        assert!(params.is_some());
+
+        let params = matcher.match_path("/static");
+        assert!(params.is_none());
+    }
+
+    #[test]
+    fn test_trie_matcher_count() {
+        let mut matcher = TrieBasedMatcher::new();
+        assert_eq!(matcher.count(), 0);
+
+        matcher.add_pattern(RoutePattern::from("/users"));
+        assert_eq!(matcher.count(), 1);
+
+        matcher.add_pattern(RoutePattern::from("/users/{id}"));
+        assert_eq!(matcher.count(), 2);
+    }
+
+    #[test]
+    fn test_trie_matcher_contains() {
+        let mut matcher = TrieBasedMatcher::new();
+        matcher.add_pattern(RoutePattern::from("/users"));
+
+        assert!(matcher.contains("/users"));
+        assert!(!matcher.contains("/nonexistent"));
     }
 }

@@ -3,6 +3,7 @@ pub mod route_entry;
 pub mod route_matcher;
 pub mod route_registry;
 pub mod route_table;
+pub mod route_trie;
 pub mod route_validator;
 pub mod simple_route;
 
