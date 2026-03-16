@@ -365,6 +365,10 @@ mod tests {
 
                 Box::new(TimedRoute::new(&data.body, &data.content_type, timeout_ms))
             }
+
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
         }
 
         // 注册自定义路由类型

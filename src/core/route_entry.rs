@@ -196,4 +196,23 @@ pub trait RouteEntry: Send + Sync + 'static + std::fmt::Debug {
     fn from_serializable(data: SerializableRoute) -> Box<dyn RouteEntry>
     where
         Self: Sized;
+
+    /// 将路由处理器转换为 `Any` 类型，用于类型转换
+    ///
+    /// # 返回
+    ///
+    /// 返回 `&dyn Any`，可以通过 `downcast_ref` 转换为具体类型
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::{RouteEntry, SimpleRoute};
+    ///
+    /// let route = SimpleRoute::new("Hello", "text/plain");
+    /// let boxed: Box<dyn RouteEntry> = Box::new(route);
+    /// if let Some(simple) = boxed.as_any().downcast_ref::<SimpleRoute>() {
+    ///     println!("Body: {}", simple.body);
+    /// }
+    /// ```
+    fn as_any(&self) -> &dyn std::any::Any;
 }

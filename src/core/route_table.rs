@@ -202,6 +202,7 @@ impl RouteTable {
     pub fn get_clone(&self, path: &str) -> Option<Box<dyn RouteEntry>> {
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
+        // 使用 clone_box 但由于 SimpleRoute 现在使用 Arc，开销已显著降低
         guard.inner.find(path).map(|(route, _params)| route.clone_box())
     }
 

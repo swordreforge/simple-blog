@@ -126,10 +126,16 @@ impl DynamicShard {
     }
 
     /// 获取所有路由的路径和处理器
+    ///
+    /// # 性能优化
+    ///
+    /// 由于 SimpleRoute 现在使用 Arc<str> 存储字符串数据，
+    /// clone_box 操作的开销已显著降低（仅增加引用计数）。
     pub fn get_all_routes(&mut self) -> HashMap<String, Box<dyn RouteEntry>> {
         let mut routes = HashMap::new();
         for path in self.list_paths() {
             if let Some((route, _)) = self.find(&path) {
+                // 使用 clone_box，但由于 SimpleRoute 使用 Arc，开销已显著降低
                 routes.insert(path.clone(), route.clone_box());
             }
         }

@@ -9,8 +9,8 @@ use std::pin::Pin;
 ///
 /// # 字段
 ///
-/// * `body` - 响应体内容
-/// * `content_type` - 响应的 Content-Type
+/// * `body` - 响应体内容（使用 Arc 共享，减少克隆开销）
+/// * `content_type` - 响应的 Content-Type（使用 Arc 共享，减少克隆开销）
 ///
 /// # 示例
 ///
@@ -18,15 +18,15 @@ use std::pin::Pin;
 /// use dynamic_route_actix::SimpleRoute;
 ///
 /// let route = SimpleRoute::new("Hello, World!", "text/plain");
-/// assert_eq!(route.body, "Hello, World!");
-/// assert_eq!(route.content_type, "text/plain");
+/// assert_eq!(&*route.body, "Hello, World!");
+/// assert_eq!(&*route.content_type, "text/plain");
 /// ```
 #[derive(Debug, Clone)]
 pub struct SimpleRoute {
-    /// 响应体内容
-    pub body: String,
-    /// 内容类型
-    pub content_type: String,
+    /// 响应体内容（使用 Arc 共享，减少克隆开销）
+    pub body: std::sync::Arc<str>,
+    /// 内容类型（使用 Arc 共享，减少克隆开销）
+    pub content_type: std::sync::Arc<str>,
 }
 
 impl SimpleRoute {
@@ -50,8 +50,8 @@ impl SimpleRoute {
     /// ```
     pub fn new<S: Into<String>, C: Into<String>>(body: S, content_type: C) -> Self {
         Self {
-            body: body.into(),
-            content_type: content_type.into(),
+            body: body.into().into(),
+            content_type: content_type.into().into(),
         }
     }
 }
@@ -78,18 +78,24 @@ impl RouteEntry for SimpleRoute {
     /// // let response = route.handle(&req).await;
     /// ```
     fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
-        let body = self.body.clone();
-        let content_type = self.content_type.clone();
-        Box::pin(async move { HttpResponse::Ok().content_type(content_type).body(body) })
+        // 使用 Arc::clone 而非字符串克隆，显著减少开销
+        let body = std::sync::Arc::clone(&self.body);
+        let content_type = std::sync::Arc::clone(&self.content_type);
+        Box::pin(async move {
+            HttpResponse::Ok()
+                .content_type(content_type.as_ref())
+                .body(body.as_ref().to_string())
+        })
     }
 
     /// 克隆 SimpleRoute
     ///
     /// 返回一个新的 SimpleRoute 实例，包含相同的 body 和 content_type。
+    /// 使用 Arc::clone 增加引用计数，避免深拷贝。
     fn clone_box(&self) -> Box<dyn RouteEntry> {
         Box::new(SimpleRoute {
-            body: self.body.clone(),
-            content_type: self.content_type.clone(),
+            body: std::sync::Arc::clone(&self.body),
+            content_type: std::sync::Arc::clone(&self.content_type),
         })
     }
 
@@ -101,8 +107,8 @@ impl RouteEntry for SimpleRoute {
     fn to_serializable(&self) -> SerializableRoute {
         SerializableRoute {
             route_type: "SimpleRoute".to_string(),
-            body: self.body.clone(),
-            content_type: self.content_type.clone(),
+            body: self.body.to_string(),
+            content_type: self.content_type.to_string(),
             extra_data: None, // SimpleRoute 不需要额外数据
         }
     }
@@ -121,9 +127,14 @@ impl RouteEntry for SimpleRoute {
         Self: Sized,
     {
         Box::new(SimpleRoute {
-            body: data.body,
-            content_type: data.content_type,
+            body: data.body.into(),
+            content_type: data.content_type.into(),
         })
+    }
+
+    /// 将 SimpleRoute 转换为 Any 类型
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 }
 
@@ -134,28 +145,28 @@ mod tests {
     #[test]
     fn test_simple_route_creation() {
         let route = SimpleRoute::new("test body", "text/plain");
-        assert_eq!(route.body, "test body");
-        assert_eq!(route.content_type, "text/plain");
+        assert_eq!(&*route.body, "test body");
+        assert_eq!(&*route.content_type, "text/plain");
     }
 
     #[test]
     fn test_simple_route_creation_with_str() {
         let route = SimpleRoute::new("hello", "application/json");
-        assert_eq!(route.body, "hello");
-        assert_eq!(route.content_type, "application/json");
+        assert_eq!(&*route.body, "hello");
+        assert_eq!(&*route.content_type, "application/json");
     }
 
     #[test]
     fn test_simple_route_clone() {
         let route1 = SimpleRoute::new("original", "text/plain");
         let route2 = route1.clone();
-        assert_eq!(route1.body, route2.body);
-        assert_eq!(route1.content_type, route2.content_type);
+        assert_eq!(&*route1.body, &*route2.body);
+        assert_eq!(&*route1.content_type, &*route2.content_type);
     }
 
     #[test]
     fn test_simple_route_empty_body() {
         let route = SimpleRoute::new("", "text/plain");
-        assert_eq!(route.body, "");
+        assert_eq!(&*route.body, "");
     }
 }
