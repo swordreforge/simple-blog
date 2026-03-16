@@ -5,6 +5,8 @@ pub mod cache_optimized;
 pub mod cow_optimized;
 pub mod dynamic_route_table;
 pub mod dynamic_sharding;
+pub mod lockfree_cache;
+pub mod lockfree_shard;
 pub mod object_pool;
 pub mod route_entry;
 pub mod route_matcher;
@@ -23,6 +25,8 @@ pub use dynamic_route_table::{DynamicRouteTable, DynamicRouteTableConfig};
 pub use dynamic_sharding::{
     DynamicShard, DynamicShardManager, DynamicShardingConfig, LoadBalanceStrategy, ShardMetrics,
 };
+pub use lockfree_cache::{CacheStatsSnapshot, LockfreeCacheStats, LockfreeLruCache};
+pub use lockfree_shard::{LockfreeDynamicShard, LockfreeShardMetrics, ShardMetricsSnapshot};
 pub use object_pool::{PoolConfig, RouteObjectPool};
 pub use route_entry::{RouteEntry, SerializableRoute};
 pub use route_matcher::{MatchResult, RouteMatcher, RoutePattern};
