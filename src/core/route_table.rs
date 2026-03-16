@@ -1,5 +1,5 @@
 use super::RouteEntry;
-use super::route_trie::RouteTrie;
+use super::route_radix_tree::RouteRadixTree;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
@@ -9,7 +9,7 @@ const NUM_SHARDS: usize = 16;
 
 /// 路由表分片
 struct RouteTableShard {
-    inner: RouteTrie,
+    inner: RouteRadixTree,
     /// 用于跟踪此分片中的路由数量
     count: usize,
 }
@@ -17,7 +17,7 @@ struct RouteTableShard {
 impl RouteTableShard {
     fn new() -> Self {
         Self {
-            inner: RouteTrie::new(),
+            inner: RouteRadixTree::new(),
             count: 0,
         }
     }
