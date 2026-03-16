@@ -2,14 +2,27 @@ const DAMPING_FACTOR: f64 = 0.85;
 const MAX_ITERATIONS: usize = 100;
 const CONVERGENCE_THRESHOLD: f64 = 1e-5;
 
+/// 使用 TextRank 算法计算句子重要性分数
+///
+/// # 参数
+///
+/// * `similarity_matrix` - 已归一化的句子相似度矩阵
+///
+/// # 返回
+///
+/// 返回每个句子的 TextRank 分数向量
 pub fn textrank(similarity_matrix: &[Vec<f64>]) -> Vec<f64> {
     let n = similarity_matrix.len();
     if n == 0 {
         return vec![];
     }
 
-    let mut scores = vec![1.0 / n as f64; n];
+    let init_score = 1.0 / n as f64;
+    let mut scores = vec![init_score; n];
     let mut prev_scores = scores.clone();
+
+    let damping_complement = 1.0 - DAMPING_FACTOR;
+    let damping_base = damping_complement / n as f64;
 
     for _ in 0..MAX_ITERATIONS {
         for i in 0..n {
@@ -19,7 +32,7 @@ pub fn textrank(similarity_matrix: &[Vec<f64>]) -> Vec<f64> {
                     sum += similarity_matrix[j][i] * prev_scores[j];
                 }
             }
-            scores[i] = (1.0 - DAMPING_FACTOR) / n as f64 + DAMPING_FACTOR * sum;
+            scores[i] = damping_base + DAMPING_FACTOR * sum;
         }
 
         let max_diff = scores
@@ -32,12 +45,22 @@ pub fn textrank(similarity_matrix: &[Vec<f64>]) -> Vec<f64> {
             break;
         }
 
-        prev_scores.clone_from(&scores);
+        prev_scores.copy_from_slice(&scores);
     }
 
     scores
 }
 
+/// 选择得分最高的句子
+///
+/// # 参数
+///
+/// * `scores` - 句子分数数组
+/// * `top_n` - 要选择的句子数量
+///
+/// # 返回
+///
+/// 返回按分数降序排列的 (索引, 分数) 对
 pub fn select_top_sentences(scores: &[f64], top_n: usize) -> Vec<(usize, f64)> {
     let mut indexed_scores: Vec<(usize, f64)> = scores
         .iter()
@@ -45,7 +68,7 @@ pub fn select_top_sentences(scores: &[f64], top_n: usize) -> Vec<(usize, f64)> {
         .map(|(i, &score)| (i, score))
         .collect();
 
-    indexed_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    indexed_scores.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
     indexed_scores.into_iter().take(top_n).collect()
 }

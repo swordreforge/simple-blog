@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use std::collections::HashSet;
 
 lazy_static! {
-    static ref JIEBA: Jieba = Jieba::new();
+    static ref JIEBA: Jieba = Jieba::empty();
     static ref STOPWORDS: HashSet<String> = {
         let stopwords = include_str!("../data/hit_stopwords.txt");
         stopwords
