@@ -246,8 +246,12 @@ fn test_lockfree_vs_mutex_concurrent_comparison() {
     println!("  总操作数: {}", TOTAL_OPERATIONS);
     println!("  无锁版本总时间: {:?}", lockfree_time);
     println!("  Mutex版本总时间: {:?}", mutex_time);
-    println!("  性能差异: {:.2}%", 
-             (mutex_time.as_nanos() - lockfree_time.as_nanos()) as f64 / mutex_time.as_nanos() as f64 * 100.0);
+    println!("  性能差异: {:.2}%",
+             if mutex_time.as_nanos() > lockfree_time.as_nanos() {
+                 (mutex_time.as_nanos() - lockfree_time.as_nanos()) as f64 / mutex_time.as_nanos() as f64 * 100.0
+             } else {
+                 -((lockfree_time.as_nanos() - mutex_time.as_nanos()) as f64 / mutex_time.as_nanos() as f64 * 100.0)
+             });
     println!("  速度提升: {:.2}x", 
              mutex_time.as_secs_f64() / lockfree_time.as_secs_f64());
 }

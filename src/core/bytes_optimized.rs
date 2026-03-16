@@ -472,6 +472,14 @@ impl<'a> BytesSplitter<'a> {
     }
 }
 
+impl<'a> Iterator for BytesSplitter<'a> {
+    type Item = BytesView<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_view()
+    }
+}
+
 /// 字节比较器
 ///
 /// 高效比较字节缓冲区

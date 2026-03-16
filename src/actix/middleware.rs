@@ -65,7 +65,7 @@ where
 /// # 类型参数
 ///
 /// * `S` - 底层服务类型，必须实现 `Service<ServiceRequest>`
-struct RequestLoggerMiddleware<S> {
+pub struct RequestLoggerMiddleware<S> {
     service: S,
 }
 
@@ -185,7 +185,7 @@ where
 /// # 类型参数
 ///
 /// * `S` - 底层服务类型，必须实现 `Service<ServiceRequest>`
-struct AuthMiddlewareImpl<S> {
+pub struct AuthMiddlewareImpl<S> {
     service: S,
     valid_tokens: Vec<String>,
 }
@@ -336,7 +336,7 @@ where
 /// # 类型参数
 ///
 /// * `S` - 底层服务类型，必须实现 `Service<ServiceRequest>`
-struct RateLimiterImpl<S> {
+pub struct RateLimiterImpl<S> {
     service: std::sync::Arc<S>,
     max_requests: usize,
     window_duration: Duration,

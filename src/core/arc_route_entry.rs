@@ -112,8 +112,9 @@ impl ArcRouteEntry {
     /// let simple_route = SimpleRoute::new("Hello", "text/plain");
     /// let arc_route = ArcRouteEntry::new(simple_route);
     ///
-    /// // 通过 as_any 检查内部类型
-    /// if let Some(simple) = arc_route.inner.as_any().downcast_ref::<SimpleRoute>() {
+    /// // 通过 inner 方法获取内部引用
+    /// let inner_ref = arc_route.inner();
+    /// if let Some(simple) = inner_ref.as_any().downcast_ref::<SimpleRoute>() {
     ///     println!("Body: {}", simple.body);
     /// }
     /// ```
