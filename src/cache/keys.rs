@@ -236,6 +236,16 @@ impl PassageCacheKeys {
             .build()
     }
 
+    /// 生成最新文章缓存键
+    pub fn latest() -> String {
+        "passage:latest".to_string()
+    }
+
+    /// 生成最新文章缓存模式（用于删除）
+    pub fn latest_pattern() -> String {
+        "passage:latest".to_string()
+    }
+
     /// 生成文章列表缓存模式（用于批量删除）
     pub fn list_pattern() -> String {
         "passage:list:*".to_string()

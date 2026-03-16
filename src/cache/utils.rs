@@ -152,6 +152,7 @@ pub async fn invalidate_all_passage_cache(
         &[
             &PassageCacheKeys::list_pattern(),
             &PassageCacheKeys::get_pattern(),
+            &PassageCacheKeys::latest_pattern(),
         ]
     ).await;
 }
