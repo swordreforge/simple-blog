@@ -16,6 +16,7 @@ pub mod route_table;
 pub mod route_trie;
 pub mod route_validator;
 pub mod simple_route;
+pub mod simd_optimized;
 pub mod string_optimized;
 
 pub use arc_route_entry::ArcRouteEntry;
@@ -27,6 +28,7 @@ pub use dynamic_sharding::{
 };
 pub use lockfree_cache::{CacheStatsSnapshot, LockfreeCacheStats, LockfreeLruCache};
 pub use lockfree_shard::{LockfreeDynamicShard, LockfreeShardMetrics, ShardMetricsSnapshot};
+pub use simd_optimized::{SimdComparator, SimdPathSplitter};
 pub use object_pool::{PoolConfig, RouteObjectPool};
 pub use route_entry::{RouteEntry, SerializableRoute};
 pub use route_matcher::{MatchResult, RouteMatcher, RoutePattern};

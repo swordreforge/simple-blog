@@ -36,3 +36,4 @@ default = []
 sqlite = ["sqlx/sqlite"]
 postgres = ["sqlx/postgres"]
 database = ["sqlite", "postgres", "chrono", "sqlx"]
+simd = []  # SIMD优化特性，使用AVX2指令加速字符串操作
