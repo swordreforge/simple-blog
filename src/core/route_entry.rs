@@ -80,6 +80,10 @@ pub struct SerializableRoute {
 ///         })
 ///     }
 ///
+///     fn as_any(&self) -> &dyn std::any::Any {
+///         self
+///     }
+///
 ///     fn to_serializable(&self) -> SerializableRoute {
 ///         // 使用 extra_data 存储自定义字段
 ///         let extra_data = serde_json::json!({

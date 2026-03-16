@@ -41,7 +41,8 @@ impl Default for DynamicRouteTableConfig {
 /// # 示例
 ///
 /// ```
-/// use dynamic_route_actix::{DynamicRouteTable, DynamicRouteTableConfig, SimpleRoute};
+/// use dynamic_route_actix::{DynamicRouteTable, SimpleRoute};
+/// use dynamic_route_actix::core::DynamicRouteTableConfig;
 ///
 /// let config = DynamicRouteTableConfig::default();
 /// let table = DynamicRouteTable::new(config);
