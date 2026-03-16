@@ -47,6 +47,12 @@ pub struct SerializableRoute {
 ///         })
 ///     }
 ///
+///     fn clone_box(&self) -> Box<dyn RouteEntry> {
+///         Box::new(CustomRoute {
+///             message: self.message.clone(),
+///         })
+///     }
+///
 ///     fn to_serializable(&self) -> SerializableRoute {
 ///         SerializableRoute {
 ///             route_type: "CustomRoute".to_string(),
@@ -87,6 +93,24 @@ pub trait RouteEntry: Send + Sync + 'static + std::fmt::Debug {
     /// // route.handle(&req).await; // 在异步上下文中调用
     /// ```
     fn handle(&self, req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>>;
+
+    /// 克隆路由处理器
+    ///
+    /// 返回一个新的 `Box<dyn RouteEntry>`，包含与当前处理器相同的数据。
+    ///
+    /// # 返回
+    ///
+    /// 返回克隆的路由处理器
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::{RouteEntry, SimpleRoute};
+    ///
+    /// let route = SimpleRoute::new("Hello", "text/plain");
+    /// let cloned = route.clone_box();
+    /// ```
+    fn clone_box(&self) -> Box<dyn RouteEntry>;
 
     /// 将路由序列化为可传输的格式
     ///

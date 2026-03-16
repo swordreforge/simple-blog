@@ -136,6 +136,33 @@ impl RouteTable {
         guard.get(path).map(f)
     }
 
+    /// 获取指定路径的路由处理器的克隆
+    ///
+    /// # 参数
+    ///
+    /// * `path` - 要查询的路由路径
+    ///
+    /// # 返回
+    ///
+    /// 如果路由存在，返回 `Some(Box<dyn RouteEntry>)`；否则返回 `None`
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::{RouteTable, SimpleRoute};
+    ///
+    /// let table = RouteTable::new();
+    /// let route = SimpleRoute::new("Hello", "text/plain");
+    /// table.insert("/hello".into(), Box::new(route));
+    ///
+    /// let route_clone = table.get_clone("/hello");
+    /// assert!(route_clone.is_some());
+    /// ```
+    pub fn get_clone(&self, path: &str) -> Option<Box<dyn RouteEntry>> {
+        let guard = self.inner.read().unwrap();
+        guard.get(path).map(|route| route.clone_box())
+    }
+
     /// 获取路由的数量
     ///
     /// # 返回

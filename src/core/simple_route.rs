@@ -83,6 +83,16 @@ impl RouteEntry for SimpleRoute {
         Box::pin(async move { HttpResponse::Ok().content_type(content_type).body(body) })
     }
 
+    /// 克隆 SimpleRoute
+    ///
+    /// 返回一个新的 SimpleRoute 实例，包含相同的 body 和 content_type。
+    fn clone_box(&self) -> Box<dyn RouteEntry> {
+        Box::new(SimpleRoute {
+            body: self.body.clone(),
+            content_type: self.content_type.clone(),
+        })
+    }
+
     /// 将 SimpleRoute 序列化为 SerializableRoute
     ///
     /// # 返回
