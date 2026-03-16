@@ -189,6 +189,7 @@ pub trait RouteEntry: Send + Sync + 'static + std::fmt::Debug {
     ///     route_type: "SimpleRoute".to_string(),
     ///     body: "Hello!".to_string(),
     ///     content_type: "text/plain".to_string(),
+    ///     extra_data: None,
     /// };
     /// let route = SimpleRoute::from_serializable(data);
     /// ```

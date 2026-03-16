@@ -2,9 +2,13 @@
 //!
 //! 提供与 Actix-Web 框架的深度集成，包括万能路由处理器和管理端点。
 
+pub mod middleware;
+
 use crate::core::{RouteTable, SerializableRoute, SimpleRoute};
 use actix_web::{delete, get, post, web, web::Path, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
+
+pub use middleware::{AuthMiddleware, RateLimiter, RequestLogger};
 
 /// 万能路由处理器
 ///

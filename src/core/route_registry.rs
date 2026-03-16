@@ -171,6 +171,7 @@ impl RouteRegistry {
     ///     route_type: "SimpleRoute".to_string(),
     ///     body: "Hello".to_string(),
     ///     content_type: "text/plain".to_string(),
+    ///     extra_data: None,
     /// };
     ///
     /// let route = RouteRegistry::create_route(data);
