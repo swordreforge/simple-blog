@@ -103,6 +103,7 @@ impl RouteEntry for SimpleRoute {
             route_type: "SimpleRoute".to_string(),
             body: self.body.clone(),
             content_type: self.content_type.clone(),
+            extra_data: None, // SimpleRoute 不需要额外数据
         }
     }
 

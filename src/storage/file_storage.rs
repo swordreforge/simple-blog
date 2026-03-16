@@ -3,7 +3,6 @@
 //! 提供文件系统的键值存储和路由持久化功能。
 
 use crate::core::route_entry::RouteEntry;
-use crate::core::simple_route::SimpleRoute;
 use crate::core::SerializableRoute;
 use crate::storage::traits::{KeyValueStorage, RouteStorage};
 use async_trait::async_trait;
@@ -158,14 +157,9 @@ impl RouteStorage for FileStorage {
             let content = fs::read_to_string(&path).await?;
             let serializable: SerializableRoute = serde_json::from_str(&content)?;
 
-            // 根据路由类型创建对应的 RouteEntry
-            // 目前只支持 SimpleRoute，未来可以扩展支持更多类型
-            let route: Box<dyn RouteEntry> = match serializable.route_type.as_str() {
-                "SimpleRoute" => SimpleRoute::from_serializable(serializable),
-                _ => {
-                    return Err(format!("Unknown route type: {}", serializable.route_type).into());
-                }
-            };
+            // 使用注册表创建路由实例
+            let route: Box<dyn RouteEntry> = crate::core::route_registry::RouteRegistry::create_route(serializable)
+                .map_err(|e| format!("Failed to create route: {}", e))?;
 
             routes.insert(route_key.to_string(), route);
         }
@@ -275,5 +269,127 @@ mod tests {
 
         let result = storage.delete("nonexistent.txt").await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_file_storage_route_persistence_with_registry() {
+        let temp_dir = tempdir().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+
+        // 创建并保存路由
+        let mut routes = std::collections::HashMap::new();
+        routes.insert(
+            "test1".into(),
+            Box::new(crate::SimpleRoute::new("body1", "text/plain")) as Box<dyn RouteEntry>,
+        );
+        routes.insert(
+            "test2".into(),
+            Box::new(crate::SimpleRoute::new("body2", "application/json")) as Box<dyn RouteEntry>,
+        );
+
+        storage.save(&routes).await.expect("Failed to save routes");
+
+        // 加载路由
+        let loaded_routes = storage.load().await.expect("Failed to load routes");
+
+        assert_eq!(loaded_routes.len(), 2);
+        assert!(loaded_routes.contains_key("test1"));
+        assert!(loaded_routes.contains_key("test2"));
+    }
+
+    #[tokio::test]
+    async fn test_file_storage_with_custom_route_type() {
+        use crate::core::{RouteEntry, SerializableRoute, RouteRegistry};
+        use actix_web::{HttpRequest, HttpResponse};
+        use std::future::Future;
+        use std::pin::Pin;
+
+        // 定义自定义路由类型
+        #[derive(Debug, Clone)]
+        struct TimedRoute {
+            body: String,
+            content_type: String,
+            timeout_ms: u64,
+        }
+
+        impl TimedRoute {
+            fn new(body: &str, content_type: &str, timeout_ms: u64) -> Self {
+                Self {
+                    body: body.to_string(),
+                    content_type: content_type.to_string(),
+                    timeout_ms,
+                }
+            }
+        }
+
+        impl RouteEntry for TimedRoute {
+            fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
+                let body = self.body.clone();
+                let content_type = self.content_type.clone();
+                Box::pin(async move {
+                    HttpResponse::Ok().content_type(content_type).body(body)
+                })
+            }
+
+            fn clone_box(&self) -> Box<dyn RouteEntry> {
+                Box::new(self.clone())
+            }
+
+            fn to_serializable(&self) -> SerializableRoute {
+                let extra_data = serde_json::json!({
+                    "timeout_ms": self.timeout_ms
+                }).to_string();
+
+                SerializableRoute {
+                    route_type: "TimedRoute".to_string(),
+                    body: self.body.clone(),
+                    content_type: self.content_type.clone(),
+                    extra_data: Some(extra_data),
+                }
+            }
+
+            fn from_serializable(data: SerializableRoute) -> Box<dyn RouteEntry>
+            where
+                Self: Sized,
+            {
+                let timeout_ms = if let Some(ref extra) = data.extra_data {
+                    serde_json::from_str(extra).unwrap_or(1000)
+                } else {
+                    1000
+                };
+
+                Box::new(TimedRoute::new(&data.body, &data.content_type, timeout_ms))
+            }
+        }
+
+        // 注册自定义路由类型
+        let result = RouteRegistry::register("TimedRoute", TimedRoute::from_serializable);
+        assert!(result.is_ok());
+
+        let temp_dir = tempdir().unwrap();
+        let storage = FileStorage::new(temp_dir.path());
+
+        // 创建并保存自定义路由
+        let mut routes = std::collections::HashMap::new();
+        routes.insert(
+            "timed".into(),
+            Box::new(TimedRoute::new("timed response", "text/plain", 5000)) as Box<dyn RouteEntry>,
+        );
+
+        storage.save(&routes).await.expect("Failed to save custom routes");
+
+        // 加载路由
+        let loaded_routes = storage.load().await.expect("Failed to load custom routes");
+        assert_eq!(loaded_routes.len(), 1);
+        assert!(loaded_routes.contains_key("timed"));
+
+        // 验证加载的路由具有正确的类型
+        if let Some(route) = loaded_routes.get("timed") {
+            let serializable = route.to_serializable();
+            assert_eq!(serializable.route_type, "TimedRoute");
+        }
+
+        // 清理注册表
+        RouteRegistry::unregister("TimedRoute");
     }
 }

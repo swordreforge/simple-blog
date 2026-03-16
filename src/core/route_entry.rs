@@ -4,7 +4,7 @@ use std::pin::Pin;
 
 /// 可序列化的路由数据
 ///
-/// 用于路由的持久化和传输。
+/// 用于路由的持久化和传输。支持自定义路由类型的额外数据。
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SerializableRoute {
     /// 路由类型标识符
@@ -13,6 +13,31 @@ pub struct SerializableRoute {
     pub body: String,
     /// Content-Type
     pub content_type: String,
+    /// 自定义数据（可选，用于扩展路由类型）
+    ///
+    /// 使用 JSON 字符串存储自定义数据，允许灵活添加额外的配置信息。
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::SerializableRoute;
+    /// use serde_json::json;
+    ///
+    /// let custom_data = json!({
+    ///     "timeout": 30,
+    ///     "retry_count": 3,
+    ///     "cache_enabled": true
+    /// });
+    ///
+    /// let route = SerializableRoute {
+    ///     route_type: "CustomRoute".to_string(),
+    ///     body: "Response".to_string(),
+    ///     content_type: "application/json".to_string(),
+    ///     extra_data: Some(custom_data.to_string()),
+    /// };
+    /// ```
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extra_data: Option<String>,
 }
 
 /// 路由处理器 trait
@@ -35,6 +60,7 @@ pub struct SerializableRoute {
 /// #[derive(Debug)]
 /// struct CustomRoute {
 ///     message: String,
+///     timeout: u64,
 /// }
 ///
 /// impl RouteEntry for CustomRoute {
@@ -50,14 +76,21 @@ pub struct SerializableRoute {
 ///     fn clone_box(&self) -> Box<dyn RouteEntry> {
 ///         Box::new(CustomRoute {
 ///             message: self.message.clone(),
+///             timeout: self.timeout,
 ///         })
 ///     }
 ///
 ///     fn to_serializable(&self) -> SerializableRoute {
+///         // 使用 extra_data 存储自定义字段
+///         let extra_data = serde_json::json!({
+///             "timeout": self.timeout
+///         }).to_string();
+///
 ///         SerializableRoute {
 ///             route_type: "CustomRoute".to_string(),
 ///             body: self.message.clone(),
 ///             content_type: "text/plain".to_string(),
+///             extra_data: Some(extra_data),
 ///         }
 ///     }
 ///
@@ -65,8 +98,16 @@ pub struct SerializableRoute {
 ///     where
 ///         Self: Sized,
 ///     {
+///         // 从 extra_data 解析自定义字段
+///         let timeout = if let Some(ref extra) = data.extra_data {
+///             serde_json::from_str(extra).unwrap_or(30)
+///         } else {
+///             30
+///         };
+///
 ///         Box::new(CustomRoute {
 ///             message: data.body,
+///             timeout,
 ///         })
 ///     }
 /// }
