@@ -5,8 +5,7 @@
 use actix_web::{
     body::{EitherBody, MessageBody},
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    error::ErrorTooManyRequests,
-    Error, HttpMessage, HttpResponse,
+    Error, HttpResponse,
 };
 use futures_util::future::{ok, LocalBoxFuture, Ready};
 use std::{
@@ -137,7 +136,9 @@ impl AuthMiddleware {
     ///
     /// * `tokens` - 有效的认证令牌列表
     pub fn new(tokens: Vec<String>) -> Self {
-        Self { valid_tokens: tokens }
+        Self {
+            valid_tokens: tokens,
+        }
     }
 
     /// 从单个令牌创建认证中间件
@@ -145,11 +146,6 @@ impl AuthMiddleware {
         Self {
             valid_tokens: vec![token.to_string()],
         }
-    }
-
-    /// 验证令牌
-    fn verify_token(&self, token: &str) -> bool {
-        self.valid_tokens.contains(&token.to_string())
     }
 }
 
@@ -267,31 +263,6 @@ impl RateLimiter {
             window_duration: Duration::from_secs(window_seconds),
             state: Arc::new(RwLock::new(HashMap::new())),
         }
-    }
-
-    /// 检查客户端是否超过限流
-    async fn check_rate_limit(&self, client_ip: IpAddr) -> Result<(), Error> {
-        let mut state = self.state.write().await;
-        let now = Instant::now();
-
-        let client_state = state.entry(client_ip).or_insert_with(|| ClientState {
-            request_count: 0,
-            window_start: now,
-        });
-
-        // 检查是否需要重置计数器
-        if now.duration_since(client_state.window_start) >= self.window_duration {
-            client_state.request_count = 0;
-            client_state.window_start = now;
-        }
-
-        // 检查是否超过限制
-        if client_state.request_count >= self.max_requests {
-            return Err(ErrorTooManyRequests("Rate limit exceeded".to_string()));
-        }
-
-        client_state.request_count += 1;
-        Ok(())
     }
 
     /// 清理过期的客户端状态
@@ -492,6 +463,4 @@ mod tests {
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), 429);
     }
-
-    
 }

@@ -9,8 +9,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
 use thiserror::Error;
+use tokio::sync::RwLock;
 
 /// 热重载错误类型
 #[derive(Error, Debug)]
@@ -112,7 +112,9 @@ where
     pub async fn start(&mut self, watch_path: &Path) -> Result<(), HotReloadError> {
         // 验证路径存在
         if !watch_path.exists() {
-            return Err(HotReloadError::PathNotFound(watch_path.display().to_string()));
+            return Err(HotReloadError::PathNotFound(
+                watch_path.display().to_string(),
+            ));
         }
 
         // 如果配置要求在启动时加载
@@ -127,7 +129,9 @@ where
 
         let mut watcher = notify::recommended_watcher(move |res| {
             if let Ok(event) = res {
-                if let Err(e) = handle_file_event(event, routes.clone(), storage.clone(), debounce_duration) {
+                if let Err(e) =
+                    handle_file_event(event, routes.clone(), storage.clone(), debounce_duration)
+                {
                     eprintln!("Error handling file event: {}", e);
                 }
             }
@@ -154,7 +158,10 @@ where
             Ok(routes) => {
                 let mut guard = self.routes.write().await;
                 *guard = routes;
-                println!("Routes reloaded successfully, {} routes loaded", guard.len());
+                println!(
+                    "Routes reloaded successfully, {} routes loaded",
+                    guard.len()
+                );
                 Ok(())
             }
             Err(e) => {
@@ -168,7 +175,10 @@ where
     /// 获取当前路由
     pub async fn get_routes(&self) -> HashMap<String, Box<dyn RouteEntry>> {
         let guard = self.routes.read().await;
-        guard.iter().map(|(k, v)| (k.clone(), v.clone_box())).collect()
+        guard
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone_box()))
+            .collect()
     }
 
     /// 获取指定路径的路由
@@ -200,7 +210,10 @@ fn handle_file_event(
                     Ok(new_routes) => {
                         let mut guard = routes.write().await;
                         *guard = new_routes;
-                        println!("Routes reloaded successfully, {} routes loaded", guard.len());
+                        println!(
+                            "Routes reloaded successfully, {} routes loaded",
+                            guard.len()
+                        );
                     }
                     Err(e) => {
                         eprintln!("Failed to reload routes: {}", e);
@@ -270,7 +283,10 @@ mod tests {
         // 尝试监听不存在的路径
         let result = manager.start(Path::new("/nonexistent/path")).await;
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), HotReloadError::PathNotFound(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            HotReloadError::PathNotFound(_)
+        ));
     }
 
     #[tokio::test]

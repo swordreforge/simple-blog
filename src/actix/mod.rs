@@ -45,10 +45,7 @@ pub use middleware::{AuthMiddleware, RateLimiter, RequestLogger};
 ///     .await
 /// }
 /// ```
-pub async fn universal_handler(
-    req: HttpRequest,
-    table: web::Data<RouteTable>,
-) -> HttpResponse {
+pub async fn universal_handler(req: HttpRequest, table: web::Data<RouteTable>) -> HttpResponse {
     // 获取请求的路径
     let path = req.path();
 
@@ -151,10 +148,7 @@ pub async fn add_route(
 ///
 /// 返回 200 OK 表示成功，或 404 Not Found 表示路由不存在
 #[delete("/admin/routes/{path:.*}")]
-pub async fn delete_route(
-    path: Path<String>,
-    table: web::Data<RouteTable>,
-) -> HttpResponse {
+pub async fn delete_route(path: Path<String>, table: web::Data<RouteTable>) -> HttpResponse {
     let route_path = format!("/{}", path.into_inner());
 
     if table.remove(&route_path) {
@@ -214,10 +208,7 @@ pub struct RouteInfo {
 ///
 /// 返回路由详情，或 404 Not Found
 #[get("/admin/routes/{path:.*}")]
-pub async fn get_route(
-    path: Path<String>,
-    table: web::Data<RouteTable>,
-) -> HttpResponse {
+pub async fn get_route(path: Path<String>, table: web::Data<RouteTable>) -> HttpResponse {
     let route_path = format!("/{}", path.into_inner());
 
     if let Some(serializable) = table.get_with(&route_path, |route| route.to_serializable()) {
@@ -297,7 +288,6 @@ pub fn admin_routes(cfg: &mut web::ServiceConfig) {
 ///     .await
 /// }
 /// ```
-
 pub fn configure_dynamic_routes(cfg: &mut web::ServiceConfig) {
     cfg.route("/{tail:.*}", web::get().to(universal_handler))
         .route("/{tail:.*}", web::post().to(universal_handler))
@@ -499,7 +489,9 @@ mod integration_tests {
         )
         .await;
 
-        let req = test::TestRequest::get().uri("/admin/routes/test").to_request();
+        let req = test::TestRequest::get()
+            .uri("/admin/routes/test")
+            .to_request();
         let resp = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK);

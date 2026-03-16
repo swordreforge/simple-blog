@@ -67,7 +67,10 @@ impl RouteRegistry {
         REGISTRY.get_or_init(|| {
             // 初始化时注册 SimpleRoute
             let mut map: HashMap<String, RouteFactory> = HashMap::new();
-            map.insert("SimpleRoute".to_string(), super::SimpleRoute::from_serializable);
+            map.insert(
+                "SimpleRoute".to_string(),
+                super::SimpleRoute::from_serializable,
+            );
             RwLock::new(map)
         })
     }
@@ -98,7 +101,9 @@ impl RouteRegistry {
         let mut registry = Self::get_registry().write().unwrap();
 
         if registry.contains_key(route_type) {
-            return Err(RouteRegistryError::AlreadyRegistered(route_type.to_string()));
+            return Err(RouteRegistryError::AlreadyRegistered(
+                route_type.to_string(),
+            ));
         }
 
         registry.insert(route_type.to_string(), factory);
@@ -177,7 +182,9 @@ impl RouteRegistry {
     /// let route = RouteRegistry::create_route(data);
     /// assert!(route.is_ok());
     /// ```
-    pub fn create_route(data: SerializableRoute) -> Result<Box<dyn RouteEntry>, RouteRegistryError> {
+    pub fn create_route(
+        data: SerializableRoute,
+    ) -> Result<Box<dyn RouteEntry>, RouteRegistryError> {
         let factory = Self::get_factory(&data.route_type)
             .ok_or_else(|| RouteRegistryError::NotFound(data.route_type.clone()))?;
 
@@ -263,10 +270,13 @@ mod tests {
 
     #[test]
     fn test_register_route_type() {
-        let test_type = format!("TestRoute_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let test_type = format!(
+            "TestRoute_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         assert!(!RouteRegistry::is_registered(&test_type));
 
         // 注册新类型
@@ -280,10 +290,13 @@ mod tests {
 
     #[test]
     fn test_register_duplicate_type() {
-        let test_type = format!("DuplicateRoute_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let test_type = format!(
+            "DuplicateRoute_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
 
         // 第一次注册应该成功
         let result1 = RouteRegistry::register(&test_type, test_factory);
@@ -291,7 +304,10 @@ mod tests {
 
         // 第二次注册应该失败
         let result2 = RouteRegistry::register(&test_type, test_factory);
-        assert!(matches!(result2, Err(RouteRegistryError::AlreadyRegistered(_))));
+        assert!(matches!(
+            result2,
+            Err(RouteRegistryError::AlreadyRegistered(_))
+        ));
 
         // 清理
         RouteRegistry::unregister(&test_type);
@@ -299,10 +315,13 @@ mod tests {
 
     #[test]
     fn test_get_factory() {
-        let test_type = format!("GetTestRoute_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let test_type = format!(
+            "GetTestRoute_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         RouteRegistry::register(&test_type, test_factory).unwrap();
 
         let factory = RouteRegistry::get_factory(&test_type);
@@ -317,10 +336,13 @@ mod tests {
 
     #[test]
     fn test_create_route() {
-        let test_type = format!("CreateTestRoute_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let test_type = format!(
+            "CreateTestRoute_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         RouteRegistry::register(&test_type, test_factory).unwrap();
 
         let data = SerializableRoute {
@@ -377,10 +399,13 @@ mod tests {
 
     #[test]
     fn test_clear_registry() {
-        let test_type = format!("ClearTestRoute_{}", std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos());
+        let test_type = format!(
+            "ClearTestRoute_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
         RouteRegistry::register(&test_type, test_factory).unwrap();
         assert!(RouteRegistry::is_registered(&test_type));
 

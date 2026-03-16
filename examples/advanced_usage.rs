@@ -2,12 +2,15 @@
 //!
 //! 展示如何使用数据库存储、版本控制、路由验证等高级功能。
 
-#[cfg(all(feature = "database", feature = "sqlite"))]
-
-use dynamic_route_actix::RouteEntry;
-use dynamic_route_actix::core::{RouteRegistry, SerializableRoute, SimpleRoute, RouteValidator, RouteTypeMetadata};
-use dynamic_route_actix::storage::{DatabaseStorage, DatabaseStorageConfig, DatabaseType, RouteStorage};
 use actix_web::{HttpRequest, HttpResponse};
+use dynamic_route_actix::core::{
+    RouteRegistry, RouteTypeMetadata, RouteValidator, SerializableRoute, SimpleRoute,
+};
+use dynamic_route_actix::storage::{
+    DatabaseStorage, DatabaseStorageConfig, DatabaseType, RouteStorage,
+};
+#[cfg(all(feature = "database", feature = "sqlite"))]
+use dynamic_route_actix::RouteEntry;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
@@ -91,7 +94,12 @@ async fn demo_database_storage() -> Result<(), Box<dyn std::error::Error>> {
         Ok(versions) => {
             println!("✓ 路由 /hello 有 {} 个版本", versions.len());
             for (i, version) in versions.iter().enumerate() {
-                println!("  版本 {}: {} (创建于: {})", i + 1, version.body, version.created_at);
+                println!(
+                    "  版本 {}: {} (创建于: {})",
+                    i + 1,
+                    version.body,
+                    version.created_at
+                );
             }
         }
         Err(e) => {
@@ -173,9 +181,7 @@ async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::E
         fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
             let body = self.body.clone();
             let content_type = self.content_type.clone();
-            Box::pin(async move {
-                HttpResponse::Ok().content_type(content_type).body(body)
-            })
+            Box::pin(async move { HttpResponse::Ok().content_type(content_type).body(body) })
         }
 
         fn clone_box(&self) -> Box<dyn RouteEntry> {
@@ -185,7 +191,8 @@ async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::E
         fn to_serializable(&self) -> SerializableRoute {
             let extra_data = serde_json::json!({
                 "timeout_ms": self.timeout_ms
-            }).to_string();
+            })
+            .to_string();
 
             SerializableRoute {
                 route_type: "TimedRoute".to_string(),
@@ -231,7 +238,11 @@ async fn demo_custom_route_with_versioning() -> Result<(), Box<dyn std::error::E
     let mut routes = HashMap::new();
     routes.insert(
         "/timed".to_string(),
-        Box::new(TimedRoute::new("Response with 1s timeout", "text/plain", 1000)) as Box<dyn RouteEntry>,
+        Box::new(TimedRoute::new(
+            "Response with 1s timeout",
+            "text/plain",
+            1000,
+        )) as Box<dyn RouteEntry>,
     );
 
     if let Err(e) = storage.save(&routes).await {

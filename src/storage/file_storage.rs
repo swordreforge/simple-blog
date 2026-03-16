@@ -130,7 +130,9 @@ impl KeyValueStorage for FileStorage {
 
 #[async_trait]
 impl RouteStorage for FileStorage {
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
+    async fn load(
+        &self,
+    ) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
         let mut routes = HashMap::new();
 
         if !self.base_path.exists() {
@@ -158,8 +160,9 @@ impl RouteStorage for FileStorage {
             let serializable: SerializableRoute = serde_json::from_str(&content)?;
 
             // 使用注册表创建路由实例
-            let route: Box<dyn RouteEntry> = crate::core::route_registry::RouteRegistry::create_route(serializable)
-                .map_err(|e| format!("Failed to create route: {}", e))?;
+            let route: Box<dyn RouteEntry> =
+                crate::core::route_registry::RouteRegistry::create_route(serializable)
+                    .map_err(|e| format!("Failed to create route: {}", e))?;
 
             routes.insert(route_key.to_string(), route);
         }
@@ -299,7 +302,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_file_storage_with_custom_route_type() {
-        use crate::core::{RouteEntry, SerializableRoute, RouteRegistry};
+        use crate::core::{RouteEntry, RouteRegistry, SerializableRoute};
         use actix_web::{HttpRequest, HttpResponse};
         use std::future::Future;
         use std::pin::Pin;
@@ -323,12 +326,13 @@ mod tests {
         }
 
         impl RouteEntry for TimedRoute {
-            fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
+            fn handle(
+                &self,
+                _req: &HttpRequest,
+            ) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
                 let body = self.body.clone();
                 let content_type = self.content_type.clone();
-                Box::pin(async move {
-                    HttpResponse::Ok().content_type(content_type).body(body)
-                })
+                Box::pin(async move { HttpResponse::Ok().content_type(content_type).body(body) })
             }
 
             fn clone_box(&self) -> Box<dyn RouteEntry> {
@@ -338,7 +342,8 @@ mod tests {
             fn to_serializable(&self) -> SerializableRoute {
                 let extra_data = serde_json::json!({
                     "timeout_ms": self.timeout_ms
-                }).to_string();
+                })
+                .to_string();
 
                 SerializableRoute {
                     route_type: "TimedRoute".to_string(),
@@ -376,7 +381,10 @@ mod tests {
             Box::new(TimedRoute::new("timed response", "text/plain", 5000)) as Box<dyn RouteEntry>,
         );
 
-        storage.save(&routes).await.expect("Failed to save custom routes");
+        storage
+            .save(&routes)
+            .await
+            .expect("Failed to save custom routes");
 
         // 加载路由
         let loaded_routes = storage.load().await.expect("Failed to load custom routes");

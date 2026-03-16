@@ -42,7 +42,9 @@ pub trait RouteStorage: Send + Sync {
     /// # Errors
     ///
     /// 如果加载失败，返回错误
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>>;
+    async fn load(
+        &self,
+    ) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>>;
 
     /// 将所有路由保存到持久化存储
     ///

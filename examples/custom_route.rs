@@ -3,8 +3,8 @@
 //! 演示如何创建自定义路由类型并注册到路由注册表中。
 
 use actix_web::{HttpRequest, HttpResponse};
-use dynamic_route_actix::{RouteEntry, SerializableRoute};
 use dynamic_route_actix::core::RouteRegistry;
+use dynamic_route_actix::{RouteEntry, SerializableRoute};
 use std::future::Future;
 use std::pin::Pin;
 
@@ -46,7 +46,8 @@ impl RouteEntry for TimedRoute {
         // 使用 extra_data 存储自定义字段
         let extra_data = serde_json::json!({
             "timeout_ms": self.timeout_ms
-        }).to_string();
+        })
+        .to_string();
 
         SerializableRoute {
             route_type: "TimedRoute".to_string(),
@@ -113,7 +114,8 @@ impl RouteEntry for HeaderRoute {
         // 使用 extra_data 存储自定义字段
         let extra_data = serde_json::json!({
             "headers": self.headers
-        }).to_string();
+        })
+        .to_string();
 
         SerializableRoute {
             route_type: "HeaderRoute".to_string(),
@@ -182,7 +184,10 @@ fn main() {
     println!("4. 测试 HeaderRoute:");
     let header_route = HeaderRoute::new(
         "Hello with headers!",
-        vec![("X-Custom-Header", "custom-value"), ("X-Request-ID", "12345")],
+        vec![
+            ("X-Custom-Header", "custom-value"),
+            ("X-Request-ID", "12345"),
+        ],
     );
     let serializable = header_route.to_serializable();
     println!("   序列化数据: {:?}", serializable);

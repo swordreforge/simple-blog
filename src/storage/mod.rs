@@ -10,7 +10,9 @@ mod memory_storage;
 mod traits;
 
 #[cfg(feature = "database")]
-pub use database_storage::{DatabaseStorage, DatabaseStorageConfig, DatabaseType, DatabaseStorageError, RouteVersion};
+pub use database_storage::{
+    DatabaseStorage, DatabaseStorageConfig, DatabaseStorageError, DatabaseType, RouteVersion,
+};
 pub use file_storage::FileStorage;
 pub use hot_reload::{HotReloadConfig, HotReloadError, HotReloadManager};
 pub use memory_storage::MemoryStorage;

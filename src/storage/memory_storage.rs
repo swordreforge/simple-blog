@@ -154,7 +154,9 @@ impl KeyValueStorage for MemoryStorage {
 
 #[async_trait]
 impl RouteStorage for MemoryStorage {
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
+    async fn load(
+        &self,
+    ) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
         // MemoryStorage 不支持持久化路由，返回空 HashMap
         // 如果需要支持，可以添加额外的存储结构来保存序列化的路由
         Ok(HashMap::new())

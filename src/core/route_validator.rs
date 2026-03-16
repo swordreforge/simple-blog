@@ -67,7 +67,10 @@ impl RouteTypeRegistry {
     }
 
     /// 注册路由类型元数据
-    pub fn register_metadata(&mut self, metadata: RouteTypeMetadata) -> Result<(), ValidationError> {
+    pub fn register_metadata(
+        &mut self,
+        metadata: RouteTypeMetadata,
+    ) -> Result<(), ValidationError> {
         // 验证元数据
         if metadata.type_name.is_empty() {
             return Err(ValidationError::MissingField("type_name".to_string()));
@@ -90,13 +93,16 @@ impl RouteTypeRegistry {
     pub fn register_migration(&mut self, type_name: &str, rule: MigrationRule) {
         self.migrations
             .entry(type_name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(rule);
     }
 
     /// 获取迁移规则
     pub fn get_migrations(&self, type_name: &str) -> &[MigrationRule] {
-        self.migrations.get(type_name).map(|v| v.as_slice()).unwrap_or(&[])
+        self.migrations
+            .get(type_name)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// 检查是否支持路由类型
@@ -129,33 +135,45 @@ impl RouteValidator {
         let mut validator = Self::new();
 
         // 注册 SimpleRoute 的元数据
-        validator.metadata_registry.register_metadata(RouteTypeMetadata {
-            type_name: "SimpleRoute".to_string(),
-            version: "1.0.0".to_string(),
-            description: "Simple route with basic response".to_string(),
-            required_fields: vec!["route_type".to_string(), "body".to_string(), "content_type".to_string()],
-            optional_fields: vec!["extra_data".to_string()],
-            supported_content_types: vec![
-                "text/plain".to_string(),
-                "text/html".to_string(),
-                "application/json".to_string(),
-                "application/xml".to_string(),
-            ],
-            requires_extra_data: false,
-        }).unwrap();
+        validator
+            .metadata_registry
+            .register_metadata(RouteTypeMetadata {
+                type_name: "SimpleRoute".to_string(),
+                version: "1.0.0".to_string(),
+                description: "Simple route with basic response".to_string(),
+                required_fields: vec![
+                    "route_type".to_string(),
+                    "body".to_string(),
+                    "content_type".to_string(),
+                ],
+                optional_fields: vec!["extra_data".to_string()],
+                supported_content_types: vec![
+                    "text/plain".to_string(),
+                    "text/html".to_string(),
+                    "application/json".to_string(),
+                    "application/xml".to_string(),
+                ],
+                requires_extra_data: false,
+            })
+            .unwrap();
 
         validator
     }
 
     /// 注册路由类型元数据
-    pub fn register_type_metadata(&mut self, metadata: RouteTypeMetadata) -> Result<(), ValidationError> {
+    pub fn register_type_metadata(
+        &mut self,
+        metadata: RouteTypeMetadata,
+    ) -> Result<(), ValidationError> {
         self.metadata_registry.register_metadata(metadata)
     }
 
     /// 验证路由路径
     fn validate_path(&self, path: &str) -> Result<(), ValidationError> {
         if path.is_empty() {
-            return Err(ValidationError::InvalidPath("Path cannot be empty".to_string()));
+            return Err(ValidationError::InvalidPath(
+                "Path cannot be empty".to_string(),
+            ));
         }
 
         // 检查路径是否以 / 开头
@@ -176,13 +194,20 @@ impl RouteValidator {
     }
 
     /// 验证内容类型
-    fn validate_content_type(&self, content_type: &str, metadata: &RouteTypeMetadata) -> Result<(), ValidationError> {
+    fn validate_content_type(
+        &self,
+        content_type: &str,
+        metadata: &RouteTypeMetadata,
+    ) -> Result<(), ValidationError> {
         if metadata.supported_content_types.is_empty() {
             // 如果没有指定支持的内容类型，则允许所有类型
             return Ok(());
         }
 
-        if !metadata.supported_content_types.contains(&content_type.to_string()) {
+        if !metadata
+            .supported_content_types
+            .contains(&content_type.to_string())
+        {
             return Err(ValidationError::InvalidContentType(format!(
                 "Content type '{}' is not supported. Supported types: {:?}",
                 content_type, metadata.supported_content_types
@@ -193,7 +218,11 @@ impl RouteValidator {
     }
 
     /// 验证额外数据
-    fn validate_extra_data(&self, extra_data: &Option<String>, metadata: &RouteTypeMetadata) -> Result<(), ValidationError> {
+    fn validate_extra_data(
+        &self,
+        extra_data: &Option<String>,
+        metadata: &RouteTypeMetadata,
+    ) -> Result<(), ValidationError> {
         if metadata.requires_extra_data && extra_data.is_none() {
             return Err(ValidationError::ExtraDataValidationError(
                 "This route type requires extra_data".to_string(),
@@ -202,15 +231,20 @@ impl RouteValidator {
 
         // 如果存在额外数据，验证是否为有效的 JSON
         if let Some(ref data) = extra_data {
-            serde_json::from_str::<serde_json::Value>(data)
-                .map_err(|e| ValidationError::ExtraDataValidationError(format!("Invalid JSON: {}", e)))?;
+            serde_json::from_str::<serde_json::Value>(data).map_err(|e| {
+                ValidationError::ExtraDataValidationError(format!("Invalid JSON: {}", e))
+            })?;
         }
 
         Ok(())
     }
 
     /// 验证路由
-    pub fn validate_route(&self, path: &str, route: &SerializableRoute) -> Result<(), ValidationError> {
+    pub fn validate_route(
+        &self,
+        path: &str,
+        route: &SerializableRoute,
+    ) -> Result<(), ValidationError> {
         // 验证路径
         self.validate_path(path)?;
 
@@ -235,7 +269,10 @@ impl RouteValidator {
     }
 
     /// 验证路由集合
-    pub fn validate_routes(&self, routes: &HashMap<String, SerializableRoute>) -> Result<(), Vec<ValidationError>> {
+    pub fn validate_routes(
+        &self,
+        routes: &HashMap<String, SerializableRoute>,
+    ) -> Result<(), Vec<ValidationError>> {
         let mut errors = Vec::new();
 
         for (path, route) in routes {
@@ -258,7 +295,11 @@ impl RouteValidator {
     }
 
     /// 获取可用的迁移规则
-    pub fn get_available_migrations(&self, type_name: &str, from_version: &str) -> Vec<&MigrationRule> {
+    pub fn get_available_migrations(
+        &self,
+        type_name: &str,
+        from_version: &str,
+    ) -> Vec<&MigrationRule> {
         self.metadata_registry
             .get_migrations(type_name)
             .iter()

@@ -215,7 +215,10 @@ impl BatchOperations {
     /// # 返回
     ///
     /// 返回包含每个路径是否存在的结果映射
-    pub fn batch_contains(table: &crate::RouteTable, paths: HashSet<String>) -> HashMap<String, bool> {
+    pub fn batch_contains(
+        table: &crate::RouteTable,
+        paths: HashSet<String>,
+    ) -> HashMap<String, bool> {
         paths
             .into_iter()
             .map(|path| (path.clone(), table.contains(&path)))
@@ -359,10 +362,13 @@ mod tests {
             Box::new(SimpleRoute::new("body2", "text/plain")),
         );
 
-        let paths: HashSet<String> =
-            vec!["/route1".to_string(), "/route2".to_string(), "/route3".to_string()]
-                .into_iter()
-                .collect();
+        let paths: HashSet<String> = vec![
+            "/route1".to_string(),
+            "/route2".to_string(),
+            "/route3".to_string(),
+        ]
+        .into_iter()
+        .collect();
 
         let results = BatchOperations::batch_contains(&table, paths);
 
@@ -401,7 +407,10 @@ mod tests {
 
         // 验证所有数据都已写入
         for i in 0..10 {
-            assert_eq!(cache.get(&format!("/route-{}", i)), Some(format!("value-{}", i)));
+            assert_eq!(
+                cache.get(&format!("/route-{}", i)),
+                Some(format!("value-{}", i))
+            );
         }
 
         assert_eq!(cache.size(), 10);

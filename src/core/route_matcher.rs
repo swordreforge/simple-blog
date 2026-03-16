@@ -148,7 +148,7 @@ impl RoutePattern {
             }
             RoutePattern::Parameterized {
                 pattern,
-                param_names,
+                param_names: _,
             } => {
                 let mut params = HashMap::new();
                 let pattern_parts: Vec<&str> = pattern.split('/').collect();
@@ -160,7 +160,9 @@ impl RoutePattern {
 
                 let mut matched_path = String::new();
 
-                for (i, (pattern_part, path_part)) in pattern_parts.iter().zip(path_parts.iter()).enumerate() {
+                for (i, (pattern_part, path_part)) in
+                    pattern_parts.iter().zip(path_parts.iter()).enumerate()
+                {
                     if pattern_part.starts_with('{') && pattern_part.ends_with('}') {
                         // 路径参数
                         let param_name = &pattern_part[1..pattern_part.len() - 1];
@@ -381,7 +383,8 @@ mod tests {
 
     #[test]
     fn test_complex_path() {
-        let pattern = RoutePattern::from("/api/v1/users/{user_id}/posts/{post_id}/comments/{comment_id}");
+        let pattern =
+            RoutePattern::from("/api/v1/users/{user_id}/posts/{post_id}/comments/{comment_id}");
 
         let result = pattern.match_path("/api/v1/users/123/posts/456/comments/789");
         assert!(result.is_some());

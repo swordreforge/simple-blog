@@ -144,7 +144,8 @@ async fn test_batch_operations_performance() {
     let start = Instant::now();
 
     // 批量插入
-    let mut routes: std::collections::HashMap<String, Box<dyn RouteEntry>> = std::collections::HashMap::new();
+    let mut routes: std::collections::HashMap<String, Box<dyn RouteEntry>> =
+        std::collections::HashMap::new();
     for i in 0..1000 {
         routes.insert(
             format!("/route-{}", i),
@@ -216,7 +217,10 @@ async fn test_high_load_scenario() {
         let path = format!("/api/resource-{}", i);
         table.insert(
             path.clone(),
-            Box::new(SimpleRoute::new(format!("Resource {}", i), "application/json")),
+            Box::new(SimpleRoute::new(
+                format!("Resource {}", i),
+                "application/json",
+            )),
         );
         cache.insert(&path, format!("Cached: Resource {}", i));
     }

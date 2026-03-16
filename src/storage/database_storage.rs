@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::pool::PoolOptions;
-use sqlx::{Pool, Row, SqlitePool, Postgres};
+use sqlx::{Pool, Postgres, Row, SqlitePool};
 use std::collections::HashMap;
 use std::error::Error;
 use thiserror::Error;
@@ -129,12 +129,12 @@ impl DatabaseStorage {
     /// 如果连接失败或初始化失败，返回错误
     pub async fn new(config: DatabaseStorageConfig) -> Result<Self, DatabaseStorageError> {
         match config.database_type {
-            DatabaseType::SQLite => {
-                Self::new_sqlite(config).await.map_err(|e| DatabaseStorageError::ConnectionError(e.to_string()))
-            }
-            DatabaseType::PostgreSQL => {
-                Self::new_postgres(config).await.map_err(|e| DatabaseStorageError::ConnectionError(e.to_string()))
-            }
+            DatabaseType::SQLite => Self::new_sqlite(config)
+                .await
+                .map_err(|e| DatabaseStorageError::ConnectionError(e.to_string())),
+            DatabaseType::PostgreSQL => Self::new_postgres(config)
+                .await
+                .map_err(|e| DatabaseStorageError::ConnectionError(e.to_string())),
         }
     }
 
@@ -375,7 +375,10 @@ impl DatabaseStorage {
     }
 
     /// 获取路由的所有版本
-    pub async fn get_route_versions(&self, path: &str) -> Result<Vec<RouteVersion>, DatabaseStorageError> {
+    pub async fn get_route_versions(
+        &self,
+        path: &str,
+    ) -> Result<Vec<RouteVersion>, DatabaseStorageError> {
         match self {
             DatabaseStorage::Sqlite { pool, .. } => {
                 let rows = sqlx::query(
@@ -451,7 +454,9 @@ impl DatabaseStorage {
         let target_version = versions
             .iter()
             .find(|v| v.version == version)
-            .ok_or_else(|| DatabaseStorageError::RouteNotFound(format!("Version {} not found", version)))?;
+            .ok_or_else(|| {
+                DatabaseStorageError::RouteNotFound(format!("Version {} not found", version))
+            })?;
 
         // 创建可序列化的路由
         let serializable = SerializableRoute {
@@ -468,7 +473,11 @@ impl DatabaseStorage {
     }
 
     /// 更新单个路由
-    async fn update_route(&self, path: &str, route: &SerializableRoute) -> Result<(), DatabaseStorageError> {
+    async fn update_route(
+        &self,
+        path: &str,
+        route: &SerializableRoute,
+    ) -> Result<(), DatabaseStorageError> {
         match self {
             DatabaseStorage::Sqlite { pool, .. } => {
                 sqlx::query(
@@ -558,7 +567,9 @@ impl DatabaseStorage {
     /// 验证路由类型是否有效
     pub fn validate_route_type(&self, route_type: &str) -> Result<(), DatabaseStorageError> {
         // 使用注册表验证路由类型
-        match crate::core::route_registry::RouteRegistry::list_types().contains(&route_type.to_string()) {
+        match crate::core::route_registry::RouteRegistry::list_types()
+            .contains(&route_type.to_string())
+        {
             true => Ok(()),
             false => Err(DatabaseStorageError::QueryError(format!(
                 "Unknown route type: {}. Make sure to register the type before use.",
@@ -666,7 +677,9 @@ impl KeyValueStorage for DatabaseStorage {
 
 #[async_trait]
 impl RouteStorage for DatabaseStorage {
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
+    async fn load(
+        &self,
+    ) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
         let mut routes = HashMap::new();
 
         match self {
@@ -692,8 +705,14 @@ impl RouteStorage for DatabaseStorage {
                     };
 
                     // 使用注册表创建路由实例
-                    let route = crate::core::route_registry::RouteRegistry::create_route(serializable)
-                        .map_err(|e| DatabaseStorageError::QueryError(format!("Failed to create route: {}", e)))?;
+                    let route =
+                        crate::core::route_registry::RouteRegistry::create_route(serializable)
+                            .map_err(|e| {
+                                DatabaseStorageError::QueryError(format!(
+                                    "Failed to create route: {}",
+                                    e
+                                ))
+                            })?;
 
                     routes.insert(path, route);
                 }
@@ -722,8 +741,14 @@ impl RouteStorage for DatabaseStorage {
                     };
 
                     // 使用注册表创建路由实例
-                    let route = crate::core::route_registry::RouteRegistry::create_route(serializable)
-                        .map_err(|e| DatabaseStorageError::QueryError(format!("Failed to create route: {}", e)))?;
+                    let route =
+                        crate::core::route_registry::RouteRegistry::create_route(serializable)
+                            .map_err(|e| {
+                                DatabaseStorageError::QueryError(format!(
+                                    "Failed to create route: {}",
+                                    e
+                                ))
+                            })?;
 
                     routes.insert(path, route);
                 }
@@ -733,7 +758,10 @@ impl RouteStorage for DatabaseStorage {
         }
     }
 
-    async fn save(&self, routes: &HashMap<String, Box<dyn RouteEntry>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn save(
+        &self,
+        routes: &HashMap<String, Box<dyn RouteEntry>>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         for (path, route) in routes {
             let serializable = route.to_serializable();
 
@@ -763,7 +791,9 @@ impl RouteStorage for DatabaseStorage {
                 };
 
                 // 保存版本
-                let _ = self.save_route_version(path, &current_route, version, None).await;
+                let _ = self
+                    .save_route_version(path, &current_route, version, None)
+                    .await;
             }
 
             // 更新当前路由
