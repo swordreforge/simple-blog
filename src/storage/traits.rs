@@ -22,11 +22,11 @@ use std::error::Error;
 ///
 /// #[async_trait]
 /// impl RouteStorage for MockStorage {
-///     async fn load(&self) -> Result<std::collections::HashMap<String, Box<dyn RouteEntry>>, Box<dyn std::error::Error>> {
+///     async fn load(&self) -> Result<std::collections::HashMap<String, Box<dyn RouteEntry>>, Box<dyn std::error::Error + Send + Sync>> {
 ///         Ok(std::collections::HashMap::new())
 ///     }
 ///
-///     async fn save(&self, routes: &std::collections::HashMap<String, Box<dyn RouteEntry>>) -> Result<(), Box<dyn std::error::Error>> {
+///     async fn save(&self, routes: &std::collections::HashMap<String, Box<dyn RouteEntry>>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 ///         Ok(())
 ///     }
 /// }
@@ -42,7 +42,7 @@ pub trait RouteStorage: Send + Sync {
     /// # Errors
     ///
     /// 如果加载失败，返回错误
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error>>;
+    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>>;
 
     /// 将所有路由保存到持久化存储
     ///
@@ -56,7 +56,7 @@ pub trait RouteStorage: Send + Sync {
     async fn save(
         &self,
         routes: &HashMap<String, Box<dyn RouteEntry>>,
-    ) -> Result<(), Box<dyn Error>>;
+    ) -> Result<(), Box<dyn Error + Send + Sync>>;
 }
 
 /// 简单的键值存储抽象，提供基础的 CRUD 操作
@@ -121,7 +121,7 @@ pub trait KeyValueStorage: Send + Sync {
     /// # Errors
     ///
     /// 如果键不存在或读取失败，返回错误
-    async fn read(&self, key: &str) -> Result<String, Box<dyn Error>>;
+    async fn read(&self, key: &str) -> Result<String, Box<dyn Error + Send + Sync>>;
 
     /// 写入键值对
     ///
@@ -133,7 +133,7 @@ pub trait KeyValueStorage: Send + Sync {
     /// # Errors
     ///
     /// 如果写入失败，返回错误
-    async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn Error>>;
+    async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn Error + Send + Sync>>;
 
     /// 删除指定键
     ///
@@ -144,7 +144,7 @@ pub trait KeyValueStorage: Send + Sync {
     /// # Errors
     ///
     /// 如果键不存在或删除失败，返回错误
-    async fn delete(&self, key: &str) -> Result<(), Box<dyn Error>>;
+    async fn delete(&self, key: &str) -> Result<(), Box<dyn Error + Send + Sync>>;
 
     /// 检查键是否存在
     ///

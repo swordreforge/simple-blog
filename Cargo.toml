@@ -2,11 +2,11 @@
 name = "dynamic-route-actix"
 version = "0.1.0"
 edition = "2021"
-description = "A dynamic routing library for Actix-Web"
+description = "A dynamic routing library for Actix-Web with database support, versioning, and validation"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/yourusername/dynamic-route-actix"
-keywords = ["actix", "routing", "dynamic", "web"]
-categories = ["web-programming", "asynchronous"]
+keywords = ["actix", "routing", "dynamic", "web", "database"]
+categories = ["web-programming", "asynchronous", "database"]
 
 [dependencies]
 actix-web = "4"
@@ -15,7 +15,15 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
 thiserror = "1"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "postgres", "chrono"], optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3"
+
+[features]
+default = []
+sqlite = ["sqlx/sqlite", "chrono"]
+postgres = ["sqlx/postgres", "chrono"]
+database = ["sqlite", "postgres"]

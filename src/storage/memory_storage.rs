@@ -126,20 +126,20 @@ impl MemoryStorage {
 
 #[async_trait]
 impl KeyValueStorage for MemoryStorage {
-    async fn read(&self, key: &str) -> Result<String, Box<dyn Error>> {
+    async fn read(&self, key: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let data = self.data.read().await;
         data.get(key)
             .cloned()
             .ok_or_else(|| format!("Key not found: {}", key).into())
     }
 
-    async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn Error>> {
+    async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut data = self.data.write().await;
         data.insert(key.to_string(), value.to_string());
         Ok(())
     }
 
-    async fn delete(&self, key: &str) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut data = self.data.write().await;
         data.remove(key)
             .map(|_| ())
@@ -154,7 +154,7 @@ impl KeyValueStorage for MemoryStorage {
 
 #[async_trait]
 impl RouteStorage for MemoryStorage {
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error>> {
+    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
         // MemoryStorage 不支持持久化路由，返回空 HashMap
         // 如果需要支持，可以添加额外的存储结构来保存序列化的路由
         Ok(HashMap::new())
@@ -163,7 +163,7 @@ impl RouteStorage for MemoryStorage {
     async fn save(
         &self,
         routes: &HashMap<String, Box<dyn RouteEntry>>,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // MemoryStorage 不支持持久化路由，返回成功但不做任何操作
         // 如果需要支持，可以将路由序列化后存储到内部结构中
         let _ = routes;

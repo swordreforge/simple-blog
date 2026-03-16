@@ -76,7 +76,7 @@ impl FileStorage {
     }
 
     /// 确保基础目录存在
-    async fn ensure_base_dir(&self) -> Result<(), Box<dyn Error>> {
+    async fn ensure_base_dir(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         if !self.base_path.exists() {
             fs::create_dir_all(&self.base_path).await?;
         }
@@ -86,7 +86,7 @@ impl FileStorage {
 
 #[async_trait]
 impl KeyValueStorage for FileStorage {
-    async fn read(&self, key: &str) -> Result<String, Box<dyn Error>> {
+    async fn read(&self, key: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let file_path = self.get_file_path(key);
 
         if !file_path.exists() {
@@ -100,7 +100,7 @@ impl KeyValueStorage for FileStorage {
         Ok(contents)
     }
 
-    async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn Error>> {
+    async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.ensure_base_dir().await?;
 
         let file_path = self.get_file_path(key);
@@ -111,7 +111,7 @@ impl KeyValueStorage for FileStorage {
         Ok(())
     }
 
-    async fn delete(&self, key: &str) -> Result<(), Box<dyn Error>> {
+    async fn delete(&self, key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let file_path = self.get_file_path(key);
 
         if !file_path.exists() {
@@ -130,7 +130,7 @@ impl KeyValueStorage for FileStorage {
 
 #[async_trait]
 impl RouteStorage for FileStorage {
-    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error>> {
+    async fn load(&self) -> Result<HashMap<String, Box<dyn RouteEntry>>, Box<dyn Error + Send + Sync>> {
         let mut routes = HashMap::new();
 
         if !self.base_path.exists() {
@@ -170,7 +170,7 @@ impl RouteStorage for FileStorage {
     async fn save(
         &self,
         routes: &HashMap<String, Box<dyn RouteEntry>>,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.ensure_base_dir().await?;
 
         // 使用新的序列化接口
