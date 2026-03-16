@@ -50,7 +50,7 @@ pub mod actix;
 pub mod core;
 pub mod storage;
 
-pub use core::{RouteEntry, RouteTable, SerializableRoute, SimpleRoute};
+pub use core::{ArcRouteEntry, RouteEntry, RouteTable, SerializableRoute, SimpleRoute};
 pub use core::cache_optimized::CacheOptimizedRouteTable;
 pub use core::dynamic_route_table::DynamicRouteTable;
 pub use core::dynamic_sharding::{

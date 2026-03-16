@@ -1,5 +1,8 @@
+pub mod arc_route_entry;
+pub mod bytes_optimized;
 pub mod cache;
 pub mod cache_optimized;
+pub mod cow_optimized;
 pub mod dynamic_route_table;
 pub mod dynamic_sharding;
 pub mod object_pool;
@@ -13,6 +16,7 @@ pub mod route_validator;
 pub mod simple_route;
 pub mod string_optimized;
 
+pub use arc_route_entry::ArcRouteEntry;
 pub use cache::{BatchOperations, PerformanceOptions, RouteCache};
 pub use cache_optimized::{CacheOptimizedShard, CompactRadixTree};
 pub use dynamic_route_table::{DynamicRouteTable, DynamicRouteTableConfig};
@@ -33,4 +37,12 @@ pub use string_optimized::{
     extract_params_pooled, global_path_pool, global_stats, join_paths_optimized, PathStringPool,
     SmallString, SmartString, split_path_pooled, split_path_small, split_path_smart,
     StringOptimizationStats, StringPool,
+};
+pub use cow_optimized::{
+    CowRoutePattern, join_cow, normalize_path, OptimizedMatchResult, OptimizedStr, ParamExtractor,
+    PathMatchCache, StringFragment, StringFragmentBuilder,
+};
+pub use bytes_optimized::{
+    BytesBuilder, BytesComparator, BytesConverter, BytesPool, BytesSplitter, BytesView,
+    OptimizedBytes,
 };

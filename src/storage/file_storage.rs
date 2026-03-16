@@ -307,19 +307,19 @@ mod tests {
         use std::future::Future;
         use std::pin::Pin;
 
-        // 定义自定义路由类型
+        // 定义自定义路由类型（使用 Arc 优化字符串字段）
         #[derive(Debug, Clone)]
         struct TimedRoute {
-            body: String,
-            content_type: String,
+            body: std::sync::Arc<str>,
+            content_type: std::sync::Arc<str>,
             timeout_ms: u64,
         }
 
         impl TimedRoute {
             fn new(body: &str, content_type: &str, timeout_ms: u64) -> Self {
                 Self {
-                    body: body.to_string(),
-                    content_type: content_type.to_string(),
+                    body: body.into(),
+                    content_type: content_type.into(),
                     timeout_ms,
                 }
             }
@@ -330,13 +330,22 @@ mod tests {
                 &self,
                 _req: &HttpRequest,
             ) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
-                let body = self.body.clone();
-                let content_type = self.content_type.clone();
-                Box::pin(async move { HttpResponse::Ok().content_type(content_type).body(body) })
+                // 使用 Arc::clone 而非字符串克隆，显著减少开销
+                let body = std::sync::Arc::clone(&self.body);
+                let content_type = std::sync::Arc::clone(&self.content_type);
+                Box::pin(async move {
+                    HttpResponse::Ok()
+                        .content_type(content_type.as_ref())
+                        .body(body.as_ref().to_string())
+                })
             }
 
             fn clone_box(&self) -> Box<dyn RouteEntry> {
-                Box::new(self.clone())
+                Box::new(TimedRoute {
+                    body: std::sync::Arc::clone(&self.body),
+                    content_type: std::sync::Arc::clone(&self.content_type),
+                    timeout_ms: self.timeout_ms,
+                })
             }
 
             fn to_serializable(&self) -> SerializableRoute {
@@ -347,8 +356,8 @@ mod tests {
 
                 SerializableRoute {
                     route_type: "TimedRoute".to_string(),
-                    body: self.body.clone(),
-                    content_type: self.content_type.clone(),
+                    body: self.body.to_string(),
+                    content_type: self.content_type.to_string(),
                     extra_data: Some(extra_data),
                 }
             }
