@@ -466,8 +466,23 @@ impl CacheOptimizedRouteTable {
     
     /// 查找路由
     pub fn find(&self, path: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
+        // 首先尝试在哈希分片中查找（对于静态路由，这是最优的）
         let shard_idx = self.shard_index(path);
-        self.shards[shard_idx].find(path)
+        if let Some(result) = self.shards[shard_idx].find(path) {
+            return Some(result);
+        }
+
+        // 如果在哈希分片中找不到，则需要在所有分片中搜索
+        // 这对于参数化路由是必要的，因为 /user/{id} 和 /user/123 的哈希值不同
+        for (i, shard) in self.shards.iter().enumerate() {
+            if i != shard_idx {
+                if let Some(result) = shard.find(path) {
+                    return Some(result);
+                }
+            }
+        }
+
+        None
     }
     
     /// 移除路由

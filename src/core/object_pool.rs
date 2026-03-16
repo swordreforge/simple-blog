@@ -456,25 +456,30 @@ where
     fn push(&self, item: T) {
         let current_size = self.size.load(Ordering::Relaxed);
         let max_capacity = self.total_capacity.load(Ordering::Relaxed);
-        
+
         if current_size >= max_capacity {
             return; // 池已满，丢弃对象
         }
-        
-        // 使用线程ID作为哈希，选择子池
+
+        // 使用线程ID作为哈希，选择起始子池
         let thread_id = std::thread::current().id();
-        let hash = std::collections::hash_map::DefaultHasher::new();
-        let mut hasher = hash;
-        use std::hash::Hash;
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
         thread_id.hash(&mut hasher);
-        let pool_index = hasher.finish() as usize % self.sub_pools.len();
-        
-        if let Ok(mut pool) = self.sub_pools[pool_index].try_lock() {
-            if pool.len() < self.sub_pool_capacity {
-                pool.push(item);
-                self.size.fetch_add(1, Ordering::Relaxed);
+        let start_pool_index = hasher.finish() as usize % self.sub_pools.len();
+
+        // 尝试从起始子池开始，轮询所有子池
+        for offset in 0..self.sub_pools.len() {
+            let pool_index = (start_pool_index + offset) % self.sub_pools.len();
+
+            if let Ok(mut pool) = self.sub_pools[pool_index].try_lock() {
+                if pool.len() < self.sub_pool_capacity {
+                    pool.push(item);
+                    self.size.fetch_add(1, Ordering::Relaxed);
+                    return; // 成功推送，返回
+                }
             }
         }
+        // 所有子池都满了或锁失败，丢弃对象
     }
 
     /// 获取当前池中的对象数量
