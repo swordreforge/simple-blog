@@ -111,7 +111,7 @@ fn test_memory_usage() {
 
 #[tokio::test]
 async fn test_cache_performance() {
-    let cache = RouteCache::new(Duration::from_secs(60));
+    let cache = RouteCache::new(10000, Duration::from_secs(60));
 
     // 预热缓存
     for i in 0..1000 {
@@ -210,7 +210,7 @@ fn test_route_matching_performance() {
 #[tokio::test]
 async fn test_high_load_scenario() {
     let table = Arc::new(RouteTable::new());
-    let cache = Arc::new(RouteCache::new(Duration::from_secs(60)));
+    let cache = Arc::new(RouteCache::new(2000, Duration::from_secs(60)));
 
     // 预填充路由表
     for i in 0..1000 {
@@ -286,7 +286,7 @@ async fn test_high_load_scenario() {
 #[test]
 fn test_concurrent_cache_operations() {
     use std::sync::Arc;
-    let cache = Arc::new(RouteCache::new(Duration::from_secs(60)));
+    let cache = Arc::new(RouteCache::new(10000, Duration::from_secs(60)));
     let mut handles = vec![];
 
     // 并发写入

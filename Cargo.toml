@@ -20,6 +20,7 @@ chrono = { version = "0.4", features = ["serde"], optional = true }
 notify = "7"
 futures-util = "0.3"
 regex = "1.10"
+lru = "0.12"
 
 [dev-dependencies]
 tempfile = "3"
