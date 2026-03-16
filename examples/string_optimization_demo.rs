@@ -37,8 +37,8 @@ fn main() {
 
     // 4. 智能字符串演示
     println!("\n4. 智能字符串（SmartString）");
-    let smart_short = SmartString::from_str("hello");
-    let smart_long = SmartString::from_str("this is a very long string");
+    let smart_short = SmartString::from_string("hello");
+    let smart_long = SmartString::from_string("this is a very long string");
     println!("   短字符串类型: {:?}", std::mem::discriminant(&smart_short));
     println!("   长字符串类型: {:?}", std::mem::discriminant(&smart_long));
 

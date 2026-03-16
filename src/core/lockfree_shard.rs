@@ -7,6 +7,9 @@ use super::route_radix_tree::RouteRadixTree;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+/// 路由匹配结果类型别名
+type MatchResult<'a> = Option<(&'a Arc<dyn RouteEntry>, Vec<(String, String)>)>;
+
 /// 无锁分片负载指标
 ///
 /// 使用原子操作实现无锁计数器，避免锁竞争
@@ -190,7 +193,7 @@ impl LockfreeDynamicShard {
     }
 
     /// 查找路由（无锁读操作）
-    pub fn find(&self, path: &str) -> Option<(&Arc<dyn RouteEntry>, Vec<(String, String)>)> {
+    pub fn find(&self, path: &str) -> MatchResult<'_> {
         let start = std::time::Instant::now();
         let result = self.inner.find(path);
         let duration = start.elapsed();

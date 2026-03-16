@@ -46,7 +46,7 @@ impl<'a> CowRoutePattern<'a> {
     /// 从路径字符串创建路由模式
     ///
     /// 根据字符串的生命周期选择最优的存储方式
-    pub fn from_str(path: &'a str) -> Self {
+    pub fn from_path_str(path: &'a str) -> Self {
         if path.contains('{') && path.contains('}') {
             let param_names = Self::extract_param_names(path);
             CowRoutePattern::Parameterized {
@@ -524,7 +524,7 @@ mod tests {
 
     #[test]
     fn test_cow_route_pattern_exact() {
-        let pattern = CowRoutePattern::from_str("/users");
+        let pattern = CowRoutePattern::from_path_str("/users");
         assert!(matches!(pattern, CowRoutePattern::Exact(_)));
 
         let result = pattern.match_path("/users");
@@ -534,7 +534,7 @@ mod tests {
 
     #[test]
     fn test_cow_route_pattern_parameterized() {
-        let pattern = CowRoutePattern::from_str("/users/{id}");
+        let pattern = CowRoutePattern::from_path_str("/users/{id}");
         assert!(matches!(pattern, CowRoutePattern::Parameterized { .. }));
 
         let result = pattern.match_path("/users/123");
@@ -545,7 +545,7 @@ mod tests {
 
     #[test]
     fn test_cow_route_pattern_wildcard() {
-        let pattern = CowRoutePattern::from_str("/static/*");
+        let pattern = CowRoutePattern::from_path_str("/static/*");
         assert!(matches!(pattern, CowRoutePattern::Wildcard { .. }));
 
         let result = pattern.match_path("/static/css/style.css");
@@ -597,7 +597,7 @@ mod tests {
     #[test]
     fn test_param_extractor_matches() {
         let extractor = ParamExtractor::new("/users/123");
-        let pattern = CowRoutePattern::from_str("/users/{id}");
+        let pattern = CowRoutePattern::from_path_str("/users/{id}");
 
         assert!(extractor.matches(&pattern));
     }

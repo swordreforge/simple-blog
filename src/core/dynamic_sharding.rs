@@ -8,6 +8,9 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
+
+/// 路由匹配结果类型别名
+type MatchResult<'a> = Option<(&'a Arc<dyn RouteEntry>, Vec<(String, String)>)>;
 use std::time::{Duration, Instant};
 
 /// 分片负载指标
@@ -104,7 +107,7 @@ impl DynamicShard {
         result
     }
 
-    pub fn find(&mut self, path: &str) -> Option<(&std::sync::Arc<dyn RouteEntry>, Vec<(String, String)>)> {
+    pub fn find(&mut self, path: &str) -> MatchResult<'_> {
         let start = Instant::now();
         let result = self.inner.find(path);
         let duration = start.elapsed();

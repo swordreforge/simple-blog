@@ -28,7 +28,7 @@ fn bench_string_creation(c: &mut Criterion) {
     
     group.bench_function("short_string_smart", |b| {
         b.iter(|| {
-            let s = SmartString::from_str("hello");
+            let s = SmartString::from_string("hello");
             black_box(s)
         })
     });
@@ -50,7 +50,7 @@ fn bench_string_creation(c: &mut Criterion) {
     
     group.bench_function("long_string_smart", |b| {
         b.iter(|| {
-            let s = SmartString::from_str("this is a very long string that will not fit in SSO");
+            let s = SmartString::from_string("this is a very long string that will not fit in SSO");
             black_box(s)
         })
     });

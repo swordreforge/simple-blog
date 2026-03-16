@@ -303,7 +303,7 @@ pub enum SmartString {
 
 impl SmartString {
     /// 从字符串创建智能字符串
-    pub fn from_str(s: &str) -> Self {
+    pub fn from_string(s: &str) -> Self {
         // 对于短字符串，使用小字符串优化
         if s.len() <= 23 {
             // 尝试从池获取
@@ -409,7 +409,7 @@ pub fn split_path_small(path: &str) -> Vec<SmallString> {
 pub fn split_path_smart(path: &str) -> Vec<SmartString> {
     path.split('/')
         .filter(|s| !s.is_empty())
-        .map(SmartString::from_str)
+        .map(SmartString::from_string)
         .collect()
 }
 
@@ -583,14 +583,14 @@ mod tests {
 
     #[test]
     fn test_smart_string_from_str_small() {
-        let s = SmartString::from_str("hello");
+        let s = SmartString::from_string("hello");
         assert_eq!(s.as_str(), "hello");
         assert!(matches!(s, SmartString::Small(_)));
     }
 
     #[test]
     fn test_smart_string_from_str_large() {
-        let s = SmartString::from_str("this is a very long string");
+        let s = SmartString::from_string("this is a very long string");
         assert_eq!(s.as_str(), "this is a very long string");
         // 长字符串应该使用池化
         assert!(matches!(s, SmartString::Pooled(_)));

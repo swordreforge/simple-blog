@@ -5,6 +5,9 @@
 
 use std::hash::{Hash, Hasher};
 
+/// 路由匹配结果类型别名
+type MatchResult<'a> = Option<(&'a Box<dyn super::RouteEntry>, Vec<(String, String)>)>;
+
 /// 紧凑的Radix Tree节点边
 ///
 /// 优化内存布局，减少内存占用和缓存未命中
@@ -98,9 +101,9 @@ impl CompactRadixTree {
             node.route_index = Some(route_index);
         }
     }
-    
+
     /// 查找路由
-    pub fn find(&self, path: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
+    pub fn find(&self, path: &str) -> MatchResult<'_> {
         let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
         let mut current_index = self.root_index;
         let mut params = Vec::new();
@@ -391,7 +394,7 @@ impl CacheOptimizedShard {
     }
     
     /// 查找路由
-    pub fn find(&self, path: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
+    pub fn find(&self, path: &str) -> MatchResult<'_> {
         self.inner.find(path)
     }
     
@@ -470,9 +473,8 @@ impl CacheOptimizedRouteTable {
         }
     }
     
-    /// 查找路由
-    pub fn find(&self, path: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
-        // 首先尝试在哈希分片中查找（对于静态路由，这是最优的）
+        /// 查找路由
+        pub fn find(&self, path: &str) -> MatchResult<'_> {        // 首先尝试在哈希分片中查找（对于静态路由，这是最优的）
         let shard_idx = self.shard_index(path);
         if let Some(result) = self.shards[shard_idx].find(path) {
             return Some(result);

@@ -26,7 +26,7 @@ fn bench_cow_route_matching(c: &mut Criterion) {
             .join("/");
 
         // Cow 优化版本
-        let cow_pattern = CowRoutePattern::from_str(path.as_str());
+        let cow_pattern = CowRoutePattern::from_path_str(path.as_str());
 
         group.bench_with_input(
             BenchmarkId::new("cow_match", path_len),
@@ -310,11 +310,11 @@ fn bench_comprehensive_route_matching(c: &mut Criterion) {
 
     // 创建多个路由模式
     let patterns = vec![
-        CowRoutePattern::from_str("/api/v1/users"),
-        CowRoutePattern::from_str("/api/v1/users/{id}"),
-        CowRoutePattern::from_str("/api/v1/users/{id}/posts"),
-        CowRoutePattern::from_str("/api/v1/users/{id}/posts/{post_id}"),
-        CowRoutePattern::from_str("/api/v1/static/*"),
+        CowRoutePattern::from_path_str("/api/v1/users"),
+        CowRoutePattern::from_path_str("/api/v1/users/{id}"),
+        CowRoutePattern::from_path_str("/api/v1/users/{id}/posts"),
+        CowRoutePattern::from_path_str("/api/v1/users/{id}/posts/{post_id}"),
+        CowRoutePattern::from_path_str("/api/v1/static/*"),
     ];
 
     // 测试路径

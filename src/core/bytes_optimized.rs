@@ -442,7 +442,7 @@ impl<'a> BytesSplitter<'a> {
     }
 
     /// 获取下一个片段
-    pub fn next(&mut self) -> Option<BytesView<'a>> {
+    pub fn next_view(&mut self) -> Option<BytesView<'a>> {
         if self.pos >= self.bytes.len() {
             return None;
         }
@@ -465,7 +465,7 @@ impl<'a> BytesSplitter<'a> {
     /// 收集所有片段
     pub fn collect_all(mut self) -> Vec<BytesView<'a>> {
         let mut result = Vec::new();
-        while let Some(view) = self.next() {
+        while let Some(view) = self.next_view() {
             result.push(view);
         }
         result
