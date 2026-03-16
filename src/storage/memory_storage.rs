@@ -20,7 +20,7 @@ use tokio::sync::RwLock;
 /// use dynamic_route_actix::storage::{MemoryStorage, KeyValueStorage};
 ///
 /// #[tokio::main]
-/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 ///     let storage = MemoryStorage::new();
 ///
 ///     // 写入键值对

@@ -115,12 +115,13 @@ where
 /// use dynamic_route_actix::actix::middleware::AuthMiddleware;
 ///
 /// #[actix_web::main]
-    /// async fn main() -> std::io::Result<()> {
-    ///     HttpServer::new(|| {
-    ///         App::new()
-    ///             .wrap(AuthMiddleware::from_token("secret-token"))
-    ///             .route("/protected", web::get().to(|| async { "Protected content" }))
-    ///     })///     .bind("127.0.0.1:8080")?
+/// async fn main() -> std::io::Result<()> {
+///     HttpServer::new(|| {
+///         App::new()
+///             .wrap(AuthMiddleware::from_token("secret-token"))
+///             .route("/protected", web::get().to(|| async { "Protected content" }))
+///     })
+///     .bind("127.0.0.1:8080")?
 ///     .run()
 ///     .await
 /// }

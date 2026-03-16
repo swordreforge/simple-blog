@@ -82,20 +82,20 @@ pub trait RouteStorage: Send + Sync {
 ///
 /// #[async_trait::async_trait]
 /// impl KeyValueStorage for MemoryStorage {
-///     async fn read(&self, key: &str) -> Result<String, Box<dyn std::error::Error>> {
+///     async fn read(&self, key: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
 ///         let data = self.data.read().await;
 ///         data.get(key)
 ///             .cloned()
 ///             .ok_or_else(|| "Key not found".into())
 ///     }
 ///
-///     async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error>> {
+///     async fn write(&self, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 ///         let mut data = self.data.write().await;
 ///         data.insert(key.to_string(), value.to_string());
 ///         Ok(())
 ///     }
 ///
-///     async fn delete(&self, key: &str) -> Result<(), Box<dyn std::error::Error>> {
+///     async fn delete(&self, key: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 ///         let mut data = self.data.write().await;
 ///         data.remove(key).map(|_| ()).ok_or_else(|| "Key not found".into())
 ///     }

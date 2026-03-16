@@ -22,7 +22,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 /// use dynamic_route_actix::storage::{FileStorage, KeyValueStorage};
 ///
 /// #[tokio::main]
-/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 ///     let storage = FileStorage::new("./data");
 ///
 ///     // 写入文件

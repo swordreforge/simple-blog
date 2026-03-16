@@ -53,18 +53,18 @@ impl Default for HotReloadConfig {
 /// # 示例
 ///
 /// ```no_run
-/// use dynamic_route_actix::storage::{FileStorage, RouteStorage};
-/// use dynamic_route_actix::storage::hot_reload::HotReloadManager;
+/// use dynamic_route_actix::storage::{FileStorage, RouteStorage, HotReloadManager, HotReloadConfig};
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let storage = FileStorage::new("./data/routes.json");
-///     let config = dynamic_route_actix::storage::hot_reload::HotReloadConfig::default();
+///     let config = HotReloadConfig::default();
 ///
 ///     let mut manager = HotReloadManager::new(storage, config)?;
 ///
 ///     // 启动热重载
-///     manager.start().await?;
+///     use std::path::Path;
+///     manager.start(Path::new("./data/routes.json")).await?;
 ///
 ///     // 当文件变化时，路由会自动重新加载
 ///
