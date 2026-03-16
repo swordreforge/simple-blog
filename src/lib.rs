@@ -51,6 +51,7 @@ pub mod core;
 pub mod storage;
 
 pub use core::{RouteEntry, RouteTable, SerializableRoute, SimpleRoute};
+pub use core::cache_optimized::CacheOptimizedRouteTable;
 pub use storage::{FileStorage, KeyValueStorage, MemoryStorage, RouteStorage};
 
 /// 库版本

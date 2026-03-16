@@ -1,4 +1,5 @@
 pub mod cache;
+pub mod cache_optimized;
 pub mod object_pool;
 pub mod route_entry;
 pub mod route_matcher;
@@ -10,6 +11,7 @@ pub mod route_validator;
 pub mod simple_route;
 
 pub use cache::{BatchOperations, PerformanceOptions, RouteCache};
+pub use cache_optimized::{CacheOptimizedShard, CompactRadixTree};
 pub use object_pool::{PoolConfig, RouteObjectPool};
 pub use route_entry::{RouteEntry, SerializableRoute};
 pub use route_matcher::{MatchResult, RouteMatcher, RoutePattern};
