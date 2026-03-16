@@ -46,11 +46,6 @@ async function compressHtml(filePath) {
     // 读取 HTML 文件
     const html = readFileSync(filePath, 'utf-8')
 
-    // 检查是否已经是压缩版本
-    if (html.includes('<!-- HTML Minified -->')) {
-      return { skipped: true, fileName: filePath.split('/').pop() }
-    }
-
     // 备份原始文件
     const relativePath = filePath.replace(templatesDir, '')
     const backupPath = join(backupDir, relativePath)
@@ -111,16 +106,13 @@ async function compressHtml(filePath) {
     // 如果压缩失败，返回原始内容
     const output = minified || html
 
-    // 添加压缩标记
-    const markedOutput = `<!-- HTML Minified -->\n${output}`
-
     // 计算压缩率
     const originalSize = Buffer.byteLength(html, 'utf-8')
-    const compressedSize = Buffer.byteLength(markedOutput, 'utf-8')
+    const compressedSize = Buffer.byteLength(output, 'utf-8')
     const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(2)
 
     // 写入压缩后的 HTML（覆盖原始文件）
-    writeFileSync(filePath, markedOutput)
+    writeFileSync(filePath, output)
 
     const fileName = filePath.split('/').pop()
     console.log(`✓ ${fileName}`)

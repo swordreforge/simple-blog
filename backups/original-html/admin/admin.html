@@ -2739,13 +2739,15 @@ input[type=range]::-moz-range-thumb:hover {
 
 .am-header p {
 	margin: 0;
-	color: #666;
+	color: rgba(255, 255, 255, .85);
 	font-size: .95em
 }
 
 .am-filter-section {
-	background: rgba(255, 255, 255, .95);
-	border: 1px solid rgba(0, 0, 0, .1);
+	background: rgba(0, 0, 0, 0);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, .3);
 	border-radius: 12px;
 	padding: 20px;
 	margin-bottom: 20px
@@ -2767,15 +2769,17 @@ input[type=range]::-moz-range-thumb:hover {
 	margin-bottom: 5px;
 	font-size: .9em;
 	font-weight: 500;
-	color: #555
+	color: rgba(255, 255, 255, .85)
 }
 
 .am-stats {
 	display: flex;
 	gap: 20px;
 	padding: 15px 20px;
-	background: rgba(255, 255, 255, .95);
-	border: 1px solid rgba(0, 0, 0, .1);
+	background: rgba(0, 0, 0, 0);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, .3);
 	border-radius: 12px;
 	margin-bottom: 20px;
 	flex-wrap: wrap
@@ -2789,7 +2793,7 @@ input[type=range]::-moz-range-thumb:hover {
 }
 
 .am-stat-label {
-	color: #666
+	color: rgba(255, 255, 255, .85)
 }
 
 .am-stat-value {
@@ -2798,8 +2802,10 @@ input[type=range]::-moz-range-thumb:hover {
 }
 
 .am-list-container {
-	background: rgba(255, 255, 255, .95);
-	border: 1px solid rgba(0, 0, 0, .1);
+	background: rgba(0, 0, 0, 0);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, .3);
 	border-radius: 12px;
 	overflow: hidden;
 	margin-bottom: 20px
@@ -2866,8 +2872,10 @@ input[type=range]::-moz-range-thumb:hover {
 	align-items: center;
 	gap: 15px;
 	padding: 15px 20px;
-	background: rgba(255, 255, 255, .95);
-	border: 1px solid rgba(0, 123, 255, .3);
+	background: rgba(0, 0, 0, 0);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, .3);
 	border-radius: 12px;
 	margin-bottom: 20px;
 	flex-wrap: wrap;
@@ -4015,15 +4023,15 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="backgroundImage">背景图片路径</label> <input id="backgroundImage" class="form-control" placeholder="">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">支持相对路径或绝对URL（桌面端）
+                           <p style="font-size:.85em;color:white;margin-top:5px">支持相对路径或绝对URL（桌面端）
                         </div>
                         <div class="form-group">
                            <label for="mobileBackgroundImage">移动端背景图片路径</label> <input id="mobileBackgroundImage" class="form-control" placeholder="">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">移动端专用背景图片（留空则使用桌面端背景）
+                           <p style="font-size:.85em;color:white;margin-top:5px">移动端专用背景图片（留空则使用桌面端背景）
                         </div>
                         <div class="form-group">
                            <label for="globalOpacity">全局透明度 (0-1)</label> <input type="range" id="globalOpacity" class="form-control" min="0" max="1" step="0.05" value="0.15">
-                           <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:.85em;color:#666"><span>0 (不透明)</span> <span id="opacityValue">0.15</span> <span>1 (完全透明)</span></div>
+                           <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:.85em;color:#666"><span style="color: white">0 (不透明)</span> <span id="opacityValue">0.15</span> <span style="color: white">1 (完全透明)</span></div>
                         </div>
                         <div class="form-group">
                            <label for="backgroundSize">背景尺寸</label> 
@@ -4067,11 +4075,11 @@ body.admin-focus-mode .modal-header {
                         </div>
                         <div class="form-group">
                            <label for="blurAmount">背景模糊程度</label> <input id="blurAmount" class="form-control" placeholder="20px">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">例如: 0px, 10px, 20px
+                           <p style="font-size:.85em;color:white;margin-top:5px">例如: 0px, 10px, 20px
                         </div>
                         <div class="form-group">
                            <label for="saturateAmount">背景饱和度</label> <input id="saturateAmount" class="form-control" placeholder="180%">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">例如: 100%, 150%, 200%
+                           <p style="font-size:.85em;color:white;margin-top:5px">例如: 100%, 150%, 200%
                         </div>
                      </div>
                      <div class="settings-preview">
@@ -4082,36 +4090,36 @@ body.admin-focus-mode .modal-header {
                      </div>
                      <div class="form-group">
                         <label for="darkModeEnabled"><input type="checkbox" id="darkModeEnabled" style="margin-right:8px"> 启用暗色模式</label>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">为整个网站启用暗色主题，减少眼部疲劳
+                        <p style="font-size:.85em;color:white;margin-top:5px">为整个网站启用暗色主题，减少眼部疲劳
                      </div>
                      <div class="form-group">
                         <label for="navbarGlassColor">导航栏毛玻璃颜色</label>
                         <div style="display:flex;gap:10px;align-items:center"><input type="color" id="navbarGlassColorPicker" class="color-picker" style="width:50px;height:40px;border:none;cursor:pointer"> <input id="navbarGlassColor" class="form-control" placeholder="rgba(255, 255, 255, 0.85)"></div>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">导航栏背景毛玻璃效果颜色（支持 rgba 格式）
+                        <p style="font-size:.85em;color:white;margin-top:5px">导航栏背景毛玻璃效果颜色（支持 rgba 格式）
                      </div>
                      <div class="form-group">
                         <label for="navbarTextColor">导航栏文字颜色</label>
                         <div style="display:flex;gap:10px;align-items:center"><input type="color" id="navbarTextColorPicker" class="color-picker" style="width:50px;height:40px;border:none;cursor:pointer"> <input id="navbarTextColor" class="form-control" placeholder="#333333"></div>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">导航栏文字颜色（支持 hex、rgb 格式）
+                        <p style="font-size:.85em;color:white;margin-top:5px">导航栏文字颜色（支持 hex、rgb 格式）
                      </div>
                      <div class="form-group">
                         <label for="cardGlassColor">页面卡片毛玻璃颜色</label>
                         <div style="display:flex;gap:10px;align-items:center"><input type="color" id="cardGlassColorPicker" class="color-picker" style="width:50px;height:40px;border:none;cursor:pointer"> <input id="cardGlassColor" class="form-control" placeholder="rgba(255, 255, 255, 0.75)"></div>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">页面卡片背景毛玻璃效果颜色（支持 rgba 格式）
+                        <p style="font-size:.85em;color:white;margin-top:5px">页面卡片背景毛玻璃效果颜色（支持 rgba 格式）
                      </div>
                      <div class="form-group">
                         <label for="footerGlassColor">底栏毛玻璃颜色</label>
                         <div style="display:flex;gap:10px;align-items:center"><input type="color" id="footerGlassColorPicker" class="color-picker" style="width:50px;height:40px;border:none;cursor:pointer"> <input id="footerGlassColor" class="form-control" placeholder="rgba(255, 255, 255, 0.9)"></div>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">底栏背景毛玻璃效果颜色（支持 rgba 格式）
+                        <p style="font-size:.85em;color:white;margin-top:5px">底栏背景毛玻璃效果颜色（支持 rgba 格式）
                      </div>
                      <div class="form-group">
                         <label for="floatingTextEnabled"><input type="checkbox" id="floatingTextEnabled" style="margin-right:8px"> 启用飘字效果</label>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">在文章页面显示飘动的文字效果
+                        <p style="font-size:.85em;color:white;margin-top:5px">在文章页面显示飘动的文字效果
                      </div>
                      <div class="form-group">
                         <label for="floatingTexts">飘字文本（用逗号分隔）</label> 
                         <textarea id="floatingTexts" class="form-control" rows="3" placeholder="perfect, good, excellent, extraordinary, legend"></textarea>
-                        <p style="font-size:.85em;color:#666;margin-top:5px">自定义飘字效果显示的文本，多个文本用逗号分隔
+                        <p style="font-size:.85em;color:white;margin-top:5px">自定义飘字效果显示的文本，多个文本用逗号分隔
                      </div>
                   </div>
                   <div class="settings-section">
@@ -4126,11 +4134,11 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="musicEnabled"><input type="checkbox" id="musicEnabled" style="margin-right:8px"> 启用音乐播放器</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">在页面显示音乐播放器控件
+                           <p style="font-size:.85em;color:white;margin-top:5px">在页面显示音乐播放器控件
                         </div>
                         <div class="form-group">
                            <label for="musicAutoPlay"><input type="checkbox" id="musicAutoPlay" style="margin-right:8px"> 自动播放</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">页面加载时自动播放音乐
+                           <p style="font-size:.85em;color:white;margin-top:5px">页面加载时自动播放音乐
                         </div>
                         <div class="form-group">
                            <label for="musicControlSize">控件大小</label> 
@@ -4139,12 +4147,12 @@ body.admin-focus-mode .modal-header {
                               <option value="medium">中
                               <option value="large">大
                            </select>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">音乐播放器控件的大小
+                           <p style="font-size:.85em;color:white;margin-top:5px">音乐播放器控件的大小
                         </div>
                         <div class="form-group">
                            <label for="musicPlayerColor">播放器颜色</label>
                            <div style="display:flex;gap:10px;align-items:center"><input type="color" id="musicPlayerColorPicker" class="color-picker" style="width:50px;height:40px;border:none;cursor:pointer"> <input id="musicPlayerColor" class="form-control" placeholder="rgba(66, 133, 244, 0.9)"></div>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">音乐播放器颜色（支持 rgba 格式）
+                           <p style="font-size:.85em;color:white;margin-top:5px">音乐播放器颜色（支持 rgba 格式）
                         </div>
                         <div class="form-group">
                            <label for="musicPosition">显示位置</label> 
@@ -4154,12 +4162,12 @@ body.admin-focus-mode .modal-header {
                               <option value="bottom-left">左下角
                               <option value="bottom-right">右下角
                            </select>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">音乐播放器在页面中的显示位置
+                           <p style="font-size:.85em;color:white;margin-top:5px">音乐播放器在页面中的显示位置
                         </div>
                         <div class="form-group">
                            <label for="musicCustomCSS">自定义 CSS 样式</label> 
                            <textarea id="musicCustomCSS" class="form-control" rows="4" placeholder="/* 自定义音乐播放器样式 */"></textarea>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">为音乐播放器添加自定义 CSS 样式
+                           <p style="font-size:.85em;color:white;margin-top:5px">为音乐播放器添加自定义 CSS 样式
                         </div>
                      </div>
                      <div style="margin-top:30px;padding-top:20px;border-top:1px solid rgba(0,0,0,.1)">
@@ -4224,24 +4232,24 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="templateName">个人主页标题</label> <input id="templateName" class="form-control" placeholder="欢迎来到我的博客">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">显示在首页的标题文字
+                           <p style="font-size:.85em;color:white;margin-top:5px">显示在首页的标题文字
                         </div>
                         <div class="form-group">
                            <label for="templateGreting">欢迎语</label> 
                            <textarea id="templateGreting" class="form-control" rows="3" placeholder="这是一个使用 Go 语言构建的个人博客系统..."></textarea>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">显示在首页的欢迎文字
+                           <p style="font-size:.85em;color:white;margin-top:5px">显示在首页的欢迎文字
                         </div>
                         <div class="form-group">
                            <label for="templateYear">年份</label> <input id="templateYear" class="form-control" placeholder="2026">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">用于版权信息
+                           <p style="font-size:.85em;color:white;margin-top:5px">用于版权信息
                         </div>
                         <div class="form-group">
                            <label for="templateFoodes">页脚信息</label> <input id="templateFoodes" class="form-control" placeholder="我的博客">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">显示在页脚的信息
+                           <p style="font-size:.85em;color:white;margin-top:5px">显示在页脚的信息
                         </div>
                         <div class="form-group">
                            <label for="globalAvatar">全局头像路径</label> <input id="globalAvatar" class="form-control" placeholder="/img/avatar.webp">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">全局用户头像图片路径（支持相对路径或绝对URL）
+                           <p style="font-size:.85em;color:white;margin-top:5px">全局用户头像图片路径（支持相对路径或绝对URL）
                         </div>
                      </div>
                   </div>
@@ -4259,11 +4267,11 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="templateArticleTitle"><input type="checkbox" id="templateArticleTitle" style="margin-right:8px"> 显示文章标题</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">是否在文章页面显示标题
+                           <p style="font-size:.85em;color:white;margin-top:5px">是否在文章页面显示标题
                         </div>
                         <div class="form-group">
                            <label for="templateArticleTitlePrefix">文章标题前缀</label> <input id="templateArticleTitlePrefix" class="form-control" placeholder="文章">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">显示在文章标题前的文字（如：文章、阅读等）
+                           <p style="font-size:.85em;color:white;margin-top:5px">显示在文章标题前的文字（如：文章、阅读等）
                         </div>
                      </div>
                   </div>
@@ -4279,11 +4287,11 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="templateSwitchNotice"><input type="checkbox" id="templateSwitchNotice" style="margin-right:8px"> 显示切换标签页提示</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">用户切换到其他标签页时，在标签页标题显示提示文字
+                           <p style="font-size:.85em;color:white;margin-top:5px">用户切换到其他标签页时，在标签页标题显示提示文字
                         </div>
                         <div class="form-group">
                            <label for="templateSwitchNoticeText">提示文字</label> <input id="templateSwitchNoticeText" class="form-control" placeholder="回来继续阅读">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">切换标签页时在标题栏显示的文字（如：回来继续阅读、别忘记回来哦等）
+                           <p style="font-size:.85em;color:white;margin-top:5px">切换标签页时在标题栏显示的文字（如：回来继续阅读、别忘记回来哦等）
                         </div>
                      </div>
                   </div>
@@ -4298,23 +4306,23 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="externalLinkWarning"><input type="checkbox" id="externalLinkWarning" style="margin-right:8px"> 启用外部链接跳转警告</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">用户点击外部链接时，显示警告提示
+                           <p style="font-size:.85em;color:white;margin-top:5px">用户点击外部链接时，显示警告提示
                         </div>
                         <div class="form-group">
                            <label for="externalLinkWhitelist">白名单域名</label> <input id="externalLinkWhitelist" class="form-control" placeholder="github.com,gitee.com,stackoverflow.com">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">不需要警告的域名，用逗号分隔（如：github.com,gitee.com）
+                           <p style="font-size:.85em;color:white;margin-top:5px">不需要警告的域名，用逗号分隔（如：github.com,gitee.com）
                         </div>
                         <div class="form-group">
                            <label for="externalLinkWarningText">警告提示文字</label> <input id="externalLinkWarningText" class="form-control" placeholder="您即将离开本站，前往外部链接">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">外部链接警告提示文字
+                           <p style="font-size:.85em;color:white;margin-top:5px">外部链接警告提示文字
                         </div>
                         <div class="form-group">
                            <label for="passageSummarizeEnabled"><input type="checkbox" id="passageSummarizeEnabled" style="margin-right:8px"> 启用文章摘要功能</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">自动为文章生成中文摘要（基于 TextRank 算法）
+                           <p style="font-size:.85em;color:white;margin-top:5px">自动为文章生成中文摘要（基于 TextRank 算法）
                         </div>
                         <div class="form-group">
                            <label for="live2dEnabled"><input type="checkbox" id="live2dEnabled" style="margin-right:8px"> 启用 Live2D 看板娘</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">在页面显示 Live2D 看板娘
+                           <p style="font-size:.85em;color:white;margin-top:5px">在页面显示 Live2D 看板娘
                         </div>
                      </div>
                   </div>
@@ -4333,15 +4341,15 @@ body.admin-focus-mode .modal-header {
                         </div>
                         <div class="form-group">
                            <label for="live2dModelId">模型 ID</label> <input id="live2dModelId" class="form-control" placeholder="1">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">CDN 模型的 ID（如：1, 2, 3 等）
+                           <p style="font-size:.85em;color:white;margin-top:5px">CDN 模型的 ID（如：1, 2, 3 等）
                         </div>
                         <div class="form-group">
                            <label for="live2dModelPath">自定义模型路径</label> <input id="live2dModelPath" class="form-control" placeholder="/live2d/model/">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">留空则使用 CDN 模型。填写时使用相对路径（如：/live2d/model/）
+                           <p style="font-size:.85em;color:white;margin-top:5px">留空则使用 CDN 模型。填写时使用相对路径（如：/live2d/model/）
                         </div>
                         <div class="form-group">
                            <label for="live2dCDNPath">CDN 路径</label> <input id="live2dCDNPath" class="form-control" placeholder="https://unpkg.com/live2d-widget-model@1.0.5/">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">CDN 模型的基础路径
+                           <p style="font-size:.85em;color:white;margin-top:5px">CDN 模型的基础路径
                         </div>
                         <div class="form-group"><label for="live2dWidth">宽度</label> <input id="live2dWidth" class="form-control" placeholder="280px"></div>
                         <div class="form-group"><label for="live2dHeight">高度</label> <input id="live2dHeight" class="form-control" placeholder="250px"></div>
@@ -4357,24 +4365,24 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="sponsorEnabled"><input type="checkbox" id="sponsorEnabled" style="margin-right:8px"> 启用赞助功能</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">在文章末尾显示赞助按钮
+                           <p style="font-size:.85em;color:white;margin-top:5px">在文章末尾显示赞助按钮
                         </div>
                         <div class="form-group">
                            <label for="sponsorTitle">赞助标题</label> <input id="sponsorTitle" class="form-control" placeholder="感谢您的支持">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">赞助模态框的标题
+                           <p style="font-size:.85em;color:white;margin-top:5px">赞助模态框的标题
                         </div>
                         <div class="form-group">
                            <label for="sponsorImage">赞助图片路径</label> <input id="sponsorImage" class="form-control" placeholder="/img/avatar.webp">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">赞助二维码图片的路径
+                           <p style="font-size:.85em;color:white;margin-top:5px">赞助二维码图片的路径
                         </div>
                         <div class="form-group">
                            <label for="sponsorDescription">赞助描述</label> 
                            <textarea id="sponsorDescription" class="form-control" rows="3" placeholder="如果您觉得这个博客对您有帮助，欢迎赞助支持！"></textarea>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">赞助说明文字
+                           <p style="font-size:.85em;color:white;margin-top:5px">赞助说明文字
                         </div>
                         <div class="form-group">
                            <label for="sponsorButtonText">赞助按钮文字</label> <input id="sponsorButtonText" class="form-control" placeholder="❤️ 赞助支持">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">显示在文章中的赞助按钮文字
+                           <p style="font-size:.85em;color:white;margin-top:5px">显示在文章中的赞助按钮文字
                         </div>
                      </div>
                   </div>
@@ -4392,19 +4400,19 @@ body.admin-focus-mode .modal-header {
                      <div class="settings-grid">
                         <div class="form-group">
                            <label for="beianEnabled"><input type="checkbox" id="beianEnabled" style="margin-right:8px"> 启用备案显示</label>
-                           <p style="font-size:.85em;color:#666;margin-top:5px">在页脚显示备案信息（仅针对中国内地网站）
+                           <p style="font-size:.85em;color:white;margin-top:5px">在页脚显示备案信息（仅针对中国内地网站）
                         </div>
                         <div class="form-group">
                            <label for="icpNumber">ICP备案号</label> <input id="icpNumber" class="form-control" placeholder="京ICP备12345678号-1">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">工信部备案号，将显示在页脚并可点击跳转至工信部官网
+                           <p style="font-size:.85em;color:white;margin-top:5px">工信部备案号，将显示在页脚并可点击跳转至工信部官网
                         </div>
                         <div class="form-group">
                            <label for="policeRecordCode">公安备案号</label> <input id="policeRecordCode" class="form-control" placeholder="12345678号">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">公安联网备案号（如：12345678号），仅用于链接中的recordcode参数
+                           <p style="font-size:.85em;color:white;margin-top:5px">公安联网备案号（如：12345678号），仅用于链接中的recordcode参数
                         </div>
                         <div class="form-group">
                            <label for="policeRecordContent">公安备案显示内容</label> <input id="policeRecordContent" class="form-control" placeholder="京公网安备 12345678号">
-                           <p style="font-size:.85em;color:#666;margin-top:5px">在页脚显示的完整公安备案文字（通常包含图标和备案号）
+                           <p style="font-size:.85em;color:white;margin-top:5px">在页脚显示的完整公安备案文字（通常包含图标和备案号）
                         </div>
                      </div>
                   </div>
@@ -4431,13 +4439,13 @@ body.admin-focus-mode .modal-header {
                      <div style="flex:1"><input type="number" id="uploadMonth" class="form-control" placeholder="月" min="1" max="12"></div>
                      <div style="flex:1"><input type="number" id="uploadDay" class="form-control" placeholder="日" min="1" max="31"></div>
                   </div>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">留空则使用当前日期
+                  <p style="font-size:.85em;color:white;margin-top:5px">留空则使用当前日期
                </div>
                <div class="form-group">
                   <label for="uploadCategory">分类</label>
                   <div class="category-selector" id="uploadCategorySelector"></div>
                   <div class="category-input-container"><input class="form-control category-input" id="uploadCategoryInput" placeholder="添加自定义分类"> <button type="button" class="btn-secondary" id="addUploadCategoryBtn">添加</button></div>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">选择文章所属分类，或输入新分类名称（可选）
+                  <p style="font-size:.85em;color:white;margin-top:5px">选择文章所属分类，或输入新分类名称（可选）
                </div>
                <div class="form-group">
                   <label>标签</label>
@@ -4447,7 +4455,7 @@ body.admin-focus-mode .modal-header {
                <div class="form-group">
                   <label for="uploadContent">文章内容 <span style="color:#e74c3c">*</span></label> 
                   <textarea id="uploadContent" class="form-control" placeholder="请输入文章内容（支持Markdown格式）" rows="10"></textarea>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">输入文章内容或上传Markdown文件（至少提供一种）
+                  <p style="font-size:.85em;color:white;margin-top:5px">输入文章内容或上传Markdown文件（至少提供一种）
                </div>
                <div class="form-group">
                   <label>上传附件</label>
@@ -4496,7 +4504,7 @@ body.admin-focus-mode .modal-header {
                </div>
                <div class="form-group">
                   <label for="articleCoverImage">封面图片路径</label> <input id="articleCoverImage" class="form-control" placeholder="/img/xxx.webp（需要预先上传图片文件）" value="/img/passage-cover2.webp">
-                  <p style="font-size:.85em;color:#666;margin-top:5px">请输入图片的相对路径，默认使用 /img/passage-cover2.webp
+                  <p style="font-size:.85em;color:white;margin-top:5px">请输入图片的相对路径，默认使用 /img/passage-cover2.webp
                </div>
                <div class="form-group"><label for="articleContent">文章内容 <span style="color:#e74c3c">*</span></label> <textarea id="articleContent" class="form-control" placeholder="请输入文章内容（支持Markdown格式）" rows="15"></textarea></div>
                <div class="btn-group"><button type="button" class="btn-secondary" data-modal="articleModal">取消</button> <button type="submit" class="btn-primary">保存文章</button></div>
@@ -4516,7 +4524,7 @@ body.admin-focus-mode .modal-header {
                <div class="form-group"><label for="editAuthor">作者 <span style="color:#e74c3c">*</span></label> <input id="editAuthor" class="form-control" placeholder="请输入作者"></div>
                <div class="form-group">
                   <label for="editShowTitle"><input type="checkbox" id="editShowTitle" checked> 显示标题（防止出现两次标题）</label>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">取消勾选后，文章内容将不显示标题，适用于标题已在内容中包含的情况
+                  <p style="font-size:.85em;color:white;margin-top:5px">取消勾选后，文章内容将不显示标题，适用于标题已在内容中包含的情况
                </div>
                <div class="form-group">
                   <label for="editCategory">分类</label> 
@@ -4536,7 +4544,7 @@ body.admin-focus-mode .modal-header {
                      <option value="published">已发布
                      <option value="pending">待审核
                   </select>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">草稿：仅管理员可见<br>已发布：公开可见（如果可见性为公开）
+                  <p style="font-size:.85em;color:white;margin-top:5px">草稿：仅管理员可见<br>已发布：公开可见（如果可见性为公开）
                </div>
                <div class="form-group">
                   <label for="editVisibility">可见性</label> 
@@ -4544,19 +4552,19 @@ body.admin-focus-mode .modal-header {
                      <option value="public">公开
                      <option value="private">私密
                   </select>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">公开：所有用户可见<br>私密：仅管理员可见
+                  <p style="font-size:.85em;color:white;margin-top:5px">公开：所有用户可见<br>私密：仅管理员可见
                </div>
                <div class="form-group">
                   <label for="editIsScheduled"><input type="checkbox" id="editIsScheduled"> 定时发布</label>
-                  <p style="font-size:.85em;color:#666;margin-top:5px">勾选后，文章将在指定时间自动发布
+                  <p style="font-size:.85em;color:white;margin-top:5px">勾选后，文章将在指定时间自动发布
                </div>
                <div class="form-group" id="editPublishedAtGroup" style="display:none">
                   <label for="editPublishedAt">发布时间</label> <input type="datetime-local" id="editPublishedAt" class="form-control">
-                  <p style="font-size:.85em;color:#666;margin-top:5px">设置文章的定时发布时间
+                  <p style="font-size:.85em;color:white;margin-top:5px">设置文章的定时发布时间
                </div>
                <div class="form-group">
                   <label for="editCoverImage">封面图片路径</label> <input id="editCoverImage" class="form-control" placeholder="/img/xxx.webp（需要预先上传图片文件）">
-                  <p style="font-size:.85em;color:#666;margin-top:5px">留空则不修改原有封面路径
+                  <p style="font-size:.85em;color:white;margin-top:5px">留空则不修改原有封面路径
                </div>
                <div class="form-group"><label for="editContent">文章内容 <span style="color:#e74c3c">*</span></label> <textarea id="editContent" class="form-control" placeholder="请输入文章内容（支持Markdown格式）" rows="15"></textarea></div>
                <div class="btn-group"><button type="button" class="btn-secondary" data-modal="editModal">取消</button> <button type="submit" class="btn-primary">保存修改</button></div>
