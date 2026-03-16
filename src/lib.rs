@@ -52,6 +52,10 @@ pub mod storage;
 
 pub use core::{RouteEntry, RouteTable, SerializableRoute, SimpleRoute};
 pub use core::cache_optimized::CacheOptimizedRouteTable;
+pub use core::dynamic_route_table::DynamicRouteTable;
+pub use core::dynamic_sharding::{
+    DynamicShardManager, DynamicShardingConfig, LoadBalanceStrategy, ShardMetrics,
+};
 pub use storage::{FileStorage, KeyValueStorage, MemoryStorage, RouteStorage};
 
 /// 库版本
