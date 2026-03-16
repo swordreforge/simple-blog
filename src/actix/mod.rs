@@ -5,6 +5,7 @@
 pub mod middleware;
 
 use crate::core::{RouteTable, SerializableRoute, SimpleRoute};
+use std::sync::Arc;
 use actix_web::{delete, get, post, web, web::Path, HttpRequest, HttpResponse};
 use serde::{Deserialize, Serialize};
 
@@ -45,7 +46,7 @@ pub use middleware::{AuthMiddleware, RateLimiter, RequestLogger};
 ///     .await
 /// }
 /// ```
-pub async fn universal_handler(req: HttpRequest, table: web::Data<RouteTable>) -> HttpResponse {
+pub async fn universal_handler(req: HttpRequest, table: web::Data<Arc<RouteTable>>) -> HttpResponse {
     // 获取请求的路径
     let path = req.path();
 
@@ -108,7 +109,7 @@ pub struct AddRouteRequest {
 #[post("/admin/routes")]
 pub async fn add_route(
     req: web::Json<AddRouteRequest>,
-    table: web::Data<RouteTable>,
+    table: web::Data<Arc<RouteTable>>,
 ) -> HttpResponse {
     let AddRouteRequest {
         path,
@@ -148,7 +149,7 @@ pub async fn add_route(
 ///
 /// 返回 200 OK 表示成功，或 404 Not Found 表示路由不存在
 #[delete("/admin/routes/{path:.*}")]
-pub async fn delete_route(path: Path<String>, table: web::Data<RouteTable>) -> HttpResponse {
+pub async fn delete_route(path: Path<String>, table: web::Data<Arc<RouteTable>>) -> HttpResponse {
     let route_path = format!("/{}", path.into_inner());
 
     if table.remove(&route_path) {
@@ -178,7 +179,7 @@ pub async fn delete_route(path: Path<String>, table: web::Data<RouteTable>) -> H
 ///
 /// 返回包含所有路由路径的 JSON 数组
 #[get("/admin/routes")]
-pub async fn list_routes(table: web::Data<RouteTable>) -> HttpResponse {
+pub async fn list_routes(table: web::Data<Arc<RouteTable>>) -> HttpResponse {
     let paths = table.list_paths();
 
     HttpResponse::Ok().json(paths)
@@ -208,7 +209,7 @@ pub struct RouteInfo {
 ///
 /// 返回路由详情，或 404 Not Found
 #[get("/admin/routes/{path:.*}")]
-pub async fn get_route(path: Path<String>, table: web::Data<RouteTable>) -> HttpResponse {
+pub async fn get_route(path: Path<String>, table: web::Data<Arc<RouteTable>>) -> HttpResponse {
     let route_path = format!("/{}", path.into_inner());
 
     if let Some(serializable) = table.get_with(&route_path, |route| route.to_serializable()) {
