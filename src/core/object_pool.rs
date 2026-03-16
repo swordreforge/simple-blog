@@ -18,11 +18,14 @@ struct SimplePool<T> {
 /// 无锁栈节点
 ///
 /// 使用Treiber Stack算法实现的无锁栈节点
+/// 注意：此结构体为未来扩展预留，当前未使用
+#[allow(dead_code)]
 struct LockFreeNode<T> {
     data: Option<T>,
     next: AtomicPtr<LockFreeNode<T>>,
 }
 
+#[allow(dead_code)]
 impl<T> LockFreeNode<T> {
     /// 创建新节点
     fn new(data: Option<T>) -> Self {
@@ -37,6 +40,8 @@ impl<T> LockFreeNode<T> {
 ///
 /// 基于Treiber Stack算法实现，提供高并发性能
 /// 使用原子操作实现线程安全，避免使用互斥锁
+/// 注意：此结构体为未来扩展预留，当前未使用
+#[allow(dead_code)]
 struct LockFreeStack<T> {
     head: AtomicPtr<LockFreeNode<T>>,
 }
@@ -44,6 +49,7 @@ struct LockFreeStack<T> {
 unsafe impl<T: Send> Send for LockFreeStack<T> {}
 unsafe impl<T: Send> Sync for LockFreeStack<T> {}
 
+#[allow(dead_code)]
 impl<T> LockFreeStack<T> {
     /// 创建新的无锁栈
     fn new() -> Self {

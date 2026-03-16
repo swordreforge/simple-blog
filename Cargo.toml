@@ -25,6 +25,8 @@ object-pool = "0.5"
 once_cell = "1.19"
 bytes = "1.5"
 base64 = "0.21"
+papaya = "0.2"
+seize = "0.5"
 
 [dev-dependencies]
 tempfile = "3"
@@ -37,3 +39,4 @@ sqlite = ["sqlx/sqlite"]
 postgres = ["sqlx/postgres"]
 database = ["sqlite", "postgres", "chrono", "sqlx"]
 simd = []  # SIMD优化特性，使用AVX2指令加速字符串操作
+papaya = []  # 使用 Papaya 无锁哈希表优化路由查找性能

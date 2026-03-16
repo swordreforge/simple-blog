@@ -8,6 +8,7 @@ pub mod dynamic_sharding;
 pub mod lockfree_cache;
 pub mod lockfree_shard;
 pub mod object_pool;
+pub mod papaya_route_table;
 pub mod route_entry;
 pub mod route_matcher;
 pub mod route_radix_tree;
@@ -52,3 +53,5 @@ pub use bytes_optimized::{
     BytesBuilder, BytesComparator, BytesConverter, BytesPool, BytesSplitter, BytesView,
     OptimizedBytes,
 };
+#[cfg(feature = "papaya")]
+pub use papaya_route_table::PapayaRouteTable;
