@@ -132,6 +132,16 @@ impl DynamicShard {
         self.inner.list_paths()
     }
 
+    /// 获取所有路径（带预分配容量优化版本）
+    ///
+    /// 当已知路由数量时，使用此方法可以避免Vec的多次重新分配
+    pub fn list_paths_with_capacity(&self) -> Vec<String> {
+        let count = self.metrics.route_count;
+        let mut paths = Vec::with_capacity(count);
+        paths.extend(self.inner.list_paths());
+        paths
+    }
+
     pub fn clear(&mut self) {
         self.inner.clear();
         self.metrics = ShardMetrics::default();
@@ -144,11 +154,19 @@ impl DynamicShard {
     /// 由于 SimpleRoute 现在使用 Arc<str> 存储字符串数据，
     /// clone_box 操作的开销已显著降低（仅增加引用计数）。
     pub fn get_all_routes(&mut self) -> HashMap<String, Box<dyn RouteEntry>> {
-        let mut routes = HashMap::new();
-        for path in self.list_paths() {
+        self.get_all_routes_with_capacity()
+    }
+
+    /// 获取所有路由（带预分配容量优化版本）
+    ///
+    /// 使用预分配的HashMap容量，减少哈希表扩容开销
+    pub fn get_all_routes_with_capacity(&mut self) -> HashMap<String, Box<dyn RouteEntry>> {
+        let count = self.metrics.route_count;
+        let mut routes = HashMap::with_capacity(count);
+        for path in self.list_paths_with_capacity() {
             if let Some((route, _)) = self.find(&path) {
                 // 使用 clone_box，但由于 SimpleRoute 使用 Arc，开销已显著降低
-                routes.insert(path.clone(), route.clone_box());
+                routes.insert(path, route.clone_box());
             }
         }
         routes
@@ -441,10 +459,10 @@ impl DynamicShardManager {
         let from_shard = &self.shards[from_idx];
         let to_shard = &self.shards[to_idx];
 
-        // 获取源分片的路径列表
+        // 获取源分片的路径列表（使用预分配优化版本）
         let paths = {
             let guard = from_shard.read().unwrap();
-            guard.list_paths()
+            guard.list_paths_with_capacity()
         };
 
         if paths.is_empty() {
@@ -510,13 +528,13 @@ impl DynamicShardManager {
 
     /// 获取所有分片的指标
     pub fn get_all_metrics(&self) -> Vec<ShardMetrics> {
-        self.shards
-            .iter()
-            .map(|shard| {
-                let guard = shard.read().unwrap();
-                guard.metrics().clone()
-            })
-            .collect()
+        let count = self.shards.len();
+        let mut metrics = Vec::with_capacity(count);
+        for shard in &self.shards {
+            let guard = shard.read().unwrap();
+            metrics.push(guard.metrics().clone());
+        }
+        metrics
     }
 
     /// 获取分片的引用
