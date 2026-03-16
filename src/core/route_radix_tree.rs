@@ -262,16 +262,16 @@ impl RadixNode {
 
         let segment = segments[idx];
 
-        // 尝试静态节点
-        if let Some((edge_idx, lcp)) = self.find_matching_edge(segment) {
-            let edge = &mut self.children[edge_idx];
-            if lcp == edge.prefix.len() && edge.prefix == segment {
-                if let Some(route) = edge.node.remove_segments(segments, idx + 1) {
+        // 尝试静态节点 - 遍历所有边寻找精确匹配
+        for edge_idx in 0..self.children.len() {
+            if self.children[edge_idx].prefix == segment {
+                // 找到精确匹配，尝试从子节点删除
+                if let Some(route) = self.children[edge_idx].node.remove_segments(segments, idx + 1) {
                     // 如果子节点没有路由和子节点，可以删除边
-                    if edge.node.route.is_none() 
-                        && edge.node.children.is_empty() 
-                        && edge.node.param_child.is_none() 
-                        && edge.node.wildcard_child.is_none() {
+                    if self.children[edge_idx].node.route.is_none() 
+                        && self.children[edge_idx].node.children.is_empty() 
+                        && self.children[edge_idx].node.param_child.is_none() 
+                        && self.children[edge_idx].node.wildcard_child.is_none() {
                         self.children.remove(edge_idx);
                     }
                     return Some(route);

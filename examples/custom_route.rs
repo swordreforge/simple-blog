@@ -42,6 +42,10 @@ impl RouteEntry for TimedRoute {
         Box::new(self.clone())
     }
 
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn to_serializable(&self) -> SerializableRoute {
         // 使用 extra_data 存储自定义字段
         let extra_data = serde_json::json!({
@@ -108,6 +112,10 @@ impl RouteEntry for HeaderRoute {
 
     fn clone_box(&self) -> Box<dyn RouteEntry> {
         Box::new(self.clone())
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
     }
 
     fn to_serializable(&self) -> SerializableRoute {
