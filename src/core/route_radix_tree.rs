@@ -64,8 +64,8 @@ struct RadixNode {
     param_child: Option<Box<RadixNode>>,
     /// 通配符子节点
     wildcard_child: Option<Box<RadixNode>>,
-    /// 存储在此节点的路由处理器
-    route: Option<Box<dyn RouteEntry>>,
+    /// 存储在此节点的路由处理器（使用Arc实现零拷贝共享）
+    route: Option<std::sync::Arc<dyn RouteEntry>>,
 }
 
 impl RadixNode {
@@ -103,16 +103,18 @@ impl RadixNode {
     /// 插入路由路径
     fn insert(&mut self, path: &str, route: Box<dyn RouteEntry>) {
         use super::object_pool::split_path_optimized;
+        // 将Box转换为Arc，实现零拷贝共享
+        let arc_route: std::sync::Arc<dyn RouteEntry> = route.into();
         let segments: Vec<String> = split_path_optimized(path);
         let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
 
-        self.insert_segments(&segments_refs, 0, route);
+        self.insert_segments(&segments_refs, 0, arc_route);
     }
 
     /// 递归插入路径段
-    fn insert_segments(&mut self, segments: &[&str], idx: usize, route: Box<dyn RouteEntry>) {
+    fn insert_segments(&mut self, segments: &[&str], idx: usize, route: std::sync::Arc<dyn RouteEntry>) {
         if idx >= segments.len() {
-            // 到达路径末尾，存储路由
+            // 到达路径末尾，存储路由（使用Arc共享）
             self.route = Some(route);
             return;
         }
@@ -124,7 +126,7 @@ impl RadixNode {
             RadixNodeType::Static(key) => {
                 // 查找是否已有匹配的边
                 let existing_edge = self.children.iter().position(|edge| edge.prefix == key);
-                
+
                 if let Some(edge_idx) = existing_edge {
                     // 边已存在，继续插入到子节点
                     self.children[edge_idx].node.insert_segments(segments, idx + 1, route);
@@ -168,7 +170,7 @@ impl RadixNode {
     }
 
     /// 查找路由
-    fn find(&self, path: &str) -> Option<(&Box<dyn RouteEntry>, Vec<(String, String)>)> {
+    fn find(&self, path: &str) -> Option<(&std::sync::Arc<dyn RouteEntry>, Vec<(String, String)>)> {
         use super::object_pool::split_path_optimized;
         let segments: Vec<String> = split_path_optimized(path);
         let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
@@ -190,7 +192,7 @@ impl RadixNode {
         segments: &[&str],
         idx: usize,
         params: Vec<(String, String)>,
-    ) -> Option<(&Box<dyn RouteEntry>, Vec<(String, String)>)> {
+    ) -> Option<(&std::sync::Arc<dyn RouteEntry>, Vec<(String, String)>)> {
         if idx >= segments.len() {
             // 到达路径末尾
             return self.route.as_ref().map(|route| (route, params));
@@ -242,7 +244,7 @@ impl RadixNode {
     }
 
     /// 移除路由
-    fn remove(&mut self, path: &str) -> Option<Box<dyn RouteEntry>> {
+    fn remove(&mut self, path: &str) -> Option<std::sync::Arc<dyn RouteEntry>> {
         use super::object_pool::split_path_optimized;
         let segments: Vec<String> = split_path_optimized(path);
         let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
@@ -255,7 +257,7 @@ impl RadixNode {
     }
 
     /// 递归移除路径段
-    fn remove_segments(&mut self, segments: &[&str], idx: usize) -> Option<Box<dyn RouteEntry>> {
+    fn remove_segments(&mut self, segments: &[&str], idx: usize) -> Option<std::sync::Arc<dyn RouteEntry>> {
         if idx >= segments.len() {
             return self.route.take();
         }
@@ -268,9 +270,9 @@ impl RadixNode {
                 // 找到精确匹配，尝试从子节点删除
                 if let Some(route) = self.children[edge_idx].node.remove_segments(segments, idx + 1) {
                     // 如果子节点没有路由和子节点，可以删除边
-                    if self.children[edge_idx].node.route.is_none() 
-                        && self.children[edge_idx].node.children.is_empty() 
-                        && self.children[edge_idx].node.param_child.is_none() 
+                    if self.children[edge_idx].node.route.is_none()
+                        && self.children[edge_idx].node.children.is_empty()
+                        && self.children[edge_idx].node.param_child.is_none()
                         && self.children[edge_idx].node.wildcard_child.is_none() {
                         self.children.remove(edge_idx);
                     }
@@ -424,6 +426,39 @@ impl RouteRadixTree {
         self.root.insert(path, route);
     }
 
+    /// 插入路由（使用Arc，零拷贝）
+    ///
+    /// # 参数
+    ///
+    /// * `path` - 路由路径
+    /// * `route` - 路由处理器（使用Arc共享）
+    ///
+    /// # 性能优化
+    ///
+    /// 直接使用Arc存储路由，避免Box到Arc的转换开销。
+    /// 适用于需要多次克隆路由或在不同分片间移动路由的场景。
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::core::route_radix_tree::RouteRadixTree;
+    /// use dynamic_route_actix::SimpleRoute;
+    /// use std::sync::Arc;
+    ///
+    /// let mut radix = RouteRadixTree::new();
+    /// let route = Arc::new(SimpleRoute::new("users", "text/plain"));
+    /// radix.insert_arc("/users", route);
+    ///
+    /// assert!(radix.find("/users").is_some());
+    /// ```
+    pub fn insert_arc(&mut self, path: &str, route: std::sync::Arc<dyn RouteEntry>) {
+        use super::object_pool::split_path_optimized;
+        let segments: Vec<String> = split_path_optimized(path);
+        let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
+
+        self.root.insert_segments(&segments_refs, 0, route);
+    }
+
     /// 查找路由
     ///
     /// # 参数
@@ -432,7 +467,7 @@ impl RouteRadixTree {
     ///
     /// # 返回
     ///
-    /// 返回路由处理器和提取的参数，如果未找到则返回None
+    /// 返回路由处理器（使用Arc共享，零拷贝）和提取的参数，如果未找到则返回None
     ///
     /// # 示例
     ///
@@ -446,7 +481,7 @@ impl RouteRadixTree {
     /// let (route, params) = radix.find("/users/123").unwrap();
     /// assert!(params.iter().any(|(k, v)| k == "id" && v == "123"));
     /// ```
-    pub fn find(&self, path: &str) -> Option<(&Box<dyn RouteEntry>, Vec<(String, String)>)> {
+    pub fn find(&self, path: &str) -> Option<(&std::sync::Arc<dyn RouteEntry>, Vec<(String, String)>)> {
         self.root.find(path)
     }
 
@@ -458,8 +493,8 @@ impl RouteRadixTree {
     ///
     /// # 返回
     ///
-    /// 返回被移除的路由处理器，如果未找到则返回None
-    pub fn remove(&mut self, path: &str) -> Option<Box<dyn RouteEntry>> {
+    /// 返回被移除的路由处理器（使用Arc共享），如果未找到则返回None
+    pub fn remove(&mut self, path: &str) -> Option<std::sync::Arc<dyn RouteEntry>> {
         self.root.remove(path)
     }
 

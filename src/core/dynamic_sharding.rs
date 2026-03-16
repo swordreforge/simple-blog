@@ -81,7 +81,19 @@ impl DynamicShard {
         self.metrics.last_access = Some(Instant::now());
     }
 
-    pub fn remove(&mut self, path: &str) -> Option<Box<dyn RouteEntry>> {
+    /// 插入路由（直接使用Arc，零拷贝）
+    pub fn insert_arc(&mut self, path: &str, route: std::sync::Arc<dyn RouteEntry>) {
+        let existed = self.inner.contains(path);
+        self.inner.insert_arc(path, route);
+        if !existed {
+            self.metrics.route_count += 1;
+        }
+        self.metrics.write_count += 1;
+        self.metrics.total_access += 1;
+        self.metrics.last_access = Some(Instant::now());
+    }
+
+    pub fn remove(&mut self, path: &str) -> Option<std::sync::Arc<dyn RouteEntry>> {
         let result = self.inner.remove(path);
         if result.is_some() {
             self.metrics.route_count = self.metrics.route_count.saturating_sub(1);
@@ -92,7 +104,7 @@ impl DynamicShard {
         result
     }
 
-    pub fn find(&mut self, path: &str) -> Option<(&Box<dyn RouteEntry>, Vec<(String, String)>)> {
+    pub fn find(&mut self, path: &str) -> Option<(&std::sync::Arc<dyn RouteEntry>, Vec<(String, String)>)> {
         let start = Instant::now();
         let result = self.inner.find(path);
         let duration = start.elapsed();
@@ -448,16 +460,16 @@ impl DynamicShardManager {
                 break;
             }
 
-            // 从源分片移除并获取路由
+            // 从源分片移除并获取路由（Arc引用）
             let route = {
                 let mut guard = from_shard.write().unwrap();
                 guard.remove(&path)
             };
 
             if let Some(route) = route {
-                // 添加到目标分片
+                // 直接使用Arc插入到目标分片，零拷贝
                 let mut guard = to_shard.write().unwrap();
-                guard.insert(&path, route);
+                guard.insert_arc(&path, route);
                 moved += 1;
             }
         }

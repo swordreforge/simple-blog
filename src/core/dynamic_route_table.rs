@@ -131,7 +131,7 @@ impl DynamicRouteTable {
     /// 如果路由存在，返回 `Some(T)`；否则返回 `None`
     pub fn get_with<F, R>(&self, path: &str, f: F) -> Option<R>
     where
-        F: FnOnce(&Box<dyn RouteEntry>) -> R,
+        F: FnOnce(&std::sync::Arc<dyn RouteEntry>) -> R,
     {
         let manager = self.manager.read().unwrap();
         let shard_idx = manager.hash_shard_index(path);

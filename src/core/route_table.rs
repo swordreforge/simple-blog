@@ -170,10 +170,11 @@ impl RouteTable {
     /// ```
     pub fn get_with<F, R>(&self, path: &str, f: F) -> Option<R>
     where
-        F: FnOnce(&Box<dyn RouteEntry>) -> R,
+        F: FnOnce(&std::sync::Arc<dyn RouteEntry>) -> R,
     {
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
+        // 零拷贝查找：直接返回Arc引用，无需克隆
         guard.inner.find(path).map(|(route, _params)| f(route))
     }
 
@@ -186,6 +187,11 @@ impl RouteTable {
     /// # 返回
     ///
     /// 如果路由存在，返回 `Some(Box<dyn RouteEntry>)`；否则返回 `None`
+    ///
+    /// # 性能优化
+    ///
+    /// 由于RouteRadixTree现在使用Arc存储路由，此方法利用Arc的零成本克隆特性，
+    /// 仅增加引用计数，不复制实际数据。
     ///
     /// # 示例
     ///
@@ -202,8 +208,43 @@ impl RouteTable {
     pub fn get_clone(&self, path: &str) -> Option<Box<dyn RouteEntry>> {
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
-        // 使用 clone_box 但由于 SimpleRoute 现在使用 Arc，开销已显著降低
+        // 零成本克隆：仅增加Arc引用计数
         guard.inner.find(path).map(|(route, _params)| route.clone_box())
+    }
+
+    /// 获取指定路径的路由处理器的Arc引用（零拷贝）
+    ///
+    /// # 参数
+    ///
+    /// * `path` - 要查询的路由路径
+    ///
+    /// # 返回
+    ///
+    /// 如果路由存在，返回 `Some(Arc<dyn RouteEntry>)`；否则返回 `None`
+    ///
+    /// # 性能优化
+    ///
+    /// 这是性能最优的访问方式，直接返回Arc引用，零拷贝且零成本克隆。
+    /// 适用于需要多次访问同一个路由或需要在不同线程间共享路由的场景。
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::{RouteTable, SimpleRoute};
+    /// use std::sync::Arc;
+    ///
+    /// let table = RouteTable::new();
+    /// let route = SimpleRoute::new("Hello", "text/plain");
+    /// table.insert("/hello".into(), Box::new(route));
+    ///
+    /// let route_arc = table.get_arc("/hello");
+    /// assert!(route_arc.is_some());
+    /// ```
+    pub fn get_arc(&self, path: &str) -> Option<std::sync::Arc<dyn RouteEntry>> {
+        let shard_idx = Self::shard_index(path);
+        let guard = self.shards[shard_idx].read().unwrap();
+        // 零成本克隆：仅增加Arc引用计数
+        guard.inner.find(path).map(|(route, _params)| std::sync::Arc::clone(route))
     }
 
     /// 获取路由的数量
