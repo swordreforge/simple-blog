@@ -106,7 +106,7 @@ impl RoutePattern {
     /// ```
     /// use dynamic_route_actix::core::route_matcher::RoutePattern;
     ///
-    /// let pattern = RoutePattern::regex(r"/users/\d+");
+    /// let pattern = RoutePattern::regex(r"/users/\d+").unwrap();
     /// assert!(pattern.match_path("/users/123").is_some());
     /// assert!(pattern.match_path("/users/abc").is_none());
     /// ```
@@ -229,13 +229,14 @@ impl RoutePattern {
                         let param_value = &path[value_start..path_idx];
                         params.insert(param_name.to_string(), param_value.to_string());
 
-                        // 检查是否还有下一个段
-                        if pattern_idx < pattern_bytes.len() {
-                            if path_idx < path_bytes.len() && path_bytes[path_idx] == b'/' {
-                                path_idx += 1;
-                            } else {
-                                return None;
-                            }
+                        // 如果pattern还有内容，跳过路径中的'/'
+                        if pattern_idx < pattern_bytes.len() && pattern_bytes[pattern_idx] == b'/' {
+                            pattern_idx += 1;
+                        }
+
+                        // 如果path还有内容且当前字符是'/'，跳过它
+                        if path_idx < path_bytes.len() && path_bytes[path_idx] == b'/' {
+                            path_idx += 1;
                         }
                     } else if pattern_bytes[pattern_idx] != path_bytes[path_idx] {
                         // 不匹配

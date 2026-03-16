@@ -1,12 +1,32 @@
 use super::RouteEntry;
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 
+/// 分片数
+const NUM_SHARDS: usize = 16;
+
+/// 路由表分片
+struct RouteTableShard {
+    inner: HashMap<String, Box<dyn RouteEntry>>,
+    /// 用于跟踪此分片中的路由数量
+    count: usize,
+}
+
+impl RouteTableShard {
+    fn new() -> Self {
+        Self {
+            inner: HashMap::new(),
+            count: 0,
+        }
+    }
+}
+
 /// 线程安全的路由表
 ///
-/// 使用 `RwLock` 实现读写锁，允许多个读操作或单个写操作并发执行。
-/// 路由表存储路径到路由处理器的映射。
+/// 使用分片锁（Sharded Locking）实现，将路由表分成多个分片，每个分片有自己的读写锁。
+/// 这样可以显著减少高并发场景下的锁竞争。
 ///
 /// # 线程安全
 ///
@@ -22,7 +42,8 @@ use std::sync::{Arc, RwLock};
 /// ```
 #[derive(Clone)]
 pub struct RouteTable {
-    inner: Arc<RwLock<HashMap<String, Box<dyn RouteEntry>>>>,
+    /// 分片数组，每个分片有自己的读写锁
+    shards: [Arc<RwLock<RouteTableShard>>; NUM_SHARDS],
     /// 用于跟踪路由数量的原子计数器
     count: Arc<AtomicUsize>,
 }
@@ -39,10 +60,25 @@ impl RouteTable {
     /// assert_eq!(table.count(), 0);
     /// ```
     pub fn new() -> Self {
+        // 创建分片数组
+        let shard_vec: Vec<Arc<RwLock<RouteTableShard>>> =
+            (0..NUM_SHARDS).map(|_| Arc::new(RwLock::new(RouteTableShard::new()))).collect();
+
+        // 将Vec转换为数组（在编译时已知NUM_SHARDS的值）
+        let shards: [Arc<RwLock<RouteTableShard>>; NUM_SHARDS] =
+            shard_vec.try_into().unwrap_or_else(|_| panic!("Failed to convert Vec to array"));
+
         Self {
-            inner: Arc::new(RwLock::new(HashMap::new())),
+            shards,
             count: Arc::new(AtomicUsize::new(0)),
         }
+    }
+
+    /// 根据路径计算分片索引
+    fn shard_index(path: &str) -> usize {
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        path.hash(&mut hasher);
+        (hasher.finish() as usize) % NUM_SHARDS
     }
 
     /// 向路由表中插入一个路由
@@ -65,10 +101,12 @@ impl RouteTable {
     /// assert!(table.contains("/hello"));
     /// ```
     pub fn insert(&self, path: String, route: Box<dyn RouteEntry>) {
-        let mut guard = self.inner.write().unwrap();
-        let existed = guard.contains_key(&path);
-        guard.insert(path, route);
+        let shard_idx = Self::shard_index(&path);
+        let mut guard = self.shards[shard_idx].write().unwrap();
+        let existed = guard.inner.contains_key(&path);
+        guard.inner.insert(path, route);
         if !existed {
+            guard.count += 1;
             self.count.fetch_add(1, Ordering::SeqCst);
         }
     }
@@ -95,9 +133,11 @@ impl RouteTable {
     /// assert!(!table.remove("/nonexistent"));
     /// ```
     pub fn remove(&self, path: &str) -> bool {
-        let mut guard = self.inner.write().unwrap();
-        let removed = guard.remove(path).is_some();
+        let shard_idx = Self::shard_index(path);
+        let mut guard = self.shards[shard_idx].write().unwrap();
+        let removed = guard.inner.remove(path).is_some();
         if removed {
+            guard.count -= 1;
             self.count.fetch_sub(1, Ordering::SeqCst);
         }
         removed
@@ -132,8 +172,9 @@ impl RouteTable {
     where
         F: FnOnce(&Box<dyn RouteEntry>) -> R,
     {
-        let guard = self.inner.read().unwrap();
-        guard.get(path).map(f)
+        let shard_idx = Self::shard_index(path);
+        let guard = self.shards[shard_idx].read().unwrap();
+        guard.inner.get(path).map(f)
     }
 
     /// 获取指定路径的路由处理器的克隆
@@ -159,8 +200,9 @@ impl RouteTable {
     /// assert!(route_clone.is_some());
     /// ```
     pub fn get_clone(&self, path: &str) -> Option<Box<dyn RouteEntry>> {
-        let guard = self.inner.read().unwrap();
-        guard.get(path).map(|route| route.clone_box())
+        let shard_idx = Self::shard_index(path);
+        let guard = self.shards[shard_idx].read().unwrap();
+        guard.inner.get(path).map(|route| route.clone_box())
     }
 
     /// 获取路由的数量
@@ -205,8 +247,9 @@ impl RouteTable {
     /// assert!(!table.contains("/nonexistent"));
     /// ```
     pub fn contains(&self, path: &str) -> bool {
-        let guard = self.inner.read().unwrap();
-        guard.contains_key(path)
+        let shard_idx = Self::shard_index(path);
+        let guard = self.shards[shard_idx].read().unwrap();
+        guard.inner.contains_key(path)
     }
 
     /// 获取所有路由的路径列表
@@ -228,8 +271,12 @@ impl RouteTable {
     /// assert_eq!(paths.len(), 2);
     /// ```
     pub fn list_paths(&self) -> Vec<String> {
-        let guard = self.inner.read().unwrap();
-        guard.keys().cloned().collect()
+        let mut paths = Vec::new();
+        for shard in &self.shards {
+            let guard = shard.read().unwrap();
+            paths.extend(guard.inner.keys().cloned());
+        }
+        paths
     }
 
     /// 清空路由表
@@ -249,8 +296,11 @@ impl RouteTable {
     /// assert_eq!(table.count(), 0);
     /// ```
     pub fn clear(&self) {
-        let mut guard = self.inner.write().unwrap();
-        guard.clear();
+        for shard in &self.shards {
+            let mut guard = shard.write().unwrap();
+            guard.inner.clear();
+            guard.count = 0;
+        }
         self.count.store(0, Ordering::SeqCst);
     }
 
@@ -277,18 +327,34 @@ impl RouteTable {
     /// assert_eq!(table.count(), 2);
     /// ```
     pub fn batch_insert(&self, routes: std::collections::HashMap<String, Box<dyn RouteEntry>>) {
-        let mut guard = self.inner.write().unwrap();
-        let mut new_count = 0;
+        // 将路由按分片分组
+        let mut shard_routes: Vec<Vec<(String, Box<dyn RouteEntry>)>> =
+            (0..NUM_SHARDS).map(|_| Vec::new()).collect();
 
         for (path, route) in routes {
-            let existed = guard.contains_key(&path);
-            guard.insert(path, route);
-            if !existed {
-                new_count += 1;
-            }
+            let shard_idx = Self::shard_index(&path);
+            shard_routes[shard_idx].push((path, route));
         }
 
-        self.count.fetch_add(new_count, Ordering::SeqCst);
+        // 批量插入到各个分片
+        let mut total_new_count = 0;
+        for (shard_idx, routes) in shard_routes.into_iter().enumerate() {
+            let mut guard = self.shards[shard_idx].write().unwrap();
+            let mut new_count = 0;
+
+            for (path, route) in routes {
+                let existed = guard.inner.contains_key(&path);
+                guard.inner.insert(path, route);
+                if !existed {
+                    new_count += 1;
+                }
+            }
+
+            guard.count += new_count;
+            total_new_count += new_count;
+        }
+
+        self.count.fetch_add(total_new_count, Ordering::SeqCst);
     }
 }
 

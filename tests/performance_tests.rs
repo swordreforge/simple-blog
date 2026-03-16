@@ -41,7 +41,7 @@ async fn test_concurrent_route_lookup() {
     }
 
     let duration = start.elapsed();
-    println!("Concurrent lookup time: {:?}", duration);
+    println!("📊 Concurrent lookup time: {:?}", duration);
 
     // 验证性能：100 个并发任务，每个查询 1000 个路由，应该在 1 秒内完成
     assert!(
