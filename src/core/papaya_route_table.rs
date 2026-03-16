@@ -322,7 +322,7 @@ impl PapayaRouteTable {
     /// }
     /// ```
     pub async fn get_all_paths(&self) -> Vec<String> {
-        self.routes.pin().keys().map(|k| k.clone()).collect()
+        self.routes.pin().keys().cloned().collect()
     }
 
     /// 原子更新或插入路由
