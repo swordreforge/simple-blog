@@ -220,14 +220,14 @@
         }
 
         button {
-            background: #667eea;
+            background: rgba(102, 126, 234, 0.3);
             color: white;
             padding: 12px 24px;
             border: none;
             border-radius: 5px;
             font-size: 14px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
             margin-right: 10px;
             margin-bottom: 10px;
         }
@@ -235,22 +235,34 @@
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
+            background: rgba(102, 126, 234, 0.5);
         }
 
         button.secondary {
-            background: #6c757d;
+            background: rgba(108, 117, 125, 0.3);
+        }
+
+        button.secondary:hover {
+            background: rgba(108, 117, 125, 0.5);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
         }
 
         button.danger {
-            background: #dc3545;
+            background: rgba(220, 53, 69, 0.3);
+        }
+
+        button.danger:hover {
+            background: rgba(220, 53, 69, 0.5);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
         }
 
         button.success {
-            background: #28a745;
+            background: rgba(40, 167, 69, 0.3);
+        }
+
+        button.success:hover {
+            background: rgba(40, 167, 69, 0.5);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
         }
 
         .route-list {
@@ -331,7 +343,6 @@
             background: rgba(0, 0, 0, 0.4);
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
         }
 
         .demo-route-name {
@@ -342,7 +353,7 @@
 
         .demo-route-path {
             font-family: 'Courier New', monospace;
-            background: #e9ecef;
+            background: #000000;
             padding: 4px 8px;
             border-radius: 3px;
             font-size: 12px;
@@ -380,7 +391,7 @@
     <div class="background-animation" id="backgroundAnimation"></div>
     <div class="container">
         <header>
-            <h1>🚀 动态路由管理系统</h1>
+            <h1>动态路由管理系统(内存路由)</h1>
             <p class="subtitle">基于 Rust 和 Actix-Web 的高性能动态路由库验证平台</p>
             <div class="stats">
                 <div class="stat-card">
@@ -405,7 +416,7 @@
         <div class="main-content">
             <!-- 左侧：添加路由 -->
             <div class="panel">
-                <h2 class="panel-title">➕ 添加新路由</h2>
+                <h2 class="panel-title"> 添加新路由</h2>
                 <div id="message"></div>
                 <form id="addRouteForm">
                     <div class="form-group">
@@ -430,7 +441,7 @@
                 </form>
 
                 <div style="margin-top: 30px;">
-                    <h3 style="color: #333; font-size: 16px; margin-bottom: 15px;">⚡ 快速操作</h3>
+                    <h3 style="color: #333; font-size: 16px; margin-bottom: 15px;"> 快速操作</h3>
                     <button onclick="addDemoRoutes()" class="success">添加演示路由</button>
                     <button onclick="clearAllRoutes()" class="danger">清空所有路由</button>
                     <button onclick="loadRoutes()" class="secondary">刷新列表</button>
@@ -439,7 +450,7 @@
 
             <!-- 右侧：路由列表 -->
             <div class="panel">
-                <h2 class="panel-title">📋 路由列表</h2>
+                <h2 class="panel-title">路由列表</h2>
                 <div id="routeList" class="route-list">
                     <div class="loading">加载中...</div>
                 </div>
@@ -448,7 +459,7 @@
 
         <!-- 演示路由区域 -->
         <div class="panel">
-            <h2 class="panel-title">🎯 预设演示路由</h2>
+            <h2 class="panel-title">预设演示路由</h2>
             <p style="color: #666; margin-bottom: 20px; font-size: 14px;">点击下方的卡片可以快速添加预设的演示路由</p>
             <div id="demoRoutes" class="demo-routes">
                 <div class="loading">加载中...</div>
@@ -457,7 +468,7 @@
 
         <!-- API 测试区域 -->
         <div class="panel" style="margin-top: 20px;">
-            <h2 class="panel-title">🧪 API 测试</h2>
+            <h2 class="panel-title"> API 测试</h2>
             <p style="color: #666; margin-bottom: 15px; font-size: 14px;">在浏览器中直接访问以下路径来测试路由功能：</p>
             <div class="demo-routes" id="testLinks">
                 <div class="loading">加载中...</div>
