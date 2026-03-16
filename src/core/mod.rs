@@ -9,6 +9,7 @@ pub mod route_table;
 pub mod route_trie;
 pub mod route_validator;
 pub mod simple_route;
+pub mod string_optimized;
 
 pub use cache::{BatchOperations, PerformanceOptions, RouteCache};
 pub use cache_optimized::{CacheOptimizedShard, CompactRadixTree};
@@ -22,3 +23,8 @@ pub use route_validator::{
     MigrationRule, RouteTypeMetadata, RouteTypeRegistry, RouteValidator, ValidationError,
 };
 pub use simple_route::SimpleRoute;
+pub use string_optimized::{
+    extract_params_pooled, global_path_pool, global_stats, join_paths_optimized, PathStringPool,
+    SmallString, SmartString, split_path_pooled, split_path_small, split_path_smart,
+    StringOptimizationStats, StringPool,
+};

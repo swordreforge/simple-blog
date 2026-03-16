@@ -686,6 +686,7 @@ dependencies = [
  "lru",
  "notify",
  "object-pool",
+ "once_cell",
  "rand 0.8.5",
  "regex",
  "serde",
