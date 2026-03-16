@@ -10,7 +10,7 @@ categories = ["web-programming", "asynchronous", "database"]
 
 [dependencies]
 actix-web = "4"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs", "io-util"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
