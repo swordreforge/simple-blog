@@ -1,6 +1,5 @@
 use super::RouteEntry;
 use super::route_trie::RouteTrie;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};

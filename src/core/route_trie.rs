@@ -2,6 +2,8 @@
 //!
 //! 使用前缀树（Trie）数据结构优化路由匹配性能，将查找复杂度从O(n)降低到O(k)，其中k为路径段数。
 
+#![allow(clippy::type_complexity)]
+
 use super::RouteEntry;
 use std::collections::HashMap;
 
@@ -30,6 +32,7 @@ impl TrieNodeType {
     }
 
     /// 检查是否匹配给定路径段
+    #[allow(dead_code)]
     fn matches(&self, segment: &str) -> bool {
         match self {
             TrieNodeType::Static(s) => s == segment,
@@ -68,9 +71,11 @@ impl TrieNode {
 
     /// 插入路由路径
     fn insert(&mut self, path: &str, route: Box<dyn RouteEntry>) {
-        let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+        use super::object_pool::split_path_optimized;
+        let segments: Vec<String> = split_path_optimized(path);
+        let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
 
-        self.insert_segments(&segments, 0, route);
+        self.insert_segments(&segments_refs, 0, route);
     }
 
     /// 递归插入路径段
@@ -123,9 +128,11 @@ impl TrieNode {
 
     /// 查找路由
     fn find(&self, path: &str) -> Option<(&Box<dyn RouteEntry>, Vec<(String, String)>)> {
-        let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+        use super::object_pool::split_path_optimized;
+        let segments: Vec<String> = split_path_optimized(path);
+        let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
 
-        if segments.is_empty() {
+        if segments_refs.is_empty() {
             // 根路径
             if let Some(ref route) = self.route {
                 return Some((route, Vec::new()));
@@ -133,7 +140,7 @@ impl TrieNode {
             return None;
         }
 
-        self.find_segments(&segments, 0, Vec::new())
+        self.find_segments(&segments_refs, 0, Vec::new())
     }
 
     /// 递归查找路径段
@@ -192,13 +199,15 @@ impl TrieNode {
 
     /// 移除路由
     fn remove(&mut self, path: &str) -> Option<Box<dyn RouteEntry>> {
-        let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+        use super::object_pool::split_path_optimized;
+        let segments: Vec<String> = split_path_optimized(path);
+        let segments_refs: Vec<&str> = segments.iter().map(|s| s.as_str()).collect();
 
-        if segments.is_empty() {
+        if segments_refs.is_empty() {
             return self.route.take();
         }
 
-        self.remove_segments(&segments, 0)
+        self.remove_segments(&segments_refs, 0)
     }
 
     /// 递归移除路径段
