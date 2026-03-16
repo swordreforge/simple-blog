@@ -57,7 +57,15 @@ where
     }
 }
 
-pub struct RequestLoggerMiddleware<S> {
+/// 请求日志中间件的实现结构体
+///
+/// 此结构体实现了 `Service` trait，用于记录每个请求的基本信息，
+/// 包括 HTTP 方法、请求路径、状态码和响应时间。
+///
+/// # 类型参数
+///
+/// * `S` - 底层服务类型，必须实现 `Service<ServiceRequest>`
+struct RequestLoggerMiddleware<S> {
     service: S,
 }
 
@@ -169,7 +177,15 @@ where
     }
 }
 
-pub struct AuthMiddlewareImpl<S> {
+/// 认证中间件的实现结构体
+///
+/// 此结构体实现了 `Service` trait，用于验证请求是否包含有效的认证令牌。
+/// 令牌通过 `Authorization` 请求头传递，格式为 `Bearer <token>`。
+///
+/// # 类型参数
+///
+/// * `S` - 底层服务类型，必须实现 `Service<ServiceRequest>`
+struct AuthMiddlewareImpl<S> {
     service: S,
     valid_tokens: Vec<String>,
 }
@@ -277,6 +293,13 @@ impl RateLimiter {
 }
 
 /// 客户端状态
+///
+/// 记录每个客户端 IP 的请求计数和时间窗口信息，用于限流控制。
+///
+/// # 字段
+///
+/// * `request_count` - 当前时间窗口内的请求计数
+/// * `window_start` - 当前时间窗口的开始时间
 #[derive(Debug, Clone)]
 struct ClientState {
     request_count: usize,
@@ -305,7 +328,15 @@ where
     }
 }
 
-pub struct RateLimiterImpl<S> {
+/// 限流中间件的实现结构体
+///
+/// 此结构体实现了 `Service` trait，用于基于令牌桶算法实现请求限流。
+/// 每个客户端 IP 在指定的时间窗口内只能发起有限数量的请求。
+///
+/// # 类型参数
+///
+/// * `S` - 底层服务类型，必须实现 `Service<ServiceRequest>`
+struct RateLimiterImpl<S> {
     service: std::sync::Arc<S>,
     max_requests: usize,
     window_duration: Duration,

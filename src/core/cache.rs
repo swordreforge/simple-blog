@@ -11,6 +11,18 @@ use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 /// 路由缓存条目
+///
+/// 封装了缓存值的元数据，包括创建时间、TTL、访问次数和访问频率等信息。
+/// 用于支持智能缓存失效和优先级计算。
+///
+/// # 字段
+///
+/// * `value` - 缓存的值
+/// * `timestamp` - 条目创建时间
+/// * `ttl` - 生存时间
+/// * `access_count` - 访问次数
+/// * `last_access_time` - 最后访问时间
+/// * `access_frequency` - 访问频率（次/秒），使用指数移动平均计算
 #[derive(Clone)]
 struct CacheEntry<T> {
     value: T,
