@@ -150,7 +150,17 @@ pub async fn add_route(
 /// 返回 200 OK 表示成功，或 404 Not Found 表示路由不存在
 #[delete("/admin/routes/{path:.*}")]
 pub async fn delete_route(path: Path<String>, table: web::Data<Arc<RouteTable>>) -> HttpResponse {
-    let route_path = format!("/{}", path.into_inner());
+    let mut route_path = path.into_inner();
+    
+    // 确保路径只有一个前导斜杠，避免双斜杠问题
+    while route_path.starts_with("//") {
+        route_path = route_path.replacen("//", "/", 1);
+    }
+    
+    // 如果路径不以 / 开头，添加一个
+    if !route_path.starts_with('/') {
+        route_path = format!("/{}", route_path);
+    }
 
     if table.remove(&route_path) {
         HttpResponse::Ok().json(serde_json::json!({
@@ -210,7 +220,17 @@ pub struct RouteInfo {
 /// 返回路由详情，或 404 Not Found
 #[get("/admin/routes/{path:.*}")]
 pub async fn get_route(path: Path<String>, table: web::Data<Arc<RouteTable>>) -> HttpResponse {
-    let route_path = format!("/{}", path.into_inner());
+    let mut route_path = path.into_inner();
+    
+    // 确保路径只有一个前导斜杠，避免双斜杠问题
+    while route_path.starts_with("//") {
+        route_path = route_path.replacen("//", "/", 1);
+    }
+    
+    // 如果路径不以 / 开头，添加一个
+    if !route_path.starts_with('/') {
+        route_path = format!("/{}", route_path);
+    }
 
     if let Some(serializable) = table.get_with(&route_path, |route| route.to_serializable()) {
         HttpResponse::Ok().json(RouteInfo {

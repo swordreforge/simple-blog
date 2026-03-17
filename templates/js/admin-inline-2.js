@@ -1,6 +1,27 @@
 let originalAppearanceSettings = {};
 window.currentAction = null;
 window.currentItemId = null;
+
+async function loadDynamicRoutesCount() {
+    try {
+        var e = localStorage.getItem("auth_token"),
+            t = {
+                "Content-Type": "application/json"
+            },
+            n = (e && (t.Authorization = "Bearer " + e), await fetch("/api/admin/dynamic-routes", {
+                headers: t
+            })),
+            o = await n.json();
+        if (o.success && o.data) {
+            var a = o.data.total || (Array.isArray(o.data) ? o.data.length : 0),
+                i = document.getElementById("dynamicRoutesCount");
+            i && (i.textContent = a)
+        }
+    } catch (e) {
+        console.error("获取动态路由数量失败:", e)
+    }
+}
+
 async function loadSettings() {
     try {
         var e, t = localStorage.getItem("auth_token"),
@@ -112,7 +133,7 @@ function rgbaToHex(e, t, n) {
     return "#" + o(e) + o(t) + o(n)
 }
 document.addEventListener("DOMContentLoaded", async function() {
-    await loadSettings(), await loadTemplateSettings(), await loadMusicSettings(), await loadMusicPlaylist();
+    await loadSettings(), await loadTemplateSettings(), await loadMusicSettings(), await loadMusicPlaylist(), await loadDynamicRoutesCount();
     const e = document.getElementById("globalOpacity"),
         t = document.getElementById("opacityValue");
     e && t && e.addEventListener("input", function() {

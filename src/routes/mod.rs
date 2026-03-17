@@ -2,11 +2,13 @@ use actix_web::web;
 
 mod page_routes;
 mod static_routes;
+mod static_routes_list;
 mod api_routes;
 mod dynamic_routes;
 
 pub use page_routes::configure_page_routes;
 pub use static_routes::configure_static_routes;
+pub use static_routes_list::conflicts_with_static_route;
 pub use api_routes::configure_api_routes;
 pub use dynamic_routes::configure_dynamic_routes;
 

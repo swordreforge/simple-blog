@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{DynamicRoute, UpdateRouteRequest};
+use crate::routes::conflicts_with_static_route;
 
 /// 更新路由
 pub async fn update_route(
@@ -44,6 +45,15 @@ pub async fn update_route(
     // 检查路径冲突（如果路径被修改）
     if let Some(ref new_path) = update_data.path {
         if new_path != &old_route.path {
+            // 检查是否与预定义静态路由冲突
+            if conflicts_with_static_route(new_path) {
+                return HttpResponse::Conflict().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("路径 '{}' 与预定义静态路由冲突，请使用其他路径", new_path)
+                }));
+            }
+
+            // 检查路径是否已存在于动态路由表中
             if let Ok(Some(_)) = repo.get_by_path(new_path).await {
                 return HttpResponse::Conflict().json(serde_json::json!({
                     "success": false,

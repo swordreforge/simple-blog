@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{DynamicRoute, CreateRouteRequest, HandlerType};
+use crate::routes::conflicts_with_static_route;
 
 /// 创建路由
 pub async fn create_route(
@@ -28,7 +29,15 @@ pub async fn create_route(
         }));
     }
 
-    // 检查路径冲突
+    // 检查是否与预定义静态路由冲突
+    if conflicts_with_static_route(&route.path) {
+        return HttpResponse::Conflict().json(serde_json::json!({
+            "success": false,
+            "message": format!("路径 '{}' 与预定义静态路由冲突，请使用其他路径", route.path)
+        }));
+    }
+
+    // 检查路径是否已存在于动态路由表中
     let repo = state.dynamic_route_repository();
     if let Ok(Some(_)) = repo.get_by_path(&route.path).await {
         return HttpResponse::Conflict().json(serde_json::json!({

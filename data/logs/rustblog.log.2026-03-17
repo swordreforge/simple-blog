@@ -1,0 +1,67 @@
+2026-03-17T03:40:44.902020Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-17T03:40:44.902059Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T03:40:45.127734Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-17T03:40:45.127756Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-17T03:40:45.127766Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8082", workers: 22, listening on: 0.0.0.0:8082
+2026-03-17T03:41:42.215042Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/debug/data/jwt-secret
+2026-03-17T03:41:42.215132Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T03:41:42.870152Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 0 个动态路由
+2026-03-17T03:41:45.338017Z  INFO ThreadId(01) actix_server::server: SIGTERM received; starting graceful shutdown
+2026-03-17T03:41:45.338115Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338121Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338125Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338134Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338149Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338154Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338164Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338174Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338177Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338180Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338259Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338262Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-17T03:41:45.338268Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338342Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338347Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338351Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338372Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338376Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338389Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338392Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338629Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.338866Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:45.339235Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-17T03:41:46.204244Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/debug/data/jwt-secret
+2026-03-17T03:41:46.204313Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T03:41:46.507627Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 0 个动态路由
+2026-03-17T03:41:51.659809Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/debug/data/jwt-secret
+2026-03-17T03:41:51.659868Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T03:41:51.962866Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 0 个动态路由
+2026-03-17T03:41:52.799524Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/data/jwt-secret
+2026-03-17T03:41:52.799567Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T03:41:52.918989Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-17T03:41:52.919001Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-17T03:41:52.919007Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8082", workers: 22, listening on: 0.0.0.0:8082
+2026-03-17T03:43:00.460280Z  INFO ThreadId(01) actix_server::server: SIGTERM received; starting graceful shutdown
+2026-03-17T03:43:00.460384Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-17T03:43:00.460389Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460392Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460396Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460439Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460409Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460414Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460523Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460524Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460536Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460570Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460584Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460599Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460649Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460652Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460665Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460668Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460692Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460705Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460827Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.460898Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.461532Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-17T03:43:00.461750Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker

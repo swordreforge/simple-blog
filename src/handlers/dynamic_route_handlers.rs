@@ -15,6 +15,11 @@ pub async fn handle_dynamic_route(
 ) -> Result<HttpResponse> {
     let mut path_str = path.into_inner();
     
+    // 规范化路径：移除多余的前导斜杠
+    while path_str.starts_with("//") {
+        path_str = path_str.replacen("//", "/", 1);
+    }
+    
     // 确保路径以 / 开头，以匹配数据库中存储的路径格式
     if !path_str.starts_with('/') {
         path_str = format!("/{}", path_str);

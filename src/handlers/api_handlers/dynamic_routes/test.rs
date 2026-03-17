@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{CreateRouteRequest, HandlerType};
+use crate::routes::conflicts_with_static_route;
 
 /// 测试路由配置
 pub async fn test_route(
@@ -27,7 +28,22 @@ pub async fn test_route(
         }));
     }
 
-    // 检查路径冲突
+    // 检查是否与预定义静态路由冲突
+    if conflicts_with_static_route(&route.path) {
+        return HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "路由测试完成",
+            "data": {
+                "match": true,
+                "conflict": true,
+                "conflict_type": "static_route",
+                "conflict_reason": format!("路径 '{}' 与预定义静态路由冲突", route.path),
+                "response_preview": None::<serde_json::Value>
+            }
+        }));
+    }
+
+    // 检查路径是否已存在于动态路由表中
     let repo = state.dynamic_route_repository();
     if let Ok(Some(existing)) = repo.get_by_path(&route.path).await {
         return HttpResponse::Ok().json(serde_json::json!({
@@ -36,6 +52,7 @@ pub async fn test_route(
             "data": {
                 "match": true,
                 "conflict": true,
+                "conflict_type": "dynamic_route",
                 "existing_route": existing,
                 "response_preview": None::<serde_json::Value>
             }
