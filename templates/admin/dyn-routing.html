@@ -480,6 +480,12 @@
             letter-spacing: 0.5px;
         }
 
+        .storage-type-display {
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
         @media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -514,6 +520,18 @@
                 <h3>已禁用</h3>
                 <div class="value" id="disabledRoutes">0</div>
             </div>
+            <div class="stat-card">
+                <h3>数据库存储</h3>
+                <div class="value" id="databaseRoutes">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>内存存储</h3>
+                <div class="value" id="memoryRoutes">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>文件存储</h3>
+                <div class="value" id="fileRoutes">0</div>
+            </div>
         </div>
 
         <div class="toolbar">
@@ -534,6 +552,7 @@
                 <option value="disabled">已禁用</option>
             </select>
             <button class="btn btn-secondary" onclick="refreshRoutes()">刷新</button>
+            <button class="btn btn-primary" onclick="openStorageModal()">存储管理</button>
         </div>
 
         <div id="message"></div>
@@ -547,12 +566,13 @@
                     <th>处理器类型</th>
                     <th>状态</th>
                     <th>优先级</th>
+                    <th>存储类型</th>
                     <th>操作</th>
                 </tr>
             </thead>
             <tbody id="routesTableBody">
                 <tr>
-                    <td colspan="8" class="loading">加载中...</td>
+                    <td colspan="9" class="loading">加载中...</td>
                 </tr>
             </tbody>
         </table>
@@ -601,7 +621,7 @@
                         <select id="routeType" required>
                             <option value="">请选择路由类型</option>
                             <option value="database" selected>数据库 (database)</option>
-                            <option value="database" selected>内存(memory)</option>
+                            <option value="memory">内存 (memory)</option>
                             <option value="file">文件 (file)</option>
                         </select>
                         <div class="field-description">路由配置的存储方式，管理界面创建的路由通常为数据库</div>
@@ -747,6 +767,170 @@
             </div>
         </div>
     </div>
+
+    <!-- 存储管理模态框 -->
+    <div class="modal" id="storageModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>路由存储管理</h2>
+                <button class="btn btn-secondary btn-sm" onclick="closeStorageModal()">关闭</button>
+            </div>
+            <div id="storageMessage"></div>
+            
+            <div class="storage-stats">
+                <h3>存储统计</h3>
+                <div class="storage-stats-grid">
+                    <div class="storage-stat-card">
+                        <h4>数据库存储</h4>
+                        <div class="stat-value" id="storageDatabaseTotal">0</div>
+                        <div class="stat-detail">启用: <span id="storageDatabaseEnabled">0</span> | 禁用: <span id="storageDatabaseDisabled">0</span></div>
+                        <div class="stat-detail">内存: <span id="storageDatabaseMemory">0</span> bytes</div>
+                    </div>
+                    <div class="storage-stat-card">
+                        <h4>内存存储</h4>
+                        <div class="stat-value" id="storageMemoryTotal">0</div>
+                        <div class="stat-detail">启用: <span id="storageMemoryEnabled">0</span> | 禁用: <span id="storageMemoryDisabled">0</span></div>
+                        <div class="stat-detail">内存: <span id="storageMemoryMemory">0</span> bytes</div>
+                    </div>
+                    <div class="storage-stat-card">
+                        <h4>文件存储</h4>
+                        <div class="stat-value" id="storageFileTotal">0</div>
+                        <div class="stat-detail">启用: <span id="storageFileEnabled">0</span> | 禁用: <span id="storageFileDisabled">0</span></div>
+                        <div class="stat-detail">内存: <span id="storageFileMemory">0</span> bytes</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="storage-actions">
+                <h3>存储操作</h3>
+                <div class="storage-action-grid">
+                    <div class="storage-action-card">
+                        <h4>批量迁移</h4>
+                        <div class="form-group">
+                            <label>从</label>
+                            <select id="migrateFrom">
+                                <option value="database">数据库</option>
+                                <option value="memory">内存</option>
+                                <option value="file">文件</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>到</label>
+                            <select id="migrateTo">
+                                <option value="database">数据库</option>
+                                <option value="memory">内存</option>
+                                <option value="file">文件</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-warning" onclick="batchMigrateRoutes()">批量迁移</button>
+                    </div>
+                    <div class="storage-action-card">
+                        <h4>清空存储</h4>
+                        <div class="form-group">
+                            <label>存储类型</label>
+                            <select id="clearStorageType">
+                                <option value="database">数据库</option>
+                                <option value="memory">内存</option>
+                                <option value="file">文件</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-danger" onclick="clearStorage()">清空存储</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeStorageModal()">关闭</button>
+                <button type="button" class="btn btn-primary" onclick="refreshStorageStats()">刷新统计</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .storage-stats {
+            margin-bottom: 30px;
+        }
+
+        .storage-stats h3, .storage-actions h3 {
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .storage-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .storage-stat-card {
+            background: rgba(40, 40, 60, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .storage-stat-card h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .stat-detail {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 5px;
+        }
+
+        .storage-actions {
+            margin-bottom: 20px;
+        }
+
+        .storage-action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .storage-action-card {
+            background: rgba(40, 40, 60, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .storage-action-card h4 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .storage-action-card .form-group {
+            margin-bottom: 10px;
+        }
+
+        .storage-action-card label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .storage-action-card select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(20, 20, 30, 0.8);
+            color: white;
+        }
+    </style>
 
     <script>
         // 生成小球动画背景

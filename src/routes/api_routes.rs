@@ -412,6 +412,30 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     ).service(
         web::resource("/api/admin/dynamic-routes/test")
             .route(web::post().to(api_handlers::dynamic_routes::test_route))
+    );
+
+    // 管理员 API - 路由存储管理 (必须在 /{id}/* 路由之前)
+    cfg.service(
+        web::resource("/api/admin/dynamic-routes/storage/stats")
+            .route(web::get().to(api_handlers::dynamic_routes::get_storage_stats))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/storage/migrate")
+            .route(web::post().to(api_handlers::dynamic_routes::migrate_route))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/storage/batch-migrate")
+            .route(web::post().to(api_handlers::dynamic_routes::batch_migrate_routes))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/storage/clear/{route_type}")
+            .route(web::post().to(api_handlers::dynamic_routes::clear_storage))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/batch")
+            .route(web::post().to(api_handlers::dynamic_routes::batch_operations))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/export")
+            .route(web::get().to(api_handlers::dynamic_routes::export_routes))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/import")
+            .route(web::post().to(api_handlers::dynamic_routes::import_routes))
     ).service(
         web::resource("/api/admin/dynamic-routes/{id}")
             .route(web::get().to(api_handlers::dynamic_routes::get_route))
@@ -428,13 +452,7 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/admin/dynamic-routes/{id}/stats")
             .route(web::get().to(api_handlers::dynamic_routes::get_route_stats))
     ).service(
-        web::resource("/api/admin/dynamic-routes/batch")
-            .route(web::post().to(api_handlers::dynamic_routes::batch_operations))
-    ).service(
-        web::resource("/api/admin/dynamic-routes/export")
-            .route(web::get().to(api_handlers::dynamic_routes::export_routes))
-    ).service(
-        web::resource("/api/admin/dynamic-routes/import")
-            .route(web::post().to(api_handlers::dynamic_routes::import_routes))
+        web::resource("/api/admin/dynamic-routes/{id}/storage-type")
+            .route(web::get().to(api_handlers::dynamic_routes::get_route_storage_type))
     );
 }

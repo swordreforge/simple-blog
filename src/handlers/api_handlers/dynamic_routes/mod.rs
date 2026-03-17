@@ -6,6 +6,7 @@ pub mod test;
 pub mod stats;
 pub mod batch;
 pub mod export;
+pub mod storage;
 
 pub use list::*;
 pub use create::*;
@@ -15,3 +16,4 @@ pub use test::*;
 pub use stats::*;
 pub use batch::*;
 pub use export::*;
+pub use storage::*;

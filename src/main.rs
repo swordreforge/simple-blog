@@ -308,7 +308,7 @@ async fn main() -> std::io::Result<()> {
     let dynamic_route_repo = db::repositories::DynamicRouteRepository::new(repository.get_pool().clone());
     let dynamic_route_service = services::dynamic_route_service::DynamicRouteService::new(
         route_table.clone(),
-        dynamic_route_repo,
+        dynamic_route_repo.clone(),
     );
     
     // 从数据库加载路由
@@ -321,14 +321,48 @@ async fn main() -> std::io::Result<()> {
         }
     }
     
+    // 初始化路由类型管理器
+    println!("🔧 初始化路由类型管理器...");
+    let route_type_manager = match app_state::create_route_type_manager(
+        base_dir,
+        dynamic_route_repo.clone(),
+        db::models::RouteType::Database, // 默认使用数据库存储
+    ) {
+        Ok(manager) => {
+            println!("✅ 路由类型管理器初始化成功");
+            
+            // 输出统计信息
+            match manager.get_storage_stats().await {
+                Ok(stats) => {
+                    println!("📊 路由存储统计:");
+                    println!("    数据库路由: {} 条", stats.database.total_routes);
+                    println!("    内存路由: {} 条", stats.memory.total_routes);
+                    println!("    文件路由: {} 条", stats.file.total_routes);
+                }
+                Err(e) => {
+                    eprintln!("⚠️  获取路由存储统计失败: {}", e);
+                }
+            }
+            
+            manager
+        }
+        Err(e) => {
+            eprintln!("⚠️  路由类型管理器初始化失败: {}", e);
+            eprintln!("💡 将继续使用数据库存储作为后备方案");
+            // 即使失败，程序也应该继续运行
+            return Err(std::io::Error::other(e.to_string()));
+        }
+    };
+    
     // 启动 HTTP/1.1/HTTP/2 服务器
     // 创建应用状态（依赖注入容器）
-    let app_state = app_state::AppState::new(
+    let app_state = app_state::AppState::new_with_route_type_manager(
         repository.clone(),
         app_cache.clone(),
         view_batch_processor.clone(),
         route_table.clone(),
         Arc::new(dynamic_route_service),
+        route_type_manager,
     );
 
     let mut server = HttpServer::new(move || {

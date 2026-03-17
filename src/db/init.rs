@@ -573,6 +573,26 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             }
         ).unwrap_or(false);
 
+        // 检查是否有 content_template 列
+        let has_content_template_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'content_template'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
+        // 检查是否有 content_type_hint 列
+        let has_content_type_hint_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'content_type_hint'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
         // 如果表已存在但没有 route_name 列，则添加该列
         if !has_route_name_column {
             println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 route_name 列...");
@@ -585,6 +605,20 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 content_source 列...");
             conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_source TEXT CHECK(content_source IN ('database', 'file'))", [])?;
             println!("✅ 已添加 content_source 列");
+        }
+
+        // 如果表已存在但没有 content_template 列，则添加该列
+        if !has_content_template_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 content_template 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_template TEXT", [])?;
+            println!("✅ 已添加 content_template 列");
+        }
+
+        // 如果表已存在但没有 content_type_hint 列，则添加该列
+        if !has_content_type_hint_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 content_type_hint 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_type_hint TEXT", [])?;
+            println!("✅ 已添加 content_type_hint 列");
         }
     }
 

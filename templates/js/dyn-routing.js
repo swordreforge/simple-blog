@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // 加载路由列表
 async function loadRoutes() {
     const tbody = document.getElementById('routesTableBody');
-    tbody.innerHTML = '<tr><td colspan="8" class="loading">加载中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="loading">加载中...</td></tr>';
 
     try {
         const filterType = document.getElementById('filterType').value;
@@ -135,7 +135,7 @@ function renderRoutes() {
     });
 
     if (filteredRoutes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">暂无路由数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">暂无路由数据</td></tr>';
         return;
     }
 
@@ -143,6 +143,7 @@ function renderRoutes() {
         const routeNameDisplay = route.route_name ?
             `<div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(route.route_name)}</div>` : '';
         const handlerTypeLabel = getHandlerTypeLabel(route.handler_type);
+        const storageTypeLabel = getStorageTypeLabel(route.route_type);
 
         return `
         <tr>
@@ -156,6 +157,7 @@ function renderRoutes() {
                 </span>
             </td>
             <td><span class="priority-display">${route.priority}</span></td>
+            <td><span class="badge badge-info storage-type-display">${storageTypeLabel}</span></td>
             <td class="actions">
                 <button class="btn btn-sm btn-primary" onclick="editRoute(${route.id})" title="编辑">编辑</button>
                 <button class="btn btn-sm ${route.enabled ? 'btn-secondary' : 'btn-success'}"
@@ -179,6 +181,16 @@ function getHandlerTypeLabel(handlerType) {
         'custom': '自定义'
     };
     return labels[handlerType] || handlerType;
+}
+
+// 获取存储类型标签
+function getStorageTypeLabel(routeType) {
+    const labels = {
+        'database': '数据库',
+        'memory': '内存',
+        'file': '文件'
+    };
+    return labels[routeType] || routeType;
 }
 
 // 渲染分页
