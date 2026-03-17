@@ -547,7 +547,6 @@
                     <th>处理器类型</th>
                     <th>状态</th>
                     <th>优先级</th>
-                    <th>访问次数</th>
                     <th>操作</th>
                 </tr>
             </thead>
@@ -668,6 +667,20 @@
                         <div class="field-description">响应的 Content-Type 头，留空则自动识别</div>
                     </div>
 
+                    <!-- 内容模板（仅对 static/template 类型显示） -->
+                    <div class="form-group form-full-width" id="contentTemplateGroup" style="display: none;">
+                        <div class="field-info">
+                            <label for="contentTemplate">内容模板</label>
+                            <span class="info-icon" title="static/template类型的内容或文件路径">ℹ️</span>
+                        </div>
+                        <div class="help-text" style="margin-bottom: 10px;">
+                            <button type="button" class="btn btn-secondary btn-sm" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">上传文件</button>
+                            <input type="file" id="fileInput" accept=".html,.htm,.svg,.xml,.txt,.css,.js,.json" style="display: none;" onchange="handleFileUpload(event)">
+                        </div>
+                        <textarea id="contentTemplate" rows="6" placeholder="输入纯文本内容或文件路径..."></textarea>
+                        <div class="field-description">static/template类型路由的内容或文件路径</div>
+                    </div>
+
                     <!-- 处理器配置 -->
                     <div class="form-group form-full-width">
                         <div class="field-info">
@@ -678,8 +691,6 @@
                             <button type="button" class="btn btn-secondary btn-sm" onclick="formatConfig()">格式化</button>
                             <button type="button" class="btn btn-secondary btn-sm" onclick="validateConfig()">验证</button>
                             <button type="button" class="btn btn-secondary btn-sm" onclick="loadTemplate()">加载模板</button>
-                            <button type="button" class="btn btn-secondary btn-sm" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">上传文件</button>
-                            <input type="file" id="fileInput" accept=".html,.htm,.svg,.xml,.txt,.css,.js,.json" style="display: none;" onchange="handleFileUpload(event)">
                         </div>
                         <textarea id="handlerConfig" required></textarea>
                         <div class="field-description">根据处理器类型，存储特定处理器所需的参数</div>
@@ -692,6 +703,20 @@
                             立即启用
                         </label>
                         <div class="field-description">启用后路由将立即生效</div>
+                    </div>
+
+                    <!-- 扩展元数据 -->
+                    <div class="form-group form-full-width">
+                        <div class="field-info">
+                            <label for="routeMetadata">扩展元数据</label>
+                            <span class="info-icon" title="自定义配置、标签、备注等">ℹ️</span>
+                        </div>
+                        <div class="help-text" style="margin-bottom: 10px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="formatMetadata()">格式化</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="validateMetadata()">验证</button>
+                        </div>
+                        <textarea id="routeMetadata" rows="4" placeholder='{"tags": ["example"], "description": "示例描述"}'></textarea>
+                        <div class="field-description">JSON格式的扩展信息：标签、备注、自定义配置等（可选）</div>
                     </div>
                 </div>
 

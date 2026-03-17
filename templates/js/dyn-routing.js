@@ -193,15 +193,25 @@ function updateHandlerFields() {
     const handlerType = document.getElementById('handlerType').value;
     const contentSourceGroup = document.getElementById('contentSourceGroup');
     const contentTypeGroup = document.getElementById('contentTypeGroup');
+    const contentTemplateGroup = document.getElementById('contentTemplateGroup');
+    const uploadFileBtn = document.getElementById('uploadFileBtn');
 
     // 重置所有字段显示
-    contentSourceGroup.style.display = 'none';
-    contentTypeGroup.style.display = 'none';
+    if (contentSourceGroup) contentSourceGroup.style.display = 'none';
+    if (contentTypeGroup) contentTypeGroup.style.display = 'none';
+    if (contentTemplateGroup) contentTemplateGroup.style.display = 'none';
+    if (uploadFileBtn) {
+        uploadFileBtn.style.display = 'none';
+    }
 
     // 根据处理器类型显示相应字段
-    if (handlerType === 'static') {
-        contentSourceGroup.style.display = 'block';
-        contentTypeGroup.style.display = 'block';
+    if (handlerType === 'static' || handlerType === 'template') {
+        if (contentSourceGroup) contentSourceGroup.style.display = 'block';
+        if (contentTypeGroup) contentTypeGroup.style.display = 'block';
+        if (contentTemplateGroup) contentTemplateGroup.style.display = 'block';
+        if (uploadFileBtn) {
+            uploadFileBtn.style.display = 'inline-block';
+        }
     }
 
     // 加载对应的模板
@@ -270,6 +280,8 @@ function showAddModal() {
     document.getElementById('handlerConfig').value = '';
     document.getElementById('contentSource').value = '';
     document.getElementById('contentType').value = '';
+    document.getElementById('contentTemplate').value = '';
+    document.getElementById('routeMetadata').value = '';
     document.getElementById('routePriority').value = '0';
     document.getElementById('routeEnabled').checked = true;
     document.getElementById('modalMessage').innerHTML = '';
@@ -277,6 +289,11 @@ function showAddModal() {
     // 隐藏所有条件字段
     document.getElementById('contentSourceGroup').style.display = 'none';
     document.getElementById('contentTypeGroup').style.display = 'none';
+    document.getElementById('contentTemplateGroup').style.display = 'none';
+    const uploadFileBtn = document.getElementById('uploadFileBtn');
+    if (uploadFileBtn) {
+        uploadFileBtn.style.display = 'none';
+    }
 
     document.getElementById('routeModal').classList.add('active');
 }
@@ -289,7 +306,7 @@ function editRoute(id) {
     // 检查必要元素是否存在
     const requiredElements = ['modalTitle', 'routeId', 'routeName', 'routeType', 'routePath', 'handlerType',
                              'contentSource', 'contentType', 'handlerConfig', 'routePriority',
-                             'routeEnabled', 'modalMessage', 'routeModal'];
+                             'routeEnabled', 'contentTemplate', 'routeMetadata', 'modalMessage', 'routeModal'];
     for (const elementId of requiredElements) {
         if (!document.getElementById(elementId)) {
             console.error(`元素 ${elementId} 不存在`);
@@ -309,6 +326,8 @@ function editRoute(id) {
     document.getElementById('handlerConfig').value = JSON.stringify(route.handler_config, null, 2);
     document.getElementById('routePriority').value = route.priority;
     document.getElementById('routeEnabled').checked = route.enabled;
+    document.getElementById('contentTemplate').value = route.content_template || '';
+    document.getElementById('routeMetadata').value = route.metadata ? JSON.stringify(route.metadata, null, 2) : '';
     document.getElementById('modalMessage').innerHTML = '';
 
     // 更新字段显示
@@ -332,6 +351,8 @@ async function saveRoute() {
     const handlerConfig = document.getElementById('handlerConfig').value;
     const contentSource = document.getElementById('contentSource').value;
     const contentType = document.getElementById('contentType').value;
+    const contentTemplate = document.getElementById('contentTemplate').value.trim();
+    const routeMetadata = document.getElementById('routeMetadata').value.trim();
     const priority = parseInt(document.getElementById('routePriority').value);
     const enabled = document.getElementById('routeEnabled').checked;
 
@@ -359,15 +380,42 @@ async function saveRoute() {
         return;
     }
 
+    // 验证元数据（如果填写了）
+    let metadata = null;
+    if (routeMetadata) {
+        try {
+            metadata = JSON.parse(routeMetadata);
+        } catch (e) {
+            showMessage('modalError', '扩展元数据必须是有效的JSON格式');
+            return;
+        }
+    }
+
     // 构建路由数据
+    let parsedHandlerConfig = JSON.parse(handlerConfig);
+
+    // 对于 static/template 处理器，将 content_template 和 content_type_hint 合并到 handler_config 中
+    if (handlerType === 'static' || handlerType === 'template') {
+        // 如果有 content_template 内容，添加到 handler_config.content
+        if (contentTemplate) {
+            parsedHandlerConfig.content = contentTemplate;
+        }
+        // 如果有 contentType，添加到 handler_config.content_type
+        if (contentType) {
+            parsedHandlerConfig.content_type = contentType;
+        }
+    }
+
     const routeData = {
         route_name: routeName || null,
         route_type: routeType || 'database',
         path: path,
         handler_type: handlerType,
-        handler_config: JSON.parse(handlerConfig),
+        handler_config: parsedHandlerConfig,
         content_source: contentSource || null,
         content_type_hint: contentType || null,
+        content_template: contentTemplate || null,
+        metadata: metadata,
         enabled: enabled,
         priority: priority
     };
@@ -583,6 +631,28 @@ function validateConfig() {
     }
 }
 
+// 格式化元数据
+function formatMetadata() {
+    const textarea = document.getElementById('routeMetadata');
+    try {
+        const metadata = JSON.parse(textarea.value);
+        textarea.value = JSON.stringify(metadata, null, 2);
+    } catch (e) {
+        alert('JSON格式错误');
+    }
+}
+
+// 验证元数据
+function validateMetadata() {
+    const textarea = document.getElementById('routeMetadata');
+    try {
+        JSON.parse(textarea.value);
+        alert('元数据格式正确');
+    } catch (e) {
+        alert('JSON格式错误: ' + e.message);
+    }
+}
+
 // 加载模板
 function loadTemplate() {
     const handlerType = document.getElementById('handlerType').value;
@@ -724,22 +794,22 @@ function handleFileUpload(event) {
         // 更新字段显示
         updateHandlerFields();
 
-        // 创建静态内容配置
+        // 将文件内容填充到内容模板字段
+        document.getElementById('contentTemplate').value = content;
+
+        // 创建适当的handler配置（不包含实际内容，只包含处理器参数）
         const config = {
             type: 'static',
-            content_source: 'database',
-            content: content,
-            content_type: contentType,
             headers: {
                 'Cache-Control': 'public, max-age=3600'
             }
         };
 
-        // 将配置填充到文本框
+        // 将配置填充到处理器配置文本框
         document.getElementById('handlerConfig').value = JSON.stringify(config, null, 2);
 
         // 显示成功消息
-        showMessage('success', `文件 "${fileName}" 上传成功，已自动设置为静态内容处理器`);
+        showMessage('success', `文件 "${fileName}" 上传成功，已自动设置为静态内容处理器，内容已填充到内容模板字段`);
     };
 
     reader.onerror = function() {
