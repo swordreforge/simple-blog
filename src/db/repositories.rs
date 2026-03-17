@@ -3,6 +3,7 @@ use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{params, OptionalExtension};
 use std::sync::Arc;
 use smallvec::SmallVec;
+use chrono::Utc;
 
 use super::models::*;
 
@@ -2287,6 +2288,316 @@ impl FriendLinkRepository {
         let conn = self.pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM friend_links WHERE is_enabled = 1", [], |row| row.get(0))?;
         Ok(count)
+    }
+}
+
+// ==================== 动态路由仓库 ====================
+
+/// 动态路由仓库
+#[derive(Clone)]
+pub struct DynamicRouteRepository {
+    pool: Arc<Pool<SqliteConnectionManager>>,
+}
+
+impl DynamicRouteRepository {
+    pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
+        Self { pool }
+    }
+
+    /// 创建路由
+    pub async fn create(&self, route: &DynamicRoute) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "INSERT INTO dynamic_routes (route_type, path, handler_type, handler_config, enabled, priority, created_by, metadata, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                &route.route_type,
+                &route.path,
+                &route.handler_type,
+                &route.handler_config.to_string(),
+                &route.enabled,
+                &route.priority,
+                &route.created_by,
+                &route.metadata.as_ref().map(|v| v.to_string()),
+                &route.created_at,
+                &route.updated_at,
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// 根据ID获取路由
+    pub async fn get_by_id(&self, id: i64) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+             FROM dynamic_routes WHERE id = ?"
+        )?;
+        
+        let route = stmt.query_row(params![id], |row| {
+            Ok(DynamicRoute {
+                id: Some(row.get(0)?),
+                route_type: row.get(1)?,
+                path: row.get(2)?,
+                handler_type: row.get(3)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
+                enabled: row.get(5)?,
+                priority: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+                created_by: row.get(9)?,
+                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+            })
+        }).optional()?;
+        
+        Ok(route)
+    }
+
+    /// 根据路径获取路由
+    pub async fn get_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+             FROM dynamic_routes WHERE path = ?"
+        )?;
+        
+        let route = stmt.query_row(params![path], |row| {
+            Ok(DynamicRoute {
+                id: Some(row.get(0)?),
+                route_type: row.get(1)?,
+                path: row.get(2)?,
+                handler_type: row.get(3)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
+                enabled: row.get(5)?,
+                priority: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+                created_by: row.get(9)?,
+                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+            })
+        }).optional()?;
+        
+        Ok(route)
+    }
+
+    /// 获取路由列表
+    pub async fn list(
+        &self,
+        offset: i64,
+        limit: i64,
+        route_type: Option<RouteType>,
+        enabled: Option<bool>,
+    ) -> Result<(Vec<DynamicRoute>, i64), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        
+        // 构建查询条件
+        let mut where_clause = String::new();
+        let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+        
+        if route_type.is_some() || enabled.is_some() {
+            where_clause.push_str(" WHERE ");
+        }
+        
+        if let Some(rt) = route_type {
+            where_clause.push_str("route_type = ?");
+            params.push(Box::new(rt));
+        }
+        
+        if let Some(en) = enabled {
+            if route_type.is_some() {
+                where_clause.push_str(" AND ");
+            }
+            where_clause.push_str("enabled = ?");
+            params.push(Box::new(en));
+        }
+        
+        // 获取总数
+        let total: i64 = conn.query_row(
+            &format!("SELECT COUNT(*) FROM dynamic_routes{}", where_clause),
+            rusqlite::params_from_iter(params.iter()),
+            |row| row.get(0)
+        )?;
+        
+        // 获取列表
+        let query = format!(
+            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+             FROM dynamic_routes{} ORDER BY priority DESC, id ASC LIMIT ? OFFSET ?",
+            where_clause
+        );
+        
+        let mut stmt = conn.prepare(&query)?;
+        
+        let mut final_params: Vec<Box<dyn rusqlite::ToSql>> = params;
+        final_params.push(Box::new(limit));
+        final_params.push(Box::new(offset));
+        
+        let routes = stmt.query_map(rusqlite::params_from_iter(final_params.iter()), |row| {
+            Ok(DynamicRoute {
+                id: Some(row.get(0)?),
+                route_type: row.get(1)?,
+                path: row.get(2)?,
+                handler_type: row.get(3)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
+                enabled: row.get(5)?,
+                priority: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+                created_by: row.get(9)?,
+                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+        
+        Ok((routes, total))
+    }
+
+    /// 更新路由
+    pub async fn update(&self, id: i64, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "UPDATE dynamic_routes SET route_type=?, path=?, handler_type=?, handler_config=?, enabled=?, priority=?, metadata=?, updated_at=?
+             WHERE id=?",
+            params![
+                &route.route_type,
+                &route.path,
+                &route.handler_type,
+                &route.handler_config.to_string(),
+                &route.enabled,
+                &route.priority,
+                &route.metadata.as_ref().map(|v| v.to_string()),
+                &route.updated_at,
+                id,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// 删除路由
+    pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("DELETE FROM dynamic_routes WHERE id=?", params![id])?;
+        Ok(())
+    }
+
+    /// 启用路由
+    pub async fn enable(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("UPDATE dynamic_routes SET enabled=1, updated_at=? WHERE id=?", params![Utc::now(), id])?;
+        Ok(())
+    }
+
+    /// 禁用路由
+    pub async fn disable(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("UPDATE dynamic_routes SET enabled=0, updated_at=? WHERE id=?", params![Utc::now(), id])?;
+        Ok(())
+    }
+
+    /// 记录操作日志
+    pub async fn log_operation(
+        &self,
+        route_id: Option<i64>,
+        action: &str,
+        old_config: Option<String>,
+        new_config: Option<String>,
+        created_by: Option<String>,
+        ip_address: Option<String>,
+        user_agent: Option<String>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "INSERT INTO dynamic_route_logs (route_id, action, old_config, new_config, created_by, ip_address, user_agent, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                route_id,
+                action,
+                old_config,
+                new_config,
+                created_by,
+                ip_address,
+                user_agent,
+                Utc::now(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// 更新访问统计
+    pub async fn update_stats(
+        &self,
+        route_id: i64,
+        response_time_ms: i64,
+        is_error: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute(
+            "INSERT OR REPLACE INTO dynamic_route_stats (route_id, access_count, last_accessed_at, total_response_time_ms, error_count, updated_at)
+             VALUES (?, 
+                COALESCE((SELECT access_count FROM dynamic_route_stats WHERE route_id = ?), 0) + 1,
+                ?,
+                COALESCE((SELECT total_response_time_ms FROM dynamic_route_stats WHERE route_id = ?), 0) + ?,
+                COALESCE((SELECT error_count FROM dynamic_route_stats WHERE route_id = ?), 0) + ?,
+                ?
+             )",
+            params![
+                route_id, route_id,
+                Utc::now(),
+                route_id, response_time_ms,
+                route_id, if is_error { 1 } else { 0 },
+                Utc::now(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// 获取路由统计
+    pub async fn get_stats(&self, route_id: i64) -> Result<Option<DynamicRouteStats>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, route_id, access_count, last_accessed_at, total_response_time_ms, avg_response_time_ms, error_count, updated_at
+             FROM dynamic_route_stats WHERE route_id = ?"
+        )?;
+        
+        let stats = stmt.query_row(params![route_id], |row| {
+            Ok(DynamicRouteStats {
+                id: Some(row.get(0)?),
+                route_id: row.get(1)?,
+                access_count: row.get(2)?,
+                last_accessed_at: row.get(3)?,
+                total_response_time_ms: row.get(4)?,
+                avg_response_time_ms: row.get(5)?,
+                error_count: row.get(6)?,
+                updated_at: row.get(7)?,
+            })
+        }).optional()?;
+        
+        Ok(stats)
+    }
+
+    /// 获取所有启用的路由
+    pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+             FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
+        )?;
+        
+        let routes = stmt.query_map([], |row| {
+            Ok(DynamicRoute {
+                id: Some(row.get(0)?),
+                route_type: row.get(1)?,
+                path: row.get(2)?,
+                handler_type: row.get(3)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
+                enabled: row.get(5)?,
+                priority: row.get(6)?,
+                created_at: row.get(7)?,
+                updated_at: row.get(8)?,
+                created_by: row.get(9)?,
+                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+            })
+        })?.collect::<Result<Vec<_>, _>>()?;
+        
+        Ok(routes)
     }
 }
 

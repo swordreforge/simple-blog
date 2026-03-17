@@ -57,6 +57,13 @@ pub async fn create_route(
             // 记录操作日志
             log_route_operation(&repo, id, "create", None, &dynamic_route, &admin_info.1);
 
+            // 如果路由启用，热更新到路由表
+            if dynamic_route.enabled {
+                if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+                    tracing::warn!("路由热更新失败: id={}, error={}", id, e);
+                }
+            }
+
             HttpResponse::Created().json(serde_json::json!({
                 "success": true,
                 "message": "路由创建成功",

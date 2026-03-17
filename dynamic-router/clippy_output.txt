@@ -1,0 +1,637 @@
+    Checking dynamic-route-actix v0.1.0 (/home/swordreforge/projects/rustblog-new/rustblog-wip-dynamic-router)
+warning: unused import: `std::sync::Arc`
+ --> src/core/lockfree_cache.rs:7:5
+  |
+7 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::collections::hash_map::DefaultHasher`
+ --> src/core/object_pool.rs:6:5
+  |
+6 | use std::collections::hash_map::DefaultHasher;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::hash_map::DefaultHasher`
+ --> src/core/object_pool.rs:6:5
+  |
+6 | use std::collections::hash_map::DefaultHasher;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable `param_idx` is assigned to, but never used
+   --> src/core/cow_optimized.rs:162:21
+    |
+162 |                 let mut param_idx = 0;
+    |                     ^^^^^^^^^^^^^
+    |
+    = note: consider using `_param_idx` instead
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `param_idx` is never read
+   --> src/core/cow_optimized.rs:193:25
+    |
+193 |                         param_idx += 1;
+    |                         ^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/core/cow_optimized.rs:434:9
+    |
+434 |     let mut segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+    |         ----^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `i`
+   --> src/core/object_pool.rs:440:14
+    |
+440 |         for (i, sub_pool) in self.sub_pools.iter().enumerate() {
+    |              ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+warning: field `created_at` is never read
+   --> src/core/lockfree_cache.rs:105:5
+    |
+101 | struct CacheEntry<T> {
+    |        ---------- field in this struct
+...
+105 |     created_at: Instant,
+    |     ^^^^^^^^^^
+    |
+    = note: `CacheEntry` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `LockFreeNode` is never constructed
+  --> src/core/object_pool.rs:22:8
+   |
+22 | struct LockFreeNode<T> {
+   |        ^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/core/object_pool.rs:29:8
+   |
+27 | impl<T> LockFreeNode<T> {
+   | ----------------------- associated function in this implementation
+28 |     /// 创建新节点
+29 |     fn new(data: Option<T>) -> Self {
+   |        ^^^
+
+warning: struct `LockFreeStack` is never constructed
+  --> src/core/object_pool.rs:41:8
+   |
+41 | struct LockFreeStack<T> {
+   |        ^^^^^^^^^^^^^
+
+warning: associated items `new`, `push`, `pop`, and `is_empty` are never used
+   --> src/core/object_pool.rs:50:8
+    |
+ 48 | impl<T> LockFreeStack<T> {
+    | ------------------------ associated items in this implementation
+ 49 |     /// 创建新的无锁栈
+ 50 |     fn new() -> Self {
+    |        ^^^
+...
+ 57 |     fn push(&self, data: T) {
+    |        ^^^^
+...
+ 83 |     fn pop(&self) -> Option<T> {
+    |        ^^^
+...
+117 |     fn is_empty(&self) -> bool {
+    |        ^^^^^^^^
+
+warning: method `next` can be confused for the standard trait method `std::iter::Iterator::next`
+   --> src/core/bytes_optimized.rs:445:5
+    |
+445 | /     pub fn next(&mut self) -> Option<BytesView<'a>> {
+446 | |         if self.pos >= self.bytes.len() {
+447 | |             return None;
+...   |
+463 | |     }
+    | |_____^
+    |
+    = help: consider implementing the trait `std::iter::Iterator` or choosing a less ambiguous method name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait
+    = note: `#[warn(clippy::should_implement_trait)]` on by default
+
+warning: manual implementation of `.is_multiple_of()`
+   --> src/core/bytes_optimized.rs:515:12
+    |
+515 |         if hex.len() % 2 != 0 {
+    |            ^^^^^^^^^^^^^^^^^^ help: replace with: `!hex.len().is_multiple_of(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_is_multiple_of
+    = note: `#[warn(clippy::manual_is_multiple_of)]` on by default
+
+warning: you should consider adding a `Default` implementation for `CompactRadixTree`
+  --> src/core/cache_optimized.rs:64:5
+   |
+64 | /     pub fn new() -> Self {
+65 | |         let mut nodes = Vec::new();
+66 | |         let root_index = nodes.len();
+67 | |         nodes.push(CompactRadixNode::new(RadixNodeType::Static(String::new())));
+...  |
+74 | |     }
+   | |_____^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#new_without_default
+   = note: `#[warn(clippy::new_without_default)]` on by default
+help: try adding this
+   |
+62 + impl Default for CompactRadixTree {
+63 +     fn default() -> Self {
+64 +         Self::new()
+65 +     }
+66 + }
+   |
+
+warning: very complex type used. Consider factoring parts into `type` definitions
+  --> src/core/cache_optimized.rs:97:39
+   |
+97 | ...th: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+   = note: `#[warn(clippy::type_complexity)]` on by default
+
+warning: very complex type used. Consider factoring parts into `type` definitions
+   --> src/core/cache_optimized.rs:388:39
+    |
+388 | ...th: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+
+warning: very complex type used. Consider factoring parts into `type` definitions
+   --> src/core/cache_optimized.rs:468:39
+    |
+468 | ...th: &str) -> Option<(&Box<dyn super::RouteEntry>, Vec<(String, String)>)> {
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+
+warning: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+  --> src/core/cow_optimized.rs:49:5
+   |
+49 | /     pub fn from_str(path: &'a str) -> Self {
+50 | |         if path.contains('{') && path.contains('}') {
+51 | |             let param_names = Self::extract_param_names(path);
+52 | |             CowRoutePattern::Parameterized {
+...  |
+71 | |     }
+   | |_____^
+   |
+   = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait
+
+warning: redundant closure
+   --> src/core/cow_optimized.rs:373:18
+    |
+373 |             .map(|s| Cow::Borrowed(s))
+    |                  ^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the tuple variant itself: `Cow::Borrowed`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+    = note: `#[warn(clippy::redundant_closure)]` on by default
+
+warning: very complex type used. Consider factoring parts into `type` definitions
+   --> src/core/dynamic_sharding.rs:107:43
+    |
+107 | ...: &str) -> Option<(&std::sync::Arc<dyn RouteEntry>, Vec<(String, String)>)> {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+
+warning: this `impl` can be derived
+   --> src/core/dynamic_sharding.rs:189:1
+    |
+189 | / impl Default for LoadBalanceStrategy {
+190 | |     fn default() -> Self {
+191 | |         Self::Comprehensive
+192 | |     }
+193 | | }
+    | |_^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#derivable_impls
+    = note: `#[warn(clippy::derivable_impls)]` on by default
+help: replace the manual implementation with a derive attribute and mark the default variant
+    |
+178 + #[derive(Default)]
+179 | pub enum LoadBalanceStrategy {
+180 |     /// 基于路由数量的负载均衡
+...
+184 |     /// 综合负载均衡（路由数量 + 访问频率 + 延迟）
+185 ~     #[default]
+186 ~     Comprehensive,
+    |
+
+warning: returning the result of a `let` binding from a block
+   --> src/core/dynamic_sharding.rs:299:17
+    |
+298 | ...   let idx = self.round_robin_index.fetch_add(1, Ordering::Relaxed) % self.shards.len();
+    |       ------------------------------------------------------------------------------------- unnecessary `let` binding
+299 | ...   idx
+    |       ^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#let_and_return
+    = note: `#[warn(clippy::let_and_return)]` on by default
+help: return the expression directly
+    |
+298 ~                 
+299 ~                 self.round_robin_index.fetch_add(1, Ordering::Relaxed) % self.shards.len()
+    |
+
+warning: casting the result of `isize::abs()` to usize
+  --> src/core/lockfree_cache.rs:62:33
+   |
+62 |             self.size.fetch_sub(delta.abs() as usize, Ordering::Relaxed);
+   |                                 ^^^^^^^^^^^^^^^^^^^^ help: replace with: `delta.unsigned_abs()`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_abs_to_unsigned
+   = note: `#[warn(clippy::cast_abs_to_unsigned)]` on by default
+
+warning: manual checked division
+  --> src/core/lockfree_shard.rs:66:12
+   |
+66 |         if total > 0 {
+   |            ^^^^^^^^^ check performed here
+67 |             let current_avg = self.avg_latency_ns.load(Ordering::Relaxed);
+68 |             let new_avg = (current_avg * (total - 1) + new_latency) / total;
+   |                           ------------------------------------------------- division performed here
+   |
+   = help: consider using `checked_div`
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_checked_ops
+   = note: `#[warn(clippy::manual_checked_ops)]` on by default
+
+warning: very complex type used. Consider factoring parts into `type` definitions
+   --> src/core/lockfree_shard.rs:193:39
+    |
+193 | ... path: &str) -> Option<(&Arc<dyn RouteEntry>, Vec<(String, String)>)> {
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#type_complexity
+
+warning: manually reimplementing `div_ceil`
+   --> src/core/object_pool.rs:420:33
+    |
+420 |         let sub_pool_capacity = (total_capacity + num_shards - 1) / num_shards;
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using `.div_ceil()`: `total_capacity.div_ceil(num_shards)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_div_ceil
+    = note: `#[warn(clippy::manual_div_ceil)]` on by default
+
+warning: unsafe function's docs are missing a `# Safety` section
+  --> src/core/simd_optimized.rs:17:5
+   |
+17 |     pub unsafe fn equals_simd(a: &str, b: &str) -> bool {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_safety_doc
+   = note: `#[warn(clippy::missing_safety_doc)]` on by default
+
+warning: unsafe function's docs are missing a `# Safety` section
+  --> src/core/simd_optimized.rs:78:5
+   |
+78 |     pub unsafe fn starts_with_simd(text: &str, prefix: &str) -> bool {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_safety_doc
+
+warning: unsafe function's docs are missing a `# Safety` section
+   --> src/core/simd_optimized.rs:137:5
+    |
+137 |     pub unsafe fn longest_common_prefix_simd(a: &str, b: &str) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_safety_doc
+
+warning: unsafe function's docs are missing a `# Safety` section
+   --> src/core/simd_optimized.rs:211:5
+    |
+211 |     pub unsafe fn find_char_simd(text: &str, ch: char) -> Option<usize> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_safety_doc
+
+warning: attempt to mutate range bound within loop
+   --> src/core/simd_optimized.rs:306:17
+    |
+306 |                 start = i + 1;
+    |                 ^^^^^
+    |
+    = note: the range of the loop is unchanged
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#mut_range_bound
+    = note: `#[warn(clippy::mut_range_bound)]` on by default
+
+warning: redundant closure
+   --> src/core/string_optimized.rs:159:30
+    |
+159 |         self.pool.get(s).map(|arc| Arc::clone(arc))
+    |                              ^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `Arc::clone`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+warning: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+   --> src/core/string_optimized.rs:306:5
+    |
+306 | /     pub fn from_str(s: &str) -> Self {
+307 | |         // 对于短字符串，使用小字符串优化
+308 | |         if s.len() <= 23 {
+...   |
+325 | |     }
+    | |_____^
+    |
+    = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait
+
+warning: redundant closure
+   --> src/core/string_optimized.rs:391:18
+    |
+391 |             .map(|s| Arc::from(s))
+    |                  ^^^^^^^^^^^^^^^^ help: replace the closure with the associated function itself: `Arc::from`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+warning: redundant closure
+   --> src/core/string_optimized.rs:402:14
+    |
+402 |         .map(|s| SmallString::from(s))
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the associated function itself: `SmallString::from`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+warning: redundant closure
+   --> src/core/string_optimized.rs:412:14
+    |
+412 |         .map(|s| SmartString::from_str(s))
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the associated function itself: `SmartString::from_str`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure
+
+warning: unused variable: `route`
+   --> src/core/route_radix_tree.rs:554:14
+    |
+554 |         let (route, params) = radix.find("/users/123").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_radix_tree.rs:557:14
+    |
+557 |         let (route, params) = radix.find("/users/abc").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_radix_tree.rs:569:14
+    |
+569 |         let (route, params) = radix.find("/users/123/posts/456").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_radix_tree.rs:596:14
+    |
+596 |         let (route, params) = radix.find("/users").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_radix_tree.rs:600:14
+    |
+600 |         let (route, params) = radix.find("/users/123").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_radix_tree.rs:652:14
+    |
+652 |         let (route, params) = radix
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_trie.rs:468:14
+    |
+468 |         let (route, params) = trie.find("/users/123").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_trie.rs:471:14
+    |
+471 |         let (route, params) = trie.find("/users/abc").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_trie.rs:483:14
+    |
+483 |         let (route, params) = trie.find("/users/123/posts/456").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_trie.rs:510:14
+    |
+510 |         let (route, params) = trie.find("/users").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_trie.rs:514:14
+    |
+514 |         let (route, params) = trie.find("/users/123").unwrap();
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: unused variable: `route`
+   --> src/core/route_trie.rs:566:14
+    |
+566 |         let (route, params) = trie
+    |              ^^^^^ help: if this is intentional, prefix it with an underscore: `_route`
+
+warning: `dynamic-route-actix` (lib) generated 36 warnings (run `cargo clippy --fix --lib -p dynamic-route-actix -- ` to apply 14 suggestions)
+warning: unused variable: `cloned_route`
+  --> examples/arc_route_usage.rs:19:9
+   |
+19 |     let cloned_route = arc_route.clone_box();
+   |         ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_cloned_route`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+error[E0046]: not all trait items implemented, missing: `as_any`
+   --> examples/advanced_usage.rs:190:5
+    |
+190 |     impl RouteEntry for TimedRoute {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `as_any` in implementation
+    |
+    = help: implement the missing item: `fn as_any(&self) -> &(dyn std::any::Any + 'static) { todo!() }`
+
+warning: variable does not need to be mutable
+  --> tests/cache_performance_tests.rs:14:9
+   |
+14 |     let mut standard_table = RouteTable::new();
+   |         ----^^^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `global_object_pool`
+ --> tests/lockfree_performance_tests.rs:5:75
+  |
+5 | ...ool::{global_lockfree_object_pool, global_object_pool, LockFreeRouteObjectPool, RouteObj...
+  |                                       ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `dynamic-route-actix` (example "arc_route_usage") generated 1 warning (run `cargo clippy --fix --example "arc_route_usage" -p dynamic-route-actix -- ` to apply 1 suggestion)
+warning: variable does not need to be mutable
+  --> tests/cache_performance_tests.rs:72:9
+   |
+72 |     let mut standard_table = RouteTable::new();
+   |         ----^^^^^^^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> tests/cache_performance_tests.rs:250:9
+    |
+250 |     let mut standard_table = RouteTable::new();
+    |         ----^^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: redundant pattern matching, consider using `is_some()`
+   --> tests/cow_and_bytes_performance_tests.rs:293:23
+    |
+293 |             while let Some(_) = splitter.next() {
+    |             ----------^^^^^^^------------------ help: try: `while splitter.next().is_some()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_pattern_matching
+    = note: `#[warn(clippy::redundant_pattern_matching)]` on by default
+
+warning: useless use of `vec!`
+   --> tests/cow_and_bytes_performance_tests.rs:104:17
+    |
+104 |       let paths = vec![
+    |  _________________^
+105 | |         "/api/v1/users",
+106 | |         "/api//v1//users",
+107 | |         "/api/./v1/users",
+108 | |         "/api/v1/../users",
+109 | |         "/api/v1/users/../../..",
+110 | |     ];
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#useless_vec
+    = note: `#[warn(clippy::useless_vec)]` on by default
+help: you can use an array directly
+    |
+104 ~     let paths = ["/api/v1/users",
+105 +         "/api//v1//users",
+106 +         "/api/./v1/users",
+107 +         "/api/v1/../users",
+108 ~         "/api/v1/users/../../.."];
+    |
+
+warning: useless use of `vec!`
+  --> tests/object_pool_performance_tests.rs:49:22
+   |
+49 |       let test_paths = vec![
+   |  ______________________^
+50 | |         "/users/",
+51 | |         "/users//123/",
+52 | |         "  /api/v1/users/123  ",
+53 | |         "/",
+54 | |         "/api/v1/posts/",
+55 | |     ];
+   | |_____^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#useless_vec
+   = note: `#[warn(clippy::useless_vec)]` on by default
+help: you can use an array directly
+   |
+49 ~     let test_paths = ["/users/",
+50 +         "/users//123/",
+51 +         "  /api/v1/users/123  ",
+52 +         "/",
+53 ~         "/api/v1/posts/"];
+   |
+
+warning: `dynamic-route-actix` (test "object_pool_performance_tests") generated 1 warning (run `cargo clippy --fix --test "object_pool_performance_tests" -p dynamic-route-actix -- ` to apply 1 suggestion)
+warning: unused variable: `i`
+   --> tests/cache_optimization_tests.rs:306:9
+    |
+306 |     for i in 0..10 {
+    |         ^ help: if this is intentional, prefix it with an underscore: `_i`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `string_clones`
+   --> tests/arc_route_handler_tests.rs:185:9
+    |
+185 |     let string_clones: Vec<String> = (0..10000).map(|_| string_body.clone()).collect();
+    |         ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_string_clones`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `arc_clones`
+   --> tests/arc_route_handler_tests.rs:189:9
+    |
+189 |     let arc_clones: Vec<std::sync::Arc<str>> = (0..10000).map(|_| std::sync::Arc::clone(&...
+    |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_arc_clones`
+
+warning: unused variable: `cache_size`
+   --> tests/cache_performance_benchmark.rs:167:9
+    |
+167 |     let cache_size = table.cache_stats().total_accesses; // 使用total_accesses作为缓存条...
+    |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_cache_size`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `dynamic-route-actix` (test "cow_and_bytes_performance_tests") generated 2 warnings (run `cargo clippy --fix --test "cow_and_bytes_performance_tests" -p dynamic-route-actix -- ` to apply 2 suggestions)
+warning: unused variable: `path2`
+  --> tests/string_optimization_tests.rs:66:9
+   |
+66 |     let path2 = "/admin/dashboard/settings";
+   |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_path2`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `path3`
+  --> tests/string_optimization_tests.rs:67:9
+   |
+67 |     let path3 = "/auth/login";
+   |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_path3`
+
+warning: `dynamic-route-actix` (test "cache_performance_tests") generated 3 warnings (run `cargo clippy --fix --test "cache_performance_tests" -p dynamic-route-actix -- ` to apply 3 suggestions)
+warning: `dynamic-route-actix` (test "cache_optimization_tests") generated 1 warning (run `cargo clippy --fix --test "cache_optimization_tests" -p dynamic-route-actix -- ` to apply 1 suggestion)
+For more information about this error, try `rustc --explain E0046`.
+error: could not compile `dynamic-route-actix` (example "advanced_usage") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+warning: unused variable: `s`
+   --> tests/lockfree_performance_tests.rs:206:21
+    |
+206 |                 let s = pool_clone.pull_string();
+    |                     ^ help: if this is intentional, prefix it with an underscore: `_s`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `dynamic-route-actix` (test "arc_route_handler_tests") generated 2 warnings (run `cargo clippy --fix --test "arc_route_handler_tests" -p dynamic-route-actix -- ` to apply 2 suggestions)
+warning: `dynamic-route-actix` (test "cache_performance_benchmark") generated 1 warning (run `cargo clippy --fix --test "cache_performance_benchmark" -p dynamic-route-actix -- ` to apply 1 suggestion)
+warning: `dynamic-route-actix` (test "string_optimization_tests") generated 2 warnings (run `cargo clippy --fix --test "string_optimization_tests" -p dynamic-route-actix -- ` to apply 2 suggestions)
+warning: `dynamic-route-actix` (test "lockfree_performance_tests") generated 2 warnings (run `cargo clippy --fix --test "lockfree_performance_tests" -p dynamic-route-actix -- ` to apply 2 suggestions)
+warning: manual `RangeInclusive::contains` implementation
+   --> src/core/cache.rs:695:17
+    |
+695 |         assert!(score >= 0.0 && score <= 1.0);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `(0.0..=1.0).contains(&score)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_range_contains
+    = note: `#[warn(clippy::manual_range_contains)]` on by default
+
+warning: manual `RangeInclusive::contains` implementation
+   --> src/core/dynamic_sharding.rs:719:17
+    |
+719 |         assert!(imbalance >= 0.0 && imbalance <= 1.0);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `(0.0..=1.0).contains(&imbalance)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_range_contains
+
+warning: `dynamic-route-actix` (lib test) generated 49 warnings (34 duplicates) (run `cargo clippy --fix --lib -p dynamic-route-actix --tests -- ` to apply 15 suggestions)

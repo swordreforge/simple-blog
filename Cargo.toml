@@ -83,6 +83,9 @@ jsonwebtoken = { version = "10.3", default-features = false, features = ["use_pe
 # Valkey/Redis 缓存（可选）
 redis = { version = "0.28", default-features = false, features = ["tokio-comp", "connection-manager", "aio"], optional = true }
 
+# 动态路由管理
+dynamic-route-actix = { path = "./dynamic-router", default-features = false, features = [] }
+
 # 本地缓存（降级方案）
 dashmap = "6.1"
 moka = { version = "0.12", features = ["sync"] }

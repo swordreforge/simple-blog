@@ -28,6 +28,7 @@ use clap::Parser;
 use config::{AppConfig, CliArgs};
 use routes::configure_routes;
 use middleware::logging::LoggingMiddleware;
+use std::sync::Arc;
 use std::path::Path;
 
 /// 检查首次运行所需的文件和目录
@@ -300,6 +301,25 @@ async fn main() -> std::io::Result<()> {
             eprintln!("⚠️  文章同步失败: {}", e);
         }
     }
+
+    // 初始化动态路由表
+    println!("🛣️  初始化动态路由表...");
+    let route_table = Arc::new(dynamic_route_actix::RouteTable::new());
+    let dynamic_route_repo = db::repositories::DynamicRouteRepository::new(repository.get_pool().clone());
+    let dynamic_route_service = services::dynamic_route_service::DynamicRouteService::new(
+        route_table.clone(),
+        dynamic_route_repo,
+    );
+    
+    // 从数据库加载路由
+    match dynamic_route_service.load_routes_from_db().await {
+        Ok(_) => {
+            println!("✅ 动态路由加载完成");
+        }
+        Err(e) => {
+            eprintln!("⚠️  动态路由加载失败: {}", e);
+        }
+    }
     
     // 启动 HTTP/1.1/HTTP/2 服务器
     // 创建应用状态（依赖注入容器）
@@ -307,6 +327,8 @@ async fn main() -> std::io::Result<()> {
         repository.clone(),
         app_cache.clone(),
         view_batch_processor.clone(),
+        route_table.clone(),
+        Arc::new(dynamic_route_service),
     );
 
     let mut server = HttpServer::new(move || {

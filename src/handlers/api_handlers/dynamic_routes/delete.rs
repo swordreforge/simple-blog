@@ -43,6 +43,9 @@ pub async fn delete_route(
             // 记录操作日志
             log_route_operation(&repo, id, "delete", Some(&old_route), &old_route, &admin_info.1);
 
+            // 从路由表中移除路由
+            state.dynamic_route_service().remove_route(&old_route.path);
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "路由删除成功"

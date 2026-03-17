@@ -29,6 +29,7 @@ pub fn configure_page_routes(cfg: &mut web::ServiceConfig) {
 
     // 管理后台
     cfg.route("/admin", web::get().to(page_handlers::admin));
+    cfg.route("/admin/dyn-routing", web::get().to(page_handlers::dyn_routing));
 
     // 状态页面
     cfg.route("/status/{status}", web::get().to(page_handlers::status_page));

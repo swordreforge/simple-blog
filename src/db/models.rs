@@ -545,3 +545,250 @@ pub struct TagStats {
     pub name: String,
     pub count: i32,
 }
+
+// ==================== 动态路由相关模型 ====================
+
+/// 路由类型枚举
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RouteType {
+    /// 内存路由
+    Memory,
+    /// 文件路由
+    File,
+    /// 数据库路由
+    Database,
+}
+
+impl fmt::Display for RouteType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RouteType::Memory => write!(f, "memory"),
+            RouteType::File => write!(f, "file"),
+            RouteType::Database => write!(f, "database"),
+        }
+    }
+}
+
+impl AsRef<str> for RouteType {
+    fn as_ref(&self) -> &str {
+        match self {
+            RouteType::Memory => "memory",
+            RouteType::File => "file",
+            RouteType::Database => "database",
+        }
+    }
+}
+
+impl RouteType {
+    /// 从字符串解析路由类型
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "memory" => Some(RouteType::Memory),
+            "file" => Some(RouteType::File),
+            "database" => Some(RouteType::Database),
+            _ => None,
+        }
+    }
+}
+
+// 为数据库实现 ToSql 和 FromSql
+impl rusqlite::types::ToSql for RouteType {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        self.as_ref().to_sql()
+    }
+}
+
+impl rusqlite::types::FromSql for RouteType {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        let s: String = rusqlite::types::FromSql::column_result(value)?;
+        Self::from_str(&s)
+            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+    }
+}
+
+/// 处理器类型枚举
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HandlerType {
+    /// 重定向处理器
+    Redirect,
+    /// 静态内容处理器
+    Static,
+    /// 模板渲染处理器
+    Template,
+    /// 代理处理器
+    Proxy,
+    /// 自定义处理器
+    Custom,
+}
+
+impl fmt::Display for HandlerType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HandlerType::Redirect => write!(f, "redirect"),
+            HandlerType::Static => write!(f, "static"),
+            HandlerType::Template => write!(f, "template"),
+            HandlerType::Proxy => write!(f, "proxy"),
+            HandlerType::Custom => write!(f, "custom"),
+        }
+    }
+}
+
+impl AsRef<str> for HandlerType {
+    fn as_ref(&self) -> &str {
+        match self {
+            HandlerType::Redirect => "redirect",
+            HandlerType::Static => "static",
+            HandlerType::Template => "template",
+            HandlerType::Proxy => "proxy",
+            HandlerType::Custom => "custom",
+        }
+    }
+}
+
+impl HandlerType {
+    /// 从字符串解析处理器类型
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "redirect" => Some(HandlerType::Redirect),
+            "static" => Some(HandlerType::Static),
+            "template" => Some(HandlerType::Template),
+            "proxy" => Some(HandlerType::Proxy),
+            "custom" => Some(HandlerType::Custom),
+            _ => None,
+        }
+    }
+}
+
+// 为数据库实现 ToSql 和 FromSql
+impl rusqlite::types::ToSql for HandlerType {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        self.as_ref().to_sql()
+    }
+}
+
+impl rusqlite::types::FromSql for HandlerType {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        let s: String = rusqlite::types::FromSql::column_result(value)?;
+        Self::from_str(&s)
+            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+    }
+}
+
+/// 动态路由模型
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DynamicRoute {
+    /// 路由ID
+    pub id: Option<i64>,
+    /// 路由类型
+    pub route_type: RouteType,
+    /// 路由路径
+    pub path: String,
+    /// 处理器类型
+    pub handler_type: HandlerType,
+    /// 处理器配置 (JSON)
+    pub handler_config: serde_json::Value,
+    /// 是否启用
+    pub enabled: bool,
+    /// 优先级 (数字越大优先级越高)
+    pub priority: i32,
+    /// 创建时间
+    pub created_at: DateTime<Utc>,
+    /// 更新时间
+    pub updated_at: DateTime<Utc>,
+    /// 创建者
+    pub created_by: Option<String>,
+    /// 扩展元数据 (JSON)
+    pub metadata: Option<serde_json::Value>,
+}
+
+impl DynamicRoute {
+    /// 创建新的路由实例
+    pub fn new(
+        route_type: RouteType,
+        path: String,
+        handler_type: HandlerType,
+        handler_config: serde_json::Value,
+    ) -> Self {
+        let now = Utc::now();
+        Self {
+            id: None,
+            route_type,
+            path,
+            handler_type,
+            handler_config,
+            enabled: true,
+            priority: 0,
+            created_at: now,
+            updated_at: now,
+            created_by: None,
+            metadata: None,
+        }
+    }
+
+    /// 检查路由是否可用
+    pub fn is_available(&self) -> bool {
+        self.enabled
+    }
+}
+
+/// 动态路由操作日志模型
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DynamicRouteLog {
+    pub id: Option<i64>,
+    pub route_id: Option<i64>,
+    pub action: String,
+    pub old_config: Option<String>,
+    pub new_config: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub created_by: Option<String>,
+    pub ip_address: Option<String>,
+    pub user_agent: Option<String>,
+}
+
+/// 动态路由统计模型
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DynamicRouteStats {
+    pub id: Option<i64>,
+    pub route_id: i64,
+    pub access_count: i64,
+    pub last_accessed_at: Option<DateTime<Utc>>,
+    pub total_response_time_ms: i64,
+    pub avg_response_time_ms: f64,
+    pub error_count: i64,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// 创建路由请求
+#[derive(Debug, Deserialize)]
+pub struct CreateRouteRequest {
+    pub route_type: RouteType,
+    pub path: String,
+    pub handler_type: HandlerType,
+    pub handler_config: serde_json::Value,
+    pub enabled: Option<bool>,
+    pub priority: Option<i32>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+/// 更新路由请求
+#[derive(Debug, Deserialize)]
+pub struct UpdateRouteRequest {
+    pub route_type: Option<RouteType>,
+    pub path: Option<String>,
+    pub handler_type: Option<HandlerType>,
+    pub handler_config: Option<serde_json::Value>,
+    pub enabled: Option<bool>,
+    pub priority: Option<i32>,
+    pub metadata: Option<serde_json::Value>,
+}
+
+/// 路由列表查询参数
+#[derive(Debug, Deserialize)]
+pub struct ListRoutesQuery {
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+    pub route_type: Option<RouteType>,
+    pub enabled: Option<bool>,
+}

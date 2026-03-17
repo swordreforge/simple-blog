@@ -1,11 +1,12 @@
 //! 应用状态和依赖注入容器
-//! 
+//!
 //! 统一管理应用的所有依赖项，包括：
 //! - 数据库 Repository
 //! - 缓存服务
 //! - 批量处理器
 //! - 各种服务实例
-//! 
+//! - 动态路由表
+//!
 //! 使用依赖注入模式，便于测试和维护
 
 use std::sync::Arc;
@@ -14,6 +15,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 use crate::db::repositories;
 use crate::cache::AppCache;
 use crate::view_batch::ViewBatchProcessor;
+use crate::services::dynamic_route_service::DynamicRouteService;
+use dynamic_route_actix::RouteTable;
 
 /// 应用状态 - 依赖注入容器
 #[derive(Clone)]
@@ -24,6 +27,10 @@ pub struct AppState {
     pub cache: Arc<AppCache>,
     /// 阅读记录批量处理器
     pub view_batch_processor: Arc<ViewBatchProcessor>,
+    /// 动态路由表
+    pub route_table: Arc<RouteTable>,
+    /// 动态路由服务
+    dynamic_route_service: Arc<DynamicRouteService>,
 }
 
 impl AppState {
@@ -32,11 +39,15 @@ impl AppState {
         repository: Arc<dyn repositories::Repository>,
         cache: Arc<AppCache>,
         view_batch_processor: Arc<ViewBatchProcessor>,
+        route_table: Arc<RouteTable>,
+        dynamic_route_service: Arc<DynamicRouteService>,
     ) -> Self {
         Self {
             repository,
             cache,
             view_batch_processor,
+            route_table,
+            dynamic_route_service,
         }
     }
 
@@ -104,6 +115,16 @@ impl AppState {
     /// 获取关于子卡片 Repository
     pub fn about_sub_card_repository(&self) -> repositories::AboutSubCardRepository {
         repositories::AboutSubCardRepository::new(self.get_pool())
+    }
+
+    /// 获取动态路由 Repository
+    pub fn dynamic_route_repository(&self) -> repositories::DynamicRouteRepository {
+        repositories::DynamicRouteRepository::new(self.get_pool())
+    }
+
+    /// 获取动态路由服务
+    pub fn dynamic_route_service(&self) -> Arc<DynamicRouteService> {
+        self.dynamic_route_service.clone()
     }
 }
 

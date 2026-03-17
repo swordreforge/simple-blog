@@ -74,6 +74,11 @@ pub async fn update_route(
             // 记录操作日志
             log_route_operation(&repo, id, "update", Some(&old_route), &updated_route, &admin_info.1);
 
+            // 热更新路由表
+            if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+                tracing::warn!("路由热更新失败: id={}, error={}", id, e);
+            }
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "路由更新成功",
@@ -233,6 +238,11 @@ pub async fn enable_route(
         Ok(_) => {
             log_route_operation(&repo, id, "enable", Some(&old_route_clone), &updated_route, &admin_info.1);
 
+            // 热更新路由表
+            if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+                tracing::warn!("路由热更新失败: id={}, error={}", id, e);
+            }
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "路由已启用"
@@ -295,6 +305,9 @@ pub async fn disable_route(
     match repo.update(id, &updated_route).await {
         Ok(_) => {
             log_route_operation(&repo, id, "disable", Some(&old_route_clone), &updated_route, &admin_info.1);
+
+            // 从路由表中移除路由
+            state.dynamic_route_service().remove_route(&old_route_clone.path);
 
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,

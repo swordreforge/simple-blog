@@ -115,6 +115,44 @@ pub async fn admin(req: HttpRequest) -> HttpResponse {
     render_template("admin/admin.html", &context).await
 }
 
+/// 动态路由管理页面
+pub async fn dyn_routing(req: HttpRequest) -> HttpResponse {
+    // 从 cookie 中获取 token
+    let token = req.cookie("auth_token")
+        .map(|c| c.value().to_string());
+
+    if let Some(token_str) = token {
+        // 验证 token
+        match crate::jwt::validate_token(&token_str) {
+            Ok(claims) => {
+                // 检查是否为管理员
+                if claims.role != "admin" {
+                    // 非管理员，重定向到首页
+                    return HttpResponse::Found()
+                        .insert_header(("Location", "/"))
+                        .finish();
+                }
+            }
+            Err(_) => {
+                // token 无效，重定向到首页
+                return HttpResponse::Found()
+                    .insert_header(("Location", "/"))
+                    .finish();
+            }
+        }
+    } else {
+        // 没有 token，重定向到首页
+        return HttpResponse::Found()
+            .insert_header(("Location", "/"))
+            .finish();
+    }
+
+    let mut context = tera::Context::new();
+    context.insert("title", "动态路由管理");
+    context.insert("page", "dyn-routing");
+
+    render_template("admin/dyn-routing.html", &context).await
+}
 /// 状态页面
 pub async fn status_page(path: web::Path<u16>) -> HttpResponse {
     render_status_page(path.into_inner()).await
