@@ -20,3 +20,4 @@ pub mod db_stats;
 pub mod markdown_preview;
 pub mod friend_link;
 pub mod admin_friend_link;
+pub mod dynamic_routes;

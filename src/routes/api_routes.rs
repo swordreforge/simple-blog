@@ -403,4 +403,38 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::put().to(api_handlers::admin_friend_link::update))
             .route(web::delete().to(api_handlers::admin_friend_link::delete))
     );
+
+    // 管理员 API - 动态路由
+    cfg.service(
+        web::resource("/api/admin/dynamic-routes")
+            .route(web::get().to(api_handlers::dynamic_routes::list_routes))
+            .route(web::post().to(api_handlers::dynamic_routes::create_route))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/{id}")
+            .route(web::get().to(api_handlers::dynamic_routes::get_route))
+            .route(web::put().to(api_handlers::dynamic_routes::update_route))
+            .route(web::patch().to(api_handlers::dynamic_routes::patch_route))
+            .route(web::delete().to(api_handlers::dynamic_routes::delete_route))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/{id}/enable")
+            .route(web::post().to(api_handlers::dynamic_routes::enable_route))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/{id}/disable")
+            .route(web::post().to(api_handlers::dynamic_routes::disable_route))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/test")
+            .route(web::post().to(api_handlers::dynamic_routes::test_route))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/{id}/stats")
+            .route(web::get().to(api_handlers::dynamic_routes::get_route_stats))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/batch")
+            .route(web::post().to(api_handlers::dynamic_routes::batch_operations))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/export")
+            .route(web::get().to(api_handlers::dynamic_routes::export_routes))
+    ).service(
+        web::resource("/api/admin/dynamic-routes/import")
+            .route(web::post().to(api_handlers::dynamic_routes::import_routes))
+    );
 }
