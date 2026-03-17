@@ -45,6 +45,9 @@ impl DynamicRouteService {
 
     /// 添加路由到路由表
     fn add_route_to_table(&self, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
+        // 规范化路径：确保以 / 开头，移除尾部斜杠（根路径除外），规范化多个连续斜杠
+        let normalized_path = normalize_path(&route.path);
+        
         match route.handler_type {
             HandlerType::Redirect => {
                 // 处理重定向路由
@@ -57,7 +60,7 @@ impl DynamicRouteService {
                     
                     // 创建重定向路由处理器
                     let redirect_route = RedirectHandler::new(target_str.to_string(), status_code);
-                    self.route_table.insert(route.path.clone(), Box::new(redirect_route));
+                    self.route_table.insert(normalized_path, Box::new(redirect_route));
                 }
             }
             HandlerType::Static => {
@@ -70,7 +73,7 @@ impl DynamicRouteService {
                         .unwrap_or("text/plain");
                     
                     let static_route = SimpleRoute::new(content_str.to_string(), content_type.to_string());
-                    self.route_table.insert(route.path.clone(), Box::new(static_route));
+                    self.route_table.insert(normalized_path, Box::new(static_route));
                 }
             }
             HandlerType::Template => {
@@ -84,20 +87,20 @@ impl DynamicRouteService {
                     template_name.to_string(),
                     route.handler_config.clone(),
                 );
-                self.route_table.insert(route.path.clone(), Box::new(template_route));
+                self.route_table.insert(normalized_path, Box::new(template_route));
             }
             HandlerType::Proxy => {
                 // 处理代理路由
                 if let Some(target) = route.handler_config.get("target") {
                     let target_str = target.as_str().ok_or("target 必须是字符串")?;
                     let proxy_route = ProxyHandler::new(target_str.to_string());
-                    self.route_table.insert(route.path.clone(), Box::new(proxy_route));
+                    self.route_table.insert(normalized_path, Box::new(proxy_route));
                 }
             }
             HandlerType::Custom => {
                 // 处理自定义处理器路由
                 let custom_route = CustomHandler::new(route.handler_config.clone());
-                self.route_table.insert(route.path.clone(), Box::new(custom_route));
+                self.route_table.insert(normalized_path, Box::new(custom_route));
             }
         }
         
@@ -111,14 +114,13 @@ impl DynamicRouteService {
 
     /// 热更新：重新加载单个路由
     pub async fn reload_route(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        // 先从路由表中删除旧路由
+        // 查询数据库获取路由信息
         if let Some(route) = self.repository.get_by_id(id).await? {
+            // 先从路由表中删除旧路由
             self.route_table.remove(&route.path);
             tracing::debug!("已从路由表移除路由: path={}", route.path);
-        }
 
-        // 如果路由是启用状态，重新加载
-        if let Some(route) = self.repository.get_by_id(id).await? {
+            // 如果路由是启用状态，重新加载
             if route.enabled {
                 self.add_route_to_table(&route)?;
                 tracing::info!("路由热更新成功: path={}, type={}", route.path, route.handler_type);
@@ -411,4 +413,28 @@ impl std::fmt::Debug for CustomHandler {
             .field("config", &self.config)
             .finish()
     }
+}
+
+/// 规范化路径
+///
+/// 确保路径以 / 开头，移除尾部斜杠（根路径除外），规范化多个连续斜杠
+fn normalize_path(path: &str) -> String {
+    let mut normalized = path.trim().to_string();
+    
+    // 确保以 / 开头
+    if !normalized.starts_with('/') {
+        normalized = format!("/{}", normalized);
+    }
+    
+    // 移除尾部斜杠（根路径除外）
+    if normalized.len() > 1 && normalized.ends_with('/') {
+        normalized.pop();
+    }
+    
+    // 标准化多个连续斜杠为单个斜杠
+    while normalized.contains("//") {
+        normalized = normalized.replace("//", "/");
+    }
+    
+    normalized
 }

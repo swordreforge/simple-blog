@@ -13,9 +13,14 @@ pub async fn handle_dynamic_route(
     state: web::Data<AppState>,
     path: web::Path<String>,
 ) -> Result<HttpResponse> {
-    let path_str = path.into_inner();
+    let mut path_str = path.into_inner();
     
-    tracing::debug!("尝试匹配动态路由: {}", path_str);
+    // 确保路径以 / 开头，以匹配数据库中存储的路径格式
+    if !path_str.starts_with('/') {
+        path_str = format!("/{}", path_str);
+    }
+    
+    tracing::info!("尝试匹配动态路由: {}", path_str);
 
     // 在路由表中查找路由
     if let Some(route_entry) = state.route_table.get_arc(&path_str) {
@@ -26,7 +31,7 @@ pub async fn handle_dynamic_route(
     }
     
     // 路由未匹配，返回 404
-    tracing::debug!("动态路由未匹配: {}", path_str);
+    tracing::warn!("动态路由未匹配: {}", path_str);
     Ok(HttpResponse::NotFound().finish())
 }
 
