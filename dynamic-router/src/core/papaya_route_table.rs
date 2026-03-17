@@ -40,7 +40,6 @@
 //! ```
 
 use crate::core::route_entry::RouteEntry;
-use crate::core::simple_route::SimpleRoute;
 use papaya::HashMap;
 use seize::Collector;
 

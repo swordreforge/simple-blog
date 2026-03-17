@@ -35,7 +35,8 @@ pub struct AppState {
     pub route_table: Arc<RouteTable>,
     /// 动态路由服务
     dynamic_route_service: Arc<DynamicRouteService>,
-    /// 路由类型管理器
+    /// 路由类型管理器（预留，用于路由存储抽象层）
+    #[allow(dead_code)]
     pub route_type_manager: Option<Arc<RouteTypeManager>>,
 }
 
@@ -59,6 +60,7 @@ impl AppState {
     }
 
     /// 创建带有路由类型管理器的应用状态
+    #[allow(dead_code)]
     pub fn new_with_route_type_manager(
         repository: Arc<dyn repositories::Repository>,
         cache: Arc<AppCache>,
@@ -154,6 +156,7 @@ impl AppState {
     }
 
     /// 获取路由类型管理器
+    #[allow(dead_code)]
     pub fn route_type_manager(&self) -> Option<Arc<RouteTypeManager>> {
         self.route_type_manager.clone()
     }
@@ -168,6 +171,7 @@ impl AppState {
 ///
 /// # 返回
 /// 返回配置好的 RouteTypeManager 实例
+#[allow(dead_code)]
 pub fn create_route_type_manager(
     base_dir: &std::path::Path,
     dynamic_route_repo: repositories::DynamicRouteRepository,

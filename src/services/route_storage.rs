@@ -18,6 +18,7 @@ use crate::db::models::DynamicRoute;
 
 /// 路由存储错误类型
 #[derive(Debug, thiserror::Error)]
+#[allow(dead_code)]
 pub enum StorageError {
     #[error("存储未找到: {0}")]
     NotFound(String),
@@ -57,6 +58,7 @@ pub enum StorageError {
 ///
 /// 定义统一的存储接口，所有存储实现都需要实现此 trait
 #[async_trait::async_trait]
+#[allow(dead_code)]
 pub trait RouteStorage: Send + Sync {
     /// 保存路由
     async fn save_route(&self, route: &DynamicRoute) -> Result<i64, StorageError>;
@@ -93,7 +95,9 @@ pub trait RouteStorage: Send + Sync {
 pub struct MemoryRouteStorage {
     routes: Arc<RwLock<HashMap<i64, DynamicRoute>>>,
     path_index: Arc<RwLock<HashMap<String, i64>>>, // 路径到ID的映射索引
+    #[allow(dead_code)]
     max_routes: usize,
+    #[allow(dead_code)]
     cleanup_interval: Duration,
     next_id: Arc<RwLock<i64>>,
 }
@@ -167,6 +171,7 @@ impl MemoryRouteStorage {
     }
 
     /// 生成下一个ID
+    #[allow(dead_code)]
     fn next_id(&self) -> i64 {
         let mut id = self.next_id.write().unwrap();
         let current = *id;
@@ -175,6 +180,7 @@ impl MemoryRouteStorage {
     }
 
     /// 获取存储统计信息
+    #[allow(dead_code)]
     pub fn get_stats(&self) -> RouteStorageStats {
         let routes = self.routes.read().unwrap();
         RouteStorageStats {
@@ -286,8 +292,11 @@ pub struct FileRouteStorage {
     base_dir: PathBuf,
     routes_dir: PathBuf,
     backups_dir: PathBuf,
+    #[allow(dead_code)]
     max_file_size: usize, // 字节
+    #[allow(dead_code)]
     backup_enabled: bool,
+    #[allow(dead_code)]
     backup_count: usize,
 }
 
@@ -337,11 +346,13 @@ impl FileRouteStorage {
     }
 
     /// 获取路由文件路径
+    #[allow(dead_code)]
     fn get_route_file_path(&self, id: i64) -> PathBuf {
         self.routes_dir.join(format!("route_{}.json", id))
     }
 
     /// 验证文件路径安全性
+    #[allow(dead_code)]
     fn validate_path(&self, path: &Path) -> Result<(), StorageError> {
         // 防止路径遍历攻击
         if path.has_root() || path.starts_with("..") {
@@ -360,6 +371,7 @@ impl FileRouteStorage {
     }
 
     /// 备份路由文件
+    #[allow(dead_code)]
     fn backup_route_file(&self, id: i64) -> Result<PathBuf, StorageError> {
         if !self.backup_enabled {
             return Ok(PathBuf::new());
@@ -385,6 +397,7 @@ impl FileRouteStorage {
     }
 
     /// 清理过期备份文件
+    #[allow(dead_code)]
     fn cleanup_old_backups(&self, route_id: i64) -> Result<(), StorageError> {
         if !self.backup_enabled {
             return Ok(());
@@ -426,6 +439,7 @@ impl FileRouteStorage {
     }
 
     /// 生成下一个可用ID
+    #[allow(dead_code)]
     fn next_id(&self) -> Result<i64, StorageError> {
         let mut max_id = 0i64;
 
@@ -449,6 +463,7 @@ impl FileRouteStorage {
     }
 
     /// 获取存储统计信息
+    #[allow(dead_code)]
     pub fn get_stats(&self) -> Result<RouteStorageStats, StorageError> {
         let mut total = 0;
         let mut enabled = 0;
@@ -645,6 +660,7 @@ impl RouteStorage for FileRouteStorage {
 
 /// 路由存储统计信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct RouteStorageStats {
     /// 总路由数
     pub total_routes: usize,

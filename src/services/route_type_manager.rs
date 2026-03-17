@@ -18,9 +18,13 @@ use crate::services::route_storage::{MemoryRouteStorage, FileRouteStorage};
 /// 管理三种存储类型，提供统一的访问接口和类型转换功能
 #[derive(Clone)]
 pub struct RouteTypeManager {
+    #[allow(dead_code)]
     database_storage: Arc<DynamicRouteRepository>,
+    #[allow(dead_code)]
     memory_storage: Arc<MemoryRouteStorage>,
+    #[allow(dead_code)]
     file_storage: Arc<FileRouteStorage>,
+    #[allow(dead_code)]
     default_type: RouteType,
 }
 
@@ -352,6 +356,7 @@ impl RouteTypeManager {
 
 /// 存储统计信息摘要
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct StorageStatsSummary {
     /// 数据库统计
     pub database: StorageStats,
@@ -363,6 +368,7 @@ pub struct StorageStatsSummary {
 
 /// 存储统计信息
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct StorageStats {
     /// 总路由数
     pub total_routes: usize,
