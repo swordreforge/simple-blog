@@ -114,7 +114,6 @@ function renderRoutes() {
                 </span>
             </td>
             <td><span class="priority-display">${route.priority}</span></td>
-            <td>${route.stats ? route.stats.access_count : 0}</td>
             <td class="actions">
                 <button class="btn btn-sm btn-primary" onclick="editRoute(${route.id})" title="编辑">编辑</button>
                 <button class="btn btn-sm ${route.enabled ? 'btn-secondary' : 'btn-success'}"
