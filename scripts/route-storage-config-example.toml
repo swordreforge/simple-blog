@@ -1,0 +1,81 @@
+# 路由存储配置示例
+#
+# 将此文件复制到 data/routes/config.toml 并根据需要进行修改
+
+[routing]
+# 默认存储类型：memory, file, database
+default_type = "database"
+
+# 路由加载策略：all, enabled_only
+load_strategy = "enabled_only"
+
+# 文件存储配置
+[routing.storage.file]
+# 基础目录（相对于项目根目录）
+base_dir = "data/routes"
+# 自动创建目录
+auto_create_dir = true
+# 启用备份
+backup_enabled = true
+# 保留备份数量
+backup_count = 5
+# 最大文件大小（字节）
+max_file_size = 1048576
+
+# 内存存储配置
+[routing.storage.memory]
+# 最大路由数量
+max_routes = 1000
+# 清理间隔（秒）
+cleanup_interval = 3600
+# 自动清理已禁用的路由
+auto_cleanup_disabled = true
+
+# 数据库存储配置
+[routing.storage.database]
+# 连接池大小
+pool_size = 10
+# 连接超时（秒）
+connection_timeout = 30
+# 查询超时（秒）
+query_timeout = 10
+
+# 路由迁移配置
+[routing.migration]
+# 启用自动迁移
+auto_migrate = false
+# 源存储类型
+source_type = "file"
+# 目标存储类型
+target_type = "database"
+# 批量大小
+batch_size = 100
+# 迁移间隔（秒）
+migration_interval = 60
+
+# 路由统计配置
+[routing.stats]
+# 启用统计
+enabled = true
+# 统计间隔（秒）
+stats_interval = 300
+# 保留统计数据天数
+retention_days = 30
+
+# 路由验证配置
+[routing.validation]
+# 启用路径验证
+validate_paths = true
+# 启用处理器配置验证
+validate_handler_config = true
+# 启用内容模板验证
+validate_content_template = true
+
+# 路由缓存配置
+[routing.cache]
+# 启用路由缓存
+enabled = true
+# 缓存 TTL（秒）
+cache_ttl = 600
+# 缓存大小
+cache_size = 1000

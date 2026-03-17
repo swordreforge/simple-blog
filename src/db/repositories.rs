@@ -2623,6 +2623,31 @@ impl DynamicRouteRepository {
         
         Ok(routes)
     }
+
+    /// 获取所有路由
+    pub async fn get_all(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
+        let routes = self.list(0, 10000, None, None).await?.0;
+        Ok(routes)
+    }
+
+    /// 获取路由总数
+    pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
+        let count = self.list(0, 0, None, None).await?.1;
+        Ok(count)
+    }
+
+    /// 获取启用的路由总数
+    pub async fn count_enabled(&self) -> Result<i64, Box<dyn std::error::Error>> {
+        let count = self.list(0, 0, None, Some(true)).await?.1;
+        Ok(count)
+    }
+
+    /// 删除所有路由
+    pub async fn delete_all(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("DELETE FROM dynamic_routes", [])?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

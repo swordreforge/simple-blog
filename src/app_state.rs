@@ -6,6 +6,7 @@
 //! - 批量处理器
 //! - 各种服务实例
 //! - 动态路由表
+//! - 路由类型管理器
 //!
 //! 使用依赖注入模式，便于测试和维护
 
@@ -16,6 +17,9 @@ use crate::db::repositories;
 use crate::cache::AppCache;
 use crate::view_batch::ViewBatchProcessor;
 use crate::services::dynamic_route_service::DynamicRouteService;
+use crate::services::route_type_manager::RouteTypeManager;
+use crate::services::route_storage::{MemoryRouteStorage, FileRouteStorage};
+use crate::db::models::RouteType;
 use dynamic_route_actix::RouteTable;
 
 /// 应用状态 - 依赖注入容器
@@ -31,6 +35,8 @@ pub struct AppState {
     pub route_table: Arc<RouteTable>,
     /// 动态路由服务
     dynamic_route_service: Arc<DynamicRouteService>,
+    /// 路由类型管理器
+    pub route_type_manager: Option<Arc<RouteTypeManager>>,
 }
 
 impl AppState {
@@ -48,6 +54,26 @@ impl AppState {
             view_batch_processor,
             route_table,
             dynamic_route_service,
+            route_type_manager: None,
+        }
+    }
+
+    /// 创建带有路由类型管理器的应用状态
+    pub fn new_with_route_type_manager(
+        repository: Arc<dyn repositories::Repository>,
+        cache: Arc<AppCache>,
+        view_batch_processor: Arc<ViewBatchProcessor>,
+        route_table: Arc<RouteTable>,
+        dynamic_route_service: Arc<DynamicRouteService>,
+        route_type_manager: Arc<RouteTypeManager>,
+    ) -> Self {
+        Self {
+            repository,
+            cache,
+            view_batch_processor,
+            route_table,
+            dynamic_route_service,
+            route_type_manager: Some(route_type_manager),
         }
     }
 
@@ -126,6 +152,51 @@ impl AppState {
     pub fn dynamic_route_service(&self) -> Arc<DynamicRouteService> {
         self.dynamic_route_service.clone()
     }
+
+    /// 获取路由类型管理器
+    pub fn route_type_manager(&self) -> Option<Arc<RouteTypeManager>> {
+        self.route_type_manager.clone()
+    }
+}
+
+/// 创建路由类型管理器的辅助函数
+///
+/// # 参数
+/// - `base_dir`: 基础目录路径
+/// - `dynamic_route_repo`: 动态路由仓库
+/// - `default_route_type`: 默认路由类型
+///
+/// # 返回
+/// 返回配置好的 RouteTypeManager 实例
+pub fn create_route_type_manager(
+    base_dir: &std::path::Path,
+    dynamic_route_repo: repositories::DynamicRouteRepository,
+    default_route_type: RouteType,
+) -> Result<Arc<RouteTypeManager>, Box<dyn std::error::Error>> {
+    // 创建内存存储
+    let memory_storage = Arc::new(MemoryRouteStorage::new(1000, 3600));
+
+    // 创建文件存储
+    let routes_base_dir = base_dir.join("data").join("routes");
+    let file_storage = Arc::new(FileRouteStorage::new(
+        &routes_base_dir,
+        1024 * 1024, // 1MB 最大文件大小
+        true,         // 启用备份
+        5,            // 保留 5 个备份
+    )?);
+
+    // 创建数据库存储
+    let database_storage = Arc::new(dynamic_route_repo);
+
+    // 创建路由类型管理器
+    let route_type_manager = Arc::new(RouteTypeManager::new(
+        database_storage,
+        memory_storage,
+        file_storage,
+        default_route_type,
+    ));
+
+    Ok(route_type_manager)
 }
 
 #[cfg(test)]
