@@ -36,6 +36,12 @@ pub async fn handle_dynamic_route(
         path_str = format!("/{}", path_str);
     }
     
+    // 排除API路径，确保API请求由API路由处理器处理
+    if path_str.starts_with("/api/") {
+        tracing::warn!("跳过API路径: {}", path_str);
+        return Ok(crate::handlers::page_handlers::render_status_page(404).await);
+    }
+    
     tracing::info!("尝试匹配动态路由: {}", path_str);
 
     // 在路由表中查找路由
