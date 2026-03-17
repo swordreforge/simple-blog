@@ -1262,6 +1262,37 @@
 		box-shadow: 0 0 0 3px rgba(0, 123, 255, .2)
 	}
 	
+	select.form-control {
+		background: rgba(0, 0, 0, .5);
+		backdrop-filter: blur(30px) saturate(180%);
+		-webkit-backdrop-filter: blur(30px) saturate(180%);
+		color: #fff;
+		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 15px center;
+		padding-right: 40px
+	}
+	
+	select.form-control:focus {
+		background-color: rgba(0, 0, 0, .6)
+	}
+	
+	select.form-control option {
+		background: rgba(0, 0, 0, .85);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+		color: #fff;
+		padding: 10px 15px
+	}
+	
+	select.form-control option:hover,
+	select.form-control option:checked {
+		background: rgba(0, 123, 255, .5);
+		color: #fff
+	}
+	
 	textarea.form-control {
 		min-height: 150px;
 		resize: vertical
@@ -3404,6 +3435,23 @@
 				</div>
 				<div class="stat-value" id="todayVisits"> 0</div>
 				<div class="stat-change"> 较昨日</div>
+			</div>
+			<div class="stat-card">
+				<div class="stat-header">
+					<div class="stat-title"> 预留卡片</div>
+					<div class="stat-icon">
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<circle cx="12" cy="12" r="10">
+							</circle>
+							<line x1="12" y1="8" x2="12" y2="16">
+							</line>
+							<line x1="8" y1="12" x2="16" y2="12">
+							</line>
+						</svg>
+					</div>
+				</div>
+				<div class="stat-value" id="reservedCard"> --</div>
+				<div class="stat-change neutral"> 待开发</div>
 			</div>
 		</div>
 		<div class="admin-panel">
