@@ -15,6 +15,17 @@ pub async fn handle_dynamic_route(
 ) -> Result<HttpResponse> {
     let mut path_str = path.into_inner();
     
+    // URL解码：浏览器会对特殊字符进行编码（如 @ -> %40）
+    // 我们需要解码以匹配数据库中存储的原始路径
+    match urlencoding::decode(&path_str) {
+        Ok(decoded) => {
+            path_str = decoded.into_owned();
+        }
+        Err(e) => {
+            tracing::warn!("URL解码失败: {}, 使用原始路径", e);
+        }
+    }
+    
     // 规范化路径：移除多余的前导斜杠
     while path_str.starts_with("//") {
         path_str = path_str.replacen("//", "/", 1);
