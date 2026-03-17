@@ -27,3 +27,8 @@ data/GeoLite2-City.mmdb
 .idea/
 target/
 *.log
+
+# Playwright test artifacts
+auth.json
+test-results/
+playwright-report/
