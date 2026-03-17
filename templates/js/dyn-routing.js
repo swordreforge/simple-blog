@@ -8,7 +8,7 @@ let routes = [];
 document.addEventListener('DOMContentLoaded', function() {
     // 检查必要的页面元素是否存在
     const requiredElements = ['routeForm', 'message', 'routesTableBody', 'pagination',
-                             'totalRoutes', 'enabledRoutes', 'disabledRoutes', 'avgResponseTime',
+                             'totalRoutes', 'enabledRoutes', 'disabledRoutes',
                              'searchInput', 'filterType', 'filterStatus'];
     for (const elementId of requiredElements) {
         if (!document.getElementById(elementId)) {
@@ -72,10 +72,6 @@ async function loadStats() {
             document.getElementById('totalRoutes').textContent = allRoutes.length;
             document.getElementById('enabledRoutes').textContent = enabled;
             document.getElementById('disabledRoutes').textContent = disabled;
-
-            // 计算平均响应时间（模拟数据）
-            const avgTime = allRoutes.length > 0 ? 'undo' : '';
-            document.getElementById('avgResponseTime').textContent = avgTime;
         }
     } catch (error) {
         console.error('加载统计信息失败:', error);
