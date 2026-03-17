@@ -540,7 +540,7 @@ CREATE INDEX IF NOT EXISTS idx_dynamic_route_logs_route_id ON dynamic_route_logs
    - 支持路由 A/B 测试
 
 3. **开发体验**
-   - 提供路由 DSL
+   - 提供路由 DSLe
    - 提供可视化路由编辑器
    - 提供路由测试工具
 

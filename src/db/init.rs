@@ -541,14 +541,65 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_friend_links_sort ON friend_links(sort_order)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_friend_links_enabled ON friend_links(is_enabled)", [])?;
 
+    // 检查 dynamic_routes 表是否存在
+    let dynamic_routes_table_exists = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='dynamic_routes'",
+        [],
+        |row| {
+            let count: i64 = row.get(0)?;
+            Ok(count > 0)
+        }
+    ).unwrap_or(false);
+
+    // 如果表已存在，检查是否有新字段
+    if dynamic_routes_table_exists {
+        // 检查是否有 route_name 列
+        let has_route_name_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'route_name'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
+        // 检查是否有 content_source 列
+        let has_content_source_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'content_source'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
+        // 如果表已存在但没有 route_name 列，则添加该列
+        if !has_route_name_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 route_name 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN route_name TEXT", [])?;
+            println!("✅ 已添加 route_name 列");
+        }
+
+        // 如果表已存在但没有 content_source 列，则添加该列
+        if !has_content_source_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 content_source 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_source TEXT CHECK(content_source IN ('database', 'file'))", [])?;
+            println!("✅ 已添加 content_source 列");
+        }
+    }
+
     // 创建动态路由表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS dynamic_routes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            route_name TEXT,
             route_type TEXT NOT NULL CHECK(route_type IN ('memory', 'file', 'database')),
             path TEXT NOT NULL UNIQUE,
             handler_type TEXT NOT NULL CHECK(handler_type IN ('redirect', 'static', 'template', 'proxy', 'custom')),
             handler_config TEXT NOT NULL,
+            content_source TEXT CHECK(content_source IN ('database', 'file')),
+            content_template TEXT,
+            content_type_hint TEXT,
             enabled BOOLEAN DEFAULT 1,
             priority INTEGER DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -562,6 +613,7 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_type ON dynamic_routes(route_type)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_enabled ON dynamic_routes(enabled)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_priority ON dynamic_routes(priority DESC)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_content_template ON dynamic_routes(content_template)", [])?;
 
     // 创建动态路由操作日志表
     conn.execute(

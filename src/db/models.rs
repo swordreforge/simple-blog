@@ -681,17 +681,25 @@ impl rusqlite::types::FromSql for HandlerType {
 pub struct DynamicRoute {
     /// 路由ID
     pub id: Option<i64>,
+    /// 路由名称（管理员可见，便于识别和管理）
+    pub route_name: Option<String>,
     /// 路由类型
     pub route_type: RouteType,
-    /// 路由路径
+    /// 路由路径（支持Ant风格通配符，如 /api/**、/user/*）
     pub path: String,
-    /// 处理器类型
+    /// 处理器类型（redirect、static、proxy、custom）
     pub handler_type: HandlerType,
     /// 处理器配置 (JSON)
     pub handler_config: serde_json::Value,
+    /// 内容来源（database 或 file），仅对 static 类型有意义
+    pub content_source: Option<String>,
+    /// 纯文本内容或文件路径
+    pub content_template: Option<String>,
+    /// Content-Type 提示（可选）
+    pub content_type_hint: Option<String>,
     /// 是否启用
     pub enabled: bool,
-    /// 优先级 (数字越大优先级越高)
+    /// 优先级 (数字越小优先级越高，与Java设计一致)
     pub priority: i32,
     /// 创建时间
     pub created_at: DateTime<Utc>,
@@ -714,10 +722,14 @@ impl DynamicRoute {
         let now = Utc::now();
         Self {
             id: None,
+            route_name: None,
             route_type,
             path,
             handler_type,
             handler_config,
+            content_source: None,
+            content_template: None,
+            content_type_hint: None,
             enabled: true,
             priority: 0,
             created_at: now,
@@ -763,10 +775,14 @@ pub struct DynamicRouteStats {
 /// 创建路由请求
 #[derive(Debug, Deserialize)]
 pub struct CreateRouteRequest {
+    pub route_name: Option<String>,
     pub route_type: RouteType,
     pub path: String,
     pub handler_type: HandlerType,
     pub handler_config: serde_json::Value,
+    pub content_source: Option<String>,
+    pub content_template: Option<String>,
+    pub content_type_hint: Option<String>,
     pub enabled: Option<bool>,
     pub priority: Option<i32>,
     pub metadata: Option<serde_json::Value>,
@@ -775,10 +791,14 @@ pub struct CreateRouteRequest {
 /// 更新路由请求
 #[derive(Debug, Deserialize)]
 pub struct UpdateRouteRequest {
+    pub route_name: Option<String>,
     pub route_type: Option<RouteType>,
     pub path: Option<String>,
     pub handler_type: Option<HandlerType>,
     pub handler_config: Option<serde_json::Value>,
+    pub content_source: Option<String>,
+    pub content_template: Option<String>,
+    pub content_type_hint: Option<String>,
     pub enabled: Option<bool>,
     pub priority: Option<i32>,
     pub metadata: Option<serde_json::Value>,

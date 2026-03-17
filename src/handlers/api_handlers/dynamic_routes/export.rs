@@ -99,10 +99,14 @@ pub async fn import_routes(
         // 导入路由
         let import_route = crate::db::models::DynamicRoute {
             id: None,
+            route_name: route.route_name,
             route_type: route.route_type,
             path: route.path,
             handler_type: route.handler_type,
             handler_config: route.handler_config,
+            content_source: route.content_source,
+            content_template: route.content_template,
+            content_type_hint: route.content_type_hint,
             enabled: route.enabled,
             priority: route.priority,
             created_at: chrono::Utc::now(),

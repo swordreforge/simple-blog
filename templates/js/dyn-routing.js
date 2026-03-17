@@ -6,6 +6,18 @@ let routes = [];
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 检查必要的页面元素是否存在
+    const requiredElements = ['routeForm', 'message', 'routesTableBody', 'pagination',
+                             'totalRoutes', 'enabledRoutes', 'disabledRoutes', 'avgResponseTime',
+                             'searchInput', 'filterType', 'filterStatus'];
+    for (const elementId of requiredElements) {
+        if (!document.getElementById(elementId)) {
+            console.error(`页面加载错误：找不到元素 ${elementId}`);
+            alert(`页面加载错误：找不到元素 ${elementId}，请刷新页面重试`);
+            return;
+        }
+    }
+
     loadRoutes();
     loadStats();
 
@@ -26,7 +38,7 @@ async function loadRoutes() {
         const filterStatus = document.getElementById('filterStatus').value;
 
         let url = `/api/admin/dynamic-routes?page=${currentPage}&limit=${pageSize}`;
-        if (filterType) url += `&route_type=${filterType}`;
+        if (filterType) url += `&handler_type=${filterType}`;
         if (filterStatus === 'enabled') url += `&enabled=true`;
         if (filterStatus === 'disabled') url += `&enabled=false`;
 
@@ -75,28 +87,37 @@ function renderRoutes() {
     const tbody = document.getElementById('routesTableBody');
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
-    const filteredRoutes = routes.filter(route =>
-        route.path.toLowerCase().includes(searchTerm) ||
-        route.handler_type.toLowerCase().includes(searchTerm)
-    );
+    const filteredRoutes = routes.filter(route => {
+        const routeName = (route.route_name || '').toLowerCase();
+        const path = route.path.toLowerCase();
+        const handlerType = route.handler_type.toLowerCase();
+        return routeName.includes(searchTerm) ||
+               path.includes(searchTerm) ||
+               handlerType.includes(searchTerm);
+    });
 
     if (filteredRoutes.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-state">暂无路由数据</td></tr>';
         return;
     }
 
-    tbody.innerHTML = filteredRoutes.map(route => `
+    tbody.innerHTML = filteredRoutes.map(route => {
+        const routeNameDisplay = route.route_name ?
+            `<div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(route.route_name)}</div>` : '';
+        const handlerTypeLabel = getHandlerTypeLabel(route.handler_type);
+
+        return `
         <tr>
             <td>${route.id}</td>
+            <td>${routeNameDisplay}</td>
             <td><span class="route-path">${escapeHtml(route.path)}</span></td>
-            <td><span class="badge badge-info">${route.route_type}</span></td>
-            <td><span class="badge badge-warning">${route.handler_type}</span></td>
+            <td><span class="badge badge-warning handler-type-display">${handlerTypeLabel}</span></td>
             <td>
                 <span class="badge ${route.enabled ? 'badge-success' : 'badge-danger'}">
                     ${route.enabled ? '已启用' : '已禁用'}
                 </span>
             </td>
-            <td>${route.priority}</td>
+            <td><span class="priority-display">${route.priority}</span></td>
             <td>${route.stats ? route.stats.access_count : 0}</td>
             <td class="actions">
                 <button class="btn btn-sm btn-primary" onclick="editRoute(${route.id})" title="编辑">编辑</button>
@@ -108,7 +129,19 @@ function renderRoutes() {
                 <button class="btn btn-sm btn-danger" onclick="deleteRoute(${route.id})" title="删除">删除</button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
+}
+
+// 获取处理器类型标签
+function getHandlerTypeLabel(handlerType) {
+    const labels = {
+        'redirect': '重定向',
+        'static': '静态内容',
+        'template': '模板渲染',
+        'proxy': '代理',
+        'custom': '自定义'
+    };
+    return labels[handlerType] || handlerType;
 }
 
 // 渲染分页
@@ -159,21 +192,93 @@ function refreshRoutes() {
     loadStats();
 }
 
+// 更新处理器字段显示
+function updateHandlerFields() {
+    const handlerType = document.getElementById('handlerType').value;
+    const contentSourceGroup = document.getElementById('contentSourceGroup');
+    const contentTypeGroup = document.getElementById('contentTypeGroup');
+
+    // 重置所有字段显示
+    contentSourceGroup.style.display = 'none';
+    contentTypeGroup.style.display = 'none';
+
+    // 根据处理器类型显示相应字段
+    if (handlerType === 'static') {
+        contentSourceGroup.style.display = 'block';
+        contentTypeGroup.style.display = 'block';
+    }
+
+    // 加载对应的模板
+    loadTemplate();
+}
+
+// 更新内容来源字段显示
+function updateContentSourceFields() {
+    const contentSource = document.getElementById('contentSource').value;
+    const handlerConfig = document.getElementById('handlerConfig');
+
+    // 如果选择了内容来源，更新模板
+    if (contentSource) {
+        loadTemplate();
+    }
+}
+
+// 更新内容类型模板
+function updateContentTypeTemplate() {
+    const contentType = document.getElementById('contentType').value;
+    const handlerType = document.getElementById('handlerType').value;
+
+    if (handlerType === 'static' && contentType) {
+        loadTemplate();
+    }
+}
+
 // 显示添加路由模态框
 function showAddModal() {
+    // 检查必要元素是否存在
+    const requiredElements = {
+        'modalTitle': 'textContent',
+        'routeId': 'value',
+        'routeName': 'value',
+        'routePath': 'value',
+        'handlerType': 'value',
+        'handlerConfig': 'value',
+        'contentSource': 'value',
+        'contentType': 'value',
+        'routePriority': 'value',
+        'routeEnabled': 'checked',
+        'modalMessage': 'innerHTML',
+        'contentSourceGroup': 'style.display',
+        'contentTypeGroup': 'style.display',
+        'routeModal': 'classList'
+    };
+
+    // 检查所有必需的元素
+    for (const [elementId, property] of Object.entries(requiredElements)) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            console.error(`元素 ${elementId} 不存在`);
+            alert(`页面加载错误：找不到元素 ${elementId}，请刷新页面重试`);
+            return;
+        }
+    }
+
+    // 设置表单值
     document.getElementById('modalTitle').textContent = '添加路由';
     document.getElementById('routeId').value = '';
+    document.getElementById('routeName').value = '';
     document.getElementById('routePath').value = '';
-    document.getElementById('routeType').value = 'database';
-    document.getElementById('handlerType').value = 'redirect';
-    document.getElementById('handlerConfig').value = JSON.stringify({
-        type: 'redirect',
-        target: '/new-location',
-        status_code: 302
-    }, null, 2);
+    document.getElementById('handlerType').value = '';
+    document.getElementById('handlerConfig').value = '';
+    document.getElementById('contentSource').value = '';
+    document.getElementById('contentType').value = '';
     document.getElementById('routePriority').value = '0';
     document.getElementById('routeEnabled').checked = true;
     document.getElementById('modalMessage').innerHTML = '';
+
+    // 隐藏所有条件字段
+    document.getElementById('contentSourceGroup').style.display = 'none';
+    document.getElementById('contentTypeGroup').style.display = 'none';
 
     document.getElementById('routeModal').classList.add('active');
 }
@@ -183,15 +288,32 @@ function editRoute(id) {
     const route = routes.find(r => r.id === id);
     if (!route) return;
 
+    // 检查必要元素是否存在
+    const requiredElements = ['modalTitle', 'routeId', 'routeName', 'routePath', 'handlerType',
+                             'contentSource', 'contentType', 'handlerConfig', 'routePriority',
+                             'routeEnabled', 'modalMessage', 'routeModal'];
+    for (const elementId of requiredElements) {
+        if (!document.getElementById(elementId)) {
+            console.error(`元素 ${elementId} 不存在`);
+            alert(`页面加载错误：找不到元素 ${elementId}，请刷新页面重试`);
+            return;
+        }
+    }
+
     document.getElementById('modalTitle').textContent = '编辑路由';
     document.getElementById('routeId').value = route.id;
+    document.getElementById('routeName').value = route.route_name || '';
     document.getElementById('routePath').value = route.path;
-    document.getElementById('routeType').value = route.route_type;
     document.getElementById('handlerType').value = route.handler_type;
+    document.getElementById('contentSource').value = route.content_source || '';
+    document.getElementById('contentType').value = route.content_type_hint || '';
     document.getElementById('handlerConfig').value = JSON.stringify(route.handler_config, null, 2);
     document.getElementById('routePriority').value = route.priority;
     document.getElementById('routeEnabled').checked = route.enabled;
     document.getElementById('modalMessage').innerHTML = '';
+
+    // 更新字段显示
+    updateHandlerFields();
 
     document.getElementById('routeModal').classList.add('active');
 }
@@ -204,12 +326,25 @@ function closeModal() {
 // 保存路由
 async function saveRoute() {
     const id = document.getElementById('routeId').value;
+    const routeName = document.getElementById('routeName').value.trim();
     const path = document.getElementById('routePath').value.trim();
-    const routeType = document.getElementById('routeType').value;
     const handlerType = document.getElementById('handlerType').value;
     const handlerConfig = document.getElementById('handlerConfig').value;
+    const contentSource = document.getElementById('contentSource').value;
+    const contentType = document.getElementById('contentType').value;
     const priority = parseInt(document.getElementById('routePriority').value);
     const enabled = document.getElementById('routeEnabled').checked;
+
+    // 验证必填字段
+    if (!path) {
+        showMessage('modalError', '路由路径不能为空');
+        return;
+    }
+
+    if (!handlerType) {
+        showMessage('modalError', '请选择处理器类型');
+        return;
+    }
 
     // 验证配置
     try {
@@ -219,11 +354,14 @@ async function saveRoute() {
         return;
     }
 
+    // 构建路由数据
     const routeData = {
-        route_type: routeType,
+        route_name: routeName || null,
         path: path,
         handler_type: handlerType,
         handler_config: JSON.parse(handlerConfig),
+        content_source: contentSource || null,
+        content_type_hint: contentType || null,
         enabled: enabled,
         priority: priority
     };
@@ -256,19 +394,24 @@ async function saveRoute() {
 // 测试路由
 async function testRoute() {
     const path = document.getElementById('routePath').value.trim();
-    const routeType = document.getElementById('routeType').value;
     const handlerType = document.getElementById('handlerType').value;
     const handlerConfig = document.getElementById('handlerConfig').value;
+    const contentSource = document.getElementById('contentSource').value;
+
+    if (!path || !handlerType) {
+        alert('请先填写路由路径和选择处理器类型');
+        return;
+    }
 
     try {
         const response = await fetch('/api/admin/dynamic-routes/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                route_type: routeType,
                 path: path,
                 handler_type: handlerType,
-                handler_config: JSON.parse(handlerConfig)
+                handler_config: JSON.parse(handlerConfig),
+                content_source: contentSource || null
             })
         });
 
@@ -435,6 +578,9 @@ function validateConfig() {
 // 加载模板
 function loadTemplate() {
     const handlerType = document.getElementById('handlerType').value;
+    const contentSource = document.getElementById('contentSource').value;
+    const contentType = document.getElementById('contentType').value;
+
     let template = {};
 
     switch (handlerType) {
@@ -446,16 +592,43 @@ function loadTemplate() {
                 preserve_query: true
             };
             break;
+
         case 'static':
-            template = {
-                type: 'static',
-                content: '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>自定义页面</title>\n</head>\n<body>\n    <h1>欢迎使用动态路由</h1>\n    <p>这是一个静态HTML页面示例</p>\n</body>\n</html>',
-                content_type: 'text/html; charset=utf-8',
-                headers: {
-                    'Cache-Control': 'public, max-age=3600'
-                }
-            };
+            if (contentSource === 'database') {
+                // 数据库存储
+                template = {
+                    type: 'static',
+                    content_source: 'database',
+                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>自定义页面</title>\n</head>\n<body>\n    <h1>欢迎使用动态路由</h1>\n    <p>这是一个静态HTML页面示例（存储在数据库中）</p>\n</body>\n</html>',
+                    content_type: contentType || 'text/html; charset=utf-8',
+                    headers: {
+                        'Cache-Control': 'public, max-age=3600'
+                    }
+                };
+            } else if (contentSource === 'file') {
+                // 文件系统
+                template = {
+                    type: 'static',
+                    content_source: 'file',
+                    content: '/path/to/static/file.html',
+                    content_type: contentType || 'text/html; charset=utf-8',
+                    headers: {
+                        'Cache-Control': 'public, max-age=3600'
+                    }
+                };
+            } else {
+                // 默认模板
+                template = {
+                    type: 'static',
+                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>自定义页面</title>\n</head>\n<body>\n    <h1>欢迎使用动态路由</h1>\n    <p>这是一个静态HTML页面示例</p>\n</body>\n</html>',
+                    content_type: contentType || 'text/html; charset=utf-8',
+                    headers: {
+                        'Cache-Control': 'public, max-age=3600'
+                    }
+                };
+            }
             break;
+
         case 'template':
             template = {
                 type: 'template',
@@ -466,14 +639,16 @@ function loadTemplate() {
                 }
             };
             break;
+
         case 'proxy':
             template = {
                 type: 'proxy',
-                target: 'http://backend:8080/api',
+                target: 'http://backend-service:8080',
                 timeout: 5000,
                 strip_prefix: false
             };
             break;
+
         case 'custom':
             template = {
                 type: 'custom',
@@ -481,14 +656,12 @@ function loadTemplate() {
                 source: 'function handle(req) return {status=200, body="OK"} end'
             };
             break;
+
+        default:
+            return;
     }
 
     document.getElementById('handlerConfig').value = JSON.stringify(template, null, 2);
-}
-
-// 更新处理器模板
-function updateHandlerTemplate() {
-    loadTemplate();
 }
 
 // 处理文件上传
@@ -537,10 +710,16 @@ function handleFileUpload(event) {
 
         // 自动切换到静态内容处理器类型
         document.getElementById('handlerType').value = 'static';
+        document.getElementById('contentSource').value = 'database';
+        document.getElementById('contentType').value = contentType;
+
+        // 更新字段显示
+        updateHandlerFields();
 
         // 创建静态内容配置
         const config = {
             type: 'static',
+            content_source: 'database',
             content: content,
             content_type: contentType,
             headers: {
@@ -568,17 +747,6 @@ function handleFileUpload(event) {
 }
 
 // 显示消息
-function showMessage(type, message) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.className = type === 'error' ? 'error' : 'success';
-    messageDiv.textContent = message;
-    messageDiv.style.display = 'block';
-
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 3000);
-}
-
 function showMessage(type, message) {
     const elementId = type === 'modalError' ? 'modalMessage' :
                       type === 'importError' ? 'importMessage' : 'message';

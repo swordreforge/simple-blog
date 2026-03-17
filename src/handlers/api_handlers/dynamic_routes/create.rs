@@ -49,10 +49,14 @@ pub async fn create_route(
     // 创建路由
     let dynamic_route = DynamicRoute {
         id: None,
+        route_name: route.route_name,
         route_type: route.route_type,
         path: route.path.clone(),
         handler_type: route.handler_type,
         handler_config: route.handler_config.clone(),
+        content_source: route.content_source,
+        content_template: route.content_template,
+        content_type_hint: route.content_type_hint,
         enabled: route.enabled.unwrap_or(true),
         priority: route.priority.unwrap_or(0),
         created_at: chrono::Utc::now(),
@@ -116,8 +120,33 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             }
         }
         HandlerType::Static => {
+            // 验证 content_source 字段
+            if let Some(ref content_source) = route.content_source {
+                if content_source != "database" && content_source != "file" {
+                    return Err("content_source 必须是 'database' 或 'file'".to_string());
+                }
+            }
+
+            // 如果 content_source 为 database，则需要 content_template
+            if route.content_source.as_deref() == Some("database") {
+                if route.content_template.is_none() || route.content_template.as_ref().map_or(true, |s| s.is_empty()) {
+                    return Err("静态内容处理器（database 类型）需要 content_template 字段".to_string());
+                }
+            }
+
+            // 如果 content_source 为 file，则需要 content_template 作为文件路径
+            if route.content_source.as_deref() == Some("file") {
+                if route.content_template.is_none() || route.content_template.as_ref().map_or(true, |s| s.is_empty()) {
+                    return Err("静态内容处理器（file 类型）需要 content_template 字段作为文件路径".to_string());
+                }
+            }
+
+            // 如果 handler_config 中有 content 字段，则验证它
             if route.handler_config.get("content").is_none() {
-                return Err("静态内容处理器需要content字段".to_string());
+                // 如果没有 content 字段，则依赖 content_template
+                if route.content_template.is_none() {
+                    return Err("静态内容处理器需要 content 字段或 content_template 字段".to_string());
+                }
             }
         }
         HandlerType::Template => {

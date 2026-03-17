@@ -2308,13 +2308,17 @@ impl DynamicRouteRepository {
     pub async fn create(&self, route: &DynamicRoute) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "INSERT INTO dynamic_routes (route_type, path, handler_type, handler_config, enabled, priority, created_by, metadata, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO dynamic_routes (route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_by, metadata, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
+                &route.route_name,
                 &route.route_type,
                 &route.path,
                 &route.handler_type,
                 &route.handler_config.to_string(),
+                &route.content_source,
+                &route.content_template,
+                &route.content_type_hint,
                 &route.enabled,
                 &route.priority,
                 &route.created_by,
@@ -2330,23 +2334,27 @@ impl DynamicRouteRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes WHERE id = ?"
         )?;
-        
+
         let route = stmt.query_row(params![id], |row| {
             Ok(DynamicRoute {
                 id: Some(row.get(0)?),
-                route_type: row.get(1)?,
-                path: row.get(2)?,
-                handler_type: row.get(3)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
-                enabled: row.get(5)?,
-                priority: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-                created_by: row.get(9)?,
-                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+                route_name: row.get(1)?,
+                route_type: row.get(2)?,
+                path: row.get(3)?,
+                handler_type: row.get(4)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                content_source: row.get(6)?,
+                content_template: row.get(7)?,
+                content_type_hint: row.get(8)?,
+                enabled: row.get(9)?,
+                priority: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
+                created_by: row.get(13)?,
+                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         }).optional()?;
         
@@ -2357,26 +2365,30 @@ impl DynamicRouteRepository {
     pub async fn get_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes WHERE path = ?"
         )?;
-        
+
         let route = stmt.query_row(params![path], |row| {
             Ok(DynamicRoute {
                 id: Some(row.get(0)?),
-                route_type: row.get(1)?,
-                path: row.get(2)?,
-                handler_type: row.get(3)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
-                enabled: row.get(5)?,
-                priority: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-                created_by: row.get(9)?,
-                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+                route_name: row.get(1)?,
+                route_type: row.get(2)?,
+                path: row.get(3)?,
+                handler_type: row.get(4)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                content_source: row.get(6)?,
+                content_template: row.get(7)?,
+                content_type_hint: row.get(8)?,
+                enabled: row.get(9)?,
+                priority: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
+                created_by: row.get(13)?,
+                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         }).optional()?;
-        
+
         Ok(route)
     }
 
@@ -2420,30 +2432,34 @@ impl DynamicRouteRepository {
         
         // 获取列表
         let query = format!(
-            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes{} ORDER BY priority DESC, id ASC LIMIT ? OFFSET ?",
             where_clause
         );
-        
+
         let mut stmt = conn.prepare(&query)?;
-        
+
         let mut final_params: Vec<Box<dyn rusqlite::ToSql>> = params;
         final_params.push(Box::new(limit));
         final_params.push(Box::new(offset));
-        
+
         let routes = stmt.query_map(rusqlite::params_from_iter(final_params.iter()), |row| {
             Ok(DynamicRoute {
                 id: Some(row.get(0)?),
-                route_type: row.get(1)?,
-                path: row.get(2)?,
-                handler_type: row.get(3)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
-                enabled: row.get(5)?,
-                priority: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-                created_by: row.get(9)?,
-                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+                route_name: row.get(1)?,
+                route_type: row.get(2)?,
+                path: row.get(3)?,
+                handler_type: row.get(4)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                content_source: row.get(6)?,
+                content_template: row.get(7)?,
+                content_type_hint: row.get(8)?,
+                enabled: row.get(9)?,
+                priority: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
+                created_by: row.get(13)?,
+                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -2454,13 +2470,17 @@ impl DynamicRouteRepository {
     pub async fn update(&self, id: i64, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "UPDATE dynamic_routes SET route_type=?, path=?, handler_type=?, handler_config=?, enabled=?, priority=?, metadata=?, updated_at=?
+            "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, content_source=?, content_template=?, content_type_hint=?, enabled=?, priority=?, metadata=?, updated_at=?
              WHERE id=?",
             params![
+                &route.route_name,
                 &route.route_type,
                 &route.path,
                 &route.handler_type,
                 &route.handler_config.to_string(),
+                &route.content_source,
+                &route.content_template,
+                &route.content_type_hint,
                 &route.enabled,
                 &route.priority,
                 &route.metadata.as_ref().map(|v| v.to_string()),
@@ -2577,23 +2597,27 @@ impl DynamicRouteRepository {
     pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_type, path, handler_type, handler_config, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
         )?;
-        
+
         let routes = stmt.query_map([], |row| {
             Ok(DynamicRoute {
                 id: Some(row.get(0)?),
-                route_type: row.get(1)?,
-                path: row.get(2)?,
-                handler_type: row.get(3)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(4)?).unwrap_or_default(),
-                enabled: row.get(5)?,
-                priority: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-                created_by: row.get(9)?,
-                metadata: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+                route_name: row.get(1)?,
+                route_type: row.get(2)?,
+                path: row.get(3)?,
+                handler_type: row.get(4)?,
+                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                content_source: row.get(6)?,
+                content_template: row.get(7)?,
+                content_type_hint: row.get(8)?,
+                enabled: row.get(9)?,
+                priority: row.get(10)?,
+                created_at: row.get(11)?,
+                updated_at: row.get(12)?,
+                created_by: row.get(13)?,
+                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -2643,6 +2667,37 @@ mod tests {
 
         assert!(limit > 0 && limit <= 1000);
         assert!(page > 0);
+    }
+
+    #[test]
+    fn test_dynamic_route_model_with_new_fields() {
+        // 测试 DynamicRoute 模型包含新字段
+        use crate::db::models::{DynamicRoute, RouteType, HandlerType};
+        use serde_json::json;
+
+        let now = Utc::now();
+        let route = DynamicRoute {
+            id: None,
+            route_name: Some("测试路由".to_string()),
+            route_type: RouteType::Database,
+            path: "/test/route".to_string(),
+            handler_type: HandlerType::Static,
+            handler_config: json!({"content": "test content"}),
+            content_source: Some("database".to_string()),
+            content_template: Some("<html><body>Test</body></html>".to_string()),
+            content_type_hint: Some("text/html".to_string()),
+            enabled: true,
+            priority: 0,
+            created_at: now,
+            updated_at: now,
+            created_by: Some("test_user".to_string()),
+            metadata: Some(json!({"key": "value"})),
+        };
+
+        assert_eq!(route.path, "/test/route");
+        assert_eq!(route.content_template, Some("<html><body>Test</body></html>".to_string()));
+        assert_eq!(route.content_type_hint, Some("text/html".to_string()));
+        assert!(route.enabled);
     }
 
     #[test]

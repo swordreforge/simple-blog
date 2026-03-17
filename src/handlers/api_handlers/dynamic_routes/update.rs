@@ -66,10 +66,14 @@ pub async fn update_route(
     // 构建更新后的路由 - 使用old_route的所有字段作为默认值
     let updated_route = DynamicRoute {
         id: old_route.id,
+        route_name: update_data.route_name.or_else(|| old_route.route_name.clone()),
         route_type: update_data.route_type.unwrap_or(old_route.route_type),
         path: update_data.path.unwrap_or_else(|| old_route.path.clone()),
         handler_type: update_data.handler_type.unwrap_or(old_route.handler_type),
         handler_config: update_data.handler_config.unwrap_or_else(|| old_route.handler_config.clone()),
+        content_source: update_data.content_source.or_else(|| old_route.content_source.clone()),
+        content_template: update_data.content_template.or_else(|| old_route.content_template.clone()),
+        content_type_hint: update_data.content_type_hint.or_else(|| old_route.content_type_hint.clone()),
         enabled: update_data.enabled.unwrap_or(old_route.enabled),
         priority: update_data.priority.unwrap_or(old_route.priority),
         created_at: old_route.created_at,
@@ -166,10 +170,14 @@ pub async fn patch_route(
     // 构建更新后的路由 - 使用old_route的所有字段作为默认值
     let updated_route = DynamicRoute {
         id: old_route.id,
+        route_name: update_data.route_name.or_else(|| old_route.route_name.clone()),
         route_type: update_data.route_type.unwrap_or(old_route.route_type),
         path: update_data.path.unwrap_or_else(|| old_route.path.clone()),
         handler_type: update_data.handler_type.unwrap_or(old_route.handler_type),
         handler_config: update_data.handler_config.unwrap_or_else(|| old_route.handler_config.clone()),
+        content_source: update_data.content_source.or_else(|| old_route.content_source.clone()),
+        content_template: update_data.content_template.or_else(|| old_route.content_template.clone()),
+        content_type_hint: update_data.content_type_hint.or_else(|| old_route.content_type_hint.clone()),
         enabled: update_data.enabled.unwrap_or(old_route.enabled),
         priority: update_data.priority.unwrap_or(old_route.priority),
         created_at: old_route.created_at,
