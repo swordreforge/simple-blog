@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 检查必要的页面元素是否存在
     const requiredElements = ['routeForm', 'message', 'routesTableBody', 'pagination',
                              'totalRoutes', 'enabledRoutes', 'disabledRoutes',
-                             'searchInput', 'filterType', 'filterStatus'];
+                             'searchInput', 'filterType', 'filterStatus',
+                             'databaseRoutes', 'memoryRoutes', 'fileRoutes'];
     for (const elementId of requiredElements) {
         if (!document.getElementById(elementId)) {
             console.error(`页面加载错误：找不到元素 ${elementId}`);
@@ -69,12 +70,53 @@ async function loadStats() {
             const enabled = allRoutes.filter(r => r.enabled).length;
             const disabled = allRoutes.filter(r => !r.enabled).length;
 
-            document.getElementById('totalRoutes').textContent = allRoutes.length;
-            document.getElementById('enabledRoutes').textContent = enabled;
-            document.getElementById('disabledRoutes').textContent = disabled;
+            const totalRoutesElement = document.getElementById('totalRoutes');
+            if (totalRoutesElement) {
+                totalRoutesElement.textContent = allRoutes.length;
+            }
+            const enabledRoutesElement = document.getElementById('enabledRoutes');
+            if (enabledRoutesElement) {
+                enabledRoutesElement.textContent = enabled;
+            }
+            const disabledRoutesElement = document.getElementById('disabledRoutes');
+            if (disabledRoutesElement) {
+                disabledRoutesElement.textContent = disabled;
+            }
         }
+
+        // 同时加载存储统计信息
+        loadStorageStats();
     } catch (error) {
         console.error('加载统计信息失败:', error);
+    }
+}
+
+// 加载存储统计信息（用于主页面）
+async function loadStorageStats() {
+    try {
+        const response = await fetch('/api/admin/dynamic-routes/storage/stats');
+        const data = await response.json();
+
+        if (data.database) {
+            const databaseRoutesElement = document.getElementById('databaseRoutes');
+            if (databaseRoutesElement) {
+                databaseRoutesElement.textContent = data.database.total_routes;
+            }
+        }
+        if (data.memory) {
+            const memoryRoutesElement = document.getElementById('memoryRoutes');
+            if (memoryRoutesElement) {
+                memoryRoutesElement.textContent = data.memory.total_routes;
+            }
+        }
+        if (data.file) {
+            const fileRoutesElement = document.getElementById('fileRoutes');
+            if (fileRoutesElement) {
+                fileRoutesElement.textContent = data.file.total_routes;
+            }
+        }
+    } catch (error) {
+        console.error('加载存储统计失败:', error);
     }
 }
 
@@ -844,3 +886,141 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// 存储管理相关函数
+
+// 打开存储管理模态框
+function openStorageModal() {
+    document.getElementById('storageModal').style.display = 'block';
+    refreshStorageStats();
+}
+
+// 关闭存储管理模态框
+function closeStorageModal() {
+    document.getElementById('storageModal').style.display = 'none';
+    document.getElementById('storageMessage').style.display = 'none';
+}
+
+// 刷新存储统计信息
+async function refreshStorageStats() {
+    try {
+        const response = await fetch('/api/admin/dynamic-routes/storage/stats');
+        const data = await response.json();
+
+        if (data.database) {
+            document.getElementById('storageDatabaseTotal').textContent = data.database.total_routes;
+            document.getElementById('storageDatabaseEnabled').textContent = data.database.enabled_routes;
+            document.getElementById('storageDatabaseDisabled').textContent = data.database.disabled_routes;
+            document.getElementById('storageDatabaseMemory').textContent = data.database.memory_usage_bytes;
+        }
+
+        if (data.memory) {
+            document.getElementById('storageMemoryTotal').textContent = data.memory.total_routes;
+            document.getElementById('storageMemoryEnabled').textContent = data.memory.enabled_routes;
+            document.getElementById('storageMemoryDisabled').textContent = data.memory.disabled_routes;
+            document.getElementById('storageMemoryMemory').textContent = data.memory.memory_usage_bytes;
+        }
+
+        if (data.file) {
+            document.getElementById('storageFileTotal').textContent = data.file.total_routes;
+            document.getElementById('storageFileEnabled').textContent = data.file.enabled_routes;
+            document.getElementById('storageFileDisabled').textContent = data.file.disabled_routes;
+            document.getElementById('storageFileMemory').textContent = data.file.memory_usage_bytes;
+        }
+
+        // 同时更新主页面的存储统计
+        if (data.database) document.getElementById('databaseRoutes').textContent = data.database.total_routes;
+        if (data.memory) document.getElementById('memoryRoutes').textContent = data.memory.total_routes;
+        if (data.file) document.getElementById('fileRoutes').textContent = data.file.total_routes;
+
+    } catch (error) {
+        console.error('加载存储统计失败:', error);
+        showMessage('storageError', '加载存储统计失败: ' + error.message);
+    }
+}
+
+// 批量迁移路由
+async function batchMigrateRoutes() {
+    const fromType = document.getElementById('migrateFrom').value;
+    const toType = document.getElementById('migrateTo').value;
+
+    if (fromType === toType) {
+        showMessage('storageError', '源存储类型和目标存储类型不能相同');
+        return;
+    }
+
+    if (!confirm(`确定要将所有路由从 ${fromType} 迁移到 ${toType} 吗？此操作不可逆。`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/admin/dynamic-routes/storage/batch-migrate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                source_type: fromType,
+                target_type: toType
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showMessage('storageSuccess', data.message);
+            refreshStorageStats();
+            loadRoutes(); // 刷新路由列表
+            loadStats();  // 刷新统计
+        } else {
+            showMessage('storageError', data.message || '迁移失败');
+        }
+    } catch (error) {
+        showMessage('storageError', '网络错误: ' + error.message);
+    }
+}
+
+// 清空存储
+async function clearStorage() {
+    const storageType = document.getElementById('clearStorageType').value;
+
+    if (!confirm(`确定要清空 ${storageType} 存储中的所有路由吗？此操作不可逆。`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/admin/dynamic-routes/storage/clear/${storageType}`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showMessage('storageSuccess', data.message);
+            refreshStorageStats();
+            loadRoutes(); // 刷新路由列表
+            loadStats();  // 刷新统计
+        } else {
+            showMessage('storageError', data.message || '清空失败');
+        }
+    } catch (error) {
+        showMessage('storageError', '网络错误: ' + error.message);
+    }
+}
+
+// 修改 showMessage 函数以支持存储管理消息
+const originalShowMessage = showMessage;
+showMessage = function(type, message) {
+    if (type === 'storageSuccess' || type === 'storageError') {
+        const messageDiv = document.getElementById('storageMessage');
+        messageDiv.className = type === 'storageError' ? 'error' : 'success';
+        messageDiv.textContent = message;
+        messageDiv.style.display = 'block';
+
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    } else {
+        originalShowMessage(type, message);
+    }
+};
