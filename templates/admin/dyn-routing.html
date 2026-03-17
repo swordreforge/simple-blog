@@ -384,8 +384,8 @@
                 <div class="value" id="disabledRoutes">0</div>
             </div>
             <div class="stat-card">
-                <h3>平均响应时间</h3>
-                <div class="value" id="avgResponseTime">0ms</div>
+                <h3>预留</h3>
+                <div class="value" id="avgResponseTime">预留</div>
             </div>
         </div>
 
@@ -464,6 +464,21 @@
                         </div>
                         <input type="text" id="routePath" required placeholder="/example-path">
                         <div class="field-description">路径必须以 / 开头，支持通配符如 /api/**</div>
+                    </div>
+
+                    <!-- 路由类型 -->
+                    <div class="form-group">
+                        <div class="field-info">
+                            <label for="routeType">路由类型 *</label>
+                            <span class="info-icon" title="路由配置的存储方式">ℹ️</span>
+                        </div>
+                        <select id="routeType" required>
+                            <option value="">请选择路由类型</option>
+                            <option value="database" selected>数据库 (database)</option>
+                            <option value="memory">内存 (memory)</option>
+                            <option value="file">文件 (file)</option>
+                        </select>
+                        <div class="field-description">路由配置的存储方式，管理界面创建的路由通常为数据库</div>
                     </div>
 
                     <!-- 处理器类型 -->

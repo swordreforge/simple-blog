@@ -74,7 +74,7 @@ async function loadStats() {
             document.getElementById('disabledRoutes').textContent = disabled;
 
             // 计算平均响应时间（模拟数据）
-            const avgTime = allRoutes.length > 0 ? '0.8ms' : '0ms';
+            const avgTime = allRoutes.length > 0 ? 'undo' : '';
             document.getElementById('avgResponseTime').textContent = avgTime;
         }
     } catch (error) {
@@ -240,6 +240,7 @@ function showAddModal() {
         'modalTitle': 'textContent',
         'routeId': 'value',
         'routeName': 'value',
+        'routeType': 'value',
         'routePath': 'value',
         'handlerType': 'value',
         'handlerConfig': 'value',
@@ -267,6 +268,7 @@ function showAddModal() {
     document.getElementById('modalTitle').textContent = '添加路由';
     document.getElementById('routeId').value = '';
     document.getElementById('routeName').value = '';
+    document.getElementById('routeType').value = 'database';
     document.getElementById('routePath').value = '';
     document.getElementById('handlerType').value = '';
     document.getElementById('handlerConfig').value = '';
@@ -289,7 +291,7 @@ function editRoute(id) {
     if (!route) return;
 
     // 检查必要元素是否存在
-    const requiredElements = ['modalTitle', 'routeId', 'routeName', 'routePath', 'handlerType',
+    const requiredElements = ['modalTitle', 'routeId', 'routeName', 'routeType', 'routePath', 'handlerType',
                              'contentSource', 'contentType', 'handlerConfig', 'routePriority',
                              'routeEnabled', 'modalMessage', 'routeModal'];
     for (const elementId of requiredElements) {
@@ -303,6 +305,7 @@ function editRoute(id) {
     document.getElementById('modalTitle').textContent = '编辑路由';
     document.getElementById('routeId').value = route.id;
     document.getElementById('routeName').value = route.route_name || '';
+    document.getElementById('routeType').value = route.route_type || 'database';
     document.getElementById('routePath').value = route.path;
     document.getElementById('handlerType').value = route.handler_type;
     document.getElementById('contentSource').value = route.content_source || '';
@@ -327,6 +330,7 @@ function closeModal() {
 async function saveRoute() {
     const id = document.getElementById('routeId').value;
     const routeName = document.getElementById('routeName').value.trim();
+    const routeType = document.getElementById('routeType').value;
     const path = document.getElementById('routePath').value.trim();
     const handlerType = document.getElementById('handlerType').value;
     const handlerConfig = document.getElementById('handlerConfig').value;
@@ -338,6 +342,11 @@ async function saveRoute() {
     // 验证必填字段
     if (!path) {
         showMessage('modalError', '路由路径不能为空');
+        return;
+    }
+
+    if (!routeType) {
+        showMessage('modalError', '请选择路由类型');
         return;
     }
 
@@ -357,6 +366,7 @@ async function saveRoute() {
     // 构建路由数据
     const routeData = {
         route_name: routeName || null,
+        route_type: routeType || 'database',
         path: path,
         handler_type: handlerType,
         handler_config: JSON.parse(handlerConfig),
@@ -394,12 +404,13 @@ async function saveRoute() {
 // 测试路由
 async function testRoute() {
     const path = document.getElementById('routePath').value.trim();
+    const routeType = document.getElementById('routeType').value;
     const handlerType = document.getElementById('handlerType').value;
     const handlerConfig = document.getElementById('handlerConfig').value;
     const contentSource = document.getElementById('contentSource').value;
 
-    if (!path || !handlerType) {
-        alert('请先填写路由路径和选择处理器类型');
+    if (!path || !routeType || !handlerType) {
+        alert('请先填写路由路径、选择路由类型和处理器类型');
         return;
     }
 
@@ -408,6 +419,7 @@ async function testRoute() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                route_type: routeType || 'database',
                 path: path,
                 handler_type: handlerType,
                 handler_config: JSON.parse(handlerConfig),

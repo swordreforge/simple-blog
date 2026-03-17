@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
-use crate::db::models::{DynamicRoute, CreateRouteRequest, HandlerType};
+use crate::db::models::{DynamicRoute, CreateRouteRequest, HandlerType, RouteType};
 use crate::routes::conflicts_with_static_route;
 
 /// 创建路由
@@ -50,7 +50,7 @@ pub async fn create_route(
     let dynamic_route = DynamicRoute {
         id: None,
         route_name: route.route_name,
-        route_type: route.route_type,
+        route_type: route.route_type.unwrap_or(RouteType::Database),
         path: route.path.clone(),
         handler_type: route.handler_type,
         handler_config: route.handler_config.clone(),

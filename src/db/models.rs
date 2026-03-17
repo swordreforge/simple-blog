@@ -776,7 +776,7 @@ pub struct DynamicRouteStats {
 #[derive(Debug, Deserialize)]
 pub struct CreateRouteRequest {
     pub route_name: Option<String>,
-    pub route_type: RouteType,
+    pub route_type: Option<RouteType>,
     pub path: String,
     pub handler_type: HandlerType,
     pub handler_config: serde_json::Value,
