@@ -32,12 +32,14 @@ pub async fn handle_dynamic_route(
         tracing::info!("动态路由匹配成功: {}", path_str);
         
         // 使用路由条目的 handle 方法处理请求
-        return Ok(route_entry.handle(&req).await);
+        // 注意：我们已经在异步上下文中，可以直接调用异步函数
+        let response = route_entry.handle(&req).await;
+        return Ok(response);
     }
     
-    // 路由未匹配，返回 404
+    // 路由未匹配，返回 404 页面
     tracing::warn!("动态路由未匹配: {}", path_str);
-    Ok(HttpResponse::NotFound().finish())
+    Ok(crate::handlers::page_handlers::render_status_page(404).await)
 }
 
 /// 动态路由健康检查
