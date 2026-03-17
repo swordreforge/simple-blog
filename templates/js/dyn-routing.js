@@ -449,8 +449,8 @@ function loadTemplate() {
         case 'static':
             template = {
                 type: 'static',
-                content: 'Hello, World!',
-                content_type: 'text/plain; charset=utf-8',
+                content: '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>自定义页面</title>\n</head>\n<body>\n    <h1>欢迎使用动态路由</h1>\n    <p>这是一个静态HTML页面示例</p>\n</body>\n</html>',
+                content_type: 'text/html; charset=utf-8',
                 headers: {
                     'Cache-Control': 'public, max-age=3600'
                 }
@@ -489,6 +489,82 @@ function loadTemplate() {
 // 更新处理器模板
 function updateHandlerTemplate() {
     loadTemplate();
+}
+
+// 处理文件上传
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 验证文件大小（限制为1MB）
+    if (file.size > 1024 * 1024) {
+        alert('文件大小不能超过1MB');
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        const fileName = file.name;
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+
+        // 根据文件扩展名确定content_type
+        let contentType = 'text/plain; charset=utf-8';
+        switch (fileExtension) {
+            case 'html':
+            case 'htm':
+                contentType = 'text/html; charset=utf-8';
+                break;
+            case 'svg':
+                contentType = 'image/svg+xml; charset=utf-8';
+                break;
+            case 'xml':
+                contentType = 'application/xml; charset=utf-8';
+                break;
+            case 'css':
+                contentType = 'text/css; charset=utf-8';
+                break;
+            case 'js':
+                contentType = 'application/javascript; charset=utf-8';
+                break;
+            case 'json':
+                contentType = 'application/json; charset=utf-8';
+                break;
+            default:
+                contentType = 'text/plain; charset=utf-8';
+        }
+
+        // 自动切换到静态内容处理器类型
+        document.getElementById('handlerType').value = 'static';
+
+        // 创建静态内容配置
+        const config = {
+            type: 'static',
+            content: content,
+            content_type: contentType,
+            headers: {
+                'Cache-Control': 'public, max-age=3600'
+            }
+        };
+
+        // 将配置填充到文本框
+        document.getElementById('handlerConfig').value = JSON.stringify(config, null, 2);
+
+        // 显示成功消息
+        showMessage('success', `文件 "${fileName}" 上传成功，已自动设置为静态内容处理器`);
+    };
+
+    reader.onerror = function() {
+        alert('文件读取失败');
+        event.target.value = '';
+    };
+
+    // 读取文件内容
+    reader.readAsText(file);
+
+    // 清空文件输入框，允许重复上传相同文件
+    event.target.value = '';
 }
 
 // 显示消息

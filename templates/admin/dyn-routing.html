@@ -415,6 +415,8 @@
                         <button type="button" class="btn btn-secondary btn-sm" onclick="formatConfig()">格式化</button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="validateConfig()">验证</button>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="loadTemplate()">加载模板</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">上传文件</button>
+                        <input type="file" id="fileInput" accept=".html,.htm,.svg,.xml,.txt,.css,.js,.json" style="display: none;" onchange="handleFileUpload(event)">
                     </div>
                 </div>
                 <div class="form-group">
