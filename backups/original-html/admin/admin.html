@@ -1997,8 +1997,8 @@
 			font-size: 0;
 			margin: 0 4px;
 			padding: 10px;
-			min-width: 40px;
-			height: 40px;
+			min-width: 24px;
+			height: 24px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -3275,8 +3275,8 @@
 			font-size: 0;
 			margin: 0 4px;
 			padding: 10px;
-			min-width: 40px;
-			height: 40px;
+			min-width: auto;
+			height: auto;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -3436,9 +3436,9 @@
 				<div class="stat-value" id="todayVisits"> 0</div>
 				<div class="stat-change"> 较昨日</div>
 			</div>
-			<div class="stat-card">
+			<a href="/admin/dyn-routing" class="stat-card" style="text-decoration: none; color: inherit;">
 				<div class="stat-header">
-					<div class="stat-title"> 预留卡片</div>
+					<div class="stat-title"> 动态路由</div>
 					<div class="stat-icon">
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<circle cx="12" cy="12" r="10">
@@ -3450,9 +3450,9 @@
 						</svg>
 					</div>
 				</div>
-				<div class="stat-value" id="reservedCard"> --</div>
-				<div class="stat-change neutral"> 待开发</div>
-			</div>
+				<div class="stat-value" id="dynamicRoutesCount"> --</div>
+				<div class="stat-change neutral" style="color: blue"> 查看详情 →</div>
+			</a>
 		</div>
 		<div class="admin-panel">
 			<div class="panel-header">

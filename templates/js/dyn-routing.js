@@ -482,7 +482,7 @@ function handleFileUpload(e) {
             default:
                 a = "text/plain; charset=utf-8"
         }
-        document.getElementById("handlerType").value = "static", document.getElementById("contentSource").value = "database", document.getElementById("contentType").value = a, updateHandlerFields(), document.getElementById("inlineTemplate").value = e;
+        document.getElementById("handlerType").value = "static", document.getElementById("contentType").value = a, updateHandlerFields(), document.getElementById("inlineTemplate").value = e;
         document.getElementById("handlerConfig").value = JSON.stringify({
             type: "static",
             headers: {
