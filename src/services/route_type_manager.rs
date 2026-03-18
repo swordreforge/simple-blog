@@ -359,20 +359,37 @@ impl RouteTypeManager {
             ));
         }
 
-        let from_storage = self.get_storage(&from_type);
-        let routes = from_storage.list_routes().await?;
+        // 从数据库中按类型查询路由
+        // 注意：所有路由都存储在数据库中，route_type 表示运行时行为
+        let routes = self.database_storage
+            .list(0, 10000, Some(from_type), None)
+            .await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list routes: {}", e)))?
+            .0;
 
         let mut migrated_count = 0;
+        let mut failed_count = 0;
 
         for route in routes {
             let id = route.id.ok_or_else(|| {
                 StorageError::InvalidData("Route ID is required for migration".to_string())
             })?;
 
-            if self.migrate_route(id, from_type, to_type).await.is_ok() {
-                migrated_count += 1;
+            match self.migrate_route(id, from_type, to_type).await {
+                Ok(_) => {
+                    migrated_count += 1;
+                }
+                Err(e) => {
+                    failed_count += 1;
+                    tracing::error!("迁移路由 {} 失败: {}", id, e);
+                }
             }
         }
+
+        tracing::info!(
+            "批量迁移完成: 源类型={:?}, 目标类型={:?}, 成功={}, 失败={}",
+            from_type, to_type, migrated_count, failed_count
+        );
 
         Ok(migrated_count)
     }

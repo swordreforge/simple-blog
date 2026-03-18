@@ -19,7 +19,27 @@ pub async fn export_routes(
 
     // 获取所有路由
     match repo.list(0, 10000, None, None).await {
-        Ok((routes, total)) => {
+        Ok((mut routes, total)) => {
+            // 对 file 类型的路由进行特殊处理：读取模板文件内容到 inline_template
+            for route in &mut routes {
+                if route.route_type == crate::db::models::RouteType::File {
+                    if let Some(ref template_path) = route.template_path {
+                        // 尝试读取模板文件内容
+                        match std::fs::read_to_string(template_path) {
+                            Ok(content) => {
+                                tracing::info!("导出 file 类型路由: 已读取模板文件 {}", template_path);
+                                // 将文件内容放到 inline_template 中
+                                route.inline_template = Some(content);
+                            }
+                            Err(e) => {
+                                tracing::warn!("导出 file 类型路由: 无法读取模板文件 {}: {}", template_path, e);
+                                // 如果读取失败，inline_template 保持为 None
+                            }
+                        }
+                    }
+                }
+            }
+
             let export_data = serde_json::json!({
                 "version": "1.0",
                 "exported_at": chrono::Utc::now().to_rfc3339(),
@@ -116,7 +136,7 @@ pub async fn import_routes(
         }
 
         // 导入路由
-        let import_route = crate::db::models::DynamicRoute {
+        let mut import_route = crate::db::models::DynamicRoute {
             id: None,
             route_name: route.route_name,
             route_type: route.route_type,
@@ -146,8 +166,88 @@ pub async fn import_routes(
                 }
             };
 
+            // 更新 import_route 的 ID，避免后续重复插入
+            import_route.id = Some(db_id);
+
             // 如果不是数据库类型，还需要在对应的存储后端中保存
             if import_route.route_type != crate::db::models::RouteType::Database {
+                // 特殊处理 file 类型：需要创建模板文件
+                if import_route.route_type == crate::db::models::RouteType::File {
+                    // 如果 inline_template 有内容，将其写入 template_path 指定的文件
+                    if let Some(ref inline_template) = import_route.inline_template {
+                        let template_path = import_route.template_path.clone().unwrap_or_else(|| {
+                            format!("data/routes/routes/route_{}.html", db_id)
+                        });
+
+                        // 确保目录存在
+                        if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
+                            if let Err(e) = std::fs::create_dir_all(parent_dir) {
+                                tracing::error!("创建目录失败: {}", e);
+                                failed_count += 1;
+                                errors.push(format!("第{}条路由（创建目录）: {}", index + 1, e));
+                                let _ = repo.delete(db_id).await;
+                                continue;
+                            }
+                        }
+
+                        // 写入模板文件
+                        if let Err(e) = std::fs::write(&template_path, inline_template) {
+                            tracing::error!("写入模板文件失败: {}", e);
+                            failed_count += 1;
+                            errors.push(format!("第{}条路由（写入模板文件）: {}", index + 1, e));
+                            let _ = repo.delete(db_id).await;
+                            continue;
+                        }
+
+                        tracing::info!("导入 file 类型路由: 已创建模板文件 {}", template_path);
+
+                        // 清除 inline_template（file 类型不需要）
+                        import_route.inline_template = None;
+                        import_route.template_path = Some(template_path);
+                    } else {
+                        // 如果 inline_template 为空，检查 template_path 是否有值
+                        let template_path = import_route.template_path.clone().unwrap_or_else(|| {
+                            format!("data/routes/routes/route_{}.html", db_id)
+                        });
+
+                        // 检查文件是否存在
+                        if !std::path::Path::new(&template_path).exists() {
+                            // 创建空文件
+                            if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
+                                if let Err(e) = std::fs::create_dir_all(parent_dir) {
+                                    tracing::error!("创建目录失败: {}", e);
+                                    failed_count += 1;
+                                    errors.push(format!("第{}条路由（创建目录）: {}", index + 1, e));
+                                    let _ = repo.delete(db_id).await;
+                                    continue;
+                                }
+                            }
+
+                            if let Err(e) = std::fs::write(&template_path, "") {
+                                tracing::error!("创建空模板文件失败: {}", e);
+                                failed_count += 1;
+                                errors.push(format!("第{}条路由（创建空模板文件）: {}", index + 1, e));
+                                let _ = repo.delete(db_id).await;
+                                continue;
+                            }
+
+                            tracing::warn!("导入 file 类型路由: 模板文件 {} 不存在，已创建空文件", template_path);
+                        }
+
+                        import_route.template_path = Some(template_path);
+                    }
+
+                    // 更新数据库记录以清除 inline_template（file 类型不需要）
+                    if let Err(e) = repo.update(db_id, &import_route).await {
+                        tracing::error!("更新数据库记录失败: {}", e);
+                        failed_count += 1;
+                        errors.push(format!("第{}条路由（更新数据库）: {}", index + 1, e));
+                        let _ = repo.delete(db_id).await;
+                        continue;
+                    }
+                }
+
+                // 保存到存储后端
                 let storage = manager.get_storage(&import_route.route_type);
                 match storage.save_route(&import_route).await {
                     Ok(_) => {
@@ -178,6 +278,9 @@ pub async fn import_routes(
             // 兼容性：如果没有 RouteTypeManager，只使用数据库
             match repo.create(&import_route).await {
                 Ok(id) => {
+                    // 更新 import_route 的 ID
+                    import_route.id = Some(id);
+
                     // 如果路由启用，热更新到路由表
                     if import_route.enabled {
                         if let Err(e) = state.dynamic_route_service().reload_route(id).await {
