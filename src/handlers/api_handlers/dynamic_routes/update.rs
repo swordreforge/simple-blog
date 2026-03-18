@@ -4,6 +4,15 @@ use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{DynamicRoute, UpdateRouteRequest};
 use crate::routes::conflicts_with_static_route;
 
+/// 检查字符串是否包含控制字符
+fn contains_control_chars(s: &str) -> bool {
+    s.chars().any(|c| {
+        let code = c as u32;
+        // 控制字符范围：0-31, 127（DEL）
+        code < 32 || code == 127
+    })
+}
+
 /// 更新路由
 pub async fn update_route(
     req: actix_web::HttpRequest,
@@ -41,6 +50,43 @@ pub async fn update_route(
     };
 
     let update_data = route_data.into_inner();
+
+    // 验证控制字符
+    if let Some(ref route_name) = update_data.route_name {
+        if contains_control_chars(route_name) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "路由名称不能包含控制字符"
+            }));
+        }
+    }
+
+    if let Some(ref new_path) = update_data.path {
+        if contains_control_chars(new_path) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "路由路径不能包含控制字符"
+            }));
+        }
+    }
+
+    if let Some(ref template_path) = update_data.template_path {
+        if contains_control_chars(template_path) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "模板路径不能包含控制字符"
+            }));
+        }
+    }
+
+    if let Some(ref metadata) = update_data.metadata {
+        if contains_control_chars(&metadata.to_string()) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "扩展元数据不能包含控制字符"
+            }));
+        }
+    }
 
     // 检查路径冲突（如果路径被修改）
     if let Some(ref new_path) = update_data.path {
@@ -172,6 +218,43 @@ pub async fn patch_route(
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": format!("无效的请求数据: {}", e)
+            }));
+        }
+    };
+
+    // 验证控制字符
+    if let Some(ref route_name) = update_data.route_name {
+        if contains_control_chars(route_name) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "路由名称不能包含控制字符"
+            }));
+        }
+    }
+
+    if let Some(ref new_path) = update_data.path {
+        if contains_control_chars(new_path) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "路由路径不能包含控制字符"
+            }));
+        }
+    }
+
+    if let Some(ref template_path) = update_data.template_path {
+        if contains_control_chars(template_path) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "模板路径不能包含控制字符"
+            }));
+        }
+    }
+
+    if let Some(ref metadata) = update_data.metadata {
+        if contains_control_chars(&metadata.to_string()) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "扩展元数据不能包含控制字符"
             }));
         }
     };

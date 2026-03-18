@@ -422,6 +422,23 @@ function closeModal() {
 // 防止重复提交的标志
 let isSubmitting = false;
 
+// 检查字符串是否包含控制字符
+function containsControlChars(str, allowNewlines = false) {
+    // 控制字符范围：0-31, 127（DEL）
+    // 如果允许换行，则排除 \r (13), \n (10), \t (9)
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        if (code < 32 || code === 127) {
+            // 如果允许换行，则排除常见的空白字符
+            if (allowNewlines && (code === 9 || code === 10 || code === 13)) {
+                continue;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
 // 保存路由
 async function saveRoute() {
     // 防止重复提交
@@ -442,6 +459,27 @@ async function saveRoute() {
     const routeMetadata = document.getElementById('routeMetadata').value.trim();
     const priority = parseInt(document.getElementById('routePriority').value);
     const enabled = document.getElementById('routeEnabled').checked;
+
+    // 验证控制字符
+    if (routeName && containsControlChars(routeName)) {
+        showMessage('modalError', '路由名称不能包含控制字符');
+        return;
+    }
+
+    if (path && containsControlChars(path)) {
+        showMessage('modalError', '路由路径不能包含控制字符');
+        return;
+    }
+
+    if (templatePath && containsControlChars(templatePath)) {
+        showMessage('modalError', '模板路径不能包含控制字符');
+        return;
+    }
+
+    if (routeMetadata && containsControlChars(routeMetadata)) {
+        showMessage('modalError', '扩展元数据不能包含控制字符');
+        return;
+    }
 
     // 验证必填字段
     if (!path) {

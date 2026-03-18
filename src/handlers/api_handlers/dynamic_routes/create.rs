@@ -116,8 +116,41 @@ pub async fn create_route(
     }
 }
 
+/// 检查字符串是否包含控制字符
+fn contains_control_chars(s: &str) -> bool {
+    s.chars().any(|c| {
+        let code = c as u32;
+        // 控制字符范围：0-31, 127（DEL）
+        // 排除常见的空白字符：\t (9), \n (10), \r (13)
+        code < 32 || code == 127
+    })
+}
+
 /// 验证路由配置
 fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
+    // 验证控制字符
+    if let Some(ref route_name) = route.route_name {
+        if contains_control_chars(route_name) {
+            return Err("路由名称不能包含控制字符".to_string());
+        }
+    }
+
+    if contains_control_chars(&route.path) {
+        return Err("路由路径不能包含控制字符".to_string());
+    }
+
+    if let Some(ref template_path) = route.template_path {
+        if contains_control_chars(template_path) {
+            return Err("模板路径不能包含控制字符".to_string());
+        }
+    }
+
+    if let Some(ref metadata) = route.metadata {
+        if contains_control_chars(&metadata.to_string()) {
+            return Err("扩展元数据不能包含控制字符".to_string());
+        }
+    }
+
     // 验证路径格式
     if !route.path.starts_with('/') {
         return Err("路径必须以 / 开头".to_string());
