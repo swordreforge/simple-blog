@@ -3,6 +3,7 @@ use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{DynamicRoute, UpdateRouteRequest};
 use crate::routes::conflicts_with_static_route;
+use actix_web::web::Bytes;
 
 /// 检查字符串是否包含控制字符
 fn contains_control_chars(s: &str) -> bool {
@@ -17,7 +18,7 @@ fn contains_control_chars(s: &str) -> bool {
 pub async fn update_route(
     req: actix_web::HttpRequest,
     path: web::Path<i64>,
-    route_data: web::Json<UpdateRouteRequest>,
+    route_data: Bytes,
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
@@ -31,6 +32,17 @@ pub async fn update_route(
 
     let id = path.into_inner();
     let repo = state.dynamic_route_repository();
+
+    // 使用允许控制字符的serde_json配置来解析JSON
+    let update_data: UpdateRouteRequest = match serde_json::from_slice(&route_data) {
+        Ok(data) => data,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": format!("无效的请求数据: {}", e)
+            }));
+        }
+    };
 
     // 获取现有路由
     let old_route = match repo.get_by_id(id).await {
@@ -48,8 +60,6 @@ pub async fn update_route(
             }));
         }
     };
-
-    let update_data = route_data.into_inner();
 
     // 验证控制字符
     if let Some(ref route_name) = update_data.route_name {
@@ -179,7 +189,7 @@ pub async fn update_route(
 pub async fn patch_route(
     req: actix_web::HttpRequest,
     path: web::Path<i64>,
-    route_data: web::Json<serde_json::Value>,
+    route_data: Bytes,
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
@@ -212,7 +222,7 @@ pub async fn patch_route(
     };
 
     // 解析更新字段
-    let update_data: UpdateRouteRequest = match serde_json::from_value(route_data.into_inner()) {
+    let update_data: UpdateRouteRequest = match serde_json::from_slice(&route_data) {
         Ok(data) => data,
         Err(e) => {
             return HttpResponse::BadRequest().json(serde_json::json!({
