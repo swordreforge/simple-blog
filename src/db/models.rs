@@ -683,7 +683,7 @@ pub struct DynamicRoute {
     pub id: Option<i64>,
     /// 路由名称（管理员可见，便于识别和管理）
     pub route_name: Option<String>,
-    /// 路由类型
+    /// 路由类型（决定路由的存储和读取方式：database/memory/file）
     pub route_type: RouteType,
     /// 路由路径（支持Ant风格通配符，如 /api/**、/user/*）
     pub path: String,
@@ -691,10 +691,10 @@ pub struct DynamicRoute {
     pub handler_type: HandlerType,
     /// 处理器配置 (JSON)
     pub handler_config: serde_json::Value,
-    /// 内容来源（database 或 file），仅对 static 类型有意义
-    pub content_source: Option<String>,
-    /// 纯文本内容或文件路径
-    pub content_template: Option<String>,
+    /// 内联模板内容（存储模板文件的实际内容，支持HTML/JS/CSS/SVG等纯文本格式）
+    pub inline_template: Option<String>,
+    /// 模板文件路径（相对于二进制文件的配置模板文件路径，当route_type=file时使用）
+    pub template_path: Option<String>,
     /// Content-Type 提示（可选）
     pub content_type_hint: Option<String>,
     /// 是否启用
@@ -727,8 +727,8 @@ impl DynamicRoute {
             path,
             handler_type,
             handler_config,
-            content_source: None,
-            content_template: None,
+            inline_template: None,
+            template_path: None,
             content_type_hint: None,
             enabled: true,
             priority: 0,
@@ -780,8 +780,8 @@ pub struct CreateRouteRequest {
     pub path: String,
     pub handler_type: HandlerType,
     pub handler_config: serde_json::Value,
-    pub content_source: Option<String>,
-    pub content_template: Option<String>,
+    pub inline_template: Option<String>,
+    pub template_path: Option<String>,
     pub content_type_hint: Option<String>,
     pub enabled: Option<bool>,
     pub priority: Option<i32>,
@@ -796,8 +796,8 @@ pub struct UpdateRouteRequest {
     pub path: Option<String>,
     pub handler_type: Option<HandlerType>,
     pub handler_config: Option<serde_json::Value>,
-    pub content_source: Option<String>,
-    pub content_template: Option<String>,
+    pub inline_template: Option<String>,
+    pub template_path: Option<String>,
     pub content_type_hint: Option<String>,
     pub enabled: Option<bool>,
     pub priority: Option<i32>,

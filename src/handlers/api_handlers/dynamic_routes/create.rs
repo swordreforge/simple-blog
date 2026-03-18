@@ -54,8 +54,8 @@ pub async fn create_route(
         path: route.path.clone(),
         handler_type: route.handler_type,
         handler_config: route.handler_config.clone(),
-        content_source: route.content_source,
-        content_template: route.content_template,
+        inline_template: route.inline_template,
+        template_path: route.template_path,
         content_type_hint: route.content_type_hint,
         enabled: route.enabled.unwrap_or(true),
         priority: route.priority.unwrap_or(0),
@@ -112,6 +112,27 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
         return Err("处理器配置必须是有效的JSON对象".to_string());
     }
 
+    // 根据 route_type 验证字段组合
+    let route_type = route.route_type.unwrap_or(RouteType::Database);
+    match route_type {
+        RouteType::Database | RouteType::Memory => {
+            // database/memory 类型禁止使用 template_path
+            if route.template_path.is_some() {
+                return Err("database/memory 类型路由不支持 template_path 字段".to_string());
+            }
+        }
+        RouteType::File => {
+            // file 类型禁止使用 inline_template
+            if route.inline_template.is_some() {
+                return Err("file 类型路由不支持 inline_template 字段".to_string());
+            }
+            // file 类型必须提供 template_path
+            if route.template_path.is_none() {
+                return Err("file 类型路由必须提供 template_path 字段".to_string());
+            }
+        }
+    }
+
     // 根据处理器类型验证必需字段
     match route.handler_type {
         HandlerType::Redirect => {
@@ -120,32 +141,14 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             }
         }
         HandlerType::Static => {
-            // 验证 content_source 字段
-            if let Some(ref content_source) = route.content_source {
-                if content_source != "database" && content_source != "file" {
-                    return Err("content_source 必须是 'database' 或 'file'".to_string());
-                }
-            }
-
-            // 如果 content_source 为 database，则需要 content_template
-            if route.content_source.as_deref() == Some("database") {
-                if route.content_template.is_none() || route.content_template.as_ref().map_or(true, |s| s.is_empty()) {
-                    return Err("静态内容处理器（database 类型）需要 content_template 字段".to_string());
-                }
-            }
-
-            // 如果 content_source 为 file，则需要 content_template 作为文件路径
-            if route.content_source.as_deref() == Some("file") {
-                if route.content_template.is_none() || route.content_template.as_ref().map_or(true, |s| s.is_empty()) {
-                    return Err("静态内容处理器（file 类型）需要 content_template 字段作为文件路径".to_string());
-                }
-            }
-
-            // 如果 handler_config 中有 content 字段，则验证它
+            // 静态内容处理器需要 inline_template 或 handler_config.content
+            // 对于 file 类型的路由，template_path 也可以替代 inline_template
             if route.handler_config.get("content").is_none() {
-                // 如果没有 content 字段，则依赖 content_template
-                if route.content_template.is_none() {
-                    return Err("静态内容处理器需要 content 字段或 content_template 字段".to_string());
+                let has_inline = route.inline_template.is_some() && route.inline_template.as_ref().map_or(false, |s| !s.is_empty());
+                let has_template_path = route.template_path.is_some() && route.template_path.as_ref().map_or(false, |s| !s.is_empty());
+                
+                if !has_inline && !has_template_path {
+                    return Err("静态内容处理器需要 inline_template 字段、template_path 字段或 handler_config.content 字段".to_string());
                 }
             }
         }

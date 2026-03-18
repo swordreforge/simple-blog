@@ -2308,7 +2308,7 @@ impl DynamicRouteRepository {
     pub async fn create(&self, route: &DynamicRoute) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "INSERT INTO dynamic_routes (route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_by, metadata, created_at, updated_at)
+            "INSERT INTO dynamic_routes (route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, metadata, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 &route.route_name,
@@ -2316,8 +2316,8 @@ impl DynamicRouteRepository {
                 &route.path,
                 &route.handler_type,
                 &route.handler_config.to_string(),
-                &route.content_source,
-                &route.content_template,
+                &route.inline_template,
+                &route.template_path,
                 &route.content_type_hint,
                 &route.enabled,
                 &route.priority,
@@ -2334,7 +2334,7 @@ impl DynamicRouteRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes WHERE id = ?"
         )?;
 
@@ -2346,8 +2346,8 @@ impl DynamicRouteRepository {
                 path: row.get(3)?,
                 handler_type: row.get(4)?,
                 handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                content_source: row.get(6)?,
-                content_template: row.get(7)?,
+                inline_template: row.get(6)?,
+                template_path: row.get(7)?,
                 content_type_hint: row.get(8)?,
                 enabled: row.get(9)?,
                 priority: row.get(10)?,
@@ -2365,7 +2365,7 @@ impl DynamicRouteRepository {
     pub async fn get_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes WHERE path = ?"
         )?;
 
@@ -2377,8 +2377,8 @@ impl DynamicRouteRepository {
                 path: row.get(3)?,
                 handler_type: row.get(4)?,
                 handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                content_source: row.get(6)?,
-                content_template: row.get(7)?,
+                inline_template: row.get(6)?,
+                template_path: row.get(7)?,
                 content_type_hint: row.get(8)?,
                 enabled: row.get(9)?,
                 priority: row.get(10)?,
@@ -2429,10 +2429,10 @@ impl DynamicRouteRepository {
             rusqlite::params_from_iter(params.iter()),
             |row| row.get(0)
         )?;
-        
+
         // 获取列表
         let query = format!(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes{} ORDER BY priority DESC, id ASC LIMIT ? OFFSET ?",
             where_clause
         );
@@ -2451,8 +2451,8 @@ impl DynamicRouteRepository {
                 path: row.get(3)?,
                 handler_type: row.get(4)?,
                 handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                content_source: row.get(6)?,
-                content_template: row.get(7)?,
+                inline_template: row.get(6)?,
+                template_path: row.get(7)?,
                 content_type_hint: row.get(8)?,
                 enabled: row.get(9)?,
                 priority: row.get(10)?,
@@ -2470,7 +2470,7 @@ impl DynamicRouteRepository {
     pub async fn update(&self, id: i64, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, content_source=?, content_template=?, content_type_hint=?, enabled=?, priority=?, metadata=?, updated_at=?
+            "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, inline_template=?, template_path=?, content_type_hint=?, enabled=?, priority=?, metadata=?, updated_at=?
              WHERE id=?",
             params![
                 &route.route_name,
@@ -2478,8 +2478,8 @@ impl DynamicRouteRepository {
                 &route.path,
                 &route.handler_type,
                 &route.handler_config.to_string(),
-                &route.content_source,
-                &route.content_template,
+                &route.inline_template,
+                &route.template_path,
                 &route.content_type_hint,
                 &route.enabled,
                 &route.priority,
@@ -2597,7 +2597,7 @@ impl DynamicRouteRepository {
     pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, content_source, content_template, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
              FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
         )?;
 
@@ -2609,8 +2609,8 @@ impl DynamicRouteRepository {
                 path: row.get(3)?,
                 handler_type: row.get(4)?,
                 handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                content_source: row.get(6)?,
-                content_template: row.get(7)?,
+                inline_template: row.get(6)?,
+                template_path: row.get(7)?,
                 content_type_hint: row.get(8)?,
                 enabled: row.get(9)?,
                 priority: row.get(10)?,
@@ -2708,8 +2708,8 @@ mod tests {
             path: "/test/route".to_string(),
             handler_type: HandlerType::Static,
             handler_config: json!({"content": "test content"}),
-            content_source: Some("database".to_string()),
-            content_template: Some("<html><body>Test</body></html>".to_string()),
+            inline_template: Some("<html><body>Test</body></html>".to_string()),
+            template_path: None,
             content_type_hint: Some("text/html".to_string()),
             enabled: true,
             priority: 0,
@@ -2720,7 +2720,7 @@ mod tests {
         };
 
         assert_eq!(route.path, "/test/route");
-        assert_eq!(route.content_template, Some("<html><body>Test</body></html>".to_string()));
+        assert_eq!(route.inline_template, Some("<html><body>Test</body></html>".to_string()));
         assert_eq!(route.content_type_hint, Some("text/html".to_string()));
         assert!(route.enabled);
     }

@@ -143,7 +143,9 @@ function renderRoutes() {
         const routeNameDisplay = route.route_name ?
             `<div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(route.route_name)}</div>` : '';
         const handlerTypeLabel = getHandlerTypeLabel(route.handler_type);
-        const storageTypeLabel = getStorageTypeLabel(route.route_type);
+        // 使用 route_type 作为存储类型
+        const storageType = route.route_type || 'database';
+        const storageTypeLabel = getStorageTypeLabel(storageType);
 
         return `
         <tr>
@@ -244,26 +246,32 @@ function refreshRoutes() {
 // 更新处理器字段显示
 function updateHandlerFields() {
     const handlerType = document.getElementById('handlerType').value;
-    const contentSourceGroup = document.getElementById('contentSourceGroup');
+    const routeType = document.getElementById('routeType').value;
     const contentTypeGroup = document.getElementById('contentTypeGroup');
-    const contentTemplateGroup = document.getElementById('contentTemplateGroup');
+    const inlineTemplateGroup = document.getElementById('inlineTemplateGroup');
+    const templatePathGroup = document.getElementById('templatePathGroup');
     const uploadFileBtn = document.getElementById('uploadFileBtn');
 
     // 重置所有字段显示
-    if (contentSourceGroup) contentSourceGroup.style.display = 'none';
     if (contentTypeGroup) contentTypeGroup.style.display = 'none';
-    if (contentTemplateGroup) contentTemplateGroup.style.display = 'none';
+    if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'none';
+    if (templatePathGroup) templatePathGroup.style.display = 'none';
     if (uploadFileBtn) {
         uploadFileBtn.style.display = 'none';
     }
 
     // 根据处理器类型显示相应字段
     if (handlerType === 'static' || handlerType === 'template') {
-        if (contentSourceGroup) contentSourceGroup.style.display = 'block';
         if (contentTypeGroup) contentTypeGroup.style.display = 'block';
-        if (contentTemplateGroup) contentTemplateGroup.style.display = 'block';
-        if (uploadFileBtn) {
-            uploadFileBtn.style.display = 'inline-block';
+
+        // 根据 route_type 显示相应的模板字段
+        if (routeType === 'database' || routeType === 'memory') {
+            if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'block';
+            if (uploadFileBtn) {
+                uploadFileBtn.style.display = 'inline-block';
+            }
+        } else if (routeType === 'file') {
+            if (templatePathGroup) templatePathGroup.style.display = 'block';
         }
     }
 
@@ -271,14 +279,31 @@ function updateHandlerFields() {
     loadTemplate();
 }
 
-// 更新内容来源字段显示
-function updateContentSourceFields() {
-    const contentSource = document.getElementById('contentSource').value;
-    const handlerConfig = document.getElementById('handlerConfig');
+// 更新路由类型字段显示
+function updateRouteTypeFields() {
+    const routeType = document.getElementById('routeType').value;
+    const handlerType = document.getElementById('handlerType').value;
+    const inlineTemplateGroup = document.getElementById('inlineTemplateGroup');
+    const templatePathGroup = document.getElementById('templatePathGroup');
+    const uploadFileBtn = document.getElementById('uploadFileBtn');
 
-    // 如果选择了内容来源，更新模板
-    if (contentSource) {
-        loadTemplate();
+    // 重置模板字段显示
+    if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'none';
+    if (templatePathGroup) templatePathGroup.style.display = 'none';
+    if (uploadFileBtn) {
+        uploadFileBtn.style.display = 'none';
+    }
+
+    // 仅对 static/template 类型处理器显示模板字段
+    if (handlerType === 'static' || handlerType === 'template') {
+        if (routeType === 'database' || routeType === 'memory') {
+            if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'block';
+            if (uploadFileBtn) {
+                uploadFileBtn.style.display = 'inline-block';
+            }
+        } else if (routeType === 'file') {
+            if (templatePathGroup) templatePathGroup.style.display = 'block';
+        }
     }
 }
 
@@ -303,13 +328,13 @@ function showAddModal() {
         'routePath': 'value',
         'handlerType': 'value',
         'handlerConfig': 'value',
-        'contentSource': 'value',
         'contentType': 'value',
         'routePriority': 'value',
         'routeEnabled': 'checked',
         'modalMessage': 'innerHTML',
-        'contentSourceGroup': 'style.display',
         'contentTypeGroup': 'style.display',
+        'inlineTemplateGroup': 'style.display',
+        'templatePathGroup': 'style.display',
         'routeModal': 'classList'
     };
 
@@ -331,18 +356,18 @@ function showAddModal() {
     document.getElementById('routePath').value = '';
     document.getElementById('handlerType').value = '';
     document.getElementById('handlerConfig').value = '';
-    document.getElementById('contentSource').value = '';
     document.getElementById('contentType').value = '';
-    document.getElementById('contentTemplate').value = '';
+    document.getElementById('inlineTemplate').value = '';
+    document.getElementById('templatePath').value = '';
     document.getElementById('routeMetadata').value = '';
     document.getElementById('routePriority').value = '0';
     document.getElementById('routeEnabled').checked = true;
     document.getElementById('modalMessage').innerHTML = '';
 
     // 隐藏所有条件字段
-    document.getElementById('contentSourceGroup').style.display = 'none';
     document.getElementById('contentTypeGroup').style.display = 'none';
-    document.getElementById('contentTemplateGroup').style.display = 'none';
+    document.getElementById('inlineTemplateGroup').style.display = 'none';
+    document.getElementById('templatePathGroup').style.display = 'none';
     const uploadFileBtn = document.getElementById('uploadFileBtn');
     if (uploadFileBtn) {
         uploadFileBtn.style.display = 'none';
@@ -358,8 +383,8 @@ function editRoute(id) {
 
     // 检查必要元素是否存在
     const requiredElements = ['modalTitle', 'routeId', 'routeName', 'routeType', 'routePath', 'handlerType',
-                             'contentSource', 'contentType', 'handlerConfig', 'routePriority',
-                             'routeEnabled', 'contentTemplate', 'routeMetadata', 'modalMessage', 'routeModal'];
+                             'contentType', 'handlerConfig', 'routePriority',
+                             'routeEnabled', 'inlineTemplate', 'templatePath', 'routeMetadata', 'modalMessage', 'routeModal'];
     for (const elementId of requiredElements) {
         if (!document.getElementById(elementId)) {
             console.error(`元素 ${elementId} 不存在`);
@@ -374,12 +399,12 @@ function editRoute(id) {
     document.getElementById('routeType').value = route.route_type || 'database';
     document.getElementById('routePath').value = route.path;
     document.getElementById('handlerType').value = route.handler_type;
-    document.getElementById('contentSource').value = route.content_source || '';
     document.getElementById('contentType').value = route.content_type_hint || '';
     document.getElementById('handlerConfig').value = JSON.stringify(route.handler_config, null, 2);
     document.getElementById('routePriority').value = route.priority;
     document.getElementById('routeEnabled').checked = route.enabled;
-    document.getElementById('contentTemplate').value = route.content_template || '';
+    document.getElementById('inlineTemplate').value = route.inline_template || '';
+    document.getElementById('templatePath').value = route.template_path || '';
     document.getElementById('routeMetadata').value = route.metadata ? JSON.stringify(route.metadata, null, 2) : '';
     document.getElementById('modalMessage').innerHTML = '';
 
@@ -402,9 +427,9 @@ async function saveRoute() {
     const path = document.getElementById('routePath').value.trim();
     const handlerType = document.getElementById('handlerType').value;
     const handlerConfig = document.getElementById('handlerConfig').value;
-    const contentSource = document.getElementById('contentSource').value;
     const contentType = document.getElementById('contentType').value;
-    const contentTemplate = document.getElementById('contentTemplate').value.trim();
+    const inlineTemplate = document.getElementById('inlineTemplate').value.trim();
+    const templatePath = document.getElementById('templatePath').value.trim();
     const routeMetadata = document.getElementById('routeMetadata').value.trim();
     const priority = parseInt(document.getElementById('routePriority').value);
     const enabled = document.getElementById('routeEnabled').checked;
@@ -447,15 +472,22 @@ async function saveRoute() {
     // 构建路由数据
     let parsedHandlerConfig = JSON.parse(handlerConfig);
 
-    // 对于 static/template 处理器，将 content_template 和 content_type_hint 合并到 handler_config 中
-    if (handlerType === 'static' || handlerType === 'template') {
-        // 如果有 content_template 内容，添加到 handler_config.content
-        if (contentTemplate) {
-            parsedHandlerConfig.content = contentTemplate;
+    // 字段组合验证
+    if (routeType === 'database' || routeType === 'memory') {
+        // database/memory 类型应该使用 inline_template
+        if (templatePath) {
+            showMessage('modalError', `${routeType} 类型路由不支持 template_path 字段`);
+            return;
         }
-        // 如果有 contentType，添加到 handler_config.content_type
-        if (contentType) {
-            parsedHandlerConfig.content_type = contentType;
+    } else if (routeType === 'file') {
+        // file 类型应该使用 template_path
+        if (inlineTemplate) {
+            showMessage('modalError', 'file 类型路由不支持 inline_template 字段');
+            return;
+        }
+        if (!templatePath) {
+            showMessage('modalError', 'file 类型路由必须提供 template_path');
+            return;
         }
     }
 
@@ -465,9 +497,9 @@ async function saveRoute() {
         path: path,
         handler_type: handlerType,
         handler_config: parsedHandlerConfig,
-        content_source: contentSource || null,
         content_type_hint: contentType || null,
-        content_template: contentTemplate || null,
+        inline_template: inlineTemplate || null,
+        template_path: templatePath || null,
         metadata: metadata,
         enabled: enabled,
         priority: priority
@@ -708,9 +740,19 @@ function validateMetadata() {
 
 // 加载模板
 function loadTemplate() {
-    const handlerType = document.getElementById('handlerType').value;
-    const contentSource = document.getElementById('contentSource').value;
-    const contentType = document.getElementById('contentType').value;
+    const handlerTypeEl = document.getElementById('handlerType');
+    const contentSourceEl = document.getElementById('contentSource');
+    const contentTypeEl = document.getElementById('contentType');
+
+    // 检查必需元素是否存在
+    if (!handlerTypeEl) {
+        console.error('loadTemplate: handlerType元素不存在');
+        return;
+    }
+    
+    const handlerType = handlerTypeEl.value;
+    const contentSource = contentSourceEl ? contentSourceEl.value : '';
+    const contentType = contentTypeEl ? contentTypeEl.value : '';
 
     let template = {};
 
@@ -792,7 +834,13 @@ function loadTemplate() {
             return;
     }
 
-    document.getElementById('handlerConfig').value = JSON.stringify(template, null, 2);
+    const handlerConfigEl = document.getElementById('handlerConfig');
+    if (!handlerConfigEl) {
+        console.error('loadTemplate: handlerConfig元素不存在');
+        return;
+    }
+    
+    handlerConfigEl.value = JSON.stringify(template, null, 2);
 }
 
 // 处理文件上传

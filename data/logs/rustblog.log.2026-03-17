@@ -271,3 +271,154 @@
 2026-03-17T12:32:18.136951Z ERROR ThreadId(25) actix_files::files: Specified path is not a directory: "attachments"
 2026-03-17T12:32:18.152023Z ERROR ThreadId(26) actix_files::files: Specified path is not a directory: "music"
 2026-03-17T12:32:18.152042Z ERROR ThreadId(26) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T13:57:46.079926Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-03-17T13:57:46.079951Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T13:57:46.194284Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 2 个动态路由
+2026-03-17T13:58:35.528656Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-03-17T13:58:35.528686Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T13:58:35.592849Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 2 个动态路由
+2026-03-17T15:33:25.364796Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-03-17T15:33:25.364827Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T15:33:25.480484Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 3 个动态路由
+2026-03-17T15:33:25.480663Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-17T15:33:25.480672Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-17T15:33:25.480681Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-17T15:33:25.481046Z ERROR ThreadId(05) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.481057Z ERROR ThreadId(05) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.487628Z ERROR ThreadId(06) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.487650Z ERROR ThreadId(06) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.497820Z ERROR ThreadId(07) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.497838Z ERROR ThreadId(07) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.504651Z ERROR ThreadId(08) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.504673Z ERROR ThreadId(08) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.516254Z ERROR ThreadId(09) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.516272Z ERROR ThreadId(09) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.524576Z ERROR ThreadId(10) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.524616Z ERROR ThreadId(10) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.535052Z ERROR ThreadId(11) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.535072Z ERROR ThreadId(11) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.542261Z ERROR ThreadId(12) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.542302Z ERROR ThreadId(12) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.550883Z ERROR ThreadId(13) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.550902Z ERROR ThreadId(13) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.558346Z ERROR ThreadId(14) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.558369Z ERROR ThreadId(14) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.583481Z ERROR ThreadId(15) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.583497Z ERROR ThreadId(15) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.592066Z ERROR ThreadId(16) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.592079Z ERROR ThreadId(16) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.601265Z ERROR ThreadId(17) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.601283Z ERROR ThreadId(17) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.609874Z ERROR ThreadId(18) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.609895Z ERROR ThreadId(18) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.619201Z ERROR ThreadId(19) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.619214Z ERROR ThreadId(19) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.627935Z ERROR ThreadId(20) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.627950Z ERROR ThreadId(20) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.635519Z ERROR ThreadId(21) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.635533Z ERROR ThreadId(21) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.643017Z ERROR ThreadId(22) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.643037Z ERROR ThreadId(22) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.650245Z ERROR ThreadId(23) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.650258Z ERROR ThreadId(23) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.657617Z ERROR ThreadId(24) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.657631Z ERROR ThreadId(24) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.666635Z ERROR ThreadId(25) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.666648Z ERROR ThreadId(25) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:33:25.674154Z ERROR ThreadId(26) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:33:25.674180Z ERROR ThreadId(26) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:34:54.887047Z  INFO ThreadId(01) actix_server::server: SIGTERM received; starting graceful shutdown
+2026-03-17T15:34:54.887093Z  INFO ThreadId(07) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887110Z  INFO ThreadId(27) actix_server::accept: accept thread stopped
+2026-03-17T15:34:54.887130Z  INFO ThreadId(09) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887141Z  INFO ThreadId(16) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887147Z  INFO ThreadId(17) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887155Z  INFO ThreadId(24) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887170Z  INFO ThreadId(25) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887189Z  INFO ThreadId(13) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887203Z  INFO ThreadId(05) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887203Z  INFO ThreadId(19) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887216Z  INFO ThreadId(11) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887237Z  INFO ThreadId(06) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887236Z  INFO ThreadId(08) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887267Z  INFO ThreadId(21) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887298Z  INFO ThreadId(12) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887315Z  INFO ThreadId(10) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887365Z  INFO ThreadId(14) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887373Z  INFO ThreadId(15) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887379Z  INFO ThreadId(18) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887396Z  INFO ThreadId(20) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887412Z  INFO ThreadId(22) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887530Z  INFO ThreadId(23) actix_server::worker: shutting down idle worker
+2026-03-17T15:34:54.887599Z  INFO ThreadId(26) actix_server::worker: shutting down idle worker
+2026-03-17T15:35:42.777056Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-03-17T15:35:42.777086Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T15:35:42.841865Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 3 个动态路由
+2026-03-17T15:35:42.842042Z  INFO ThreadId(01) actix_server::builder: starting 22 workers
+2026-03-17T15:35:42.842051Z  INFO ThreadId(01) actix_server::server: Actix runtime found; starting in Actix runtime
+2026-03-17T15:35:42.842056Z  INFO ThreadId(01) actix_server::server: starting service: "actix-web-service-0.0.0.0:8080", workers: 22, listening on: 0.0.0.0:8080
+2026-03-17T15:35:42.842325Z ERROR ThreadId(05) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.842333Z ERROR ThreadId(05) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.848857Z ERROR ThreadId(06) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.848876Z ERROR ThreadId(06) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.857432Z ERROR ThreadId(07) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.857448Z ERROR ThreadId(07) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.865763Z ERROR ThreadId(08) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.865779Z ERROR ThreadId(08) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.873329Z ERROR ThreadId(09) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.873351Z ERROR ThreadId(09) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.882653Z ERROR ThreadId(10) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.882670Z ERROR ThreadId(10) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.890960Z ERROR ThreadId(11) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.890976Z ERROR ThreadId(11) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.898653Z ERROR ThreadId(12) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.898671Z ERROR ThreadId(12) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.906629Z ERROR ThreadId(13) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.906642Z ERROR ThreadId(13) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.915829Z ERROR ThreadId(14) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.915849Z ERROR ThreadId(14) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.942460Z ERROR ThreadId(15) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.942476Z ERROR ThreadId(15) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.951036Z ERROR ThreadId(16) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.951047Z ERROR ThreadId(16) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.959059Z ERROR ThreadId(17) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.959086Z ERROR ThreadId(17) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.969301Z ERROR ThreadId(18) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.969352Z ERROR ThreadId(18) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.978007Z ERROR ThreadId(19) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.978025Z ERROR ThreadId(19) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.986460Z ERROR ThreadId(20) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.986472Z ERROR ThreadId(20) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:42.993068Z ERROR ThreadId(21) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:42.993081Z ERROR ThreadId(21) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:43.001837Z ERROR ThreadId(22) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:43.001848Z ERROR ThreadId(22) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:43.008789Z ERROR ThreadId(23) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:43.008800Z ERROR ThreadId(23) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:43.017777Z ERROR ThreadId(24) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:43.017790Z ERROR ThreadId(24) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:43.024820Z ERROR ThreadId(25) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:43.024832Z ERROR ThreadId(25) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:35:43.031115Z ERROR ThreadId(26) actix_files::files: Specified path is not a directory: "music"
+2026-03-17T15:35:43.031129Z ERROR ThreadId(26) actix_files::files: Specified path is not a directory: "attachments"
+2026-03-17T15:36:13.899284Z  INFO ThreadId(08) rustblog::services::dynamic_route_service: 路由热更新成功: path=/114514, type=redirect
+2026-03-17T15:37:00.969857Z  INFO ThreadId(15) rustblog::services::dynamic_route_service: 路由热更新成功: path=/114514, type=redirect
+2026-03-17T15:37:30.746269Z  INFO ThreadId(18) rustblog::services::dynamic_route_service: 路由热更新成功: path=/114514, type=redirect
+2026-03-17T15:37:54.345674Z  INFO ThreadId(20) rustblog::handlers::dynamic_route_handlers: 尝试匹配动态路由: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:37:54.345707Z  WARN ThreadId(20) rustblog::handlers::dynamic_route_handlers: 动态路由未匹配: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:38:11.229006Z  INFO ThreadId(25) rustblog::handlers::dynamic_route_handlers: 尝试匹配动态路由: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:38:11.229024Z  WARN ThreadId(25) rustblog::handlers::dynamic_route_handlers: 动态路由未匹配: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:38:20.395950Z  INFO ThreadId(26) rustblog::handlers::dynamic_route_handlers: 尝试匹配动态路由: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:38:20.395980Z  WARN ThreadId(26) rustblog::handlers::dynamic_route_handlers: 动态路由未匹配: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:38:23.158366Z  INFO ThreadId(26) rustblog::handlers::dynamic_route_handlers: 尝试匹配动态路由: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:38:23.158390Z  WARN ThreadId(26) rustblog::handlers::dynamic_route_handlers: 动态路由未匹配: /.well-known/appspecific/com.chrome.devtools.json
+2026-03-17T15:47:01.040648Z  INFO ThreadId(22) rustblog::services::dynamic_route_service: 路由热更新成功: path=/114514, type=redirect
+2026-03-17T15:47:47.793394Z  INFO ThreadId(06) rustblog::services::dynamic_route_service: 路由热更新成功: path=/db-static-test, type=static
+2026-03-17T15:47:48.833213Z  INFO ThreadId(15) rustblog::services::dynamic_route_service: 路由热更新成功: path=/consistency-test, type=static
+2026-03-17T15:47:55.528199Z  INFO ThreadId(17) rustblog::services::dynamic_route_service: 路由热更新成功: path=/stats-db-test, type=static
+2026-03-17T15:48:04.412103Z  WARN ThreadId(22) rustblog::handlers::dynamic_route_handlers: 跳过API路径: /api/auth/login
+2026-03-17T15:48:07.809396Z  WARN ThreadId(24) rustblog::handlers::dynamic_route_handlers: 跳过API路径: /api/auth/login
+2026-03-17T15:48:10.872119Z  WARN ThreadId(25) rustblog::handlers::dynamic_route_handlers: 跳过API路径: /api/auth/login
+2026-03-17T16:15:07.854367Z  INFO ThreadId(01) rustblog::jwt: JWT密钥已从文件加载: /home/swordreforge/projects/rustblog-new/rustblog/target/x86_64-unknown-linux-musl/release/data/jwt-secret
+2026-03-17T16:15:07.854403Z  WARN ThreadId(01) rustblog: GeoIP 数据库未找到，地理位置查询将返回 'unknown'
+2026-03-17T16:15:07.986487Z  INFO ThreadId(01) rustblog::services::dynamic_route_service: 已加载 4 个动态路由

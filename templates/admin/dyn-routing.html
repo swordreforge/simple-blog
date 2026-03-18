@@ -618,7 +618,7 @@
                             <label for="routeType">路由类型 *</label>
                             <span class="info-icon" title="路由配置的存储方式">ℹ️</span>
                         </div>
-                        <select id="routeType" required>
+                        <select id="routeType" required onchange="updateRouteTypeFields()">
                             <option value="">请选择路由类型</option>
                             <option value="database" selected>数据库 (database)</option>
                             <option value="memory">内存 (memory)</option>
@@ -654,20 +654,6 @@
                         <div class="field-description">数字越小优先级越高，默认为0</div>
                     </div>
 
-                    <!-- 内容来源（仅对 static 类型显示） -->
-                    <div class="form-group" id="contentSourceGroup" style="display: none;">
-                        <div class="field-info">
-                            <label for="contentSource">内容来源 *</label>
-                            <span class="info-icon" title="静态内容的存储方式">ℹ️</span>
-                        </div>
-                        <select id="contentSource" onchange="updateContentSourceFields()">
-                            <option value="">请选择内容来源</option>
-                            <option value="database">数据库 (database)</option>
-                            <option value="file">文件系统 (file)</option>
-                        </select>
-                        <div class="field-description">静态内容的存储方式：数据库或文件系统</div>
-                    </div>
-
                     <!-- 内容类型提示 -->
                     <div class="form-group" id="contentTypeGroup" style="display: none;">
                         <div class="field-info">
@@ -687,18 +673,28 @@
                         <div class="field-description">响应的 Content-Type 头，留空则自动识别</div>
                     </div>
 
-                    <!-- 内容模板（仅对 static/template 类型显示） -->
-                    <div class="form-group form-full-width" id="contentTemplateGroup" style="display: none;">
+                    <!-- 内联模板（仅对 database/memory 类型显示） -->
+                    <div class="form-group form-full-width" id="inlineTemplateGroup" style="display: none;">
                         <div class="field-info">
-                            <label for="contentTemplate">内容模板</label>
-                            <span class="info-icon" title="static/template类型的内容或文件路径">ℹ️</span>
+                            <label for="inlineTemplate">内联模板内容</label>
+                            <span class="info-icon" title="数据库/内存类型路由的模板内容">ℹ️</span>
                         </div>
                         <div class="help-text" style="margin-bottom: 10px;">
                             <button type="button" class="btn btn-secondary btn-sm" id="uploadFileBtn" onclick="document.getElementById('fileInput').click()">上传文件</button>
                             <input type="file" id="fileInput" accept=".html,.htm,.svg,.xml,.txt,.css,.js,.json" style="display: none;" onchange="handleFileUpload(event)">
                         </div>
-                        <textarea id="contentTemplate" rows="6" placeholder="输入纯文本内容或文件路径..."></textarea>
-                        <div class="field-description">static/template类型路由的内容或文件路径</div>
+                        <textarea id="inlineTemplate" rows="6" placeholder="输入纯文本内容（HTML/JS/CSS/SVG等）..."></textarea>
+                        <div class="field-description">database/memory 类型路由的模板内容，支持 HTML/JS/CSS/SVG 等纯文本格式</div>
+                    </div>
+
+                    <!-- 模板文件路径（仅对 file 类型显示） -->
+                    <div class="form-group form-full-width" id="templatePathGroup" style="display: none;">
+                        <div class="field-info">
+                            <label for="templatePath">模板文件路径 *</label>
+                            <span class="info-icon" title="file 类型路由的模板文件相对路径">ℹ️</span>
+                        </div>
+                        <input type="text" id="templatePath" placeholder="templates/route-configs/custom-page.html">
+                        <div class="field-description">file 类型路由的模板文件相对路径（相对于二进制文件）</div>
                     </div>
 
                     <!-- 处理器配置 -->

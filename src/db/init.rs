@@ -563,9 +563,9 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             }
         ).unwrap_or(false);
 
-        // 检查是否有 content_source 列
-        let has_content_source_column = conn.query_row(
-            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'content_source'",
+        // 检查是否有 inline_template 列
+        let has_inline_template_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'inline_template'",
             [],
             |row| {
                 let count: i64 = row.get(0)?;
@@ -573,9 +573,9 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             }
         ).unwrap_or(false);
 
-        // 检查是否有 content_template 列
-        let has_content_template_column = conn.query_row(
-            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'content_template'",
+        // 检查是否有 template_path 列
+        let has_template_path_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'template_path'",
             [],
             |row| {
                 let count: i64 = row.get(0)?;
@@ -600,18 +600,18 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             println!("✅ 已添加 route_name 列");
         }
 
-        // 如果表已存在但没有 content_source 列，则添加该列
-        if !has_content_source_column {
-            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 content_source 列...");
-            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_source TEXT CHECK(content_source IN ('database', 'file'))", [])?;
-            println!("✅ 已添加 content_source 列");
+        // 如果表已存在但没有 inline_template 列，则添加该列
+        if !has_inline_template_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 inline_template 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN inline_template TEXT", [])?;
+            println!("✅ 已添加 inline_template 列");
         }
 
-        // 如果表已存在但没有 content_template 列，则添加该列
-        if !has_content_template_column {
-            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 content_template 列...");
-            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_template TEXT", [])?;
-            println!("✅ 已添加 content_template 列");
+        // 如果表已存在但没有 template_path 列，则添加该列
+        if !has_template_path_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 template_path 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN template_path TEXT", [])?;
+            println!("✅ 已添加 template_path 列");
         }
 
         // 如果表已存在但没有 content_type_hint 列，则添加该列
@@ -631,8 +631,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             path TEXT NOT NULL UNIQUE,
             handler_type TEXT NOT NULL CHECK(handler_type IN ('redirect', 'static', 'template', 'proxy', 'custom')),
             handler_config TEXT NOT NULL,
-            content_source TEXT CHECK(content_source IN ('database', 'file')),
-            content_template TEXT,
+            inline_template TEXT,
+            template_path TEXT,
             content_type_hint TEXT,
             enabled BOOLEAN DEFAULT 1,
             priority INTEGER DEFAULT 0,
@@ -647,7 +647,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_type ON dynamic_routes(route_type)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_enabled ON dynamic_routes(enabled)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_priority ON dynamic_routes(priority DESC)", [])?;
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_content_template ON dynamic_routes(content_template)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_inline_template ON dynamic_routes(inline_template)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_template_path ON dynamic_routes(template_path)", [])?;
 
     // 创建动态路由操作日志表
     conn.execute(

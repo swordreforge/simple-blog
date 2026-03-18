@@ -306,21 +306,33 @@ impl RouteTypeManager {
     pub async fn get_storage_stats(
         &self,
     ) -> Result<StorageStatsSummary, StorageError> {
-        // 数据库统计
-        let db_count = self.database_storage.count().await.unwrap_or(0);
-        let db_enabled = self.database_storage.count_enabled().await.unwrap_or(0);
+        // 从数据库中按类型分别统计路由
+        let db_routes = self.database_storage.list(0, 0, Some(RouteType::Database), None).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list database routes: {}", e)))?.1;
+        let db_enabled = self.database_storage.list(0, 0, Some(RouteType::Database), Some(true)).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list enabled database routes: {}", e)))?.1;
 
-        // 内存统计
+        let file_routes = self.database_storage.list(0, 0, Some(RouteType::File), None).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list file routes: {}", e)))?.1;
+        let file_enabled = self.database_storage.list(0, 0, Some(RouteType::File), Some(true)).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list enabled file routes: {}", e)))?.1;
+
+        // 内存统计（真正的内存存储）
         let memory_stats = self.memory_storage.get_stats();
 
-        // 文件统计
-        let file_stats = self.file_storage.get_stats()?;
+        // 文件系统统计（真正的文件存储）
+        let file_fs_stats = self.file_storage.get_stats()?;
+
+        // 组合file统计：数据库中的file类型路由 + 文件系统中的路由
+        let total_file_routes = file_routes as usize + file_fs_stats.total_routes;
+        let total_file_enabled = file_enabled as usize + file_fs_stats.enabled_routes;
+        let total_file_disabled = total_file_routes - total_file_enabled;
 
         Ok(StorageStatsSummary {
             database: StorageStats {
-                total_routes: db_count as usize,
+                total_routes: db_routes as usize,
                 enabled_routes: db_enabled as usize,
-                disabled_routes: (db_count - db_enabled) as usize,
+                disabled_routes: (db_routes - db_enabled) as usize,
                 memory_usage_bytes: 0, // 数据库不使用内存
             },
             memory: StorageStats {
@@ -330,10 +342,10 @@ impl RouteTypeManager {
                 memory_usage_bytes: memory_stats.memory_usage_bytes,
             },
             file: StorageStats {
-                total_routes: file_stats.total_routes,
-                enabled_routes: file_stats.enabled_routes,
-                disabled_routes: file_stats.disabled_routes,
-                memory_usage_bytes: file_stats.memory_usage_bytes,
+                total_routes: total_file_routes,
+                enabled_routes: total_file_enabled,
+                disabled_routes: total_file_disabled,
+                memory_usage_bytes: file_fs_stats.memory_usage_bytes,
             },
         })
     }
