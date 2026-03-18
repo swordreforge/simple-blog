@@ -69,6 +69,12 @@ pub async fn delete_route(
 
     match delete_result {
         Ok(_) => {
+            // 如果路由不是数据库类型，也从数据库中删除记录（如果有的话）
+            // 这样可以避免"幽灵路由"问题：删除内存/文件路由后，数据库中仍有记录
+            if old_route.route_type != crate::db::models::RouteType::Database {
+                let _ = repo.delete(id).await;
+            }
+
             // 记录操作日志
             log_route_operation(&repo, id, "delete", Some(&old_route), &old_route, &admin_info.1);
 

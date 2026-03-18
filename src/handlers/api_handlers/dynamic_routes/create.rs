@@ -78,20 +78,60 @@ pub async fn create_route(
 
     // 根据路由类型选择存储后端
     let id = if let Some(manager) = state.route_type_manager() {
-        let storage = manager.get_storage(&route_type);
-        match storage.save_route(&dynamic_route).await {
-            Ok(id) => {
-                tracing::info!("路由创建成功: id={}, type={}, path={}", id, route_type, dynamic_route.path);
-                id
-            }
+        // 先在数据库中创建记录（用于管理和日志记录）
+        let db_id = match repo.create(&dynamic_route).await {
+            Ok(id) => id,
             Err(e) => {
-                tracing::error!("创建路由失败: path={}, type={}, error={}", dynamic_route.path, route_type, e);
+                let error_msg = e.to_string();
+
+                // 检查是否是 UNIQUE 约束错误（路径已存在）
+                if error_msg.contains("UNIQUE constraint failed") && error_msg.contains("path") {
+                    tracing::warn!("路径冲突: path={}, error={}", dynamic_route.path, error_msg);
+                    return HttpResponse::Conflict().json(serde_json::json!({
+                        "success": false,
+                        "message": "路径已存在"
+                    }));
+                }
+
+                // 检查是否是数据库锁错误
+                if error_msg.contains("database is locked") {
+                    tracing::error!("数据库锁: path={}, error={}", dynamic_route.path, error_msg);
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "success": false,
+                        "message": "数据库繁忙，请稍后重试"
+                    }));
+                }
+
+                tracing::error!("创建路由失败（数据库）: path={}, error={}", dynamic_route.path, error_msg);
                 return HttpResponse::InternalServerError().json(serde_json::json!({
                     "success": false,
                     "message": format!("创建失败: {}", e)
                 }));
             }
+        };
+
+        // 如果不是数据库类型，还需要在对应的存储后端中保存
+        if route_type != crate::db::models::RouteType::Database {
+            let storage = manager.get_storage(&route_type);
+            match storage.save_route(&dynamic_route).await {
+                Ok(_) => {
+                    tracing::info!("路由创建成功: id={}, type={}, path={}", db_id, route_type, dynamic_route.path);
+                }
+                Err(e) => {
+                    tracing::error!("创建路由失败（存储后端）: path={}, type={}, error={}", dynamic_route.path, route_type, e);
+                    // 删除数据库记录
+                    let _ = repo.delete(db_id).await;
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "success": false,
+                        "message": format!("创建失败: {}", e)
+                    }));
+                }
+            }
+        } else {
+            tracing::info!("路由创建成功（数据库）: id={}, path={}", db_id, dynamic_route.path);
         }
+
+        db_id
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
         match repo.create(&dynamic_route).await {
