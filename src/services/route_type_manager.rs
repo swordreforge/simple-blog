@@ -271,8 +271,8 @@ impl RouteTypeManager {
                     let template_path = if let Some(ref path) = route.template_path {
                         path.clone()
                     } else {
-                        // 生成默认路径
-                        format!("templates/route_{}.html", route.id.unwrap_or(0))
+                        // 生成默认路径（存储在 data/routes/routes 目录）
+                        format!("data/routes/routes/route_{}.html", route.id.unwrap_or(0))
                     };
 
                     // 确保目录存在
