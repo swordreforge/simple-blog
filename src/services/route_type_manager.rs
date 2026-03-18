@@ -177,7 +177,7 @@ impl RouteTypeManager {
         }
 
         // 按 ID 排序
-        all_routes.sort_by(|a, b| a.id.cmp(&b.id));
+        all_routes.sort_by_key(|a| a.id);
 
         Ok(all_routes)
     }

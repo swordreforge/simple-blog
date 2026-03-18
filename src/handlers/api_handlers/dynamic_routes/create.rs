@@ -232,8 +232,8 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             // 静态内容处理器需要 inline_template 或 handler_config.content
             // 对于 file 类型的路由，template_path 也可以替代 inline_template
             if route.handler_config.get("content").is_none() {
-                let has_inline = route.inline_template.is_some() && route.inline_template.as_ref().map_or(false, |s| !s.is_empty());
-                let has_template_path = route.template_path.is_some() && route.template_path.as_ref().map_or(false, |s| !s.is_empty());
+                let has_inline = route.inline_template.is_some() && route.inline_template.as_ref().is_some_and(|s| !s.is_empty());
+                let has_template_path = route.template_path.is_some() && route.template_path.as_ref().is_some_and(|s| !s.is_empty());
                 
                 if !has_inline && !has_template_path {
                     return Err("静态内容处理器需要 inline_template 字段、template_path 字段或 handler_config.content 字段".to_string());

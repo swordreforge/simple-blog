@@ -155,7 +155,7 @@ impl MemoryRouteStorage {
                         if routes.len() > max_routes {
                             // 按创建时间排序，删除最旧的
                                                     let mut route_list: Vec<_> = routes.iter().collect();
-                                                    route_list.sort_by(|a, b| a.1.created_at.cmp(&b.1.created_at));
+                                                    route_list.sort_by_key(|a| a.1.created_at);
                             
                                                     let to_remove = route_list.len() - max_routes;
                                                     let ids_to_remove: Vec<i64> = route_list.iter().take(to_remove).map(|(id, _)| **id).collect();
@@ -427,7 +427,7 @@ impl FileRouteStorage {
         }
 
         // 按修改时间排序（最新的在前）
-        backup_files.sort_by(|a, b| b.1.cmp(&a.1));
+        backup_files.sort_by_key(|b| std::cmp::Reverse(b.1));
 
         // 删除多余的备份
         for (path, _) in backup_files.iter().skip(self.backup_count) {
@@ -619,7 +619,7 @@ impl RouteStorage for FileRouteStorage {
         }
 
         // 按 ID 排序
-        routes.sort_by(|a, b| a.id.cmp(&b.id));
+        routes.sort_by_key(|a| a.id);
 
         Ok(routes)
     }
