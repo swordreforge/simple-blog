@@ -160,29 +160,51 @@ impl DynamicRouteService {
             }
             HandlerType::Static => {
                 // 处理静态内容路由
-                if let Some(content) = route.handler_config.get("content") {
-                    let content_str = content.as_str().ok_or("content 必须是字符串")?;
-                    let content_type = route.handler_config
-                        .get("content_type")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("text/plain");
-                    
-                    let static_route = SimpleRoute::new(content_str.to_string(), content_type.to_string());
-                    self.route_table.insert(normalized_path, Box::new(static_route));
-                }
-            }
-            HandlerType::Template => {
-                // 处理模板渲染路由
-                let template_name = route.handler_config
-                    .get("template_name")
+                let content_str = match route.route_type {
+                    // file 类型：从 template_path 读取文件
+                    crate::db::models::RouteType::File => {
+                        if let Some(ref path) = route.template_path {
+                            // 读取模板文件
+                            match std::fs::read_to_string(path) {
+                                Ok(content) => content,
+                                Err(e) => {
+                                    tracing::error!("读取模板文件失败: path={}, error={}", path, e);
+                                    return Err(format!("读取模板文件失败: {}", e).into());
+                                }
+                            }
+                        } else {
+                            return Err("file 类型路由必须提供 template_path".into());
+                        }
+                    }
+                    // database/memory 类型：优先使用 inline_template
+                    crate::db::models::RouteType::Database | crate::db::models::RouteType::Memory => {
+                        if let Some(ref template) = route.inline_template {
+                            if !template.is_empty() {
+                                template.clone()
+                            } else {
+                                // 兼容性：如果 inline_template 为空，尝试从 handler_config.content 读取
+                                route.handler_config.get("content")
+                                    .and_then(|v| v.as_str())
+                                    .ok_or("需要提供 inline_template 或 handler_config.content")?
+                                    .to_string()
+                            }
+                        } else {
+                            // 兼容性：如果 inline_template 不存在，尝试从 handler_config.content 读取
+                            route.handler_config.get("content")
+                                .and_then(|v| v.as_str())
+                                .ok_or("需要提供 inline_template 或 handler_config.content")?
+                                .to_string()
+                        }
+                    }
+                };
+
+                let content_type = route.handler_config
+                    .get("content_type")
                     .and_then(|v| v.as_str())
-                    .ok_or("template_name 是必需的")?;
-                
-                let template_route = TemplateHandler::new(
-                    template_name.to_string(),
-                    route.handler_config.clone(),
-                );
-                self.route_table.insert(normalized_path, Box::new(template_route));
+                    .unwrap_or("text/html; charset=utf-8");
+
+                let static_route = SimpleRoute::new(content_str, content_type.to_string());
+                self.route_table.insert(normalized_path, Box::new(static_route));
             }
             HandlerType::Proxy => {
                 // 处理代理路由
@@ -303,66 +325,6 @@ impl std::fmt::Debug for RedirectHandler {
         f.debug_struct("RedirectHandler")
             .field("target", &self.target)
             .field("status_code", &self.status_code)
-            .finish()
-    }
-}
-
-/// 模板处理器
-pub struct TemplateHandler {
-    template_name: String,
-    context: serde_json::Value,
-}
-
-impl TemplateHandler {
-    pub fn new(template_name: String, context: serde_json::Value) -> Self {
-        Self { template_name, context }
-    }
-}
-
-impl RouteEntry for TemplateHandler {
-    fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
-        let template_name = self.template_name.clone();
-        Box::pin(async move {
-            HttpResponse::Ok()
-                .content_type("text/html")
-                .body(format!("Template: {}", template_name))
-        })
-    }
-
-    fn clone_box(&self) -> Box<dyn RouteEntry> {
-        Box::new(TemplateHandler::new(self.template_name.clone(), self.context.clone()))
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn to_serializable(&self) -> dynamic_route_actix::SerializableRoute {
-        dynamic_route_actix::SerializableRoute {
-            route_type: "template".to_string(),
-            body: self.template_name.clone(),
-            content_type: "text/html".to_string(),
-            extra_data: Some(self.context.to_string()),
-        }
-    }
-
-    fn from_serializable(data: dynamic_route_actix::SerializableRoute) -> Box<dyn RouteEntry>
-    where
-        Self: Sized,
-    {
-        let context = if let Some(ref extra) = data.extra_data {
-            serde_json::from_str(extra).unwrap_or_default()
-        } else {
-            serde_json::Value::Null
-        };
-        Box::new(TemplateHandler::new(data.body, context))
-    }
-}
-
-impl std::fmt::Debug for TemplateHandler {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TemplateHandler")
-            .field("template_name", &self.template_name)
             .finish()
     }
 }

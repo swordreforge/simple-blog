@@ -1,1159 +1,563 @@
-// 全局状态
-let currentPage = 1;
-let pageSize = 20;
-let totalRoutes = 0;
-let routes = [];
-
-// 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', function() {
-    // 检查必要的页面元素是否存在
-    const requiredElements = ['routeForm', 'message', 'routesTableBody', 'pagination',
-                             'totalRoutes', 'enabledRoutes', 'disabledRoutes',
-                             'searchInput', 'filterType', 'filterStatus',
-                             'databaseRoutes', 'memoryRoutes', 'fileRoutes'];
-    for (const elementId of requiredElements) {
-        if (!document.getElementById(elementId)) {
-            console.error(`页面加载错误：找不到元素 ${elementId}`);
-            alert(`页面加载错误：找不到元素 ${elementId}，请刷新页面重试`);
-            return;
-        }
-    }
-
-    loadRoutes();
-    loadStats();
-
-    // 表单提交事件
-    document.getElementById('routeForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveRoute();
-    });
-});
-
-// 加载路由列表
+let currentPage = 1,
+    pageSize = 20,
+    totalRoutes = 0,
+    routes = [];
 async function loadRoutes() {
-    const tbody = document.getElementById('routesTableBody');
-    tbody.innerHTML = '<tr><td colspan="9" class="loading">加载中...</td></tr>';
-
+    document.getElementById("routesTableBody").innerHTML = '<tr><td colspan="9" class="loading">加载中...</td></tr>';
     try {
-        const filterType = document.getElementById('filterType').value;
-        const filterStatus = document.getElementById('filterStatus').value;
-
-        let url = `/api/admin/dynamic-routes?page=${currentPage}&limit=${pageSize}`;
-        if (filterType) url += `&handler_type=${filterType}`;
-        if (filterStatus === 'enabled') url += `&enabled=true`;
-        if (filterStatus === 'disabled') url += `&enabled=false`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.success) {
-            routes = data.data.routes;
-            totalRoutes = data.data.total;
-            renderRoutes();
-            renderPagination();
-        } else {
-            showMessage('error', data.message || '加载失败');
-        }
-    } catch (error) {
-        showMessage('error', '网络错误: ' + error.message);
+        var t = document.getElementById("filterType").value,
+            a = document.getElementById("filterStatus").value;
+        let e = `/api/admin/dynamic-routes?page=${currentPage}&limit=` + pageSize;
+        t && (e += "&handler_type=" + t), "enabled" === a && (e += "&enabled=true"), "disabled" === a && (e += "&enabled=false");
+        var o = await (await fetch(e)).json();
+        o.success ? (routes = o.data.routes, totalRoutes = o.data.total, renderRoutes(), renderPagination()) : showMessage("error", o.message || "加载失败")
+    } catch (e) {
+        showMessage("error", "网络错误: " + e.message)
     }
 }
-
-// 加载统计信息
 async function loadStats() {
     try {
-        const response = await fetch('/api/admin/dynamic-routes?page=1&limit=1000');
-        const data = await response.json();
-
-        if (data.success) {
-            const allRoutes = data.data.routes;
-            const enabled = allRoutes.filter(r => r.enabled).length;
-            const disabled = allRoutes.filter(r => !r.enabled).length;
-
-            const totalRoutesElement = document.getElementById('totalRoutes');
-            if (totalRoutesElement) {
-                totalRoutesElement.textContent = allRoutes.length;
-            }
-            const enabledRoutesElement = document.getElementById('enabledRoutes');
-            if (enabledRoutesElement) {
-                enabledRoutesElement.textContent = enabled;
-            }
-            const disabledRoutesElement = document.getElementById('disabledRoutes');
-            if (disabledRoutesElement) {
-                disabledRoutesElement.textContent = disabled;
-            }
-        }
-
-        // 同时加载存储统计信息
-        loadStorageStats();
-    } catch (error) {
-        console.error('加载统计信息失败:', error);
+        var e, t, a, o, n, s, l = await (await fetch("/api/admin/dynamic-routes?page=1&limit=1000")).json();
+        l.success && (t = (e = l.data.routes).filter(e => e.enabled).length, a = e.filter(e => !e.enabled).length, (o = document.getElementById("totalRoutes")) && (o.textContent = e.length), (n = document.getElementById("enabledRoutes")) && (n.textContent = t), s = document.getElementById("disabledRoutes")) && (s.textContent = a), loadStorageStats()
+    } catch (e) {
+        console.error("加载统计信息失败:", e)
     }
 }
-
-// 加载存储统计信息（用于主页面）
 async function loadStorageStats() {
     try {
-        const response = await fetch('/api/admin/dynamic-routes/storage/stats');
-        const data = await response.json();
-
-        if (data.database) {
-            const databaseRoutesElement = document.getElementById('databaseRoutes');
-            if (databaseRoutesElement) {
-                databaseRoutesElement.textContent = data.database.total_routes;
-            }
-        }
-        if (data.memory) {
-            const memoryRoutesElement = document.getElementById('memoryRoutes');
-            if (memoryRoutesElement) {
-                memoryRoutesElement.textContent = data.memory.total_routes;
-            }
-        }
-        if (data.file) {
-            const fileRoutesElement = document.getElementById('fileRoutes');
-            if (fileRoutesElement) {
-                fileRoutesElement.textContent = data.file.total_routes;
-            }
-        }
-    } catch (error) {
-        console.error('加载存储统计失败:', error);
+        var e, t, a, o = await (await fetch("/api/admin/dynamic-routes/storage/stats")).json();
+        o.database && (e = document.getElementById("databaseRoutes")) && (e.textContent = o.database.total_routes), o.memory && (t = document.getElementById("memoryRoutes")) && (t.textContent = o.memory.total_routes), o.file && (a = document.getElementById("fileRoutes")) && (a.textContent = o.file.total_routes)
+    } catch (e) {
+        console.error("加载存储统计失败:", e)
     }
 }
 
-// 渲染路由列表
 function renderRoutes() {
-    const tbody = document.getElementById('routesTableBody');
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-
-    const filteredRoutes = routes.filter(route => {
-        const routeName = (route.route_name || '').toLowerCase();
-        const path = route.path.toLowerCase();
-        const handlerType = route.handler_type.toLowerCase();
-        return routeName.includes(searchTerm) ||
-               path.includes(searchTerm) ||
-               handlerType.includes(searchTerm);
+    var e = document.getElementById("routesTableBody");
+    const o = document.getElementById("searchInput").value.toLowerCase();
+    var t = routes.filter(e => {
+        var t = (e.route_name || "").toLowerCase(),
+            a = e.path.toLowerCase(),
+            e = e.handler_type.toLowerCase();
+        return t.includes(o) || a.includes(o) || e.includes(o)
     });
-
-    if (filteredRoutes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">暂无路由数据</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = filteredRoutes.map(route => {
-        const routeNameDisplay = route.route_name ?
-            `<div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(route.route_name)}</div>` : '';
-        const handlerTypeLabel = getHandlerTypeLabel(route.handler_type);
-        // 使用 route_type 作为存储类型
-        const storageType = route.route_type || 'database';
-        const storageTypeLabel = getStorageTypeLabel(storageType);
-
+    0 === t.length ? e.innerHTML = '<tr><td colspan="9" class="empty-state">暂无路由数据</td></tr>' : e.innerHTML = t.map(e => {
+        var t = e.route_name ? `<div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(e.route_name)}</div>` : "",
+            a = getHandlerTypeLabel(e.handler_type),
+            o = getStorageTypeLabel(e.route_type || "database");
         return `
         <tr>
-            <td>${route.id}</td>
-            <td>${routeNameDisplay}</td>
-            <td><span class="route-path">${escapeHtml(route.path)}</span></td>
-            <td><span class="badge badge-warning handler-type-display">${handlerTypeLabel}</span></td>
+            <td>${e.id}</td>
+            <td>${t}</td>
+            <td><span class="route-path">${escapeHtml(e.path)}</span></td>
+            <td><span class="badge badge-warning handler-type-display">${a}</span></td>
             <td>
-                <span class="badge ${route.enabled ? 'badge-success' : 'badge-danger'}">
-                    ${route.enabled ? '已启用' : '已禁用'}
+                <span class="badge ${e.enabled?"badge-success":"badge-danger"}">
+                    ${e.enabled?"已启用":"已禁用"}
                 </span>
             </td>
-            <td><span class="priority-display">${route.priority}</span></td>
-            <td><span class="badge badge-info storage-type-display">${storageTypeLabel}</span></td>
+            <td><span class="priority-display">${e.priority}</span></td>
+            <td><span class="badge badge-info storage-type-display">${o}</span></td>
             <td class="actions">
-                <button class="btn btn-sm btn-primary" onclick="editRoute(${route.id})" title="编辑">编辑</button>
-                <button class="btn btn-sm ${route.enabled ? 'btn-secondary' : 'btn-success'}"
-                        onclick="toggleRoute(${route.id}, ${!route.enabled})"
-                        title="${route.enabled ? '禁用' : '启用'}">
-                    ${route.enabled ? '禁用' : '启用'}
+                <button class="btn btn-sm btn-primary" onclick="editRoute(${e.id})" title="编辑">编辑</button>
+                <button class="btn btn-sm ${e.enabled?"btn-secondary":"btn-success"}"
+                        onclick="toggleRoute(${e.id}, ${!e.enabled})"
+                        title="${e.enabled?"禁用":"启用"}">
+                    ${e.enabled?"禁用":"启用"}
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteRoute(${route.id})" title="删除">删除</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteRoute(${e.id})" title="删除">删除</button>
             </td>
         </tr>
-    `}).join('');
+    `
+    }).join("")
 }
 
-// 获取处理器类型标签
-function getHandlerTypeLabel(handlerType) {
-    const labels = {
-        'redirect': '重定向',
-        'static': '静态内容',
-        'template': '模板渲染',
-        'proxy': '代理',
-        'custom': '自定义'
-    };
-    return labels[handlerType] || handlerType;
+function getHandlerTypeLabel(e) {
+    return {
+        redirect: "重定向",
+        static: "静态内容",
+        proxy: "代理",
+        custom: "自定义"
+    } [e] || e
 }
 
-// 获取存储类型标签
-function getStorageTypeLabel(routeType) {
-    const labels = {
-        'database': '数据库',
-        'memory': '内存',
-        'file': '文件'
-    };
-    return labels[routeType] || routeType;
+function getStorageTypeLabel(e) {
+    return {
+        database: "数据库",
+        memory: "内存",
+        file: "文件"
+    } [e] || e
 }
 
-// 渲染分页
 function renderPagination() {
-    const totalPages = Math.ceil(totalRoutes / pageSize);
-    const pagination = document.getElementById('pagination');
-
-    if (totalPages <= 1) {
-        pagination.innerHTML = '';
-        return;
-    }
-
-    let html = `<button class="btn btn-secondary" onclick="goToPage(${currentPage - 1})"
-                    ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
-
-    html += `<span>第 ${currentPage} / ${totalPages} 页</span>`;
-
-    html += `<button class="btn btn-secondary" onclick="goToPage(${currentPage + 1})"
-                    ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
-
-    pagination.innerHTML = html;
+    var e, t = Math.ceil(totalRoutes / pageSize),
+        a = document.getElementById("pagination");
+    t <= 1 ? a.innerHTML = "" : (e = `<button class="btn btn-secondary" onclick="goToPage(${currentPage-1})"
+                    ${1===currentPage?"disabled":""}>上一页</button>`, e = (e += `<span>第 ${currentPage} / ${t} 页</span>`) + `<button class="btn btn-secondary" onclick="goToPage(${currentPage+1})"
+                    ${currentPage===t?"disabled":""}>下一页</button>`, a.innerHTML = e)
 }
 
-// 跳转到指定页面
-function goToPage(page) {
-    const totalPages = Math.ceil(totalRoutes / pageSize);
-    if (page < 1 || page > totalPages) return;
-
-    currentPage = page;
-    loadRoutes();
+function goToPage(e) {
+    var t = Math.ceil(totalRoutes / pageSize);
+    e < 1 || t < e || (currentPage = e, loadRoutes())
 }
 
-// 搜索路由
 function searchRoutes() {
-    renderRoutes();
+    renderRoutes()
 }
 
-// 筛选路由
 function filterRoutes() {
-    currentPage = 1;
-    loadRoutes();
+    currentPage = 1, loadRoutes()
 }
 
-// 刷新路由列表
 function refreshRoutes() {
-    currentPage = 1;
-    loadRoutes();
-    loadStats();
+    currentPage = 1, loadRoutes(), loadStats()
 }
 
-// 更新处理器字段显示
 function updateHandlerFields() {
-    const handlerType = document.getElementById('handlerType').value;
-    const routeType = document.getElementById('routeType').value;
-    const contentTypeGroup = document.getElementById('contentTypeGroup');
-    const inlineTemplateGroup = document.getElementById('inlineTemplateGroup');
-    const templatePathGroup = document.getElementById('templatePathGroup');
-    const uploadFileBtn = document.getElementById('uploadFileBtn');
-
-    // 重置所有字段显示
-    if (contentTypeGroup) contentTypeGroup.style.display = 'none';
-    if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'none';
-    if (templatePathGroup) templatePathGroup.style.display = 'none';
-    if (uploadFileBtn) {
-        uploadFileBtn.style.display = 'none';
-    }
-
-    // 根据处理器类型显示相应字段
-    if (handlerType === 'static' || handlerType === 'template') {
-        if (contentTypeGroup) contentTypeGroup.style.display = 'block';
-
-        // 根据 route_type 显示相应的模板字段
-        if (routeType === 'database' || routeType === 'memory') {
-            if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'block';
-            if (uploadFileBtn) {
-                uploadFileBtn.style.display = 'inline-block';
-            }
-        } else if (routeType === 'file') {
-            if (templatePathGroup) templatePathGroup.style.display = 'block';
-        }
-    }
-
-    // 加载对应的模板
-    loadTemplate();
+    var e = document.getElementById("handlerType").value,
+        t = document.getElementById("routeType").value,
+        a = document.getElementById("contentTypeGroup"),
+        o = document.getElementById("inlineTemplateGroup"),
+        n = document.getElementById("templatePathGroup"),
+        s = document.getElementById("uploadFileBtn");
+    a && (a.style.display = "none"), o && (o.style.display = "none"), n && (n.style.display = "none"), s && (s.style.display = "none"), "static" !== e || (a && (a.style.display = "block"), "database" === t || "memory" === t ? (o && (o.style.display = "block"), s && (s.style.display = "inline-block")) : "file" === t && n && (n.style.display = "block")), loadTemplate()
 }
 
-// 更新路由类型字段显示
 function updateRouteTypeFields() {
-    const routeType = document.getElementById('routeType').value;
-    const handlerType = document.getElementById('handlerType').value;
-    const inlineTemplateGroup = document.getElementById('inlineTemplateGroup');
-    const templatePathGroup = document.getElementById('templatePathGroup');
-    const uploadFileBtn = document.getElementById('uploadFileBtn');
-
-    // 重置模板字段显示
-    if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'none';
-    if (templatePathGroup) templatePathGroup.style.display = 'none';
-    if (uploadFileBtn) {
-        uploadFileBtn.style.display = 'none';
-    }
-
-    // 仅对 static/template 类型处理器显示模板字段
-    if (handlerType === 'static' || handlerType === 'template') {
-        if (routeType === 'database' || routeType === 'memory') {
-            if (inlineTemplateGroup) inlineTemplateGroup.style.display = 'block';
-            if (uploadFileBtn) {
-                uploadFileBtn.style.display = 'inline-block';
-            }
-        } else if (routeType === 'file') {
-            if (templatePathGroup) templatePathGroup.style.display = 'block';
-        }
-    }
+    var e = document.getElementById("routeType").value,
+        t = document.getElementById("handlerType").value,
+        a = document.getElementById("inlineTemplateGroup"),
+        o = document.getElementById("templatePathGroup"),
+        n = document.getElementById("uploadFileBtn");
+    a && (a.style.display = "none"), o && (o.style.display = "none"), n && (n.style.display = "none"), "static" !== t || ("database" === e || "memory" === e ? (a && (a.style.display = "block"), n && (n.style.display = "inline-block")) : "file" === e && o && (o.style.display = "block"))
 }
 
-// 更新内容类型模板
 function updateContentTypeTemplate() {
-    const contentType = document.getElementById('contentType').value;
-    const handlerType = document.getElementById('handlerType').value;
-
-    if (handlerType === 'static' && contentType) {
-        loadTemplate();
-    }
+    var e = document.getElementById("contentType").value;
+    "static" === document.getElementById("handlerType").value && e && loadTemplate()
 }
 
-// 显示添加路由模态框
 function showAddModal() {
-    // 检查必要元素是否存在
-    const requiredElements = {
-        'modalTitle': 'textContent',
-        'routeId': 'value',
-        'routeName': 'value',
-        'routeType': 'value',
-        'routePath': 'value',
-        'handlerType': 'value',
-        'handlerConfig': 'value',
-        'contentType': 'value',
-        'routePriority': 'value',
-        'routeEnabled': 'checked',
-        'modalMessage': 'innerHTML',
-        'contentTypeGroup': 'style.display',
-        'inlineTemplateGroup': 'style.display',
-        'templatePathGroup': 'style.display',
-        'routeModal': 'classList'
-    };
-
-    // 检查所有必需的元素
-    for (const [elementId, property] of Object.entries(requiredElements)) {
-        const element = document.getElementById(elementId);
-        if (!element) {
-            console.error(`元素 ${elementId} 不存在`);
-            alert(`页面加载错误：找不到元素 ${elementId}，请刷新页面重试`);
-            return;
-        }
-    }
-
-    // 设置表单值
-    document.getElementById('modalTitle').textContent = '添加路由';
-    document.getElementById('routeId').value = '';
-    document.getElementById('routeName').value = '';
-    document.getElementById('routeType').value = 'database';
-    document.getElementById('routePath').value = '';
-    document.getElementById('handlerType').value = '';
-    document.getElementById('handlerConfig').value = '';
-    document.getElementById('contentType').value = '';
-    document.getElementById('inlineTemplate').value = '';
-    document.getElementById('templatePath').value = '';
-    document.getElementById('routeMetadata').value = '';
-    document.getElementById('routePriority').value = '0';
-    document.getElementById('routeEnabled').checked = true;
-    document.getElementById('modalMessage').innerHTML = '';
-
-    // 隐藏所有条件字段
-    document.getElementById('contentTypeGroup').style.display = 'none';
-    document.getElementById('inlineTemplateGroup').style.display = 'none';
-    document.getElementById('templatePathGroup').style.display = 'none';
-    const uploadFileBtn = document.getElementById('uploadFileBtn');
-    if (uploadFileBtn) {
-        uploadFileBtn.style.display = 'none';
-    }
-
-    document.getElementById('routeModal').classList.add('active');
+    var e, t;
+    for ([e, t] of Object.entries({
+            modalTitle: "textContent",
+            routeId: "value",
+            routeName: "value",
+            routeType: "value",
+            routePath: "value",
+            handlerType: "value",
+            handlerConfig: "value",
+            contentType: "value",
+            routePriority: "value",
+            routeEnabled: "checked",
+            modalMessage: "innerHTML",
+            contentTypeGroup: "style.display",
+            inlineTemplateGroup: "style.display",
+            templatePathGroup: "style.display",
+            routeModal: "classList"
+        }))
+        if (!document.getElementById(e)) return console.error(`元素 ${e} 不存在`), void alert(`页面加载错误：找不到元素 ${e}，请刷新页面重试`);
+    document.getElementById("modalTitle").textContent = "添加路由", document.getElementById("routeId").value = "", document.getElementById("routeName").value = "", document.getElementById("routeType").value = "database", document.getElementById("routePath").value = "", document.getElementById("handlerType").value = "", document.getElementById("handlerConfig").value = "", document.getElementById("contentType").value = "", document.getElementById("inlineTemplate").value = "", document.getElementById("templatePath").value = "", document.getElementById("routeMetadata").value = "", document.getElementById("routePriority").value = "0", document.getElementById("routeEnabled").checked = !0, document.getElementById("modalMessage").innerHTML = "", document.getElementById("contentTypeGroup").style.display = "none", document.getElementById("inlineTemplateGroup").style.display = "none", document.getElementById("templatePathGroup").style.display = "none";
+    var a = document.getElementById("uploadFileBtn");
+    a && (a.style.display = "none"), document.getElementById("routeModal").classList.add("active")
 }
 
-// 编辑路由
-function editRoute(id) {
-    const route = routes.find(r => r.id === id);
-    if (!route) return;
-
-    // 检查必要元素是否存在
-    const requiredElements = ['modalTitle', 'routeId', 'routeName', 'routeType', 'routePath', 'handlerType',
-                             'contentType', 'handlerConfig', 'routePriority',
-                             'routeEnabled', 'inlineTemplate', 'templatePath', 'routeMetadata', 'modalMessage', 'routeModal'];
-    for (const elementId of requiredElements) {
-        if (!document.getElementById(elementId)) {
-            console.error(`元素 ${elementId} 不存在`);
-            alert(`页面加载错误：找不到元素 ${elementId}，请刷新页面重试`);
-            return;
-        }
+function editRoute(t) {
+    var e = routes.find(e => e.id === t);
+    if (e) {
+        for (const a of ["modalTitle", "routeId", "routeName", "routeType", "routePath", "handlerType", "contentType", "handlerConfig", "routePriority", "routeEnabled", "inlineTemplate", "templatePath", "routeMetadata", "modalMessage", "routeModal"])
+            if (!document.getElementById(a)) return console.error(`元素 ${a} 不存在`), void alert(`页面加载错误：找不到元素 ${a}，请刷新页面重试`);
+        document.getElementById("modalTitle").textContent = "编辑路由", document.getElementById("routeId").value = e.id, document.getElementById("routeName").value = e.route_name || "", document.getElementById("routeType").value = e.route_type || "database", document.getElementById("routePath").value = e.path, document.getElementById("handlerType").value = e.handler_type, document.getElementById("contentType").value = e.content_type_hint || "", document.getElementById("handlerConfig").value = JSON.stringify(e.handler_config, null, 2), document.getElementById("routePriority").value = e.priority, document.getElementById("routeEnabled").checked = e.enabled, document.getElementById("inlineTemplate").value = e.inline_template || "", document.getElementById("templatePath").value = e.template_path || "", document.getElementById("routeMetadata").value = e.metadata ? JSON.stringify(e.metadata, null, 2) : "", document.getElementById("modalMessage").innerHTML = "", updateHandlerFields(), document.getElementById("routeModal").classList.add("active")
     }
-
-    document.getElementById('modalTitle').textContent = '编辑路由';
-    document.getElementById('routeId').value = route.id;
-    document.getElementById('routeName').value = route.route_name || '';
-    document.getElementById('routeType').value = route.route_type || 'database';
-    document.getElementById('routePath').value = route.path;
-    document.getElementById('handlerType').value = route.handler_type;
-    document.getElementById('contentType').value = route.content_type_hint || '';
-    document.getElementById('handlerConfig').value = JSON.stringify(route.handler_config, null, 2);
-    document.getElementById('routePriority').value = route.priority;
-    document.getElementById('routeEnabled').checked = route.enabled;
-    document.getElementById('inlineTemplate').value = route.inline_template || '';
-    document.getElementById('templatePath').value = route.template_path || '';
-    document.getElementById('routeMetadata').value = route.metadata ? JSON.stringify(route.metadata, null, 2) : '';
-    document.getElementById('modalMessage').innerHTML = '';
-
-    // 更新字段显示
-    updateHandlerFields();
-
-    document.getElementById('routeModal').classList.add('active');
 }
 
-// 关闭模态框
 function closeModal() {
-    document.getElementById('routeModal').classList.remove('active');
+    document.getElementById("routeModal").classList.remove("active")
 }
+document.addEventListener("DOMContentLoaded", function() {
+    for (const e of ["routeForm", "message", "routesTableBody", "pagination", "totalRoutes", "enabledRoutes", "disabledRoutes", "searchInput", "filterType", "filterStatus", "databaseRoutes", "memoryRoutes", "fileRoutes"])
+        if (!document.getElementById(e)) return console.error("页面加载错误：找不到元素 " + e), void alert(`页面加载错误：找不到元素 ${e}，请刷新页面重试`);
+    loadRoutes(), loadStats(), document.getElementById("routeForm").addEventListener("submit", function(e) {
+        e.preventDefault(), saveRoute()
+    })
+});
+let isSubmitting = !1;
 
-// 防止重复提交的标志
-let isSubmitting = false;
-
-// 检查字符串是否包含控制字符
-function containsControlChars(str, allowNewlines = false) {
-    // 控制字符范围：0-31, 127（DEL）
-    // 如果允许换行，则排除 \r (13), \n (10), \t (9)
-    for (let i = 0; i < str.length; i++) {
-        const code = str.charCodeAt(i);
-        if (code < 32 || code === 127) {
-            // 如果允许换行，则排除常见的空白字符
-            if (allowNewlines && (code === 9 || code === 10 || code === 13)) {
-                continue;
-            }
-            return true;
-        }
+function containsControlChars(t, a = !1) {
+    for (let e = 0; e < t.length; e++) {
+        var o = t.charCodeAt(e);
+        if ((o < 32 || 127 === o) && (!a || 9 !== o && 10 !== o && 13 !== o)) return !0
     }
-    return false;
+    return !1
 }
-
-// 保存路由
 async function saveRoute() {
-    // 防止重复提交
-    if (isSubmitting) {
-        showMessage('modalError', '正在提交中，请稍候...');
-        return;
-    }
-
-    const id = document.getElementById('routeId').value;
-    const routeName = document.getElementById('routeName').value.trim();
-    const routeType = document.getElementById('routeType').value;
-    const path = document.getElementById('routePath').value.trim();
-    const handlerType = document.getElementById('handlerType').value;
-    const handlerConfig = document.getElementById('handlerConfig').value;
-    const contentType = document.getElementById('contentType').value;
-    const inlineTemplate = document.getElementById('inlineTemplate').value.trim();
-    const templatePath = document.getElementById('templatePath').value.trim();
-    const routeMetadata = document.getElementById('routeMetadata').value.trim();
-    const priority = parseInt(document.getElementById('routePriority').value);
-    const enabled = document.getElementById('routeEnabled').checked;
-
-    // 验证控制字符
-    if (routeName && containsControlChars(routeName)) {
-        showMessage('modalError', '路由名称不能包含控制字符');
-        return;
-    }
-
-    if (path && containsControlChars(path)) {
-        showMessage('modalError', '路由路径不能包含控制字符');
-        return;
-    }
-
-    if (templatePath && containsControlChars(templatePath)) {
-        showMessage('modalError', '模板路径不能包含控制字符');
-        return;
-    }
-
-    if (routeMetadata && containsControlChars(routeMetadata)) {
-        showMessage('modalError', '扩展元数据不能包含控制字符');
-        return;
-    }
-
-    // 验证必填字段
-    if (!path) {
-        showMessage('modalError', '路由路径不能为空');
-        return;
-    }
-
-    if (!routeType) {
-        showMessage('modalError', '请选择路由类型');
-        return;
-    }
-
-    if (!handlerType) {
-        showMessage('modalError', '请选择处理器类型');
-        return;
-    }
-
-    // 验证配置
-    try {
-        JSON.parse(handlerConfig);
-    } catch (e) {
-        showMessage('modalError', '处理器配置必须是有效的JSON格式');
-        return;
-    }
-
-    // 验证元数据（如果填写了）
-    let metadata = null;
-    if (routeMetadata) {
-        try {
-            metadata = JSON.parse(routeMetadata);
-        } catch (e) {
-            showMessage('modalError', '扩展元数据必须是有效的JSON格式');
-            return;
-        }
-    }
-
-    // 构建路由数据
-    let parsedHandlerConfig = JSON.parse(handlerConfig);
-
-    // 字段组合验证
-    if (routeType === 'database' || routeType === 'memory') {
-        // database/memory 类型应该使用 inline_template
-        if (templatePath) {
-            showMessage('modalError', `${routeType} 类型路由不支持 template_path 字段`);
-            return;
-        }
-    } else if (routeType === 'file') {
-        // file 类型应该使用 template_path
-        if (inlineTemplate) {
-            showMessage('modalError', 'file 类型路由不支持 inline_template 字段');
-            return;
-        }
-        if (!templatePath) {
-            showMessage('modalError', 'file 类型路由必须提供 template_path');
-            return;
-        }
-    }
-
-    const routeData = {
-        route_name: routeName || null,
-        route_type: routeType || 'database',
-        path: path,
-        handler_type: handlerType,
-        handler_config: parsedHandlerConfig,
-        content_type_hint: contentType || null,
-        inline_template: inlineTemplate || null,
-        template_path: templatePath || null,
-        metadata: metadata,
-        enabled: enabled,
-        priority: priority
-    };
-
-    // 禁用提交按钮，防止重复提交
-    isSubmitting = true;
-    const submitBtn = document.querySelector('#routeForm .btn-primary');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = '提交中...';
-    }
-
-    try {
-        const url = id ? `/api/admin/dynamic-routes/${id}` : '/api/admin/dynamic-routes';
-        const method = id ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(routeData)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showMessage('success', data.message || '保存成功');
-            closeModal();
-            loadRoutes();
-            loadStats();
-        } else {
-            showMessage('modalError', data.message || '保存失败');
-        }
-    } catch (error) {
-        showMessage('modalError', '网络错误: ' + error.message);
-    } finally {
-        // 恢复提交按钮状态
-        isSubmitting = false;
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = '保存';
-        }
+    if (isSubmitting) showMessage("modalError", "正在提交中，请稍候...");
+    else {
+        var t = document.getElementById("routeId").value,
+            a = document.getElementById("routeName").value.trim(),
+            o = document.getElementById("routeType").value,
+            n = document.getElementById("routePath").value.trim(),
+            s = document.getElementById("handlerType").value,
+            l = document.getElementById("handlerConfig").value,
+            r = document.getElementById("contentType").value,
+            d = document.getElementById("inlineTemplate").value.trim(),
+            u = document.getElementById("templatePath").value.trim(),
+            m = document.getElementById("routeMetadata").value.trim(),
+            c = parseInt(document.getElementById("routePriority").value),
+            i = document.getElementById("routeEnabled").checked;
+        if (a && containsControlChars(a)) showMessage("modalError", "路由名称不能包含控制字符");
+        else if (n && containsControlChars(n)) showMessage("modalError", "路由路径不能包含控制字符");
+        else if (u && containsControlChars(u)) showMessage("modalError", "模板路径不能包含控制字符");
+        else if (m && containsControlChars(m)) showMessage("modalError", "扩展元数据不能包含控制字符");
+        else if (n)
+            if (o)
+                if (s) {
+                    try {
+                        JSON.parse(l)
+                    } catch (e) {
+                        return void showMessage("modalError", "处理器配置必须是有效的JSON格式")
+                    }
+                    let e = null;
+                    if (m) try {
+                        e = JSON.parse(m)
+                    } catch (e) {
+                        return void showMessage("modalError", "扩展元数据必须是有效的JSON格式")
+                    }
+                    m = JSON.parse(l);
+                    if ("database" === o || "memory" === o) {
+                        if (u) return void showMessage("modalError", o + " 类型路由不支持 template_path 字段")
+                    } else if ("file" === o) {
+                        if (d) return void showMessage("modalError", "file 类型路由不支持 inline_template 字段");
+                        if (!u) return void showMessage("modalError", "file 类型路由必须提供 template_path")
+                    }
+                    l = {
+                        route_name: a || null,
+                        route_type: o || "database",
+                        path: n,
+                        handler_type: s,
+                        handler_config: m,
+                        content_type_hint: r || null,
+                        inline_template: d || null,
+                        template_path: u || null,
+                        metadata: e,
+                        enabled: i,
+                        priority: c
+                    }, a = (isSubmitting = !0, document.querySelector("#routeForm .btn-primary"));
+                    a && (a.disabled = !0, a.textContent = "提交中...");
+                    try {
+                        var y = await (await fetch(t ? "/api/admin/dynamic-routes/" + t : "/api/admin/dynamic-routes", {
+                            method: t ? "PUT" : "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify(l)
+                        })).json();
+                        y.success ? (showMessage("success", y.message || "保存成功"), closeModal(), loadRoutes(), loadStats()) : showMessage("modalError", y.message || "保存失败")
+                    } catch (e) {
+                        showMessage("modalError", "网络错误: " + e.message)
+                    } finally {
+                        isSubmitting = !1, a && (a.disabled = !1, a.textContent = "保存")
+                    }
+                } else showMessage("modalError", "请选择处理器类型");
+        else showMessage("modalError", "请选择路由类型");
+        else showMessage("modalError", "路由路径不能为空")
     }
 }
-
-// 测试路由
 async function testRoute() {
-    const pathElement = document.getElementById('routePath');
-    const routeTypeElement = document.getElementById('routeType');
-    const handlerTypeElement = document.getElementById('handlerType');
-    const handlerConfigElement = document.getElementById('handlerConfig');
-    const contentSourceElement = document.getElementById('contentSource');
-
-    if (!pathElement || !routeTypeElement || !handlerTypeElement || !handlerConfigElement) {
-        alert('缺少必要的表单元素');
-        return;
-    }
-
-    const path = pathElement.value.trim();
-    const routeType = routeTypeElement.value;
-    const handlerType = handlerTypeElement.value;
-    const handlerConfig = handlerConfigElement.value;
-    const contentSource = contentSourceElement ? contentSourceElement.value : null;
-
-    if (!path || !routeType || !handlerType) {
-        alert('请先填写路由路径、选择路由类型和处理器类型');
-        return;
-    }
-
+    var e = document.getElementById("routePath"),
+        t = document.getElementById("routeType"),
+        a = document.getElementById("handlerType"),
+        o = document.getElementById("handlerConfig"),
+        n = document.getElementById("contentSource");
+    if (e && t && a && o) {
+        e = e.value.trim(), t = t.value, a = a.value, o = o.value, n = n ? n.value : null;
+        if (e && t && a) try {
+            var s = await (await fetch("/api/admin/dynamic-routes/test", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    route_type: t || "database",
+                    path: e,
+                    handler_type: a,
+                    handler_config: JSON.parse(o),
+                    content_source: n || null
+                })
+            })).json();
+            if (s.success) {
+                var l = s.data;
+                let e = "路由测试成功";
+                l.conflict && (e += " (路径冲突)"), l.response_preview && (e += "\n响应预览: " + JSON.stringify(l.response_preview, null, 2)), alert(e)
+            } else alert("测试失败: " + s.message)
+        } catch (e) {
+            alert("测试失败: " + e.message)
+        } else alert("请先填写路由路径、选择路由类型和处理器类型")
+    } else alert("缺少必要的表单元素")
+}
+async function toggleRoute(e, t) {
+    t = t ? "enable" : "disable";
     try {
-        const response = await fetch('/api/admin/dynamic-routes/test', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                route_type: routeType || 'database',
-                path: path,
-                handler_type: handlerType,
-                handler_config: JSON.parse(handlerConfig),
-                content_source: contentSource || null
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            const result = data.data;
-            let message = '路由测试成功';
-
-            if (result.conflict) {
-                message += ' (路径冲突)';
-            }
-
-            if (result.response_preview) {
-                message += '\n响应预览: ' + JSON.stringify(result.response_preview, null, 2);
-            }
-
-            alert(message);
-        } else {
-            alert('测试失败: ' + data.message);
-        }
-    } catch (error) {
-        alert('测试失败: ' + error.message);
+        var a = await (await fetch(`/api/admin/dynamic-routes/${e}/` + t, {
+            method: "POST"
+        })).json();
+        a.success ? (showMessage("success", a.message || "操作成功"), loadRoutes(), loadStats()) : showMessage("error", a.message || "操作失败")
+    } catch (e) {
+        showMessage("error", "网络错误: " + e.message)
     }
 }
-
-// 切换路由状态
-async function toggleRoute(id, enabled) {
-    const action = enabled ? 'enable' : 'disable';
-    try {
-        const response = await fetch(`/api/admin/dynamic-routes/${id}/${action}`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showMessage('success', data.message || '操作成功');
-            loadRoutes();
-            loadStats();
-        } else {
-            showMessage('error', data.message || '操作失败');
-        }
-    } catch (error) {
-        showMessage('error', '网络错误: ' + error.message);
+async function deleteRoute(e) {
+    if (confirm("确定要删除这个路由吗？")) try {
+        var t = await (await fetch("/api/admin/dynamic-routes/" + e, {
+            method: "DELETE"
+        })).json();
+        t.success ? (showMessage("success", t.message || "删除成功"), loadRoutes(), loadStats()) : showMessage("error", t.message || "删除失败")
+    } catch (e) {
+        showMessage("error", "网络错误: " + e.message)
     }
 }
-
-// 删除路由
-async function deleteRoute(id) {
-    if (!confirm('确定要删除这个路由吗？')) return;
-
-    try {
-        const response = await fetch(`/api/admin/dynamic-routes/${id}`, {
-            method: 'DELETE'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showMessage('success', data.message || '删除成功');
-            loadRoutes();
-            loadStats();
-        } else {
-            showMessage('error', data.message || '删除失败');
-        }
-    } catch (error) {
-        showMessage('error', '网络错误: ' + error.message);
-    }
-}
-
-// 导出路由配置
 async function exportRoutes() {
     try {
-        const response = await fetch('/api/admin/dynamic-routes/export');
-        const data = await response.json();
-
-        if (data.success) {
-            const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `routes-export-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } else {
-            showMessage('error', data.message || '导出失败');
-        }
-    } catch (error) {
-        showMessage('error', '网络错误: ' + error.message);
+        var e, t, a, o = await (await fetch("/api/admin/dynamic-routes/export")).json();
+        o.success ? (e = new Blob([JSON.stringify(o.data, null, 2)], {
+            type: "application/json"
+        }), t = URL.createObjectURL(e), (a = document.createElement("a")).href = t, a.download = `routes-export-${(new Date).toISOString().split("T")[0]}.json`, document.body.appendChild(a), a.click(), document.body.removeChild(a), URL.revokeObjectURL(t)) : showMessage("error", o.message || "导出失败")
+    } catch (e) {
+        showMessage("error", "网络错误: " + e.message)
     }
 }
 
-// 显示导入模态框
 function showImportModal() {
-    document.getElementById('importConfig').value = '';
-    document.getElementById('importMessage').innerHTML = '';
-    document.getElementById('importModal').classList.add('active');
+    document.getElementById("importConfig").value = "", document.getElementById("importMessage").innerHTML = "", document.getElementById("importModal").classList.add("active")
 }
 
-// 关闭导入模态框
 function closeImportModal() {
-    document.getElementById('importModal').classList.remove('active');
+    document.getElementById("importModal").classList.remove("active")
 }
-
-// 导入路由配置
 async function importRoutes() {
-    const configText = document.getElementById('importConfig').value.trim();
-
-    if (!configText) {
-        showMessage('importError', '请输入配置内容');
-        return;
-    }
-
-    try {
-        const config = JSON.parse(configText);
-
-        const response = await fetch('/api/admin/dynamic-routes/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(config)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            const result = data.data;
-            alert(`导入完成: 成功 ${result.imported}, 跳过 ${result.skipped}, 失败 ${result.failed}`);
-            closeImportModal();
-            loadRoutes();
-            loadStats();
-        } else {
-            showMessage('importError', data.message || '导入失败');
-        }
-    } catch (error) {
-        showMessage('importError', '配置格式错误: ' + error.message);
-    }
+    var e = document.getElementById("importConfig").value.trim();
+    if (e) try {
+        var t, a = JSON.parse(e),
+            o = await (await fetch("/api/admin/dynamic-routes/import", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(a)
+            })).json();
+        o.success ? (t = o.data, alert(`导入完成: 成功 ${t.imported}, 跳过 ${t.skipped}, 失败 ` + t.failed), closeImportModal(), loadRoutes(), loadStats()) : showMessage("importError", o.message || "导入失败")
+    } catch (e) {
+        showMessage("importError", "配置格式错误: " + e.message)
+    } else showMessage("importError", "请输入配置内容")
 }
 
-// 格式化配置
 function formatConfig() {
-    const textarea = document.getElementById('handlerConfig');
+    var e = document.getElementById("handlerConfig");
     try {
-        const config = JSON.parse(textarea.value);
-        textarea.value = JSON.stringify(config, null, 2);
+        var t = JSON.parse(e.value);
+        e.value = JSON.stringify(t, null, 2)
     } catch (e) {
-        alert('JSON格式错误');
+        alert("JSON格式错误")
     }
 }
 
-// 验证配置
 function validateConfig() {
-    const textarea = document.getElementById('handlerConfig');
+    var e = document.getElementById("handlerConfig");
     try {
-        JSON.parse(textarea.value);
-        alert('配置格式正确');
+        JSON.parse(e.value), alert("配置格式正确")
     } catch (e) {
-        alert('JSON格式错误: ' + e.message);
+        alert("JSON格式错误: " + e.message)
     }
 }
 
-// 格式化元数据
 function formatMetadata() {
-    const textarea = document.getElementById('routeMetadata');
+    var e = document.getElementById("routeMetadata");
     try {
-        const metadata = JSON.parse(textarea.value);
-        textarea.value = JSON.stringify(metadata, null, 2);
+        var t = JSON.parse(e.value);
+        e.value = JSON.stringify(t, null, 2)
     } catch (e) {
-        alert('JSON格式错误');
+        alert("JSON格式错误")
     }
 }
 
-// 验证元数据
 function validateMetadata() {
-    const textarea = document.getElementById('routeMetadata');
+    var e = document.getElementById("routeMetadata");
     try {
-        JSON.parse(textarea.value);
-        alert('元数据格式正确');
+        JSON.parse(e.value), alert("元数据格式正确")
     } catch (e) {
-        alert('JSON格式错误: ' + e.message);
+        alert("JSON格式错误: " + e.message)
     }
 }
 
-// 加载模板
 function loadTemplate() {
-    const handlerTypeEl = document.getElementById('handlerType');
-    const contentSourceEl = document.getElementById('contentSource');
-    const contentTypeEl = document.getElementById('contentType');
-
-    // 检查必需元素是否存在
-    if (!handlerTypeEl) {
-        console.error('loadTemplate: handlerType元素不存在');
-        return;
-    }
-    
-    const handlerType = handlerTypeEl.value;
-    const contentSource = contentSourceEl ? contentSourceEl.value : '';
-    const contentType = contentTypeEl ? contentTypeEl.value : '';
-
-    let template = {};
-
-    switch (handlerType) {
-        case 'redirect':
-            template = {
-                type: 'redirect',
-                target: '/new-location',
-                status_code: 302,
-                preserve_query: true
-            };
-            break;
-
-        case 'static':
-            if (contentSource === 'database') {
-                // 数据库存储
-                template = {
-                    type: 'static',
-                    content_source: 'database',
-                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>自定义页面</title>\n</head>\n<body>\n    <h1>欢迎使用动态路由</h1>\n    <p>这是一个静态HTML页面示例（存储在数据库中）</p>\n</body>\n</html>',
-                    content_type: contentType || 'text/html; charset=utf-8',
+    var t = document.getElementById("handlerType"),
+        a = document.getElementById("contentSource"),
+        o = document.getElementById("contentType");
+    if (t) {
+        var t = t.value,
+            n = a ? a.value : "",
+            s = o ? o.value : "";
+        let e = {};
+        switch (t) {
+            case "redirect":
+                e = {
+                    type: "redirect",
+                    target: "/new-location",
+                    status_code: 302,
+                    preserve_query: !0
+                };
+                break;
+            case "static":
+                e = "database" === n ? {
+                    type: "static",
+                    content_type: s || "text/html; charset=utf-8",
                     headers: {
-                        'Cache-Control': 'public, max-age=3600'
+                        "Cache-Control": "public, max-age=3600"
+                    }
+                } : "file" === n ? {
+                    type: "static",
+                    content_type: s || "text/html; charset=utf-8",
+                    headers: {
+                        "Cache-Control": "public, max-age=3600"
+                    }
+                } : {
+                    type: "static",
+                    content_type: s || "text/html; charset=utf-8",
+                    headers: {
+                        "Cache-Control": "public, max-age=3600"
                     }
                 };
-            } else if (contentSource === 'file') {
-                // 文件系统
-                template = {
-                    type: 'static',
-                    content_source: 'file',
-                    content: '/path/to/static/file.html',
-                    content_type: contentType || 'text/html; charset=utf-8',
-                    headers: {
-                        'Cache-Control': 'public, max-age=3600'
-                    }
+                break;
+            case "proxy":
+                e = {
+                    type: "proxy",
+                    target: "http://backend-service:8080",
+                    timeout: 5e3,
+                    strip_prefix: !1
                 };
-            } else {
-                // 默认模板
-                template = {
-                    type: 'static',
-                    content: '<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>自定义页面</title>\n</head>\n<body>\n    <h1>欢迎使用动态路由</h1>\n    <p>这是一个静态HTML页面示例</p>\n</body>\n</html>',
-                    content_type: contentType || 'text/html; charset=utf-8',
-                    headers: {
-                        'Cache-Control': 'public, max-age=3600'
-                    }
+                break;
+            case "custom":
+                e = {
+                    type: "custom",
+                    script: "lua",
+                    source: 'function handle(req) return {status=200, body="OK"} end'
                 };
-            }
-            break;
-
-        case 'template':
-            template = {
-                type: 'template',
-                template_name: 'custom_page.html',
-                context: {
-                    title: '自定义页面',
-                    content: '页面内容'
-                }
-            };
-            break;
-
-        case 'proxy':
-            template = {
-                type: 'proxy',
-                target: 'http://backend-service:8080',
-                timeout: 5000,
-                strip_prefix: false
-            };
-            break;
-
-        case 'custom':
-            template = {
-                type: 'custom',
-                script: 'lua',
-                source: 'function handle(req) return {status=200, body="OK"} end'
-            };
-            break;
-
-        default:
-            return;
-    }
-
-    const handlerConfigEl = document.getElementById('handlerConfig');
-    if (!handlerConfigEl) {
-        console.error('loadTemplate: handlerConfig元素不存在');
-        return;
-    }
-    
-    handlerConfigEl.value = JSON.stringify(template, null, 2);
-}
-
-// 处理文件上传
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // 验证文件大小（限制为1MB）
-    if (file.size > 1024 * 1024) {
-        alert('文件大小不能超过1MB');
-        event.target.value = '';
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const content = e.target.result;
-        const fileName = file.name;
-        const fileExtension = fileName.split('.').pop().toLowerCase();
-
-        // 根据文件扩展名确定content_type
-        let contentType = 'text/plain; charset=utf-8';
-        switch (fileExtension) {
-            case 'html':
-            case 'htm':
-                contentType = 'text/html; charset=utf-8';
-                break;
-            case 'svg':
-                contentType = 'image/svg+xml; charset=utf-8';
-                break;
-            case 'xml':
-                contentType = 'application/xml; charset=utf-8';
-                break;
-            case 'css':
-                contentType = 'text/css; charset=utf-8';
-                break;
-            case 'js':
-                contentType = 'application/javascript; charset=utf-8';
-                break;
-            case 'json':
-                contentType = 'application/json; charset=utf-8';
                 break;
             default:
-                contentType = 'text/plain; charset=utf-8';
+                return
         }
+        a = document.getElementById("handlerConfig");
+        a ? a.value = JSON.stringify(e, null, 2) : console.error("loadTemplate: handlerConfig元素不存在")
+    } else console.error("loadTemplate: handlerType元素不存在")
+}
 
-        // 自动切换到静态内容处理器类型
-        document.getElementById('handlerType').value = 'static';
-        document.getElementById('contentSource').value = 'database';
-        document.getElementById('contentType').value = contentType;
-
-        // 更新字段显示
-        updateHandlerFields();
-
-        // 将文件内容填充到内容模板字段
-        document.getElementById('contentTemplate').value = content;
-
-        // 创建适当的handler配置（不包含实际内容，只包含处理器参数）
-        const config = {
-            type: 'static',
+function handleFileUpload(e) {
+    const o = e.target.files[0];
+    var t;
+    o && (1048576 < o.size ? alert("文件大小不能超过1MB") : ((t = new FileReader).onload = function(e) {
+        var e = e.target.result,
+            t = o.name;
+        let a = "text/plain; charset=utf-8";
+        switch (t.split(".").pop().toLowerCase()) {
+            case "html":
+            case "htm":
+                a = "text/html; charset=utf-8";
+                break;
+            case "svg":
+                a = "image/svg+xml; charset=utf-8";
+                break;
+            case "xml":
+                a = "application/xml; charset=utf-8";
+                break;
+            case "css":
+                a = "text/css; charset=utf-8";
+                break;
+            case "js":
+                a = "application/javascript; charset=utf-8";
+                break;
+            case "json":
+                a = "application/json; charset=utf-8";
+                break;
+            default:
+                a = "text/plain; charset=utf-8"
+        }
+        document.getElementById("handlerType").value = "static", document.getElementById("contentSource").value = "database", document.getElementById("contentType").value = a, updateHandlerFields(), document.getElementById("inlineTemplate").value = e;
+        document.getElementById("handlerConfig").value = JSON.stringify({
+            type: "static",
             headers: {
-                'Cache-Control': 'public, max-age=3600'
+                "Cache-Control": "public, max-age=3600"
             }
-        };
-
-        // 将配置填充到处理器配置文本框
-        document.getElementById('handlerConfig').value = JSON.stringify(config, null, 2);
-
-        // 显示成功消息
-        showMessage('success', `文件 "${fileName}" 上传成功，已自动设置为静态内容处理器，内容已填充到内容模板字段`);
-    };
-
-    reader.onerror = function() {
-        alert('文件读取失败');
-        event.target.value = '';
-    };
-
-    // 读取文件内容
-    reader.readAsText(file);
-
-    // 清空文件输入框，允许重复上传相同文件
-    event.target.value = '';
+        }, null, 2), showMessage("success", `文件 "${t}" 上传成功，已自动设置为静态内容处理器，内容已填充到内联模板字段`)
+    }, t.onerror = function() {
+        alert("文件读取失败"), e.target.value = ""
+    }, t.readAsText(o)), e.target.value = "")
 }
 
-// 显示消息
-function showMessage(type, message) {
-    const elementId = type === 'modalError' ? 'modalMessage' :
-                      type === 'importError' ? 'importMessage' : 'message';
-
-    const messageDiv = document.getElementById(elementId);
-    messageDiv.className = type.includes('error') ? 'error' : 'success';
-    messageDiv.textContent = message;
-    messageDiv.style.display = 'block';
-
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 5000);
+function showMessage(e, t) {
+    const a = document.getElementById("modalError" === e ? "modalMessage" : "importError" === e ? "importMessage" : "message");
+    a.className = e.includes("error") ? "error" : "success", a.textContent = t, a.style.display = "block", setTimeout(() => {
+        a.style.display = "none"
+    }, 5e3)
 }
 
-// HTML转义
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function escapeHtml(e) {
+    var t = document.createElement("div");
+    return t.textContent = e, t.innerHTML
 }
 
-// 存储管理相关函数
-
-// 打开存储管理模态框
 function openStorageModal() {
-    document.getElementById('storageModal').style.display = 'block';
-    refreshStorageStats();
+    document.getElementById("storageModal").style.display = "block", refreshStorageStats()
 }
 
-// 关闭存储管理模态框
 function closeStorageModal() {
-    document.getElementById('storageModal').style.display = 'none';
-    document.getElementById('storageMessage').style.display = 'none';
+    document.getElementById("storageModal").style.display = "none", document.getElementById("storageMessage").style.display = "none"
 }
-
-// 刷新存储统计信息
 async function refreshStorageStats() {
     try {
-        const response = await fetch('/api/admin/dynamic-routes/storage/stats');
-        const data = await response.json();
-
-        if (data.database) {
-            document.getElementById('storageDatabaseTotal').textContent = data.database.total_routes;
-            document.getElementById('storageDatabaseEnabled').textContent = data.database.enabled_routes;
-            document.getElementById('storageDatabaseDisabled').textContent = data.database.disabled_routes;
-            document.getElementById('storageDatabaseMemory').textContent = data.database.memory_usage_bytes;
-        }
-
-        if (data.memory) {
-            document.getElementById('storageMemoryTotal').textContent = data.memory.total_routes;
-            document.getElementById('storageMemoryEnabled').textContent = data.memory.enabled_routes;
-            document.getElementById('storageMemoryDisabled').textContent = data.memory.disabled_routes;
-            document.getElementById('storageMemoryMemory').textContent = data.memory.memory_usage_bytes;
-        }
-
-        if (data.file) {
-            document.getElementById('storageFileTotal').textContent = data.file.total_routes;
-            document.getElementById('storageFileEnabled').textContent = data.file.enabled_routes;
-            document.getElementById('storageFileDisabled').textContent = data.file.disabled_routes;
-            document.getElementById('storageFileMemory').textContent = data.file.memory_usage_bytes;
-        }
-
-        // 同时更新主页面的存储统计
-        if (data.database) document.getElementById('databaseRoutes').textContent = data.database.total_routes;
-        if (data.memory) document.getElementById('memoryRoutes').textContent = data.memory.total_routes;
-        if (data.file) document.getElementById('fileRoutes').textContent = data.file.total_routes;
-
-    } catch (error) {
-        console.error('加载存储统计失败:', error);
-        showMessage('storageError', '加载存储统计失败: ' + error.message);
+        var e = await (await fetch("/api/admin/dynamic-routes/storage/stats")).json();
+        e.database && (document.getElementById("storageDatabaseTotal").textContent = e.database.total_routes, document.getElementById("storageDatabaseEnabled").textContent = e.database.enabled_routes, document.getElementById("storageDatabaseDisabled").textContent = e.database.disabled_routes, document.getElementById("storageDatabaseMemory").textContent = e.database.memory_usage_bytes), e.memory && (document.getElementById("storageMemoryTotal").textContent = e.memory.total_routes, document.getElementById("storageMemoryEnabled").textContent = e.memory.enabled_routes, document.getElementById("storageMemoryDisabled").textContent = e.memory.disabled_routes, document.getElementById("storageMemoryMemory").textContent = e.memory.memory_usage_bytes), e.file && (document.getElementById("storageFileTotal").textContent = e.file.total_routes, document.getElementById("storageFileEnabled").textContent = e.file.enabled_routes, document.getElementById("storageFileDisabled").textContent = e.file.disabled_routes, document.getElementById("storageFileMemory").textContent = e.file.memory_usage_bytes), e.database && (document.getElementById("databaseRoutes").textContent = e.database.total_routes), e.memory && (document.getElementById("memoryRoutes").textContent = e.memory.total_routes), e.file && (document.getElementById("fileRoutes").textContent = e.file.total_routes)
+    } catch (e) {
+        console.error("加载存储统计失败:", e), showMessage("storageError", "加载存储统计失败: " + e.message)
     }
 }
-
-// 批量迁移路由
 async function batchMigrateRoutes() {
-    const fromType = document.getElementById('migrateFrom').value;
-    const toType = document.getElementById('migrateTo').value;
-
-    if (fromType === toType) {
-        showMessage('storageError', '源存储类型和目标存储类型不能相同');
-        return;
-    }
-
-    if (!confirm(`确定要将所有路由从 ${fromType} 迁移到 ${toType} 吗？此操作不可逆。`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch('/api/admin/dynamic-routes/storage/batch-migrate', {
-            method: 'POST',
+    var e = document.getElementById("migrateFrom").value,
+        t = document.getElementById("migrateTo").value;
+    if (e === t) showMessage("storageError", "源存储类型和目标存储类型不能相同");
+    else if (confirm(`确定要将所有路由从 ${e} 迁移到 ${t} 吗？此操作不可逆。`)) try {
+        var a = await (await fetch("/api/admin/dynamic-routes/storage/batch-migrate", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                source_type: fromType,
-                target_type: toType
+                source_type: e,
+                target_type: t
             })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showMessage('storageSuccess', data.message);
-            refreshStorageStats();
-            loadRoutes(); // 刷新路由列表
-            loadStats();  // 刷新统计
-        } else {
-            showMessage('storageError', data.message || '迁移失败');
-        }
-    } catch (error) {
-        showMessage('storageError', '网络错误: ' + error.message);
+        })).json();
+        a.success ? (showMessage("storageSuccess", a.message), refreshStorageStats(), loadRoutes(), loadStats()) : showMessage("storageError", a.message || "迁移失败")
+    } catch (e) {
+        showMessage("storageError", "网络错误: " + e.message)
     }
 }
-
-// 清空存储
 async function clearStorage() {
-    const storageType = document.getElementById('clearStorageType').value;
-
-    if (!confirm(`确定要清空 ${storageType} 存储中的所有路由吗？此操作不可逆。`)) {
-        return;
-    }
-
-    try {
-        const response = await fetch(`/api/admin/dynamic-routes/storage/clear/${storageType}`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showMessage('storageSuccess', data.message);
-            refreshStorageStats();
-            loadRoutes(); // 刷新路由列表
-            loadStats();  // 刷新统计
-        } else {
-            showMessage('storageError', data.message || '清空失败');
-        }
-    } catch (error) {
-        showMessage('storageError', '网络错误: ' + error.message);
+    var e = document.getElementById("clearStorageType").value;
+    if (confirm(`确定要清空 ${e} 存储中的所有路由吗？此操作不可逆。`)) try {
+        var t = await (await fetch("/api/admin/dynamic-routes/storage/clear/" + e, {
+            method: "POST"
+        })).json();
+        t.success ? (showMessage("storageSuccess", t.message), refreshStorageStats(), loadRoutes(), loadStats()) : showMessage("storageError", t.message || "清空失败")
+    } catch (e) {
+        showMessage("storageError", "网络错误: " + e.message)
     }
 }
-
-// 修改 showMessage 函数以支持存储管理消息
 const originalShowMessage = showMessage;
-showMessage = function(type, message) {
-    if (type === 'storageSuccess' || type === 'storageError') {
-        const messageDiv = document.getElementById('storageMessage');
-        messageDiv.className = type === 'storageError' ? 'error' : 'success';
-        messageDiv.textContent = message;
-        messageDiv.style.display = 'block';
-
-        setTimeout(() => {
-            messageDiv.style.display = 'none';
-        }, 5000);
-    } else {
-        originalShowMessage(type, message);
-    }
+showMessage = function(e, t) {
+    if ("storageSuccess" === e || "storageError" === e) {
+        const a = document.getElementById("storageMessage");
+        a.className = "storageError" === e ? "error" : "success", a.textContent = t, a.style.display = "block", setTimeout(() => {
+            a.style.display = "none"
+        }, 5e3)
+    } else originalShowMessage(e, t)
 };

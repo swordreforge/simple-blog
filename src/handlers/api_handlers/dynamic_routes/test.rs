@@ -112,11 +112,6 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
                 return Err("静态内容处理器需要content字段".to_string());
             }
         }
-        HandlerType::Template => {
-            if route.handler_config.get("template_name").is_none() {
-                return Err("模板处理器需要template_name字段".to_string());
-            }
-        }
         HandlerType::Proxy => {
             if route.handler_config.get("target").is_none() {
                 return Err("代理处理器需要target字段".to_string());
@@ -159,30 +154,23 @@ fn preview_response(route: &CreateRouteRequest) -> serde_json::Value {
                 .and_then(|v| v.as_str())
                 .unwrap_or("text/plain; charset=utf-8");
 
+            // 检查是否有 inline_template，优先使用 inline_template
+            let actual_content = if let Some(ref inline) = route.inline_template {
+                if !inline.is_empty() {
+                    inline
+                } else {
+                    content
+                }
+            } else {
+                content
+            };
+
             serde_json::json!({
                 "status_code": 200,
                 "headers": {
                     "Content-Type": content_type
                 },
-                "body": content
-            })
-        }
-        HandlerType::Template => {
-            let template_name = route.handler_config.get("template_name")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let default_context: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
-            let context = route.handler_config.get("context")
-                .and_then(|v| v.as_object())
-                .unwrap_or(&default_context);
-
-            serde_json::json!({
-                "status_code": 200,
-                "headers": {
-                    "Content-Type": "text/html; charset=utf-8"
-                },
-                "template": template_name,
-                "context": context
+                "body": actual_content
             })
         }
         HandlerType::Proxy => {

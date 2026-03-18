@@ -615,8 +615,6 @@ pub enum HandlerType {
     Redirect,
     /// 静态内容处理器
     Static,
-    /// 模板渲染处理器
-    Template,
     /// 代理处理器
     Proxy,
     /// 自定义处理器
@@ -628,7 +626,6 @@ impl fmt::Display for HandlerType {
         match self {
             HandlerType::Redirect => write!(f, "redirect"),
             HandlerType::Static => write!(f, "static"),
-            HandlerType::Template => write!(f, "template"),
             HandlerType::Proxy => write!(f, "proxy"),
             HandlerType::Custom => write!(f, "custom"),
         }
@@ -640,7 +637,6 @@ impl AsRef<str> for HandlerType {
         match self {
             HandlerType::Redirect => "redirect",
             HandlerType::Static => "static",
-            HandlerType::Template => "template",
             HandlerType::Proxy => "proxy",
             HandlerType::Custom => "custom",
         }
@@ -653,7 +649,6 @@ impl HandlerType {
         match s.to_lowercase().as_str() {
             "redirect" => Some(HandlerType::Redirect),
             "static" => Some(HandlerType::Static),
-            "template" => Some(HandlerType::Template),
             "proxy" => Some(HandlerType::Proxy),
             "custom" => Some(HandlerType::Custom),
             _ => None,

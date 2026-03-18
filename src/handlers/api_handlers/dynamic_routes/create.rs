@@ -240,11 +240,6 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
                 }
             }
         }
-        HandlerType::Template => {
-            if route.handler_config.get("template_name").is_none() {
-                return Err("模板处理器需要template_name字段".to_string());
-            }
-        }
         HandlerType::Proxy => {
             if route.handler_config.get("target").is_none() {
                 return Err("代理处理器需要target字段".to_string());
