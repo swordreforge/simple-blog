@@ -532,11 +532,22 @@ async function saveRoute() {
 
 // 测试路由
 async function testRoute() {
-    const path = document.getElementById('routePath').value.trim();
-    const routeType = document.getElementById('routeType').value;
-    const handlerType = document.getElementById('handlerType').value;
-    const handlerConfig = document.getElementById('handlerConfig').value;
-    const contentSource = document.getElementById('contentSource').value;
+    const pathElement = document.getElementById('routePath');
+    const routeTypeElement = document.getElementById('routeType');
+    const handlerTypeElement = document.getElementById('handlerType');
+    const handlerConfigElement = document.getElementById('handlerConfig');
+    const contentSourceElement = document.getElementById('contentSource');
+
+    if (!pathElement || !routeTypeElement || !handlerTypeElement || !handlerConfigElement) {
+        alert('缺少必要的表单元素');
+        return;
+    }
+
+    const path = pathElement.value.trim();
+    const routeType = routeTypeElement.value;
+    const handlerType = handlerTypeElement.value;
+    const handlerConfig = handlerConfigElement.value;
+    const contentSource = contentSourceElement ? contentSourceElement.value : null;
 
     if (!path || !routeType || !handlerType) {
         alert('请先填写路由路径、选择路由类型和处理器类型');
