@@ -33,7 +33,10 @@ pub fn init_db(db_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 获取连接并初始化表结构和优化设置
     {
         let conn = pool.get()?;
-        
+
+        // 设置 busy_timeout，避免数据库锁立即失败
+        conn.execute("PRAGMA busy_timeout = 30000;", [])?;  // 30秒超时
+
         // 启用 WAL 模式以支持更好的并发读写
         conn.query_row("PRAGMA journal_mode = WAL;", [], |row| {
             let mode: String = row.get(0)?;
