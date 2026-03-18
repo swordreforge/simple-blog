@@ -3,14 +3,14 @@
  * 在所有测试运行前执行，确保认证状态存在
  */
 
-const { chromium } = require('@playwright');
-const path = require('path');
-const fs = require('fs');
+import { chromium } from 'playwright';
+import path from 'path';
+import fs from 'fs';
 
 async function globalSetup(config) {
   console.log('🚀 开始全局设置...');
   
-  const authFile = path.join(__dirname, '..', 'auth.json');
+  const authFile = path.join(process.cwd(), 'auth.json');
   
   // 检查认证文件是否已存在
   if (fs.existsSync(authFile)) {
@@ -67,4 +67,4 @@ async function globalSetup(config) {
   }
 }
 
-module.exports = globalSetup;
+export default globalSetup;

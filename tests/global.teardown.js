@@ -7,4 +7,4 @@ async function globalTeardown(config) {
   console.log('🧹 全局清理完成');
 }
 
-module.exports = globalTeardown;
+export default globalTeardown;

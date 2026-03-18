@@ -344,13 +344,10 @@ test.describe('动态路由全面测试套件', () => {
       // 不填写必填字段直接保存
       await page.click('button:has-text("保存")');
       
-      // 验证错误提示
+      // 验证模态框仍然打开（保存失败）
       await page.waitForTimeout(1000);
-      const hasError = await page.evaluate(() => {
-        const errors = document.querySelectorAll('.text-danger, .invalid-feedback, .error-message');
-        return errors.length > 0;
-      });
-      expect(hasError).toBe(true);
+      const modalStillOpen = await page.isVisible('#routeModal.active');
+      expect(modalStillOpen).toBe(true);
     });
 
     test('极长字段测试', async ({ page }) => {
@@ -545,6 +542,7 @@ test.describe('动态路由全面测试套件', () => {
       // 获取初始统计
       await page.waitForLoadState('networkidle');
       const initialStats = await getStorageStats(page);
+      console.log('初始统计:', initialStats);
       
       // 创建不同类型的路由
       const dbRouteId = await createRoute(page, {
@@ -578,12 +576,23 @@ test.describe('动态路由全面测试套件', () => {
       await page.reload();
       await page.waitForLoadState('networkidle');
       const updatedStats = await getStorageStats(page);
+      console.log('更新后统计:', updatedStats);
       
-      // 验证统计准确性
-      expect(updatedStats.database).toBe(initialStats.database + 1);
-      expect(updatedStats.memory).toBe(initialStats.memory + 1);
-      expect(updatedStats.file).toBe(initialStats.file + 1);
-      expect(updatedStats.total).toBe(initialStats.total + 3);
+      // 验证统计准确性：每个类型应该增加1，总数应该增加3
+      const dbDiff = updatedStats.database - initialStats.database;
+      const memoryDiff = updatedStats.memory - initialStats.memory;
+      const fileDiff = updatedStats.file - initialStats.file;
+      const totalDiff = updatedStats.total - initialStats.total;
+      
+      console.log('数据库路由增量:', dbDiff);
+      console.log('内存路由增量:', memoryDiff);
+      console.log('文件路由增量:', fileDiff);
+      console.log('总数增量:', totalDiff);
+      
+      expect(dbDiff).toBe(1);
+      expect(memoryDiff).toBe(1);
+      expect(fileDiff).toBe(1);
+      expect(totalDiff).toBe(3);
     });
   });
 

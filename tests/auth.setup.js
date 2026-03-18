@@ -3,7 +3,7 @@
  * 用于保存登录状态到 auth.json 文件，供其他测试复用
  */
 
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
 test('保存登录状态', async ({ page }) => {
   console.log('开始登录流程...');
