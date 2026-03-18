@@ -317,6 +317,12 @@ impl RouteTypeManager {
         let file_enabled = self.database_storage.list(0, 0, Some(RouteType::File), Some(true)).await
             .map_err(|e| StorageError::DatabaseError(format!("Failed to list enabled file routes: {}", e)))?.1;
 
+        // 数据库中的 memory 类型路由
+        let memory_db_routes = self.database_storage.list(0, 0, Some(RouteType::Memory), None).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list memory routes: {}", e)))?.1;
+        let memory_db_enabled = self.database_storage.list(0, 0, Some(RouteType::Memory), Some(true)).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to list enabled memory routes: {}", e)))?.1;
+
         // 内存统计（真正的内存存储）
         let memory_stats = self.memory_storage.get_stats();
 
@@ -328,6 +334,11 @@ impl RouteTypeManager {
         let total_file_enabled = file_enabled as usize + file_fs_stats.enabled_routes;
         let total_file_disabled = total_file_routes - total_file_enabled;
 
+        // 组合memory统计：数据库中的memory类型路由 + 真正的内存存储
+        let total_memory_routes = memory_db_routes as usize + memory_stats.total_routes;
+        let total_memory_enabled = memory_db_enabled as usize + memory_stats.enabled_routes;
+        let total_memory_disabled = total_memory_routes - total_memory_enabled;
+
         Ok(StorageStatsSummary {
             database: StorageStats {
                 total_routes: db_routes as usize,
@@ -336,9 +347,9 @@ impl RouteTypeManager {
                 memory_usage_bytes: 0, // 数据库不使用内存
             },
             memory: StorageStats {
-                total_routes: memory_stats.total_routes,
-                enabled_routes: memory_stats.enabled_routes,
-                disabled_routes: memory_stats.disabled_routes,
+                total_routes: total_memory_routes,
+                enabled_routes: total_memory_enabled,
+                disabled_routes: total_memory_disabled,
                 memory_usage_bytes: memory_stats.memory_usage_bytes,
             },
             file: StorageStats {
