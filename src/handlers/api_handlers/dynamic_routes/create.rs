@@ -57,10 +57,11 @@ pub async fn create_route(
     }
 
     // 创建路由
+    let route_type = route.route_type.unwrap_or(RouteType::Database);
     let dynamic_route = DynamicRoute {
         id: None,
         route_name: route.route_name,
-        route_type: route.route_type.unwrap_or(RouteType::Database),
+        route_type,
         path: route.path.clone(),
         handler_type: route.handler_type,
         handler_config: route.handler_config.clone(),
@@ -75,55 +76,78 @@ pub async fn create_route(
         metadata: route.metadata.clone(),
     };
 
-    match repo.create(&dynamic_route).await {
-        Ok(id) => {
-            // 记录操作日志
-            log_route_operation(&repo, id, "create", None, &dynamic_route, &admin_info.1);
-
-            // 如果路由启用，热更新到路由表
-            if dynamic_route.enabled {
-                if let Err(e) = state.dynamic_route_service().reload_route(id).await {
-                    tracing::warn!("路由热更新失败: id={}, error={}", id, e);
-                }
+    // 根据路由类型选择存储后端
+    let id = if let Some(manager) = state.route_type_manager() {
+        let storage = manager.get_storage(&route_type);
+        match storage.save_route(&dynamic_route).await {
+            Ok(id) => {
+                tracing::info!("路由创建成功: id={}, type={}, path={}", id, route_type, dynamic_route.path);
+                id
             }
-
-            HttpResponse::Created().json(serde_json::json!({
-                "success": true,
-                "message": "路由创建成功",
-                "data": {
-                    "id": id,
-                    "path": dynamic_route.path
-                }
-            }))
-        }
-        Err(e) => {
-            let error_msg = e.to_string();
-
-            // 检查是否是 UNIQUE 约束错误（路径已存在）
-            if error_msg.contains("UNIQUE constraint failed") && error_msg.contains("path") {
-                tracing::warn!("路径冲突: path={}, error={}", dynamic_route.path, error_msg);
-                return HttpResponse::Conflict().json(serde_json::json!({
-                    "success": false,
-                    "message": "路径已存在"
-                }));
-            }
-
-            // 检查是否是数据库锁错误
-            if error_msg.contains("database is locked") {
-                tracing::error!("数据库锁: path={}, error={}", dynamic_route.path, error_msg);
+            Err(e) => {
+                tracing::error!("创建路由失败: path={}, type={}, error={}", dynamic_route.path, route_type, e);
                 return HttpResponse::InternalServerError().json(serde_json::json!({
                     "success": false,
-                    "message": "数据库繁忙，请稍后重试"
+                    "message": format!("创建失败: {}", e)
                 }));
             }
+        }
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只使用数据库
+        match repo.create(&dynamic_route).await {
+            Ok(id) => {
+                tracing::info!("路由创建成功（数据库）: id={}, path={}", id, dynamic_route.path);
+                id
+            }
+            Err(e) => {
+                let error_msg = e.to_string();
 
-            tracing::error!("创建路由失败: path={}, error={}", dynamic_route.path, error_msg);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("创建失败: {}", e)
-            }))
+                // 检查是否是 UNIQUE 约束错误（路径已存在）
+                if error_msg.contains("UNIQUE constraint failed") && error_msg.contains("path") {
+                    tracing::warn!("路径冲突: path={}, error={}", dynamic_route.path, error_msg);
+                    return HttpResponse::Conflict().json(serde_json::json!({
+                        "success": false,
+                        "message": "路径已存在"
+                    }));
+                }
+
+                // 检查是否是数据库锁错误
+                if error_msg.contains("database is locked") {
+                    tracing::error!("数据库锁: path={}, error={}", dynamic_route.path, error_msg);
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "success": false,
+                        "message": "数据库繁忙，请稍后重试"
+                    }));
+                }
+
+                tracing::error!("创建路由失败: path={}, error={}", dynamic_route.path, error_msg);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("创建失败: {}", e)
+                }));
+            }
+        }
+    };
+
+    // 记录操作日志
+    log_route_operation(&repo, id, "create", None, &dynamic_route, &admin_info.1);
+
+    // 如果路由启用，热更新到路由表
+    if dynamic_route.enabled {
+        if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+            tracing::warn!("路由热更新失败: id={}, error={}", id, e);
         }
     }
+
+    HttpResponse::Created().json(serde_json::json!({
+        "success": true,
+        "message": "路由创建成功",
+        "data": {
+            "id": id,
+            "path": dynamic_route.path,
+            "route_type": route_type
+        }
+    }))
 }
 
 /// 检查字符串是否包含控制字符

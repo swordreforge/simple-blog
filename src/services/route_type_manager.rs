@@ -361,6 +361,17 @@ impl RouteTypeManager {
         })
     }
 
+    /// 从指定存储类型加载所有路由
+    pub async fn load_all_routes_from_storage(
+        &self,
+        route_type: RouteType,
+    ) -> Result<Vec<DynamicRoute>, StorageError> {
+        let storage = self.get_storage(&route_type);
+        let routes = storage.list_routes().await?;
+
+        Ok(routes)
+    }
+
     /// 清空指定类型的所有路由
     pub async fn clear_storage(&self, route_type: RouteType) -> Result<(), StorageError> {
         let storage = self.get_storage(&route_type);
@@ -407,9 +418,17 @@ pub struct StorageStats {
 #[async_trait::async_trait]
 impl RouteStorage for DynamicRouteRepository {
     async fn save_route(&self, route: &DynamicRoute) -> Result<i64, StorageError> {
-        self.create(route)
-            .await
-            .map_err(|e| StorageError::DatabaseError(e.to_string()))
+        // 如果路由已有 ID，则更新；否则创建新路由
+        if let Some(id) = route.id {
+            self.update(id, route)
+                .await
+                .map(|_| id)
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))
+        } else {
+            self.create(route)
+                .await
+                .map_err(|e| StorageError::DatabaseError(e.to_string()))
+        }
     }
 
     async fn load_route(&self, id: i64) -> Result<Option<DynamicRoute>, StorageError> {

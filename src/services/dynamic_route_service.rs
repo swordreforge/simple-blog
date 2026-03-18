@@ -6,40 +6,140 @@ use std::sync::Arc;
 use std::future::Future;
 use std::pin::Pin;
 use actix_web::{HttpRequest, HttpResponse};
+use serde::Serialize;
 use dynamic_route_actix::{RouteTable, SimpleRoute, RouteEntry};
 use crate::db::repositories::DynamicRouteRepository;
 use crate::db::models::{DynamicRoute, HandlerType};
+use crate::services::route_type_manager::RouteTypeManager;
+
+/// 路由加载统计
+#[derive(Debug, Default, Serialize)]
+pub struct LoadStats {
+    pub database_loaded: usize,
+    pub memory_loaded: usize,
+    pub file_loaded: usize,
+    pub failed: usize,
+}
+
+impl LoadStats {
+    pub fn total(&self) -> usize {
+        self.database_loaded + self.memory_loaded + self.file_loaded
+    }
+}
 
 /// 动态路由服务
 #[derive(Clone)]
 pub struct DynamicRouteService {
     route_table: Arc<RouteTable>,
     repository: DynamicRouteRepository,
+    route_type_manager: Option<Arc<RouteTypeManager>>,
 }
 
 impl DynamicRouteService {
     /// 创建新的动态路由服务
-    pub fn new(route_table: Arc<RouteTable>, repository: DynamicRouteRepository) -> Self {
+    pub fn new(
+        route_table: Arc<RouteTable>,
+        repository: DynamicRouteRepository,
+        route_type_manager: Option<Arc<RouteTypeManager>>,
+    ) -> Self {
         Self {
             route_table,
             repository,
+            route_type_manager,
+        }
+    }
+
+    /// 从所有存储类型加载路由
+    pub async fn load_all_routes(&self) -> Result<LoadStats, Box<dyn std::error::Error>> {
+        let mut stats = LoadStats::default();
+
+        // 如果有路由类型管理器，从所有存储加载
+        if let Some(manager) = &self.route_type_manager {
+            use crate::db::models::RouteType;
+
+            // 1. 从内存存储加载（最快）
+            match manager.load_all_routes_from_storage(RouteType::Memory).await {
+                Ok(routes) => {
+                    for route in routes {
+                        if route.enabled {
+                            if let Err(e) = self.add_route_to_table(&route) {
+                                tracing::warn!("从内存存储加载路由失败: path={}, error={}", route.path, e);
+                                stats.failed += 1;
+                            } else {
+                                stats.memory_loaded += 1;
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("从内存存储加载路由失败: {}", e);
+                }
+            }
+
+            // 2. 从文件存储加载
+            match manager.load_all_routes_from_storage(RouteType::File).await {
+                Ok(routes) => {
+                    for route in routes {
+                        if route.enabled {
+                            if let Err(e) = self.add_route_to_table(&route) {
+                                tracing::warn!("从文件存储加载路由失败: path={}, error={}", route.path, e);
+                                stats.failed += 1;
+                            } else {
+                                stats.file_loaded += 1;
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("从文件存储加载路由失败: {}", e);
+                }
+            }
+
+            // 3. 从数据库存储加载
+            match manager.load_all_routes_from_storage(RouteType::Database).await {
+                Ok(routes) => {
+                    for route in routes {
+                        if route.enabled {
+                            if let Err(e) = self.add_route_to_table(&route) {
+                                tracing::warn!("从数据库存储加载路由失败: path={}, error={}", route.path, e);
+                                stats.failed += 1;
+                            } else {
+                                stats.database_loaded += 1;
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("从数据库存储加载路由失败: {}", e);
+                }
+            }
+
+            tracing::info!("路由加载统计: {:?}", stats);
+            Ok(stats)
+        } else {
+            // 兼容性：如果没有 RouteTypeManager，只从数据库加载
+            let routes = self.repository.get_all_enabled().await?;
+            let count = routes.len();
+
+            for route in routes {
+                if let Err(e) = self.add_route_to_table(&route) {
+                    tracing::warn!("加载路由失败: path={}, error={}", route.path, e);
+                }
+            }
+
+            tracing::info!("已加载 {} 个动态路由（仅数据库）", count);
+            Ok(LoadStats {
+                database_loaded: count,
+                ..Default::default()
+            })
         }
     }
 
     /// 从数据库加载所有启用的路由到路由表
+    ///
+    /// 注意：此方法为了向后兼容而保留，内部实际调用 `load_all_routes()`
     pub async fn load_routes_from_db(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let routes = self.repository.get_all_enabled().await?;
-        let count = routes.len();
-        
-        for route in routes {
-            if let Err(e) = self.add_route_to_table(&route) {
-                tracing::warn!("加载路由失败: path={}, error={}", route.path, e);
-            } else {
-                tracing::debug!("加载路由成功: path={}, type={}", route.path, route.handler_type);
-            }
-        }
-        
-        tracing::info!("已加载 {} 个动态路由", count);
+        self.load_all_routes().await?;
         Ok(())
     }
 

@@ -306,21 +306,7 @@ async fn main() -> std::io::Result<()> {
     println!("🛣️  初始化动态路由表...");
     let route_table = Arc::new(dynamic_route_actix::RouteTable::new());
     let dynamic_route_repo = db::repositories::DynamicRouteRepository::new(repository.get_pool().clone());
-    let dynamic_route_service = services::dynamic_route_service::DynamicRouteService::new(
-        route_table.clone(),
-        dynamic_route_repo.clone(),
-    );
-    
-    // 从数据库加载路由
-    match dynamic_route_service.load_routes_from_db().await {
-        Ok(_) => {
-            println!("✅ 动态路由加载完成");
-        }
-        Err(e) => {
-            eprintln!("⚠️  动态路由加载失败: {}", e);
-        }
-    }
-    
+
     // 初始化路由类型管理器
     println!("🔧 初始化路由类型管理器...");
     let route_type_manager = match app_state::create_route_type_manager(
@@ -330,7 +316,7 @@ async fn main() -> std::io::Result<()> {
     ) {
         Ok(manager) => {
             println!("✅ 路由类型管理器初始化成功");
-            
+
             // 输出统计信息
             match manager.get_storage_stats().await {
                 Ok(stats) => {
@@ -343,20 +329,43 @@ async fn main() -> std::io::Result<()> {
                     eprintln!("⚠️  获取路由存储统计失败: {}", e);
                 }
             }
-            
-            manager
+
+            Some(manager)
         }
         Err(e) => {
             eprintln!("⚠️  路由类型管理器初始化失败: {}", e);
             eprintln!("💡 将继续使用数据库存储作为后备方案");
-            // 即使失败，程序也应该继续运行
-            return Err(std::io::Error::other(e.to_string()));
+            None  // 失败时为 None，回退到只从数据库加载
         }
     };
-    
+
+    // 创建动态路由服务
+    let dynamic_route_service = services::dynamic_route_service::DynamicRouteService::new(
+        route_table.clone(),
+        dynamic_route_repo.clone(),
+        route_type_manager.clone(),
+    );
+
+    // 从所有存储类型加载路由
+    println!("🔄 加载动态路由...");
+    match dynamic_route_service.load_all_routes().await {
+        Ok(stats) => {
+            println!("✅ 路由加载完成:");
+            println!("    数据库路由: {} 条", stats.database_loaded);
+            println!("    内存路由: {} 条", stats.memory_loaded);
+            println!("    文件路由: {} 条", stats.file_loaded);
+            if stats.failed > 0 {
+                println!("    失败: {} 条", stats.failed);
+            }
+        }
+        Err(e) => {
+            eprintln!("⚠️  路由加载失败: {}", e);
+        }
+    }
+
     // 启动 HTTP/1.1/HTTP/2 服务器
     // 创建应用状态（依赖注入容器）
-    let app_state = app_state::AppState::new_with_route_type_manager(
+    let app_state = app_state::AppState::new(
         repository.clone(),
         app_cache.clone(),
         view_batch_processor.clone(),

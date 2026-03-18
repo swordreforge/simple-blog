@@ -48,6 +48,7 @@ impl AppState {
         view_batch_processor: Arc<ViewBatchProcessor>,
         route_table: Arc<RouteTable>,
         dynamic_route_service: Arc<DynamicRouteService>,
+        route_type_manager: Option<Arc<RouteTypeManager>>,
     ) -> Self {
         Self {
             repository,
@@ -55,27 +56,7 @@ impl AppState {
             view_batch_processor,
             route_table,
             dynamic_route_service,
-            route_type_manager: None,
-        }
-    }
-
-    /// 创建带有路由类型管理器的应用状态
-    #[allow(dead_code)]
-    pub fn new_with_route_type_manager(
-        repository: Arc<dyn repositories::Repository>,
-        cache: Arc<AppCache>,
-        view_batch_processor: Arc<ViewBatchProcessor>,
-        route_table: Arc<RouteTable>,
-        dynamic_route_service: Arc<DynamicRouteService>,
-        route_type_manager: Arc<RouteTypeManager>,
-    ) -> Self {
-        Self {
-            repository,
-            cache,
-            view_batch_processor,
-            route_table,
-            dynamic_route_service,
-            route_type_manager: Some(route_type_manager),
+            route_type_manager,
         }
     }
 

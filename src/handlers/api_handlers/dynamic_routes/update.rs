@@ -44,20 +44,39 @@ pub async fn update_route(
         }
     };
 
-    // 获取现有路由
-    let old_route = match repo.get_by_id(id).await {
-        Ok(Some(route)) => route,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "路由不存在"
-            }));
+    // 获取现有路由 - 使用 RouteTypeManager 从正确的存储后端加载
+    let old_route = if let Some(manager) = state.route_type_manager() {
+        match manager.load_route(id, None).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("查询失败: {}", e)
-            }));
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只从数据库加载
+        match repo.get_by_id(id).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
     };
 
@@ -138,8 +157,19 @@ pub async fn update_route(
         metadata: update_data.metadata.or_else(|| old_route.metadata.clone()),
     };
 
-    // 更新路由
-    match repo.update(id, &updated_route).await {
+    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    let update_result = if let Some(manager) = state.route_type_manager() {
+        let storage = manager.get_storage(&updated_route.route_type);
+        storage.save_route(&updated_route).await
+            .map(|_| ())
+            .map_err(|e| format!("更新失败: {}", e))
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只使用数据库
+        repo.update(id, &updated_route).await
+            .map_err(|e| e.to_string())
+    };
+
+    match update_result {
         Ok(_) => {
             // 记录操作日志
             log_route_operation(&repo, id, "update", Some(&old_route), &updated_route, &admin_info.1);
@@ -179,7 +209,7 @@ pub async fn update_route(
             tracing::error!("更新路由失败: id={}, path={}, error={}", id, updated_route.path, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
-                "message": format!("更新失败: {}", e)
+                "message": error_msg
             }))
         }
     }
@@ -204,20 +234,39 @@ pub async fn patch_route(
     let id = path.into_inner();
     let repo = state.dynamic_route_repository();
 
-    // 获取现有路由
-    let old_route = match repo.get_by_id(id).await {
-        Ok(Some(route)) => route,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "路由不存在"
-            }));
+    // 获取现有路由 - 使用 RouteTypeManager 从正确的存储后端加载
+    let old_route = if let Some(manager) = state.route_type_manager() {
+        match manager.load_route(id, None).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("查询失败: {}", e)
-            }));
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只从数据库加载
+        match repo.get_by_id(id).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
     };
 
@@ -300,8 +349,19 @@ pub async fn patch_route(
         metadata: update_data.metadata.or_else(|| old_route.metadata.clone()),
     };
 
-    // 更新路由
-    match repo.update(id, &updated_route).await {
+    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    let update_result = if let Some(manager) = state.route_type_manager() {
+        let storage = manager.get_storage(&updated_route.route_type);
+        storage.save_route(&updated_route).await
+            .map(|_| ())
+            .map_err(|e| format!("更新失败: {}", e))
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只使用数据库
+        repo.update(id, &updated_route).await
+            .map_err(|e| e.to_string())
+    };
+
+    match update_result {
         Ok(_) => {
             // 记录操作日志
             log_route_operation(&repo, id, "update", Some(&old_route), &updated_route, &admin_info.1);
@@ -336,7 +396,7 @@ pub async fn patch_route(
             tracing::error!("更新路由失败: id={}, path={}, error={}", id, updated_route.path, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
-                "message": format!("更新失败: {}", e)
+                "message": error_msg
             }))
         }
     }
@@ -360,20 +420,39 @@ pub async fn enable_route(
     let id = path.into_inner();
     let repo = state.dynamic_route_repository();
 
-    // 获取现有路由
-    let old_route = match repo.get_by_id(id).await {
-        Ok(Some(route)) => route,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "路由不存在"
-            }));
+    // 获取现有路由 - 使用 RouteTypeManager 从正确的存储后端加载
+    let old_route = if let Some(manager) = state.route_type_manager() {
+        match manager.load_route(id, None).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("查询失败: {}", e)
-            }));
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只从数据库加载
+        match repo.get_by_id(id).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
     };
 
@@ -387,7 +466,19 @@ pub async fn enable_route(
         ..old_route
     };
 
-    match repo.update(id, &updated_route).await {
+    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    let update_result = if let Some(manager) = state.route_type_manager() {
+        let storage = manager.get_storage(&updated_route.route_type);
+        storage.save_route(&updated_route).await
+            .map(|_| ())
+            .map_err(|e| format!("操作失败: {}", e))
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只使用数据库
+        repo.update(id, &updated_route).await
+            .map_err(|e| e.to_string())
+    };
+
+    match update_result {
         Ok(_) => {
             log_route_operation(&repo, id, "enable", Some(&old_route_clone), &updated_route, &admin_info.1);
 
@@ -416,7 +507,7 @@ pub async fn enable_route(
             tracing::error!("启用路由失败: id={}, error={}", id, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
-                "message": format!("操作失败: {}", e)
+                "message": error_msg
             }))
         }
     }
@@ -440,20 +531,39 @@ pub async fn disable_route(
     let id = path.into_inner();
     let repo = state.dynamic_route_repository();
 
-    // 获取现有路由
-    let old_route = match repo.get_by_id(id).await {
-        Ok(Some(route)) => route,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "路由不存在"
-            }));
+    // 获取现有路由 - 使用 RouteTypeManager 从正确的存储后端加载
+    let old_route = if let Some(manager) = state.route_type_manager() {
+        match manager.load_route(id, None).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("查询失败: {}", e)
-            }));
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只从数据库加载
+        match repo.get_by_id(id).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
     };
 
@@ -467,7 +577,19 @@ pub async fn disable_route(
         ..old_route
     };
 
-    match repo.update(id, &updated_route).await {
+    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    let update_result = if let Some(manager) = state.route_type_manager() {
+        let storage = manager.get_storage(&updated_route.route_type);
+        storage.save_route(&updated_route).await
+            .map(|_| ())
+            .map_err(|e| format!("操作失败: {}", e))
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只使用数据库
+        repo.update(id, &updated_route).await
+            .map_err(|e| e.to_string())
+    };
+
+    match update_result {
         Ok(_) => {
             log_route_operation(&repo, id, "disable", Some(&old_route_clone), &updated_route, &admin_info.1);
 
@@ -494,7 +616,7 @@ pub async fn disable_route(
             tracing::error!("禁用路由失败: id={}, error={}", id, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
-                "message": format!("操作失败: {}", e)
+                "message": error_msg
             }))
         }
     }

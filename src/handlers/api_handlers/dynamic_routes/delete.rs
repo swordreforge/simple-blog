@@ -20,25 +20,54 @@ pub async fn delete_route(
     let id = path.into_inner();
     let repo = state.dynamic_route_repository();
 
-    // 获取现有路由（用于日志记录）
-    let old_route = match repo.get_by_id(id).await {
-        Ok(Some(route)) => route,
-        Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "路由不存在"
-            }));
+    // 获取现有路由（用于日志记录）- 使用 RouteTypeManager 从正确的存储后端加载
+    let old_route = if let Some(manager) = state.route_type_manager() {
+        match manager.load_route(id, None).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("查询失败: {}", e)
-            }));
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只从数据库加载
+        match repo.get_by_id(id).await {
+            Ok(Some(route)) => route,
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "success": false,
+                    "message": "路由不存在"
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("查询失败: {}", e)
+                }));
+            }
         }
     };
 
-    // 删除路由
-    match repo.delete(id).await {
+    // 删除路由 - 使用 RouteTypeManager 从正确的存储后端删除
+    let delete_result = if let Some(manager) = state.route_type_manager() {
+        let storage = manager.get_storage(&old_route.route_type);
+        storage.delete_route(id).await
+            .map_err(|e| format!("删除失败: {}", e))
+    } else {
+        // 兼容性：如果没有 RouteTypeManager，只使用数据库
+        repo.delete(id).await
+            .map_err(|e| e.to_string())
+    };
+
+    match delete_result {
         Ok(_) => {
             // 记录操作日志
             log_route_operation(&repo, id, "delete", Some(&old_route), &old_route, &admin_info.1);
@@ -54,7 +83,7 @@ pub async fn delete_route(
         Err(e) => {
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
-                "message": format!("删除失败: {}", e)
+                "message": e
             }))
         }
     }
