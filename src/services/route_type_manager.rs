@@ -481,21 +481,7 @@ impl RouteTypeManager {
 
     /// 清空指定类型的所有路由
     pub async fn clear_storage(&self, route_type: RouteType) -> Result<(), StorageError> {
-        // 获取要清空的路由数量
-        let storage = self.get_storage(&route_type);
-        let routes = storage.list_routes().await?;
-        let route_count = routes.len();
-
-        if route_count == 0 {
-            tracing::info!("清空 {:?} 存储：无路由需要清空", route_type);
-            return Ok(());
-        }
-
-        tracing::info!(
-            "准备清空 {} 个 {:?} 类型的路由",
-            route_count,
-            route_type
-        );
+        tracing::info!("准备清空 {:?} 类型的所有路由", route_type);
 
         // 类型专有处理
         match route_type {
