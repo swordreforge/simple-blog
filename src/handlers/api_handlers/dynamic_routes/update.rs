@@ -100,6 +100,27 @@ pub async fn update_route(
             }))
         }
         Err(e) => {
+            let error_msg = e.to_string();
+
+            // 检查是否是 UNIQUE 约束错误（路径已存在）
+            if error_msg.contains("UNIQUE constraint failed") && error_msg.contains("path") {
+                tracing::warn!("路径冲突: path={}, error={}", updated_route.path, error_msg);
+                return HttpResponse::Conflict().json(serde_json::json!({
+                    "success": false,
+                    "message": "路径已存在"
+                }));
+            }
+
+            // 检查是否是数据库锁错误
+            if error_msg.contains("database is locked") {
+                tracing::error!("数据库锁: path={}, error={}", updated_route.path, error_msg);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": "数据库繁忙，请稍后重试"
+                }));
+            }
+
+            tracing::error!("更新路由失败: id={}, path={}, error={}", id, updated_route.path, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": format!("更新失败: {}", e)
@@ -199,6 +220,27 @@ pub async fn patch_route(
             }))
         }
         Err(e) => {
+            let error_msg = e.to_string();
+
+            // 检查是否是 UNIQUE 约束错误（路径已存在）
+            if error_msg.contains("UNIQUE constraint failed") && error_msg.contains("path") {
+                tracing::warn!("路径冲突: path={}, error={}", updated_route.path, error_msg);
+                return HttpResponse::Conflict().json(serde_json::json!({
+                    "success": false,
+                    "message": "路径已存在"
+                }));
+            }
+
+            // 检查是否是数据库锁错误
+            if error_msg.contains("database is locked") {
+                tracing::error!("数据库锁: path={}, error={}", updated_route.path, error_msg);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": "数据库繁忙，请稍后重试"
+                }));
+            }
+
+            tracing::error!("更新路由失败: id={}, path={}, error={}", id, updated_route.path, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": format!("更新失败: {}", e)
@@ -267,6 +309,18 @@ pub async fn enable_route(
             }))
         }
         Err(e) => {
+            let error_msg = e.to_string();
+
+            // 检查是否是数据库锁错误
+            if error_msg.contains("database is locked") {
+                tracing::error!("数据库锁: id={}, error={}", id, error_msg);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": "数据库繁忙，请稍后重试"
+                }));
+            }
+
+            tracing::error!("启用路由失败: id={}, error={}", id, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": format!("操作失败: {}", e)
@@ -333,6 +387,18 @@ pub async fn disable_route(
             }))
         }
         Err(e) => {
+            let error_msg = e.to_string();
+
+            // 检查是否是数据库锁错误
+            if error_msg.contains("database is locked") {
+                tracing::error!("数据库锁: id={}, error={}", id, error_msg);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": "数据库繁忙，请稍后重试"
+                }));
+            }
+
+            tracing::error!("禁用路由失败: id={}, error={}", id, error_msg);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": format!("操作失败: {}", e)
