@@ -90,8 +90,27 @@ pub async fn import_routes(
             }
         };
 
-        // 检查路径冲突
-        if let Ok(Some(_)) = repo.get_by_path(&route.path).await {
+        // 检查路径冲突（在所有存储类型中检查）
+        let has_conflict = if let Some(manager) = state.route_type_manager() {
+            // 检查所有存储类型
+            let mut conflict = false;
+            for route_type in [crate::db::models::RouteType::Database, crate::db::models::RouteType::Memory, crate::db::models::RouteType::File] {
+                if let Ok(Some(_)) = manager.load_route_by_path(&route.path, Some(route_type)).await {
+                    conflict = true;
+                    break;
+                }
+            }
+            conflict
+        } else {
+            // 兼容性：只检查数据库
+            if let Ok(Some(_)) = repo.get_by_path(&route.path).await {
+                true
+            } else {
+                false
+            }
+        };
+
+        if has_conflict {
             skipped_count += 1;
             continue;
         }
@@ -115,7 +134,65 @@ pub async fn import_routes(
             metadata: route.metadata,
         };
 
-        match repo.create(&import_route).await {
+        // 使用 RouteTypeManager 导入路由
+        let import_result = if let Some(manager) = state.route_type_manager() {
+            // 先在数据库中创建记录
+            let db_id = match repo.create(&import_route).await {
+                Ok(id) => id,
+                Err(e) => {
+                    failed_count += 1;
+                    errors.push(format!("第{}条路由（数据库）: {}", index + 1, e));
+                    continue;
+                }
+            };
+
+            // 如果不是数据库类型，还需要在对应的存储后端中保存
+            if import_route.route_type != crate::db::models::RouteType::Database {
+                let storage = manager.get_storage(&import_route.route_type);
+                match storage.save_route(&import_route).await {
+                    Ok(_) => {
+                        tracing::info!("导入路由成功: id={}, type={}, path={}", db_id, import_route.route_type, import_route.path);
+                    }
+                    Err(e) => {
+                        tracing::error!("导入路由失败（存储后端）: id={}, type={}, error={}", db_id, import_route.route_type, e);
+                        // 删除数据库记录
+                        let _ = repo.delete(db_id).await;
+                        failed_count += 1;
+                        errors.push(format!("第{}条路由（存储后端）: {}", index + 1, e));
+                        continue;
+                    }
+                }
+            } else {
+                tracing::info!("导入路由成功（数据库）: id={}, path={}", db_id, import_route.path);
+            }
+
+            // 如果路由启用，热更新到路由表
+            if import_route.enabled {
+                if let Err(e) = state.dynamic_route_service().reload_route(db_id).await {
+                    tracing::warn!("导入路由热更新失败: id={}, error={}", db_id, e);
+                }
+            }
+
+            Ok(db_id)
+        } else {
+            // 兼容性：如果没有 RouteTypeManager，只使用数据库
+            match repo.create(&import_route).await {
+                Ok(id) => {
+                    // 如果路由启用，热更新到路由表
+                    if import_route.enabled {
+                        if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+                            tracing::warn!("导入路由热更新失败: id={}, error={}", id, e);
+                        }
+                    }
+                    Ok(id)
+                }
+                Err(e) => {
+                    Err(e)
+                }
+            }
+        };
+
+        match import_result {
             Ok(id) => {
                 imported_count += 1;
                 log_import_operation(&repo, id, &import_route, username);
