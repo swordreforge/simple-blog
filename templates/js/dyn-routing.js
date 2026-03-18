@@ -41,13 +41,13 @@ function renderRoutes() {
             e = e.handler_type.toLowerCase();
         return t.includes(o) || a.includes(o) || e.includes(o)
     });
-    0 === t.length ? e.innerHTML = '<tr><td colspan="9" class="empty-state">暂无路由数据</td></tr>' : e.innerHTML = t.map(e => {
+    0 === t.length ? e.innerHTML = '<tr><td colspan="9" class="empty-state">暂无路由数据</td></tr>' : e.innerHTML = t.map((e, index) => {
         var t = e.route_name ? `<div style="font-weight: 500; margin-bottom: 2px;">${escapeHtml(e.route_name)}</div>` : "",
             a = getHandlerTypeLabel(e.handler_type),
             o = getStorageTypeLabel(e.route_type || "database");
         return `
         <tr>
-            <td>${e.id}</td>
+            <td>${index + 1}</td>
             <td>${t}</td>
             <td><span class="route-path">${escapeHtml(e.path)}</span></td>
             <td><span class="badge badge-warning handler-type-display">${a}</span></td>

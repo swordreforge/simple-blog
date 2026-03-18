@@ -2307,10 +2307,30 @@ impl DynamicRouteRepository {
     /// 创建路由
     pub async fn create(&self, route: &DynamicRoute) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
+
+        // 查找最小的未使用ID（ID复用逻辑）
+        let next_id: i64 = conn.query_row(
+            "SELECT CASE
+                WHEN MIN(id) > 1 THEN 1
+                ELSE (
+                    SELECT MIN(id) + 1
+                    FROM dynamic_routes r1
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM dynamic_routes r2
+                        WHERE r2.id = r1.id + 1
+                    )
+                )
+            END as next_id FROM dynamic_routes",
+            [],
+            |row| row.get(0),
+        ).unwrap_or_else(|_| 1);
+
         conn.execute(
-            "INSERT INTO dynamic_routes (route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, metadata, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO dynamic_routes (id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, metadata, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
+                next_id,
                 &route.route_name,
                 &route.route_type,
                 &route.path,
@@ -2327,7 +2347,7 @@ impl DynamicRouteRepository {
                 &route.updated_at,
             ],
         )?;
-        Ok(conn.last_insert_rowid())
+        Ok(next_id)
     }
 
     /// 根据ID获取路由
@@ -2608,6 +2628,15 @@ impl DynamicRouteRepository {
     pub async fn delete_all(&self) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute("DELETE FROM dynamic_routes", [])?;
+        Ok(())
+    }
+
+    /// 重置自增ID计数器
+    ///
+    /// 在清空所有路由后调用此方法，重置自增ID从1开始
+    pub async fn reset_auto_increment(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        conn.execute("DELETE FROM sqlite_sequence WHERE name='dynamic_routes'", [])?;
         Ok(())
     }
 }

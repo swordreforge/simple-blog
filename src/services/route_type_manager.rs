@@ -560,6 +560,12 @@ impl RouteTypeManager {
             self.clear_storage(storage_type).await?;
         }
 
+        // 重置自增ID计数器，使新路由从ID 1开始
+        self.database_storage.reset_auto_increment().await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to reset auto increment: {}", e)))?;
+
+        tracing::info!("已重置自增ID计数器，新路由将从ID 1开始");
+
         Ok(())
     }
 }
