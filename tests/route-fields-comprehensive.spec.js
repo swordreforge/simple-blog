@@ -554,6 +554,11 @@ test.describe('动态路由全面测试套件', () => {
       });
       createdRouteIds.push(dbRouteId);
       
+      // 验证database路由的route_type
+      const dbRouteData = await fetchRouteData(page, dbRouteId);
+      console.log('Database路由数据:', dbRouteData);
+      expect(dbRouteData.route_type).toBe('database');
+      
       const memoryRouteId = await createRoute(page, {
         route_name: 'stats-memory-test',
         route_path: '/stats-memory-test',
@@ -563,6 +568,11 @@ test.describe('动态路由全面测试套件', () => {
       });
       createdRouteIds.push(memoryRouteId);
       
+      // 验证memory路由的route_type
+      const memoryRouteData = await fetchRouteData(page, memoryRouteId);
+      console.log('Memory路由数据:', memoryRouteData);
+      expect(memoryRouteData.route_type).toBe('memory');
+      
       const fileRouteId = await createRoute(page, {
         route_name: 'stats-file-test',
         route_path: '/stats-file-test',
@@ -571,6 +581,11 @@ test.describe('动态路由全面测试套件', () => {
         template_path: 'templates/test.html'
       });
       createdRouteIds.push(fileRouteId);
+      
+      // 验证file路由的route_type
+      const fileRouteData = await fetchRouteData(page, fileRouteId);
+      console.log('File路由数据:', fileRouteData);
+      expect(fileRouteData.route_type).toBe('file');
       
       // 获取更新后的统计
       await page.reload();
