@@ -684,12 +684,23 @@ mod tests {
         let storage = MemoryRouteStorage::new(100, 60);
 
         // 测试保存路由
-        let route = DynamicRoute::new(
-            RouteType::Memory,
-            "/test".to_string(),
-            HandlerType::Static,
-            serde_json::json!({"content": "test"}),
-        );
+        let route = DynamicRoute {
+            id: None,
+            route_name: Some("测试路由".to_string()),
+            route_type: RouteType::Memory,
+            path: "/test".to_string(),
+            handler_type: HandlerType::Static,
+            handler_config: serde_json::json!({"content": "test"}),
+            inline_template: Some("test content".to_string()),
+            template_path: None,
+            content_type_hint: Some("text/plain".to_string()),
+            enabled: true,
+            priority: 0,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+            created_by: Some("test_user".to_string()),
+            metadata: None,
+        };
 
         let id = storage.save_route(&route).await.unwrap();
         assert!(id > 0);
@@ -735,8 +746,8 @@ mod tests {
             path: "/test/memory".to_string(),
             handler_type: HandlerType::Static,
             handler_config: json!({"content": "test content"}),
-            content_source: None,
-            content_template: None,
+            inline_template: Some("test content".to_string()),
+            template_path: None,
             content_type_hint: Some("text/plain".to_string()),
             enabled: true,
             priority: 0,
@@ -786,8 +797,8 @@ mod tests {
             path: "/test/conflict".to_string(),
             handler_type: HandlerType::Static,
             handler_config: json!({"content": "route1"}),
-            content_source: None,
-            content_template: None,
+            inline_template: Some("route1".to_string()),
+            template_path: None,
             content_type_hint: Some("text/plain".to_string()),
             enabled: true,
             priority: 0,
@@ -804,8 +815,8 @@ mod tests {
             path: "/test/conflict".to_string(), // 相同的路径
             handler_type: HandlerType::Static,
             handler_config: json!({"content": "route2"}),
-            content_source: None,
-            content_template: None,
+            inline_template: Some("route2".to_string()),
+            template_path: None,
             content_type_hint: Some("text/plain".to_string()),
             enabled: true,
             priority: 0,
@@ -840,8 +851,8 @@ mod tests {
                 path: format!("/test/capacity/{}", i),
                 handler_type: HandlerType::Static,
                 handler_config: json!({"content": format!("content{}", i)}),
-                content_source: None,
-                content_template: None,
+                inline_template: Some(format!("content{}", i)),
+                template_path: None,
                 content_type_hint: Some("text/plain".to_string()),
                 enabled: true,
                 priority: 0,
@@ -861,8 +872,8 @@ mod tests {
             path: "/test/capacity/4".to_string(),
             handler_type: HandlerType::Static,
             handler_config: json!({"content": "content4"}),
-            content_source: None,
-            content_template: None,
+            inline_template: Some("content4".to_string()),
+            template_path: None,
             content_type_hint: Some("text/plain".to_string()),
             enabled: true,
             priority: 0,

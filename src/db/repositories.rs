@@ -2498,6 +2498,16 @@ impl DynamicRouteRepository {
         Ok(())
     }
 
+    /// 根据类型删除路由
+    pub async fn delete_by_type(&self, route_type: RouteType) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let result = conn.execute(
+            "DELETE FROM dynamic_routes WHERE route_type=?",
+            params![route_type]
+        )?;
+        Ok(result as i64)
+    }
+
     /// 记录操作日志
     pub async fn log_operation(
         &self,

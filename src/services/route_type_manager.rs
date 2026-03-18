@@ -233,15 +233,114 @@ impl RouteTypeManager {
                 ))
             })?;
 
+        // 字段转换逻辑
+        match (from_type, to_type) {
+            // file -> database/memory: 读取文件内容转换为 inline_template
+            (RouteType::File, RouteType::Database) |
+            (RouteType::File, RouteType::Memory) => {
+                let template_path = route.template_path.clone();
+                if let Some(ref path) = template_path {
+                    // 读取模板文件内容
+                    let content = std::fs::read_to_string(path)
+                        .map_err(|e| StorageError::FileError(
+                            format!("Failed to read template file {}: {}", path, e)
+                        ))?;
+
+                    // 设置 inline_template
+                    route.inline_template = Some(content);
+                    // 清除 template_path（database/memory 类型不需要）
+                    route.template_path = None;
+
+                    tracing::info!(
+                        "迁移路由 {}: 读取文件 {} 内容到 inline_template",
+                        id,
+                        path
+                    );
+                } else {
+                    return Err(StorageError::InvalidData(
+                        "File type route missing template_path".to_string()
+                    ));
+                }
+            }
+
+            // database/memory -> file: 将 inline_template 写入文件
+            (RouteType::Database, RouteType::File) |
+            (RouteType::Memory, RouteType::File) => {
+                if let Some(ref inline_template) = route.inline_template {
+                    // 确定文件路径
+                    let template_path = if let Some(ref path) = route.template_path {
+                        path.clone()
+                    } else {
+                        // 生成默认路径
+                        format!("templates/route_{}.html", route.id.unwrap_or(0))
+                    };
+
+                    // 确保目录存在
+                    if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
+                        std::fs::create_dir_all(parent_dir)
+                            .map_err(|e| StorageError::FileError(
+                                format!("Failed to create directory {}: {}", parent_dir.display(), e)
+                            ))?;
+                    }
+
+                    // 写入文件
+                    std::fs::write(&template_path, inline_template)
+                        .map_err(|e| StorageError::FileError(
+                            format!("Failed to write template file {}: {}", template_path, e)
+                        ))?;
+
+                    // 设置 template_path
+                    route.template_path = Some(template_path);
+                    // 清除 inline_template（file 类型不需要）
+                    route.inline_template = None;
+
+                    tracing::info!(
+                        "迁移路由 {}: 将 inline_template 写入文件 {}",
+                        id,
+                        route.template_path.as_ref().unwrap()
+                    );
+                } else {
+                    return Err(StorageError::InvalidData(
+                        "Cannot migrate route without inline_template to file type".to_string()
+                    ));
+                }
+            }
+
+            // database <-> memory: 直接迁移，无需字段转换
+            (RouteType::Database, RouteType::Memory) |
+            (RouteType::Memory, RouteType::Database) => {
+                tracing::info!("迁移路由 {}: database <-> memory 无需字段转换", id);
+            }
+
+            _ => {
+                return Err(StorageError::InvalidData(
+                    format!("Unsupported migration: {:?} -> {:?}", from_type, to_type)
+                ));
+            }
+        }
+
         // 更新路由类型
         route.route_type = to_type;
 
-        // 保存到目标存储
-        let to_storage = self.get_storage(&to_type);
-        to_storage.save_route(&route).await?;
+        // 保存到数据库（所有路由都存储在数据库中）
+        self.database_storage.update(id, &route).await
+            .map_err(|e| StorageError::DatabaseError(format!("Failed to update route: {}", e)))?;
 
-        // 从源存储删除
-        from_storage.delete_route(id).await?;
+        // 如果迁移到 memory，同时加载到内存存储
+        if to_type == RouteType::Memory {
+            let memory_storage = self.get_storage(&RouteType::Memory);
+            memory_storage.save_route(&route).await?;
+            tracing::info!("迁移路由 {}: 已加载到内存存储", id);
+        }
+
+        // 如果从 memory 迁移走，从内存存储删除
+        if from_type == RouteType::Memory {
+            let memory_storage = self.get_storage(&RouteType::Memory);
+            memory_storage.delete_route(id).await?;
+            tracing::info!("迁移路由 {}: 已从内存存储删除", id);
+        }
+
+        tracing::info!("成功迁移路由 {} 从 {:?} 到 {:?}", id, from_type, to_type);
 
         Ok(())
     }
@@ -382,8 +481,73 @@ impl RouteTypeManager {
 
     /// 清空指定类型的所有路由
     pub async fn clear_storage(&self, route_type: RouteType) -> Result<(), StorageError> {
+        // 获取要清空的路由数量
         let storage = self.get_storage(&route_type);
-        storage.clear_all().await
+        let routes = storage.list_routes().await?;
+        let route_count = routes.len();
+
+        if route_count == 0 {
+            tracing::info!("清空 {:?} 存储：无路由需要清空", route_type);
+            return Ok(());
+        }
+
+        tracing::info!(
+            "准备清空 {} 个 {:?} 类型的路由",
+            route_count,
+            route_type
+        );
+
+        // 类型专有处理
+        match route_type {
+            RouteType::Memory => {
+                // 1. 从数据库删除所有 memory 类型的路由
+                let deleted_count = self.database_storage
+                    .delete_by_type(RouteType::Memory)
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(format!("Failed to delete memory routes: {}", e)))?;
+
+                // 2. 清空内存存储
+                self.memory_storage.clear_all().await?;
+
+                tracing::info!(
+                    "成功清空 memory 存储：从数据库删除 {} 条记录，清空内存缓存",
+                    deleted_count
+                );
+            }
+
+            RouteType::File => {
+                // 1. 从数据库删除所有 file 类型的路由
+                let deleted_count = self.database_storage
+                    .delete_by_type(RouteType::File)
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(format!("Failed to delete file routes: {}", e)))?;
+
+                // 2. 清空文件存储
+                self.file_storage.clear_all().await?;
+
+                // 注意：不删除实际的模板文件，保留作为备份
+                tracing::info!(
+                    "成功清空 file 存储：从数据库删除 {} 条记录，清空文件存储（模板文件已保留）",
+                    deleted_count
+                );
+            }
+
+            RouteType::Database => {
+                // 1. 从数据库删除所有 database 类型的路由
+                let deleted_count = self.database_storage
+                    .delete_by_type(RouteType::Database)
+                    .await
+                    .map_err(|e| StorageError::DatabaseError(format!("Failed to delete database routes: {}", e)))?;
+
+                tracing::info!(
+                    "成功清空 database 存储：从数据库删除 {} 条记录",
+                    deleted_count
+                );
+            }
+        }
+
+        tracing::info!("成功清空 {:?} 存储的所有路由", route_type);
+        Ok(())
     }
 
     /// 清空所有存储
