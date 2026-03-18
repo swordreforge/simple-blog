@@ -62,6 +62,7 @@ impl RouteTypeManager {
     /// 保存路由
     ///
     /// 如果路由未指定类型，使用默认类型
+    #[allow(dead_code)]
     pub async fn save_route(&self, route: DynamicRoute) -> Result<i64, StorageError> {
         // 路由类型，如果未指定则使用默认类型
         let route_type = route.route_type;
@@ -105,6 +106,7 @@ impl RouteTypeManager {
     ///
     /// 如果指定了路由类型，从指定类型加载；
     /// 否则依次从各存储类型查找
+    #[allow(dead_code)]
     pub async fn load_route_by_path(
         &self,
         path: &str,
@@ -131,6 +133,7 @@ impl RouteTypeManager {
     ///
     /// 如果指定了路由类型，从指定类型删除；
     /// 否则从所有存储类型中删除
+    #[allow(dead_code)]
     pub async fn delete_route(
         &self,
         id: i64,
@@ -154,6 +157,7 @@ impl RouteTypeManager {
     /// 列出所有路由
     ///
     /// 合并所有存储类型中的路由
+    #[allow(dead_code)]
     pub async fn list_all_routes(&self) -> Result<Vec<DynamicRoute>, StorageError> {
         let mut all_routes = Vec::new();
 
@@ -179,6 +183,7 @@ impl RouteTypeManager {
     }
 
     /// 列出指定类型的路由
+    #[allow(dead_code)]
     pub async fn list_routes_by_type(
         &self,
         route_type: RouteType,
@@ -190,6 +195,7 @@ impl RouteTypeManager {
     /// 获取所有启用的路由
     ///
     /// 合并所有存储类型中启用的路由
+    #[allow(dead_code)]
     pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, StorageError> {
         let all_routes = self.list_all_routes().await?;
         let enabled_routes: Vec<DynamicRoute> = all_routes
@@ -275,6 +281,7 @@ impl RouteTypeManager {
     /// 检查路由是否存在
     ///
     /// 在所有存储类型中检查
+    #[allow(dead_code)]
     pub async fn route_exists(&self, id: i64) -> Result<bool, StorageError> {
         for storage_type in [RouteType::Database, RouteType::Memory, RouteType::File] {
             let storage = self.get_storage(&storage_type);
@@ -289,6 +296,7 @@ impl RouteTypeManager {
     /// 获取路由总数
     ///
     /// 统计所有存储类型中的路由总数
+    #[allow(dead_code)]
     pub async fn count_all_routes(&self) -> Result<usize, StorageError> {
         let mut total = 0;
 
@@ -379,6 +387,7 @@ impl RouteTypeManager {
     }
 
     /// 清空所有存储
+    #[allow(dead_code)]
     pub async fn clear_all_storages(&self) -> Result<(), StorageError> {
         for storage_type in [RouteType::Database, RouteType::Memory, RouteType::File] {
             self.clear_storage(storage_type).await?;

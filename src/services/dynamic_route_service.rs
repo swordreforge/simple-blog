@@ -21,12 +21,6 @@ pub struct LoadStats {
     pub failed: usize,
 }
 
-impl LoadStats {
-    pub fn total(&self) -> usize {
-        self.database_loaded + self.memory_loaded + self.file_loaded
-    }
-}
-
 /// 动态路由服务
 #[derive(Clone)]
 pub struct DynamicRouteService {
@@ -138,6 +132,7 @@ impl DynamicRouteService {
     /// 从数据库加载所有启用的路由到路由表
     ///
     /// 注意：此方法为了向后兼容而保留，内部实际调用 `load_all_routes()`
+    #[allow(dead_code)]
     pub async fn load_routes_from_db(&self) -> Result<(), Box<dyn std::error::Error>> {
         self.load_all_routes().await?;
         Ok(())
@@ -208,6 +203,7 @@ impl DynamicRouteService {
     }
 
     /// 获取路由表引用
+    #[allow(dead_code)]
     pub fn route_table(&self) -> &Arc<RouteTable> {
         &self.route_table
     }
@@ -236,24 +232,14 @@ impl DynamicRouteService {
         tracing::info!("已从路由表移除路由: path={}", path);
     }
 
-    /// 热更新：批量重新加载所有路由
-    pub async fn reload_all_routes(&self) -> Result<(), Box<dyn std::error::Error>> {
-        // 清空路由表
-        self.route_table.clear();
-        tracing::info!("已清空路由表");
-
-        // 重新加载所有启用的路由
-        self.load_routes_from_db().await?;
-
-        Ok(())
-    }
-
     /// 检查路由是否在路由表中
+    #[allow(dead_code)]
     pub fn route_exists(&self, path: &str) -> bool {
         self.route_table.get_arc(path).is_some()
     }
 
     /// 获取路由表中的路由数量
+    #[allow(dead_code)]
     pub fn route_count(&self) -> usize {
         self.route_table.count()
     }
@@ -268,14 +254,6 @@ pub struct RedirectHandler {
 impl RedirectHandler {
     pub fn new(target: String, status_code: u16) -> Self {
         Self { target, status_code }
-    }
-
-    pub fn target(&self) -> &str {
-        &self.target
-    }
-
-    pub fn status_code(&self) -> u16 {
-        self.status_code
     }
 }
 
@@ -339,14 +317,6 @@ impl TemplateHandler {
     pub fn new(template_name: String, context: serde_json::Value) -> Self {
         Self { template_name, context }
     }
-
-    pub fn template_name(&self) -> &str {
-        &self.template_name
-    }
-
-    pub fn context(&self) -> &serde_json::Value {
-        &self.context
-    }
 }
 
 impl RouteEntry for TemplateHandler {
@@ -406,10 +376,6 @@ impl ProxyHandler {
     pub fn new(target: String) -> Self {
         Self { target }
     }
-
-    pub fn target(&self) -> &str {
-        &self.target
-    }
 }
 
 impl RouteEntry for ProxyHandler {
@@ -462,10 +428,6 @@ pub struct CustomHandler {
 impl CustomHandler {
     pub fn new(config: serde_json::Value) -> Self {
         Self { config }
-    }
-
-    pub fn config(&self) -> &serde_json::Value {
-        &self.config
     }
 }
 

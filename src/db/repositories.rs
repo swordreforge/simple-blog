@@ -2498,20 +2498,6 @@ impl DynamicRouteRepository {
         Ok(())
     }
 
-    /// 启用路由
-    pub async fn enable(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        conn.execute("UPDATE dynamic_routes SET enabled=1, updated_at=? WHERE id=?", params![Utc::now(), id])?;
-        Ok(())
-    }
-
-    /// 禁用路由
-    pub async fn disable(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        conn.execute("UPDATE dynamic_routes SET enabled=0, updated_at=? WHERE id=?", params![Utc::now(), id])?;
-        Ok(())
-    }
-
     /// 记录操作日志
     pub async fn log_operation(
         &self,
@@ -2535,34 +2521,6 @@ impl DynamicRouteRepository {
                 created_by,
                 ip_address,
                 user_agent,
-                Utc::now(),
-            ],
-        )?;
-        Ok(())
-    }
-
-    /// 更新访问统计
-    pub async fn update_stats(
-        &self,
-        route_id: i64,
-        response_time_ms: i64,
-        is_error: bool,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        conn.execute(
-            "INSERT OR REPLACE INTO dynamic_route_stats (route_id, access_count, last_accessed_at, total_response_time_ms, error_count, updated_at)
-             VALUES (?, 
-                COALESCE((SELECT access_count FROM dynamic_route_stats WHERE route_id = ?), 0) + 1,
-                ?,
-                COALESCE((SELECT total_response_time_ms FROM dynamic_route_stats WHERE route_id = ?), 0) + ?,
-                COALESCE((SELECT error_count FROM dynamic_route_stats WHERE route_id = ?), 0) + ?,
-                ?
-             )",
-            params![
-                route_id, route_id,
-                Utc::now(),
-                route_id, response_time_ms,
-                route_id, if is_error { 1 } else { 0 },
                 Utc::now(),
             ],
         )?;
@@ -2633,12 +2591,6 @@ impl DynamicRouteRepository {
     /// 获取路由总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         let count = self.list(0, 0, None, None).await?.1;
-        Ok(count)
-    }
-
-    /// 获取启用的路由总数
-    pub async fn count_enabled(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let count = self.list(0, 0, None, Some(true)).await?.1;
         Ok(count)
     }
 

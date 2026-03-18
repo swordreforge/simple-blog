@@ -711,42 +711,9 @@ pub struct DynamicRoute {
     pub metadata: Option<serde_json::Value>,
 }
 
-impl DynamicRoute {
-    /// 创建新的路由实例
-    pub fn new(
-        route_type: RouteType,
-        path: String,
-        handler_type: HandlerType,
-        handler_config: serde_json::Value,
-    ) -> Self {
-        let now = Utc::now();
-        Self {
-            id: None,
-            route_name: None,
-            route_type,
-            path,
-            handler_type,
-            handler_config,
-            inline_template: None,
-            template_path: None,
-            content_type_hint: None,
-            enabled: true,
-            priority: 0,
-            created_at: now,
-            updated_at: now,
-            created_by: None,
-            metadata: None,
-        }
-    }
-
-    /// 检查路由是否可用
-    pub fn is_available(&self) -> bool {
-        self.enabled
-    }
-}
-
 /// 动态路由操作日志模型
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct DynamicRouteLog {
     pub id: Option<i64>,
     pub route_id: Option<i64>,
@@ -806,6 +773,7 @@ pub struct UpdateRouteRequest {
 
 /// 路由列表查询参数
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct ListRoutesQuery {
     pub page: Option<i64>,
     pub limit: Option<i64>,
