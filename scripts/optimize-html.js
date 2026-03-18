@@ -128,8 +128,31 @@ async function optimizeHtml(inputPath, outputPath) {
 async function main() {
   console.log('📄 HTML 优化开始...\n')
 
-  const htmlFiles = getHtmlFiles(templatesDir)
-  console.log(`找到 ${htmlFiles.length} 个 HTML 文件\n`)
+  // 获取命令行参数
+  const args = process.argv.slice(2)
+  let htmlFiles = []
+
+  if (args.length > 0) {
+    // 单文件模式：处理指定的文件
+    const targetFile = resolve(args[0])
+
+    if (!targetFile.endsWith('.html')) {
+      console.error('✗ 错误：只支持 .html 文件')
+      process.exit(1)
+    }
+
+    if (targetFile.startsWith(templatesDir)) {
+      htmlFiles = [targetFile]
+      console.log(`单文件模式: ${args[0]}\n`)
+    } else {
+      console.error('✗ 错误：文件必须在 templates 目录下')
+      process.exit(1)
+    }
+  } else {
+    // 批量模式：处理所有 HTML 文件
+    htmlFiles = getHtmlFiles(templatesDir)
+    console.log(`批量模式：找到 ${htmlFiles.length} 个 HTML 文件\n`)
+  }
 
   let totalOriginal = 0
   let totalOptimized = 0
