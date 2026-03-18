@@ -419,8 +419,17 @@ function closeModal() {
     document.getElementById('routeModal').classList.remove('active');
 }
 
+// 防止重复提交的标志
+let isSubmitting = false;
+
 // 保存路由
 async function saveRoute() {
+    // 防止重复提交
+    if (isSubmitting) {
+        showMessage('modalError', '正在提交中，请稍候...');
+        return;
+    }
+
     const id = document.getElementById('routeId').value;
     const routeName = document.getElementById('routeName').value.trim();
     const routeType = document.getElementById('routeType').value;
@@ -505,6 +514,14 @@ async function saveRoute() {
         priority: priority
     };
 
+    // 禁用提交按钮，防止重复提交
+    isSubmitting = true;
+    const submitBtn = document.querySelector('#routeForm .btn-primary');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '提交中...';
+    }
+
     try {
         const url = id ? `/api/admin/dynamic-routes/${id}` : '/api/admin/dynamic-routes';
         const method = id ? 'PUT' : 'POST';
@@ -527,6 +544,13 @@ async function saveRoute() {
         }
     } catch (error) {
         showMessage('modalError', '网络错误: ' + error.message);
+    } finally {
+        // 恢复提交按钮状态
+        isSubmitting = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '保存';
+        }
     }
 }
 
