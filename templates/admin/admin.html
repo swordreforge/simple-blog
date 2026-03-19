@@ -48,6 +48,10 @@
         ;
     }
 
+    body.modal-open {
+        overflow: hidden
+    }
+
     nav {
         display: flex;
         justify-content: flex-end;
@@ -1157,8 +1161,15 @@
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         animation: slideIn .3s ease;
         position: relative
+    }
+
+    .modal-content::-webkit-scrollbar {
+        display: none
     }
 
     @keyframes slideIn {
@@ -4697,8 +4708,16 @@
         border-radius: 20px;
         max-width: 500px;
         width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         animation: slideIn .3s ease;
         position: relative
+    }
+
+    .modal-content::-webkit-scrollbar {
+        display: none
     }
 
     @keyframes fadeIn {
