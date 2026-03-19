@@ -100,6 +100,27 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
         return Err("处理器配置必须是有效的JSON对象".to_string());
     }
 
+    // 根据 route_type 验证字段组合
+    let route_type = route.route_type.unwrap_or(crate::db::models::RouteType::Database);
+    match route_type {
+        crate::db::models::RouteType::Database | crate::db::models::RouteType::Memory => {
+            // database/memory 类型禁止使用 template_path
+            if route.template_path.is_some() {
+                return Err("database/memory 类型路由不支持 template_path 字段".to_string());
+            }
+        }
+        crate::db::models::RouteType::File => {
+            // file 类型禁止使用 inline_template
+            if route.inline_template.is_some() {
+                return Err("file 类型路由不支持 inline_template 字段".to_string());
+            }
+            // file 类型必须提供 template_path
+            if route.template_path.is_none() {
+                return Err("file 类型路由必须提供 template_path 字段".to_string());
+            }
+        }
+    }
+
     // 根据处理器类型验证必需字段
     match route.handler_type {
         HandlerType::Redirect => {
@@ -108,8 +129,15 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             }
         }
         HandlerType::Static => {
+            // 静态内容处理器需要 inline_template 或 handler_config.content
+            // 对于 file 类型的路由，template_path 也可以替代 inline_template
             if route.handler_config.get("content").is_none() {
-                return Err("静态内容处理器需要content字段".to_string());
+                let has_inline = route.inline_template.is_some() && route.inline_template.as_ref().is_some_and(|s| !s.is_empty());
+                let has_template_path = route.template_path.is_some() && route.template_path.as_ref().is_some_and(|s| !s.is_empty());
+                
+                if !has_inline && !has_template_path {
+                    return Err("静态内容处理器需要 inline_template 字段、template_path 字段或 handler_config.content 字段".to_string());
+                }
             }
         }
         HandlerType::Proxy => {
