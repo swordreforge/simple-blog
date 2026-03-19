@@ -300,9 +300,14 @@ impl RouteTypeManager {
                         route.template_path.as_ref().unwrap()
                     );
                 } else {
-                    return Err(StorageError::InvalidData(
-                        "Cannot migrate route without inline_template to file type".to_string()
-                    ));
+                    // 没有 inline_template 的路由（如重定向路由），不需要创建模板文件
+                    tracing::info!(
+                        "迁移路由 {}: 路由没有 inline_template（可能是重定向路由），不创建模板文件",
+                        id
+                    );
+                    // 保持 template_path 为 None，不创建文件
+                    route.template_path = None;
+                    route.inline_template = None;
                 }
             }
 
