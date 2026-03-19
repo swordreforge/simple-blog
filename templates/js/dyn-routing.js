@@ -488,11 +488,11 @@ function escapeHtml(e) {
 }
 
 function openStorageModal() {
-    document.getElementById("storageModal").style.display = "block", refreshStorageStats()
+    document.getElementById("storageModal").classList.add("active"), refreshStorageStats()
 }
 
 function closeStorageModal() {
-    document.getElementById("storageModal").style.display = "none", document.getElementById("storageMessage").style.display = "none"
+    document.getElementById("storageModal").classList.remove("active"), document.getElementById("storageMessage").style.display = "none"
 }
 async function refreshStorageStats() {
     try {
