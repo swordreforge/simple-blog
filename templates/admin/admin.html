@@ -1403,7 +1403,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-top: 10px
+        margin-top: 10px;
+        width: 100%
     }
 
     .tag-option {
@@ -1416,7 +1417,8 @@
         color: rgba(255, 255, 255, .9);
         font-size: .9em;
         cursor: pointer;
-        transition: all .3s ease
+        transition: all .3s ease;
+        position: relative
     }
 
     .tag-option:hover {
@@ -1427,17 +1429,19 @@
     .tag-option.selected {
         background: rgba(255, 255, 255, .35);
         color: rgba(255, 255, 255, .9);
-        border-color: rgba(255, 255, 255, .7)
+        border-color: rgba(255, 255, 255, .7);
+        padding-right: 24px
     }
 
     .tag-option.selected::after {
         content: '✓';
         position: absolute;
         right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
         font-size: .8em;
         color: #fff;
-        font-weight: 700;
-        margin-left: 8px
+        font-weight: 700
     }
 
     .tag-input-container {
@@ -1454,7 +1458,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-top: 10px
+        margin-top: 10px;
+        width: 100%
     }
 
     .category-option {
@@ -1470,8 +1475,7 @@
         transition: all .3s ease;
         display: flex;
         align-items: center;
-        position: relative;
-        overflow: hidden
+        position: relative
     }
 
     .category-option:hover {
@@ -1489,13 +1493,16 @@
         border-color: rgba(0, 123, 255, .8);
         font-weight: 600;
         box-shadow: 0 4px 15px rgba(0, 123, 255, .3);
-        transform: translateY(-2px)
+        transform: translateY(-2px);
+        padding-right: 24px
     }
 
     .category-option.selected::before {
         content: '✓';
         position: absolute;
         right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
         font-size: .8em;
         color: #fff;
         font-weight: 700
@@ -4680,217 +4687,6 @@
         <div class="btn-group"><button type="button" class="btn-secondary" data-modal="renameModal">取消</button> <button type="button" class="btn-primary" id="confirmRenameBtn">确定</button></div>
     </div>
 </div>
-<style>
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, .5);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-        animation: fadeIn .3s ease
-    }
-
-    .modal.active {
-        display: flex
-    }
-
-    .modal-content {
-        background: rgba(0, 0, 0, 0);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, .3);
-        border-radius: 20px;
-        max-width: 500px;
-        width: 100%;
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        animation: slideIn .3s ease;
-        position: relative
-    }
-
-    .modal-content::-webkit-scrollbar {
-        display: none
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
-    }
-
-    @keyframes slideIn {
-        from {
-            transform: translateY(-50px);
-            opacity: 0
-        }
-
-        to {
-            transform: translateY(0);
-            opacity: 1
-        }
-    }
-
-    .modal-header {
-        background: rgba(0, 123, 255, .1);
-        backdrop-filter: blur(40px) saturate(200%);
-        -webkit-backdrop-filter: blur(40px) saturate(200%);
-        border: 1px solid rgba(255, 255, 255, .5);
-        border-bottom: 1px solid rgba(255, 255, 255, .3);
-        padding: 20px 30px;
-        color: #007bff;
-        border-radius: 20px 20px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center
-    }
-
-    .modal-header h3 {
-        font-size: 1.5em;
-        font-weight: 600
-    }
-
-    .modal-close {
-        background: rgba(0, 0, 0, 0);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, .3);
-        color: rgba(255, 255, 255, .9);
-        font-size: 1.5em;
-        cursor: pointer;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all .3s ease
-    }
-
-    .modal-close:hover {
-        background: rgba(0, 0, 0, 0);
-        border-color: rgba(255, 255, 255, .5);
-        transform: rotate(90deg)
-    }
-
-    .modal-body {
-        padding: 30px
-    }
-
-    .form-group {
-        margin-bottom: 20px
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        color: rgba(255, 255, 255, .9);
-        font-weight: 500
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid rgba(255, 255, 255, .3);
-        border-radius: 8px;
-        font-size: 1em;
-        background: rgba(0, 0, 0, 0);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        color: rgba(255, 255, 255, .9);
-        transition: all .3s ease
-    }
-
-    .form-control:focus {
-        outline: 0;
-        border-color: rgba(255, 255, 255, .5);
-        background: rgba(0, 0, 0, 0)
-    }
-
-    .btn-primary {
-        background: rgba(0, 0, 0, 0);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, .3);
-        color: rgba(255, 255, 255, .9);
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-size: 1em;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all .3s ease
-    }
-
-    .btn-primary:hover {
-        background: rgba(0, 0, 0, 0);
-        border-color: rgba(255, 255, 255, .5);
-        transform: translateY(-2px)
-    }
-
-    .btn-primary:disabled {
-        opacity: .6;
-        cursor: not-allowed;
-        transform: none
-    }
-
-    .btn-primary:disabled:hover {
-        background: rgba(0, 0, 0, 0);
-        border-color: rgba(255, 255, 255, .3);
-        transform: none
-    }
-
-    .btn-danger {
-        background: rgba(231, 76, 60, .2);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(231, 76, 60, .4);
-        color: rgba(255, 255, 255, .95);
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-size: 1em;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all .3s ease;
-        box-shadow: 0 4px 15px rgba(231, 76, 60, .2)
-    }
-
-    .btn-danger:hover {
-        background: rgba(231, 76, 60, .35);
-        border-color: rgba(231, 76, 60, .6);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(231, 76, 60, .3)
-    }
-
-    .btn-danger:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 10px rgba(231, 76, 60, .2)
-    }
-
-    .btn-danger:disabled {
-        opacity: .6;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none
-    }
-
-    .btn-danger:disabled:hover {
-        background: rgba(231, 76, 60, .2);
-        border-color: rgba(231, 76, 60, .4);
-        transform: none;
-        box-shadow: none
-    }
-</style>
 <script type="module" src="/js/admin-inline-2.js?v=3"></script>
 <script src="/js/ecc-encrypt.js" defer></script>
 <script src="/js/login.js" defer></script>
