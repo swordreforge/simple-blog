@@ -498,7 +498,17 @@ impl RouteTypeManager {
         let storage = self.get_storage(&route_type);
         let routes = storage.list_routes().await?;
 
-        Ok(routes)
+        // 如果是数据库存储，过滤只返回 Database 类型的路由
+        // 因为 DynamicRouteRepository::list_routes 返回所有路由，需要过滤
+        if route_type == RouteType::Database {
+            let filtered_routes: Vec<DynamicRoute> = routes
+                .into_iter()
+                .filter(|route| route.route_type == RouteType::Database)
+                .collect();
+            Ok(filtered_routes)
+        } else {
+            Ok(routes)
+        }
     }
 
     /// 清空指定类型的所有路由
