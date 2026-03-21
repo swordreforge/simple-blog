@@ -404,6 +404,12 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::delete().to(api_handlers::admin_friend_link::delete))
     );
 
+    // 公开 API - 动态路由（无需管理员权限）
+    cfg.service(
+        web::resource("/api/routes/public")
+            .route(web::get().to(api_handlers::dynamic_routes::list_public_routes))
+    );
+
     // 管理员 API - 动态路由
     cfg.service(
         web::resource("/api/admin/dynamic-routes")

@@ -57,8 +57,8 @@
     }
 
     try {
-      // 获取动态路由列表
-      const response = await fetch('/api/admin/dynamic-routes?page=1&limit=100');
+      // 获取动态路由列表（使用公开 API，无需登录）
+      const response = await fetch('/api/routes/public?page=1&limit=100&handler_type=static');
       
       if (!response.ok) {
         console.warn('获取动态路由失败:', response.status);
