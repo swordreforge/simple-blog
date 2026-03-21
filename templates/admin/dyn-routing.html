@@ -1,1 +1,984 @@
-<!DOCTYPE html><html lang="zh-CN"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>动态路由管理 - RustBlog</title><link rel="stylesheet" href="/css/admin.css"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:linear-gradient(135deg,#0f0c29 0,#302b63 50%,#24243e 100%);color:#fff;min-height:100vh;overflow-x:hidden}.particles-container{position:fixed;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:-1}.particle{position:absolute;border-radius:50%;background:rgba(255,255,255,.1);animation:float 20s infinite ease-in-out}@keyframes float{0%,100%{transform:translateY(0) translateX(0) rotate(0);opacity:.3}50%{transform:translateY(-100px) translateX(50px) rotate(180deg);opacity:.8}}.container{max-width:1600px;margin:0 auto;padding:20px}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.header h1{margin:0;font-size:24px;color:#fff;text-shadow:2px 2px 4px rgba(0,0,0,.3)}.header-actions{display:flex;gap:10px}.stats-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px}.stat-card{background:rgba(30,30,50,.8);backdrop-filter:blur(10px);padding:15px;border-radius:12px;border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 32px rgba(0,0,0,.3)}.stat-card h3{margin:0 0 10px 0;font-size:14px;color:rgba(255,255,255,.7)}.stat-card .value{font-size:28px;font-weight:700;color:#fff;text-shadow:2px 2px 4px rgba(0,0,0,.3)}.toolbar{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}.toolbar .search-box{flex:1;min-width:200px}.toolbar input{width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.2);border-radius:4px;background:rgba(30,30,50,.8);color:#fff}.toolbar input::placeholder{color:rgba(255,255,255,.5)}.toolbar input:focus{outline:0;border-color:rgba(255,255,255,.4)}.routes-table{width:100%;border-collapse:collapse;background:rgba(30,30,50,.8);backdrop-filter:blur(10px);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1)}.routes-table td,.routes-table th{padding:12px;text-align:left;border-bottom:1px solid rgba(255,255,255,.1);color:#fff}.routes-table th{background:rgba(20,20,40,.9);font-weight:600;color:rgba(255,255,255,.9)}.routes-table tr:hover{background:rgba(255,255,255,.05)}.route-path{font-family:monospace;background:rgba(100,100,150,.3);padding:2px 6px;border-radius:3px;color:#fff}.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:500}.badge-success{background:rgba(40,167,69,.3);color:#28a745;border:1px solid rgba(40,167,69,.5)}.badge-danger{background:rgba(220,53,69,.3);color:#dc3545;border:1px solid rgba(220,53,69,.5)}.badge-info{background:rgba(23,162,184,.3);color:#17a2b8;border:1px solid rgba(23,162,184,.5)}.badge-warning{background:rgba(255,193,7,.3);color:#ffc107;border:1px solid rgba(255,193,7,.5)}.badge-primary{background:rgba(0,123,255,.3);color:#007bff;border:1px solid rgba(0,123,255,.5)}.actions{display:flex;gap:5px}.btn{padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:14px;transition:all .3s ease;backdrop-filter:blur(10px)}.btn-primary{background:rgba(0,123,255,.8);color:#fff;border:1px solid rgba(0,123,255,.3)}.btn-primary:hover{background:#007bff;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,123,255,.4)}.btn-success{background:rgba(40,167,69,.8);color:#fff;border:1px solid rgba(40,167,69,.3)}.btn-success:hover{background:#28a745;transform:translateY(-2px);box-shadow:0 4px 12px rgba(40,167,69,.4)}.btn-danger{background:rgba(220,53,69,.8);color:#fff;border:1px solid rgba(220,53,69,.3)}.btn-danger:hover{background:#dc3545;transform:translateY(-2px);box-shadow:0 4px 12px rgba(220,53,69,.4)}.btn-secondary{background:rgba(108,117,125,.8);color:#fff;border:1px solid rgba(108,117,125,.3)}.btn-secondary:hover{background:#6c757d;transform:translateY(-2px);box-shadow:0 4px 12px rgba(108,117,125,.4)}.btn-sm{padding:4px 8px;font-size:12px}.pagination{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:20px}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:1000}.modal.active{display:flex;justify-content:center;align-items:center}.modal-content{background:rgba(30,30,50,.95);backdrop-filter:blur(10px);padding:20px;border-radius:12px;width:90%;max-width:800px;max-height:90vh;overflow-y:auto;border:1px solid rgba(255,255,255,.1);box-shadow:0 8px 32px rgba(0,0,0,.5)}.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.modal-header h2{margin:0;color:#fff}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.form-full-width{grid-column:1/-1}.form-group{margin-bottom:15px}.form-group label{display:block;margin-bottom:5px;font-weight:500;color:#fff}.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.2);border-radius:4px;box-sizing:border-box;background:rgba(20,20,40,.8);color:#fff}.form-group input::placeholder,.form-group select::placeholder,.form-group textarea::placeholder{color:rgba(255,255,255,.5)}.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:0;border-color:rgba(255,255,255,.4)}.form-group textarea{min-height:200px;font-family:monospace;font-size:13px}.form-group .help-text{font-size:12px;color:rgba(255,255,255,.6);margin-top:5px}.form-group .field-description{font-size:12px;color:rgba(255,255,255,.6);margin-top:5px}.form-group .field-info{display:flex;align-items:center;gap:10px;margin-bottom:5px}.form-group .field-info label{margin-bottom:0;flex:1}.form-group .field-info .info-icon{cursor:help;color:rgba(255,255,255,.7);font-size:14px}::-webkit-scrollbar{width:10px}::-webkit-scrollbar-track{background:rgba(20,20,40,.8)}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:5px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.3)}.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}.loading{text-align:center;padding:20px;color:#666}.error{color:#dc3545;padding:10px;background:#f8d7da;border-radius:4px;margin-bottom:15px}.success{color:#155724;padding:10px;background:#d4edda;border-radius:4px;margin-bottom:15px}.empty-state{text-align:center;padding:40px;color:#666}.field-description{font-size:12px;color:#666;margin-top:3px;line-height:1.4}.priority-display{font-weight:700;color:#28a745}.handler-type-display{text-transform:uppercase;font-size:11px;letter-spacing:.5px}.storage-type-display{text-transform:uppercase;font-size:11px;letter-spacing:.5px}@media (max-width:768px){.form-grid{grid-template-columns:1fr}}</style><div class="particles-container" id="particlesContainer"></div><div class="container"><div class="header"><h1>动态路由管理</h1><div class="header-actions"><button class="btn btn-primary" onclick="showAddModal()">添加路由</button> <button class="btn btn-secondary" onclick="exportRoutes()">导出配置</button> <button class="btn btn-secondary" onclick="showImportModal()">导入配置</button></div></div><div class="stats-panel" id="statsPanel"><div class="stat-card"><h3>总路由数</h3><div class="value" id="totalRoutes">0</div></div><div class="stat-card"><h3>启用中</h3><div class="value" id="enabledRoutes">0</div></div><div class="stat-card"><h3>已禁用</h3><div class="value" id="disabledRoutes">0</div></div><div class="stat-card"><h3>数据库存储</h3><div class="value" id="databaseRoutes">0</div></div><div class="stat-card"><h3>内存存储</h3><div class="value" id="memoryRoutes">0</div></div><div class="stat-card"><h3>文件存储</h3><div class="value" id="fileRoutes">0</div></div></div><div class="toolbar"><div class="search-box"><input id="searchInput" placeholder="搜索路由名称或路径..." onkeyup="searchRoutes()"></div><select id="filterType" onchange="filterRoutes()"><option value="">所有类型</option><option value="redirect">重定向</option><option value="static">静态内容</option><option value="proxy">代理</option><option value="custom">自定义</option></select> <select id="filterStatus" onchange="filterRoutes()"><option value="">所有状态</option><option value="enabled">已启用</option><option value="disabled">已禁用</option></select> <button class="btn btn-secondary" onclick="refreshRoutes()">刷新</button> <button class="btn btn-primary" onclick="openStorageModal()">存储管理</button></div><div id="message"></div><table class="routes-table"><thead><tr><th>ID</th><th>路由名称</th><th>路径</th><th>处理器类型</th><th>状态</th><th>优先级</th><th>存储类型</th><th>操作</th></tr></thead><tbody id="routesTableBody"><tr><td colspan="9" class="loading">加载中...</td></tr></tbody></table><div class="pagination" id="pagination"></div></div><div class="modal" id="routeModal"><div class="modal-content"><div class="modal-header"><h2 id="modalTitle">添加路由</h2><button class="btn btn-secondary btn-sm" onclick="closeModal()">关闭</button></div><div id="modalMessage"></div><form id="routeForm"><input type="hidden" id="routeId"><div class="form-grid"><div class="form-group"><div class="field-info"><label for="routeName">路由名称</label> <span class="info-icon" title="便于识别和管理，不参与请求处理">ℹ️</span></div><input id="routeName" placeholder="例如：首页重定向"><div class="field-description">管理员可见的路由名称，便于识别和管理，可留空</div></div><div class="form-group"><div class="field-info"><label for="routePath">路由路径 *</label> <span class="info-icon" title="请求匹配路径，支持Ant风格通配符">ℹ️</span></div><input id="routePath" required placeholder="/example-path"><div class="field-description">路径必须以 / 开头，支持通配符如 /api/**</div></div><div class="form-group"><div class="field-info"><label for="routeType">路由类型 *</label> <span class="info-icon" title="路由配置的存储方式">ℹ️</span></div><select id="routeType" required onchange="updateRouteTypeFields()"><option value="">请选择路由类型</option><option value="database" selected>数据库 (database)</option><option value="memory">内存 (memory)</option><option value="file">文件 (file)</option></select><div class="field-description">路由配置的存储方式，管理界面创建的路由通常为数据库</div></div><div class="form-group"><div class="field-info"><label for="handlerType">处理器类型 *</label> <span class="info-icon" title="决定请求的处理方式">ℹ️</span></div><select id="handlerType" required onchange="updateHandlerFields()"><option value="">请选择处理器类型</option><option value="redirect">重定向 (redirect)</option><option value="static">静态内容 (static)</option><option value="proxy">代理 (proxy)</option><option value="custom">自定义处理器 (custom)</option></select><div class="field-description">选择如何处理匹配的请求</div></div><div class="form-group"><div class="field-info"><label for="routePriority">优先级</label> <span class="info-icon" title="数字越小优先级越高">ℹ️</span></div><input type="number" id="routePriority" value="0" min="0" max="100"><div class="field-description">数字越小优先级越高，默认为0</div></div><div class="form-group" id="contentTypeGroup" style="display:none"><div class="field-info"><label for="contentType">Content-Type</label> <span class="info-icon" title="响应的Content-Type头">ℹ️</span></div><select id="contentType" onchange="updateContentTypeTemplate()"><option value="">自动识别</option><option value="text/html; charset=utf-8">HTML</option><option value="text/css; charset=utf-8">CSS</option><option value="application/javascript; charset=utf-8">JavaScript</option><option value="application/json; charset=utf-8">JSON</option><option value="application/xml; charset=utf-8">XML</option><option value="application/rss+xml; charset=utf-8">RSS</option><option value="text/plain; charset=utf-8">纯文本</option></select><div class="field-description">响应的 Content-Type 头，留空则自动识别</div></div><div class="form-group form-full-width" id="inlineTemplateGroup" style="display:none"><div class="field-info"><label for="inlineTemplate">内联模板内容</label> <span class="info-icon" title="数据库/内存类型路由的模板内容">ℹ️</span></div><div class="help-text" style="margin-bottom:10px"><button type="button" class="btn btn-secondary btn-sm" id="uploadFileBtn" onclick='document.getElementById("fileInput").click()'>上传文件</button> <input type="file" id="fileInput" accept=".html,.htm,.svg,.xml,.txt,.css,.js,.json" style="display:none" onchange="handleFileUpload(event)"></div><textarea id="inlineTemplate" rows="6" placeholder="输入纯文本内容（HTML/JS/CSS/SVG等）..."></textarea><div class="field-description">database/memory 类型路由的模板内容，支持 HTML/JS/CSS/SVG 等纯文本格式</div></div><div class="form-group form-full-width" id="templatePathGroup" style="display:none"><div class="field-info"><label for="templatePath">模板文件路径 *</label> <span class="info-icon" title="file 类型路由的模板文件相对路径">ℹ️</span></div><input id="templatePath" placeholder="data/routes/routes/route_1.html"><div class="field-description">file 类型路由的模板文件相对路径（相对于二进制文件）</div></div><div class="form-group form-full-width"><div class="field-info"><label for="handlerConfig">处理器配置 (JSON) *</label> <span class="info-icon" title="特定处理器所需的参数">ℹ️</span></div><div class="help-text" style="margin-bottom:10px"><button type="button" class="btn btn-secondary btn-sm" onclick="formatConfig()">格式化</button> <button type="button" class="btn btn-secondary btn-sm" onclick="validateConfig()">验证</button> <button type="button" class="btn btn-secondary btn-sm" onclick="loadTemplate()">加载模板</button></div><textarea id="handlerConfig" required></textarea><div class="field-description">根据处理器类型，存储特定处理器所需的参数</div></div><div class="form-group"><label><input type="checkbox" id="routeEnabled" checked> 立即启用</label><div class="field-description">启用后路由将立即生效</div></div><div class="form-group form-full-width"><div class="field-info"><label for="routeMetadata">扩展元数据</label> <span class="info-icon" title="自定义配置、标签、备注等">ℹ️</span></div><div class="help-text" style="margin-bottom:10px"><button type="button" class="btn btn-secondary btn-sm" onclick="formatMetadata()">格式化</button> <button type="button" class="btn btn-secondary btn-sm" onclick="validateMetadata()">验证</button></div><textarea id="routeMetadata" rows="4" placeholder='{"tags": ["example"], "description": "示例描述"}'></textarea><div class="field-description">JSON格式的扩展信息：标签、备注、自定义配置等（可选）</div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button> <button type="button" class="btn btn-secondary" onclick="testRoute()">测试</button> <button type="submit" class="btn btn-primary">保存</button></div></form></div></div><div class="modal" id="importModal"><div class="modal-content"><div class="modal-header"><h2>导入路由配置</h2><button class="btn btn-secondary btn-sm" onclick="closeImportModal()">关闭</button></div><div id="importMessage"></div><div class="form-group"><label for="importConfig">配置文件 (JSON)</label> <textarea id="importConfig" placeholder='{"version": "1.0", "routes": [...]}'></textarea></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeImportModal()">取消</button> <button type="button" class="btn btn-primary" onclick="importRoutes()">导入</button></div></div></div><div class="modal" id="storageModal"><div class="modal-content" style="max-width:800px"><div class="modal-header"><h2>路由存储管理</h2><button class="btn btn-secondary btn-sm" onclick="closeStorageModal()">关闭</button></div><div id="storageMessage"></div><div class="storage-stats"><h3>存储统计</h3><div class="storage-stats-grid"><div class="storage-stat-card"><h4>数据库存储</h4><div class="stat-value" id="storageDatabaseTotal">0</div><div class="stat-detail">启用: <span id="storageDatabaseEnabled">0</span> | 禁用: <span id="storageDatabaseDisabled">0</span></div><div class="stat-detail">内存: <span id="storageDatabaseMemory">0</span> bytes</div></div><div class="storage-stat-card"><h4>内存存储</h4><div class="stat-value" id="storageMemoryTotal">0</div><div class="stat-detail">启用: <span id="storageMemoryEnabled">0</span> | 禁用: <span id="storageMemoryDisabled">0</span></div><div class="stat-detail">内存: <span id="storageMemoryMemory">0</span> bytes</div></div><div class="storage-stat-card"><h4>文件存储</h4><div class="stat-value" id="storageFileTotal">0</div><div class="stat-detail">启用: <span id="storageFileEnabled">0</span> | 禁用: <span id="storageFileDisabled">0</span></div><div class="stat-detail">内存: <span id="storageFileMemory">0</span> bytes</div></div></div></div><div class="storage-actions"><h3>存储操作</h3><div class="storage-action-grid"><div class="storage-action-card"><h4>批量迁移</h4><div class="form-group"><label>从</label> <select id="migrateFrom"><option value="database">数据库</option><option value="memory">内存</option><option value="file">文件</option></select></div><div class="form-group"><label>到</label> <select id="migrateTo"><option value="database">数据库</option><option value="memory">内存</option><option value="file">文件</option></select></div><button class="btn btn-warning" onclick="batchMigrateRoutes()">批量迁移</button></div><div class="storage-action-card"><h4>清空存储</h4><div class="form-group"><label>存储类型</label> <select id="clearStorageType"><option value="database">数据库</option><option value="memory">内存</option><option value="file">文件</option></select></div><button class="btn btn-danger" onclick="clearStorage()">清空存储</button></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeStorageModal()">关闭</button> <button type="button" class="btn btn-primary" onclick="refreshStorageStats()">刷新统计</button></div></div></div><style>.storage-stats{margin-bottom:30px}.storage-actions h3,.storage-stats h3{margin-bottom:15px;color:rgba(255,255,255,.9)}.storage-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px}.storage-stat-card{background:rgba(40,40,60,.8);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.1)}.storage-stat-card h4{margin:0 0 10px 0;font-size:14px;color:rgba(255,255,255,.7)}.stat-value{font-size:32px;font-weight:700;color:#007bff;margin-bottom:10px}.stat-detail{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:5px}.storage-actions{margin-bottom:20px}.storage-action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}.storage-action-card{background:rgba(40,40,60,.8);padding:15px;border-radius:8px;border:1px solid rgba(255,255,255,.1)}.storage-action-card h4{margin:0 0 15px 0;font-size:14px;color:rgba(255,255,255,.9)}.storage-action-card .form-group{margin-bottom:10px}.storage-action-card label{display:block;margin-bottom:5px;font-size:12px;color:rgba(255,255,255,.7)}.storage-action-card select{width:100%;padding:8px;border-radius:4px;border:1px solid rgba(255,255,255,.2);background:rgba(20,20,30,.8);color:#fff}</style><script>function createParticles(){const t=document.getElementById("particlesContainer");for(let e=0;e<30;e++){const e=document.createElement("div");e.className="particle";const a=60*Math.random()+20;e.style.width=a+"px",e.style.height=a+"px",e.style.left=100*Math.random()+"%",e.style.top=100*Math.random()+"%",e.style.animationDelay=10*Math.random()+"s",e.style.animationDuration=10*Math.random()+15+"s",t.appendChild(e)}}document.addEventListener("DOMContentLoaded",createParticles)</script><script src="/js/dyn-routing.js"></script></html>
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="UTF-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>动态路由管理 - RustBlog</title
+  ><link rel="stylesheet" href="/css/admin.css" /><style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+        Arial, sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0, #302b63 50%, #24243e 100%);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .particles-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 20s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%,
+      100% {
+        transform: translateY(0) translateX(0) rotate(0);
+        opacity: 0.3;
+      }
+      50% {
+        transform: translateY(-100px) translateX(50px) rotate(180deg);
+        opacity: 0.8;
+      }
+    }
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .stats-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: rgba(30, 30, 50, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .toolbar .search-box {
+      flex: 1;
+      min-width: 200px;
+    }
+    .toolbar input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      background: rgba(30, 30, 50, 0.8);
+      color: #fff;
+    }
+    .toolbar input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .toolbar input:focus {
+      outline: 0;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    .routes-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(30, 30, 50, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .routes-table td,
+    .routes-table th {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .routes-table th {
+      background: rgba(20, 20, 40, 0.9);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .routes-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .route-path {
+      font-family: monospace;
+      background: rgba(100, 100, 150, 0.3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #fff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-success {
+      background: rgba(40, 167, 69, 0.3);
+      color: #28a745;
+      border: 1px solid rgba(40, 167, 69, 0.5);
+    }
+    .badge-danger {
+      background: rgba(220, 53, 69, 0.3);
+      color: #dc3545;
+      border: 1px solid rgba(220, 53, 69, 0.5);
+    }
+    .badge-info {
+      background: rgba(23, 162, 184, 0.3);
+      color: #17a2b8;
+      border: 1px solid rgba(23, 162, 184, 0.5);
+    }
+    .badge-warning {
+      background: rgba(255, 193, 7, 0.3);
+      color: #ffc107;
+      border: 1px solid rgba(255, 193, 7, 0.5);
+    }
+    .badge-primary {
+      background: rgba(0, 123, 255, 0.3);
+      color: #007bff;
+      border: 1px solid rgba(0, 123, 255, 0.5);
+    }
+    .actions {
+      display: flex;
+      gap: 5px;
+    }
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    .btn-primary {
+      background: rgba(0, 123, 255, 0.8);
+      color: #fff;
+      border: 1px solid rgba(0, 123, 255, 0.3);
+    }
+    .btn-primary:hover {
+      background: #007bff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+    }
+    .btn-success {
+      background: rgba(40, 167, 69, 0.8);
+      color: #fff;
+      border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    .btn-success:hover {
+      background: #28a745;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    }
+    .btn-danger {
+      background: rgba(220, 53, 69, 0.8);
+      color: #fff;
+      border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    .btn-danger:hover {
+      background: #dc3545;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    }
+    .btn-secondary {
+      background: rgba(108, 117, 125, 0.8);
+      color: #fff;
+      border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    .btn-secondary:hover {
+      background: #6c757d;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+    }
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+    }
+    .modal.active {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: rgba(30, 30, 50, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h2 {
+      margin: 0;
+      color: #fff;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .form-full-width {
+      grid-column: 1/-1;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      box-sizing: border-box;
+      background: rgba(20, 20, 40, 0.8);
+      color: #fff;
+    }
+    .form-group input::placeholder,
+    .form-group select::placeholder,
+    .form-group textarea::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: 0;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+    .form-group textarea {
+      min-height: 200px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .form-group .help-text {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 5px;
+    }
+    .form-group .field-description {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 5px;
+    }
+    .form-group .field-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+    }
+    .form-group .field-info label {
+      margin-bottom: 0;
+      flex: 1;
+    }
+    .form-group .field-info .info-icon {
+      cursor: help;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+    }
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(20, 20, 40, 0.8);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .error {
+      color: #dc3545;
+      padding: 10px;
+      background: #f8d7da;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .success {
+      color: #155724;
+      padding: 10px;
+      background: #d4edda;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .field-description {
+      font-size: 12px;
+      color: #666;
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+    .priority-display {
+      font-weight: 700;
+      color: #28a745;
+    }
+    .handler-type-display {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .storage-type-display {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <div class="particles-container" id="particlesContainer"></div>
+  <div class="container">
+    <div class="header">
+      <h1>动态路由管理</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="showAddModal()">
+          添加路由
+        </button>
+        <button class="btn btn-secondary" onclick="exportRoutes()">
+          导出配置
+        </button>
+        <button class="btn btn-secondary" onclick="showImportModal()">
+          导入配置
+        </button>
+      </div>
+    </div>
+    <div class="stats-panel" id="statsPanel">
+      <div class="stat-card">
+        <h3>总路由数</h3>
+        <div class="value" id="totalRoutes">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>启用中</h3>
+        <div class="value" id="enabledRoutes">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>已禁用</h3>
+        <div class="value" id="disabledRoutes">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>数据库存储</h3>
+        <div class="value" id="databaseRoutes">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>内存存储</h3>
+        <div class="value" id="memoryRoutes">0</div>
+      </div>
+      <div class="stat-card">
+        <h3>文件存储</h3>
+        <div class="value" id="fileRoutes">0</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">
+        <input
+          id="searchInput"
+          placeholder="搜索路由名称或路径..."
+          onkeyup="searchRoutes()"
+        />
+      </div>
+      <select id="filterType" onchange="filterRoutes()">
+        <option value="">所有类型</option>
+        <option value="redirect">重定向</option>
+        <option value="static">静态内容</option>
+        <option value="proxy">代理</option>
+        <option value="custom">自定义</option>
+      </select>
+      <select id="filterStatus" onchange="filterRoutes()">
+        <option value="">所有状态</option>
+        <option value="enabled">已启用</option>
+        <option value="disabled">已禁用</option>
+      </select>
+      <button class="btn btn-secondary" onclick="refreshRoutes()">刷新</button>
+      <button class="btn btn-primary" onclick="openStorageModal()">
+        存储管理
+      </button>
+    </div>
+    <div id="message"></div>
+    <table class="routes-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>路由名称</th>
+          <th>路径</th>
+          <th>处理器类型</th>
+          <th>状态</th>
+          <th>优先级</th>
+          <th>存储类型</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="routesTableBody">
+        <tr>
+          <td colspan="9" class="loading">加载中...</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination" id="pagination"></div>
+  </div>
+  <div class="modal" id="routeModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">添加路由</h2>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal()">
+          关闭
+        </button>
+      </div>
+      <div id="modalMessage"></div>
+      <form id="routeForm">
+        <input type="hidden" id="routeId" />
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="field-info">
+              <label for="routeName">路由名称</label>
+              <span class="info-icon" title="便于识别和管理，不参与请求处理"
+                >ℹ️</span
+              >
+            </div>
+            <input id="routeName" placeholder="例如：首页重定向" />
+            <div class="field-description">
+              管理员可见的路由名称，便于识别和管理，可留空
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="field-info">
+              <label for="routePath">路由路径 *</label>
+              <span class="info-icon" title="请求匹配路径，支持Ant风格通配符"
+                >ℹ️</span
+              >
+            </div>
+            <input id="routePath" required placeholder="/example-path" />
+            <div class="field-description">
+              路径必须以 / 开头，支持通配符如 /api/**
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="field-info">
+              <label for="routeType">路由类型 *</label>
+              <span class="info-icon" title="路由配置的存储方式">ℹ️</span>
+            </div>
+            <select id="routeType" required onchange="updateRouteTypeFields()">
+              <option value="">请选择路由类型</option>
+              <option value="database" selected>数据库 (database)</option>
+              <option value="memory">内存 (memory)</option>
+              <option value="file">文件 (file)</option>
+            </select>
+            <div class="field-description">
+              路由配置的存储方式，管理界面创建的路由通常为数据库
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="field-info">
+              <label for="handlerType">处理器类型 *</label>
+              <span class="info-icon" title="决定请求的处理方式">ℹ️</span>
+            </div>
+            <select id="handlerType" required onchange="updateHandlerFields()">
+              <option value="">请选择处理器类型</option>
+              <option value="redirect">重定向 (redirect)</option>
+              <option value="static">静态内容 (static)</option>
+              <option value="proxy">代理 (proxy)</option>
+              <option value="custom">自定义处理器 (custom)</option>
+            </select>
+            <div class="field-description">选择如何处理匹配的请求</div>
+          </div>
+          <div class="form-group">
+            <div class="field-info">
+              <label for="routePriority">优先级</label>
+              <span class="info-icon" title="数字越小优先级越高">ℹ️</span>
+            </div>
+            <input
+              type="number"
+              id="routePriority"
+              value="0"
+              min="0"
+              max="100"
+            />
+            <div class="field-description">数字越小优先级越高，默认为0</div>
+          </div>
+          <div class="form-group" id="contentTypeGroup" style="display: none">
+            <div class="field-info">
+              <label for="contentType">Content-Type</label>
+              <span class="info-icon" title="响应的Content-Type头">ℹ️</span>
+            </div>
+            <select id="contentType" onchange="updateContentTypeTemplate()">
+              <option value="">自动识别</option>
+              <option value="text/html; charset=utf-8">HTML</option>
+              <option value="text/css; charset=utf-8">CSS</option>
+              <option value="application/javascript; charset=utf-8">
+                JavaScript
+              </option>
+              <option value="application/json; charset=utf-8">JSON</option>
+              <option value="application/xml; charset=utf-8">XML</option>
+              <option value="application/rss+xml; charset=utf-8">RSS</option>
+              <option value="text/plain; charset=utf-8">纯文本</option>
+            </select>
+            <div class="field-description">
+              响应的 Content-Type 头，留空则自动识别
+            </div>
+          </div>
+          <div
+            class="form-group form-full-width"
+            id="inlineTemplateGroup"
+            style="display: none"
+          >
+            <div class="field-info">
+              <label for="inlineTemplate">内联模板内容</label>
+              <span class="info-icon" title="数据库/内存类型路由的模板内容"
+                >ℹ️</span
+              >
+            </div>
+            <div class="help-text" style="margin-bottom: 10px">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                id="uploadFileBtn"
+                onclick="document.getElementById('fileInput').click()"
+              >
+                上传文件
+              </button>
+              <input
+                type="file"
+                id="fileInput"
+                accept=".html,.htm,.svg,.xml,.txt,.css,.js,.json"
+                style="display: none"
+                onchange="handleFileUpload(event)"
+              />
+            </div>
+            <textarea
+              id="inlineTemplate"
+              rows="6"
+              placeholder="输入纯文本内容（HTML/JS/CSS/SVG等）..."
+            ></textarea>
+            <div class="field-description">
+              database/memory 类型路由的模板内容，支持 HTML/JS/CSS/SVG
+              等纯文本格式
+            </div>
+          </div>
+          <div
+            class="form-group form-full-width"
+            id="templatePathGroup"
+            style="display: none"
+          >
+            <div class="field-info">
+              <label for="templatePath">模板文件路径 *</label>
+              <span class="info-icon" title="file 类型路由的模板文件相对路径"
+                >ℹ️</span
+              >
+            </div>
+            <input
+              id="templatePath"
+              placeholder="data/routes/routes/route_1.html"
+            />
+            <div class="field-description">
+              file 类型路由的模板文件相对路径（相对于二进制文件）
+            </div>
+          </div>
+          <div class="form-group form-full-width">
+            <div class="field-info">
+              <label for="handlerConfig">处理器配置 (JSON) *</label>
+              <span class="info-icon" title="特定处理器所需的参数">ℹ️</span>
+            </div>
+            <div class="help-text" style="margin-bottom: 10px">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="formatConfig()"
+              >
+                格式化
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="validateConfig()"
+              >
+                验证
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="loadTemplate()"
+              >
+                加载模板
+              </button>
+            </div>
+            <textarea id="handlerConfig" required></textarea>
+            <div class="field-description">
+              根据处理器类型，存储特定处理器所需的参数
+            </div>
+          </div>
+          <div class="form-group">
+            <label
+              ><input type="checkbox" id="routeEnabled" checked />
+              立即启用</label
+            >
+            <div class="field-description">启用后路由将立即生效</div>
+          </div>
+          <div class="form-group form-full-width">
+            <div class="field-info">
+              <label for="routeMetadata">扩展元数据</label>
+              <span class="info-icon" title="自定义配置、标签、备注等">ℹ️</span>
+            </div>
+            <div class="help-text" style="margin-bottom: 10px">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="formatMetadata()"
+              >
+                格式化
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="validateMetadata()"
+              >
+                验证
+              </button>
+            </div>
+            <textarea
+              id="routeMetadata"
+              rows="4"
+              placeholder='{"tags": ["example"], "description": "示例描述"}'
+            ></textarea>
+            <div class="field-description">
+              JSON格式的扩展信息：标签、备注、自定义配置等（可选）
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="closeModal()"
+          >
+            取消
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="testRoute()">
+            测试
+          </button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>导入路由配置</h2>
+        <button class="btn btn-secondary btn-sm" onclick="closeImportModal()">
+          关闭
+        </button>
+      </div>
+      <div id="importMessage"></div>
+      <div class="form-group">
+        <label for="importConfig">配置文件 (JSON)</label>
+        <textarea
+          id="importConfig"
+          placeholder='{"version": "1.0", "routes": [...]}'
+        ></textarea>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="closeImportModal()"
+        >
+          取消
+        </button>
+        <button type="button" class="btn btn-primary" onclick="importRoutes()">
+          导入
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="storageModal">
+    <div class="modal-content" style="max-width: 800px">
+      <div class="modal-header">
+        <h2>路由存储管理</h2>
+        <button class="btn btn-secondary btn-sm" onclick="closeStorageModal()">
+          关闭
+        </button>
+      </div>
+      <div id="storageMessage"></div>
+      <div class="storage-stats">
+        <h3>存储统计</h3>
+        <div class="storage-stats-grid">
+          <div class="storage-stat-card">
+            <h4>数据库存储</h4>
+            <div class="stat-value" id="storageDatabaseTotal">0</div>
+            <div class="stat-detail">
+              启用: <span id="storageDatabaseEnabled">0</span> | 禁用:
+              <span id="storageDatabaseDisabled">0</span>
+            </div>
+            <div class="stat-detail">
+              内存: <span id="storageDatabaseMemory">0</span> bytes
+            </div>
+          </div>
+          <div class="storage-stat-card">
+            <h4>内存存储</h4>
+            <div class="stat-value" id="storageMemoryTotal">0</div>
+            <div class="stat-detail">
+              启用: <span id="storageMemoryEnabled">0</span> | 禁用:
+              <span id="storageMemoryDisabled">0</span>
+            </div>
+            <div class="stat-detail">
+              内存: <span id="storageMemoryMemory">0</span> bytes
+            </div>
+          </div>
+          <div class="storage-stat-card">
+            <h4>文件存储</h4>
+            <div class="stat-value" id="storageFileTotal">0</div>
+            <div class="stat-detail">
+              启用: <span id="storageFileEnabled">0</span> | 禁用:
+              <span id="storageFileDisabled">0</span>
+            </div>
+            <div class="stat-detail">
+              内存: <span id="storageFileMemory">0</span> bytes
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="storage-actions">
+        <h3>存储操作</h3>
+        <div class="storage-action-grid">
+          <div class="storage-action-card">
+            <h4>批量迁移</h4>
+            <div class="form-group">
+              <label>从</label>
+              <select id="migrateFrom">
+                <option value="database">数据库</option>
+                <option value="memory">内存</option>
+                <option value="file">文件</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>到</label>
+              <select id="migrateTo">
+                <option value="database">数据库</option>
+                <option value="memory">内存</option>
+                <option value="file">文件</option>
+              </select>
+            </div>
+            <button class="btn btn-warning" onclick="batchMigrateRoutes()">
+              批量迁移
+            </button>
+          </div>
+          <div class="storage-action-card">
+            <h4>清空存储</h4>
+            <div class="form-group">
+              <label>存储类型</label>
+              <select id="clearStorageType">
+                <option value="database">数据库</option>
+                <option value="memory">内存</option>
+                <option value="file">文件</option>
+              </select>
+            </div>
+            <button class="btn btn-danger" onclick="clearStorage()">
+              清空存储
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="closeStorageModal()"
+        >
+          关闭
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="refreshStorageStats()"
+        >
+          刷新统计
+        </button>
+      </div>
+    </div>
+  </div>
+  <style>
+    .storage-stats {
+      margin-bottom: 30px;
+    }
+    .storage-actions h3,
+    .storage-stats h3 {
+      margin-bottom: 15px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .storage-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .storage-stat-card {
+      background: rgba(40, 40, 60, 0.8);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .storage-stat-card h4 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+    .stat-detail {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 5px;
+    }
+    .storage-actions {
+      margin-bottom: 20px;
+    }
+    .storage-action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .storage-action-card {
+      background: rgba(40, 40, 60, 0.8);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .storage-action-card h4 {
+      margin: 0 0 15px 0;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .storage-action-card .form-group {
+      margin-bottom: 10px;
+    }
+    .storage-action-card label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    .storage-action-card select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(20, 20, 30, 0.8);
+      color: #fff;
+    }
+  </style>
+  <script>
+    function createParticles() {
+      const t = document.getElementById("particlesContainer");
+      for (let e = 0; e < 30; e++) {
+        const e = document.createElement("div");
+        e.className = "particle";
+        const a = 60 * Math.random() + 20;
+        ((e.style.width = a + "px"),
+          (e.style.height = a + "px"),
+          (e.style.left = 100 * Math.random() + "%"),
+          (e.style.top = 100 * Math.random() + "%"),
+          (e.style.animationDelay = 10 * Math.random() + "s"),
+          (e.style.animationDuration = 10 * Math.random() + 15 + "s"),
+          t.appendChild(e));
+      }
+    }
+    document.addEventListener("DOMContentLoaded", createParticles);
+  </script>
+  <script src="/js/dyn-routing.js"></script>
+</html>
