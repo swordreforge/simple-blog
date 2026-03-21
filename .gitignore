@@ -32,3 +32,35 @@ target/
 auth.json
 test-results/
 playwright-report/
+
+# Database files
+*.db
+
+# Rust build artifacts
+rustblog
+Cargo.lock
+
+# Temporary directories
+templates-debug/
+embedded-release/
+
+# Backup files
+*.bak
+
+# Build scripts
+build-embedded.sh
+
+# Route export files
+route-export-*.json
+
+# Report files
+report.json
+eslint-report.json
+
+# Test files
+test_*.sh
+test_*.py
+test_*.rs
+test.html
+cookies.txt
+end_test.txt
