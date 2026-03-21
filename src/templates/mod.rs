@@ -1,7 +1,7 @@
+use crate::utils::unsafe_utils::{format_date, format_datetime_short, format_year};
 use actix_web::HttpResponse;
-use tera::{Tera, Context as TeraContext};
 use std::sync::Arc;
-use crate::utils::unsafe_utils::{format_year, format_date, format_datetime_short};
+use tera::{Context as TeraContext, Tera};
 
 lazy_static::lazy_static! {
     static ref TERA: Arc<Tera> = {
@@ -16,17 +16,17 @@ lazy_static::lazy_static! {
 /// 从内嵌文件系统创建 Tera 实例
 fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
     use crate::embedded::EmbeddedAssets;
-    
+
     let mut tera = Tera::default();
     tera.autoescape_on(vec!["html"]);
-    
+
     println!("🔍 调试：开始从内嵌文件加载模板...");
     let mut found_templates = Vec::new();
-    
+
     // 遍历内嵌的模板文件
     for path in EmbeddedAssets::iter() {
         let path_str = path.as_ref();
-        
+
         // 只处理 templates 目录下的 HTML 文件
         if path_str.starts_with("templates/") && path_str.ends_with(".html") {
             if let Some(content) = EmbeddedAssets::get(&path) {
@@ -34,16 +34,16 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
                 // 例如: "templates/admin/admin.html" -> "admin/admin.html"
                 let name = path_str.strip_prefix("templates/").unwrap();
                 let content_str = std::str::from_utf8(&content.data)?;
-                
+
                 println!("  ✓ 加载模板: {} ({} bytes)", name, content.data.len());
                 found_templates.push(name.to_string());
-                
+
                 // 使用 add_raw_template 方法直接添加模板内容
                 tera.add_raw_template(name, content_str)?;
             }
         }
     }
-    
+
     if found_templates.is_empty() {
         eprintln!("❌ 错误: 没有找到任何内嵌模板文件！");
         eprintln!("🔍 所有嵌入的文件:");
@@ -54,7 +54,7 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
     } else {
         println!("✅ 成功加载 {} 个内嵌模板", found_templates.len());
     }
-    
+
     Ok(tera)
 }
 
@@ -66,7 +66,7 @@ pub struct TemplateSettings {
     pub greting: String,
     pub year: String,
     pub foodes: String,
-    
+
     // 外观相关
     pub background_image: String,
     pub mobile_background_image: String,
@@ -79,27 +79,27 @@ pub struct TemplateSettings {
     pub blur_amount: u32,
     pub saturate_amount: u32,
     pub floating_text_enabled: bool,
-    
+
     // Admin 相关
     pub navbar_glass_color: String,
     pub navbar_text_color: String,
     pub card_glass_color: String,
     pub footer_glass_color: String,
     pub dark_mode_enabled: bool,
-    
+
     // 文章相关
     pub article_title: bool,
     pub article_title_prefix: String,
-    
+
     // 切换提示
     pub switch_notice: bool,
     pub switch_notice_text: String,
-    
+
     // 外部链接警告
     pub external_link_warning: bool,
     pub external_link_whitelist: String,
     pub external_link_warning_text: String,
-    
+
     // Live2D 设置
     pub live2d_enabled: bool,
     pub live2d_show_on_index: bool,
@@ -113,17 +113,17 @@ pub struct TemplateSettings {
     pub live2d_position: String,
     pub live2d_width: String,
     pub live2d_height: String,
-    
+
     // 赞助设置
     pub sponsor_enabled: bool,
     pub sponsor_title: String,
     pub sponsor_image: String,
     pub sponsor_description: String,
     pub sponsor_button_text: String,
-    
+
     // 全局设置
     pub global_avatar: String,
-    
+
     // 附件设置
     pub attachment_default_visibility: String,
     pub attachment_max_size: i64,
@@ -144,10 +144,11 @@ impl Default for TemplateSettings {
         Self {
             // 基础模板设置
             name: "欢迎来到我的博客".to_string(),
-            greting: "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。".to_string(),
+            greting: "这是一个使用 Rust 语言构建的个人博客系统，支持文章管理、数据分析等功能。"
+                .to_string(),
             year: "2026".to_string(),
             foodes: "我的博客".to_string(),
-            
+
             // 外观相关
             background_image: "/img/test.webp".to_string(),
             mobile_background_image: "/img/mobile-test.webp".to_string(),
@@ -160,27 +161,27 @@ impl Default for TemplateSettings {
             blur_amount: 20,
             saturate_amount: 180,
             floating_text_enabled: false,
-            
+
             // Admin 相关
             navbar_glass_color: "rgba(60, 60, 60, 0.6)".to_string(),
             navbar_text_color: "#ffffff".to_string(),
             card_glass_color: "rgba(220, 138, 221, 0.2)".to_string(),
             footer_glass_color: "rgba(220, 138, 221, 0.25)".to_string(),
             dark_mode_enabled: false,
-            
+
             // 文章相关
             article_title: true,
             article_title_prefix: "文章".to_string(),
-            
+
             // 切换提示
             switch_notice: true,
             switch_notice_text: "回来继续阅读".to_string(),
-            
+
             // 外部链接警告
             external_link_warning: true,
             external_link_whitelist: "github.com,gitee.com,stackoverflow.com".to_string(),
             external_link_warning_text: "您即将离开本站，前往外部链接".to_string(),
-            
+
             // Live2D 设置
             live2d_enabled: false,
             live2d_show_on_index: true,
@@ -194,21 +195,23 @@ impl Default for TemplateSettings {
             live2d_position: "right".to_string(),
             live2d_width: "280px".to_string(),
             live2d_height: "250px".to_string(),
-            
+
             // 赞助设置
             sponsor_enabled: false,
             sponsor_title: "感谢您的支持".to_string(),
             sponsor_image: "/img/avatar.webp".to_string(),
             sponsor_description: "如果您觉得这个博客对您有帮助，欢迎赞助支持！".to_string(),
             sponsor_button_text: "❤️ 赞助支持".to_string(),
-            
+
             // 全局设置
             global_avatar: "/img/avatar.webp".to_string(),
-            
+
             // 附件设置
             attachment_default_visibility: "public".to_string(),
             attachment_max_size: 524288000, // 500MB
-            attachment_allowed_types: "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz".to_string(),
+            attachment_allowed_types:
+                "jpg,jpeg,png,gif,mp4,mp3,pdf,doc,docx,xls,xlsx,ppt,pptx,zip,rar,7z,tar,gz"
+                    .to_string(),
 
             // 文章摘要设置
             passage_summarize_enabled: true,
@@ -277,9 +280,9 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
     // 使用同步方法获取数据库连接池
     let pool = crate::db::get_db_pool_sync()?;
     let conn = pool.get()?;
-    
+
     let mut settings = AppearanceSettings::default();
-    
+
     // 定义要加载的设置项
     let keys = vec![
         ("background_image", "background_image"),
@@ -299,7 +302,7 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
         ("floating_text_enabled", "floating_text_enabled"),
         ("floating_texts", "floating_texts"),
     ];
-    
+
     for (db_key, field_name) in keys {
         if let Some(setting) = crate::db::repositories::SettingRepository::get(&conn, db_key)? {
             match field_name {
@@ -324,7 +327,8 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
                         settings.floating_texts = arr;
                     } else {
                         // 如果不是有效的 JSON，尝试按逗号分割
-                        settings.floating_texts = setting.value
+                        settings.floating_texts = setting
+                            .value
                             .split(',')
                             .map(|s| s.trim().to_string())
                             .filter(|s| !s.is_empty())
@@ -335,7 +339,7 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
             }
         }
     }
-    
+
     Ok(settings)
 }
 
@@ -343,36 +347,69 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
 pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::Error>> {
     let pool = crate::db::get_db_pool_sync()?;
     let conn = pool.get()?;
-    
+
     let mut settings = TemplateSettings::default();
-    
+
     // 定义要加载的设置项
     let keys = vec![
-        "template_name", "template_greting", "template_year", "template_foods",
-        "template_article_title", "template_article_title_prefix",
-        "template_switch_notice", "template_switch_notice_text",
-        "external_link_warning", "external_link_whitelist", "external_link_warning_text",
+        "template_name",
+        "template_greting",
+        "template_year",
+        "template_foods",
+        "template_article_title",
+        "template_article_title_prefix",
+        "template_switch_notice",
+        "template_switch_notice_text",
+        "external_link_warning",
+        "external_link_whitelist",
+        "external_link_warning_text",
         // 外观设置
-        "background_image", "mobile_background_image", "background_color",
-        "background_size", "background_position", "background_repeat", "background_attachment",
-        "global_opacity", "blur_amount", "saturate_amount", "floating_text_enabled",
-        "navbar_glass_color", "navbar_text_color", "card_glass_color", "footer_glass_color",
+        "background_image",
+        "mobile_background_image",
+        "background_color",
+        "background_size",
+        "background_position",
+        "background_repeat",
+        "background_attachment",
+        "global_opacity",
+        "blur_amount",
+        "saturate_amount",
+        "floating_text_enabled",
+        "navbar_glass_color",
+        "navbar_text_color",
+        "card_glass_color",
+        "footer_glass_color",
         "dark_mode_enabled",
         // Live2D 设置
         "live2d_enabled",
-        "live2d_show_on_index", "live2d_show_on_passage", "live2d_show_on_collect",
-        "live2d_show_on_about", "live2d_show_on_admin",
-        "live2d_model_id", "live2d_model_path", "live2d_cdn_path",
-        "live2d_position", "live2d_width", "live2d_height",
+        "live2d_show_on_index",
+        "live2d_show_on_passage",
+        "live2d_show_on_collect",
+        "live2d_show_on_about",
+        "live2d_show_on_admin",
+        "live2d_model_id",
+        "live2d_model_path",
+        "live2d_cdn_path",
+        "live2d_position",
+        "live2d_width",
+        "live2d_height",
         // 赞助设置
-        "sponsor_enabled", "sponsor_title", "sponsor_image",
-        "sponsor_description", "sponsor_button_text",
+        "sponsor_enabled",
+        "sponsor_title",
+        "sponsor_image",
+        "sponsor_description",
+        "sponsor_button_text",
         "global_avatar",
-        "attachment_default_visibility", "attachment_max_size", "attachment_allowed_types",
+        "attachment_default_visibility",
+        "attachment_max_size",
+        "attachment_allowed_types",
         "passage_summarize_enabled",
-        "beian_enabled", "icp_number", "police_record_code", "police_record_content",
+        "beian_enabled",
+        "icp_number",
+        "police_record_code",
+        "police_record_content",
     ];
-    
+
     for db_key in keys {
         if let Some(setting) = crate::db::repositories::SettingRepository::get(&conn, db_key)? {
             match db_key {
@@ -397,7 +434,9 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
                 "background_attachment" => settings.background_attachment = setting.value,
                 "global_opacity" => settings.global_opacity = setting.value.parse().unwrap_or(0.15),
                 "blur_amount" => settings.blur_amount = setting.value.parse().unwrap_or(20),
-                "saturate_amount" => settings.saturate_amount = setting.value.parse().unwrap_or(180),
+                "saturate_amount" => {
+                    settings.saturate_amount = setting.value.parse().unwrap_or(180)
+                }
                 "floating_text_enabled" => settings.floating_text_enabled = setting.value == "true",
                 "navbar_glass_color" => settings.navbar_glass_color = setting.value,
                 "navbar_text_color" => settings.navbar_text_color = setting.value,
@@ -406,8 +445,12 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
                 "dark_mode_enabled" => settings.dark_mode_enabled = setting.value == "true",
                 "live2d_enabled" => settings.live2d_enabled = setting.value == "true",
                 "live2d_show_on_index" => settings.live2d_show_on_index = setting.value == "true",
-                "live2d_show_on_passage" => settings.live2d_show_on_passage = setting.value == "true",
-                "live2d_show_on_collect" => settings.live2d_show_on_collect = setting.value == "true",
+                "live2d_show_on_passage" => {
+                    settings.live2d_show_on_passage = setting.value == "true"
+                }
+                "live2d_show_on_collect" => {
+                    settings.live2d_show_on_collect = setting.value == "true"
+                }
                 "live2d_show_on_about" => settings.live2d_show_on_about = setting.value == "true",
                 "live2d_show_on_admin" => settings.live2d_show_on_admin = setting.value == "true",
                 "live2d_model_id" => settings.live2d_model_id = setting.value,
@@ -422,10 +465,16 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
                 "sponsor_description" => settings.sponsor_description = setting.value,
                 "sponsor_button_text" => settings.sponsor_button_text = setting.value,
                 "global_avatar" => settings.global_avatar = setting.value,
-                "attachment_default_visibility" => settings.attachment_default_visibility = setting.value,
-                "attachment_max_size" => settings.attachment_max_size = setting.value.parse().unwrap_or(524288000),
+                "attachment_default_visibility" => {
+                    settings.attachment_default_visibility = setting.value
+                }
+                "attachment_max_size" => {
+                    settings.attachment_max_size = setting.value.parse().unwrap_or(524288000)
+                }
                 "attachment_allowed_types" => settings.attachment_allowed_types = setting.value,
-                "passage_summarize_enabled" => settings.passage_summarize_enabled = setting.value == "true",
+                "passage_summarize_enabled" => {
+                    settings.passage_summarize_enabled = setting.value == "true"
+                }
                 "beian_enabled" => settings.beian_enabled = setting.value == "true",
                 "icp_number" => settings.icp_number = setting.value,
                 "police_record_code" => settings.police_record_code = setting.value,
@@ -434,7 +483,7 @@ pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::
             }
         }
     }
-    
+
     Ok(settings)
 }
 
@@ -449,8 +498,16 @@ pub fn appearance_to_template_settings(appearance: &AppearanceSettings) -> Templ
         background_repeat: appearance.background_repeat.clone(),
         background_attachment: appearance.background_attachment.clone(),
         global_opacity: appearance.global_opacity.parse().unwrap_or(0.9),
-        blur_amount: appearance.blur_amount.trim_end_matches("px").parse().unwrap_or(20),
-        saturate_amount: appearance.saturate_amount.trim_end_matches("%").parse().unwrap_or(180),
+        blur_amount: appearance
+            .blur_amount
+            .trim_end_matches("px")
+            .parse()
+            .unwrap_or(20),
+        saturate_amount: appearance
+            .saturate_amount
+            .trim_end_matches("%")
+            .parse()
+            .unwrap_or(180),
         floating_text_enabled: appearance.floating_text_enabled,
         navbar_glass_color: appearance.navbar_glass_color.clone(),
         card_glass_color: appearance.card_glass_color.clone(),
@@ -469,8 +526,7 @@ pub async fn render_template(template_name: &str, context: &TeraContext) -> Http
             .body(html),
         Err(e) => {
             eprintln!("Template rendering error: {}", e);
-            HttpResponse::InternalServerError()
-                .body(format!("Failed to render template: {}", e))
+            HttpResponse::InternalServerError().body(format!("Failed to render template: {}", e))
         }
     }
 }
@@ -500,15 +556,16 @@ pub async fn render_template_with_status(
 pub fn create_index_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
-    
+
     // 默认值
     let mut name = "Dango".to_string();
-    let mut greting = "欢迎来到 RustBlog，一个基于 Rust 和 Actix-web 构建的现代化博客系统".to_string();
+    let mut greting =
+        "欢迎来到 RustBlog，一个基于 Rust 和 Actix-web 构建的现代化博客系统".to_string();
     let mut foodes = "RustBlog - 使用 Rust + Actix-web 构建".to_string();
     let mut external_link_warning = true;
     let mut external_link_whitelist = "github.com,gitee.com,stackoverflow.com".to_string();
     let mut external_link_warning_text = "您即将离开本站，前往外部链接".to_string();
-    
+
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
@@ -518,47 +575,66 @@ pub fn create_index_context() -> TeraContext {
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
             // 加载 name
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_name") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_name")
+            {
                 name = setting.value;
             }
 
             // 加载 greting
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_greting") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_greting")
+            {
                 greting = setting.value;
             }
 
             // 加载 foodes
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
 
             // 加载 external_link_warning
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
 
             // 加载 external_link_whitelist
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
 
             // 加载 external_link_warning_text
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
 
             // 加载 switch_notice
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
+            {
                 switch_notice = setting.value == "true";
             }
 
             // 加载 switch_notice_text
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(
+                &conn,
+                "template_switch_notice_text",
+            ) {
                 switch_notice_text = setting.value;
             }
 
             // 加载 global_avatar
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "global_avatar")
+            {
                 global_avatar = setting.value;
             }
         }
@@ -572,21 +648,29 @@ pub fn create_index_context() -> TeraContext {
 
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
+            {
                 beian_enabled = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "icp_number")
+            {
                 icp_number = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_code")
+            {
                 police_record_code = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_content")
+            {
                 police_record_content = setting.value;
             }
         }
     }
-    
+
     context.insert("title", "RustBlog");
     context.insert("name", &name);
     context.insert("greting", &greting);
@@ -595,65 +679,24 @@ pub fn create_index_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    
+
     // 使用从数据库加载的模板设置，而不是默认值
     let settings = load_template_settings().unwrap_or_default();
     context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
 
-    // Live2D - 从数据库加载
-    let live2d_enabled = if let Ok(settings) = load_template_settings() {
-        settings.live2d_enabled
-    } else {
-        false
-    };
-    let live2d_show_on_index = if let Ok(settings) = load_template_settings() {
-        settings.live2d_show_on_index
-    } else {
-        false
-    };
-    let live2d_model_id = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_id.clone()
-    } else {
-        "1".to_string()
-    };
-    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_cdn_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget@latest".to_string()
-    };
-    let live2d_model_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
-    };
-    let live2d_position = if let Ok(settings) = load_template_settings() {
-        settings.live2d_position.clone()
-    } else {
-        "right".to_string()
-    };
-    let live2d_width = if let Ok(settings) = load_template_settings() {
-        settings.live2d_width.clone()
-    } else {
-        "280".to_string()
-    };
-    let live2d_height = if let Ok(settings) = load_template_settings() {
-        settings.live2d_height.clone()
-    } else {
-        "260".to_string()
-    };
-    
-    context.insert("live2d_enabled", &live2d_enabled);
-    context.insert("live2d_show_on_index", &live2d_show_on_index);
-    context.insert("live2d_model_id", &live2d_model_id);
+    // Live2D - 使用已加载的 settings，避免重复调用
+    context.insert("live2d_enabled", &settings.live2d_enabled);
+    context.insert("live2d_show_on_index", &settings.live2d_show_on_index);
+    context.insert("live2d_model_id", &settings.live2d_model_id);
     context.insert("live2d_model_name", "shizuku");
     context.insert("live2d_model_textures_id", &1);
-    context.insert("live2d_cdn_path", &live2d_cdn_path);
-    context.insert("live2d_model_path", &live2d_model_path);
-    context.insert("live2d_position", &live2d_position);
-    context.insert("live2d_width", &live2d_width);
-    context.insert("live2d_height", &live2d_height);
+    context.insert("live2d_cdn_path", &settings.live2d_cdn_path);
+    context.insert("live2d_model_path", &settings.live2d_model_path);
+    context.insert("live2d_position", &settings.live2d_position);
+    context.insert("live2d_width", &settings.live2d_width);
+    context.insert("live2d_height", &settings.live2d_height);
     context.insert("global_avatar", &global_avatar);
 
     // 备案信息
@@ -683,34 +726,50 @@ pub fn create_passage_context() -> TeraContext {
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
             // 外观设置
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "navbar_glass_color") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "navbar_glass_color")
+            {
                 _navbar_glass_color = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "navbar_text_color") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "navbar_text_color")
+            {
                 _navbar_text_color = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "card_glass_color") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "card_glass_color")
+            {
                 _card_glass_color = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "footer_glass_color") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "footer_glass_color")
+            {
                 _footer_glass_color = setting.value;
             }
         }
     }
-    
+
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
     let mut switch_notice_text = "🎉 新文章发布！".to_string();
@@ -725,32 +784,49 @@ pub fn create_passage_context() -> TeraContext {
 
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
+            {
                 switch_notice = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(
+                &conn,
+                "template_switch_notice_text",
+            ) {
                 switch_notice_text = setting.value;
             }
 
             // 加载 global_avatar
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "global_avatar")
+            {
                 global_avatar = setting.value;
             }
 
             // 加载赞助设置
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_enabled") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "sponsor_enabled")
+            {
                 sponsor_enabled = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_title") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "sponsor_title")
+            {
                 sponsor_title = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_image") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "sponsor_image")
+            {
                 sponsor_image = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_description") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "sponsor_description")
+            {
                 sponsor_description = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "sponsor_button_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "sponsor_button_text")
+            {
                 sponsor_button_text = setting.value;
             }
         }
@@ -770,7 +846,7 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("settings", &settings);
     context.insert("switch_notice", &switch_notice);
     context.insert("switch_notice_text", &switch_notice_text);
-    
+
     // 文章内容
     context.insert("content", "");
     context.insert("date", &format_date(&now));
@@ -780,7 +856,7 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("passage_status", "published");
     context.insert("is_scheduled", &false);
     context.insert("is_unpublished", &false);
-    
+
     // 赞助
     context.insert("sponsor_enabled", &sponsor_enabled);
     context.insert("sponsor_title", &sponsor_title);
@@ -789,56 +865,15 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("sponsor_button_text", &sponsor_button_text);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D - 从数据库加载
-    let live2d_enabled = if let Ok(settings) = load_template_settings() {
-        settings.live2d_enabled
-    } else {
-        false
-    };
-    let live2d_show_on_passage = if let Ok(settings) = load_template_settings() {
-        settings.live2d_show_on_passage
-    } else {
-        false
-    };
-    let live2d_model_id = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_id.clone()
-    } else {
-        "1".to_string()
-    };
-    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_cdn_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget@latest".to_string()
-    };
-    let live2d_model_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
-    };
-    let live2d_position = if let Ok(settings) = load_template_settings() {
-        settings.live2d_position.clone()
-    } else {
-        "right".to_string()
-    };
-    let live2d_width = if let Ok(settings) = load_template_settings() {
-        settings.live2d_width.clone()
-    } else {
-        "280".to_string()
-    };
-    let live2d_height = if let Ok(settings) = load_template_settings() {
-        settings.live2d_height.clone()
-    } else {
-        "260".to_string()
-    };
-    
-    context.insert("live2d_enabled", &live2d_enabled);
-    context.insert("live2d_show_on_passage", &live2d_show_on_passage);
-    context.insert("live2d_cdn_path", &live2d_cdn_path);
-    context.insert("live2d_model_id", &live2d_model_id);
-    context.insert("live2d_model_path", &live2d_model_path);
-    context.insert("live2d_position", &live2d_position);
-    context.insert("live2d_width", &live2d_width);
-    context.insert("live2d_height", &live2d_height);
+    // Live2D - 使用已加载的 settings，避免重复调用
+    context.insert("live2d_enabled", &settings.live2d_enabled);
+    context.insert("live2d_show_on_passage", &settings.live2d_show_on_passage);
+    context.insert("live2d_cdn_path", &settings.live2d_cdn_path);
+    context.insert("live2d_model_id", &settings.live2d_model_id);
+    context.insert("live2d_model_path", &settings.live2d_model_path);
+    context.insert("live2d_position", &settings.live2d_position);
+    context.insert("live2d_width", &settings.live2d_width);
+    context.insert("live2d_height", &settings.live2d_height);
 
     // 备案信息（针对中国内地）
     let mut beian_enabled = false;
@@ -848,16 +883,24 @@ pub fn create_passage_context() -> TeraContext {
 
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
+            {
                 beian_enabled = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "icp_number")
+            {
                 icp_number = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_code")
+            {
                 police_record_code = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_content")
+            {
                 police_record_content = setting.value;
             }
         }
@@ -888,29 +931,44 @@ pub fn create_collect_context() -> TeraContext {
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
             // 加载 switch_notice
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
+            {
                 switch_notice = setting.value == "true";
             }
             // 加载 switch_notice_text
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(
+                &conn,
+                "template_switch_notice_text",
+            ) {
                 switch_notice_text = setting.value;
             }
 
             // 加载 global_avatar
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "global_avatar")
+            {
                 global_avatar = setting.value;
             }
         }
@@ -923,7 +981,7 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    
+
     // 使用从数据库加载的模板设置，而不是默认值
     let settings = load_template_settings().unwrap_or_default();
     context.insert("settings", &settings);
@@ -931,56 +989,15 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D - 从数据库加载
-    let live2d_enabled = if let Ok(settings) = load_template_settings() {
-        settings.live2d_enabled
-    } else {
-        false
-    };
-    let live2d_show_on_collect = if let Ok(settings) = load_template_settings() {
-        settings.live2d_show_on_collect
-    } else {
-        false
-    };
-    let live2d_model_id = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_id.clone()
-    } else {
-        "1".to_string()
-    };
-    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_cdn_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget@latest".to_string()
-    };
-    let live2d_model_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
-    };
-    let live2d_position = if let Ok(settings) = load_template_settings() {
-        settings.live2d_position.clone()
-    } else {
-        "right".to_string()
-    };
-    let live2d_width = if let Ok(settings) = load_template_settings() {
-        settings.live2d_width.clone()
-    } else {
-        "280".to_string()
-    };
-    let live2d_height = if let Ok(settings) = load_template_settings() {
-        settings.live2d_height.clone()
-    } else {
-        "260".to_string()
-    };
-    
-    context.insert("live2d_enabled", &live2d_enabled);
-    context.insert("live2d_show_on_collect", &live2d_show_on_collect);
-    context.insert("live2d_cdn_path", &live2d_cdn_path);
-    context.insert("live2d_model_id", &live2d_model_id);
-    context.insert("live2d_model_path", &live2d_model_path);
-    context.insert("live2d_position", &live2d_position);
-    context.insert("live2d_width", &live2d_width);
-    context.insert("live2d_height", &live2d_height);
+    // Live2D - 使用已加载的 settings，避免重复调用
+    context.insert("live2d_enabled", &settings.live2d_enabled);
+    context.insert("live2d_show_on_collect", &settings.live2d_show_on_collect);
+    context.insert("live2d_cdn_path", &settings.live2d_cdn_path);
+    context.insert("live2d_model_id", &settings.live2d_model_id);
+    context.insert("live2d_model_path", &settings.live2d_model_path);
+    context.insert("live2d_position", &settings.live2d_position);
+    context.insert("live2d_width", &settings.live2d_width);
+    context.insert("live2d_height", &settings.live2d_height);
 
     // 备案信息（针对中国内地）
     let mut beian_enabled = false;
@@ -990,16 +1007,24 @@ pub fn create_collect_context() -> TeraContext {
 
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
+            {
                 beian_enabled = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "icp_number")
+            {
                 icp_number = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_code")
+            {
                 police_record_code = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_content")
+            {
                 police_record_content = setting.value;
             }
         }
@@ -1030,24 +1055,37 @@ pub fn create_about_context() -> TeraContext {
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
             // 加载 switch_notice
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
+            {
                 switch_notice = setting.value == "true";
             }
             // 加载 switch_notice_text
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(
+                &conn,
+                "template_switch_notice_text",
+            ) {
                 switch_notice_text = setting.value;
             }
         }
@@ -1060,7 +1098,7 @@ pub fn create_about_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    
+
     // 使用从数据库加载的模板设置，而不是默认值
     let settings = load_template_settings().unwrap_or_default();
     context.insert("settings", &settings);
@@ -1068,56 +1106,15 @@ pub fn create_about_context() -> TeraContext {
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D - 从数据库加载
-    let live2d_enabled = if let Ok(settings) = load_template_settings() {
-        settings.live2d_enabled
-    } else {
-        false
-    };
-    let live2d_show_on_about = if let Ok(settings) = load_template_settings() {
-        settings.live2d_show_on_about
-    } else {
-        false
-    };
-    let live2d_model_id = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_id.clone()
-    } else {
-        "1".to_string()
-    };
-    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_cdn_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget@latest".to_string()
-    };
-    let live2d_model_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
-    };
-    let live2d_position = if let Ok(settings) = load_template_settings() {
-        settings.live2d_position.clone()
-    } else {
-        "right".to_string()
-    };
-    let live2d_width = if let Ok(settings) = load_template_settings() {
-        settings.live2d_width.clone()
-    } else {
-        "280".to_string()
-    };
-    let live2d_height = if let Ok(settings) = load_template_settings() {
-        settings.live2d_height.clone()
-    } else {
-        "260".to_string()
-    };
-
-    context.insert("live2d_enabled", &live2d_enabled);
-    context.insert("live2d_show_on_about", &live2d_show_on_about);
-    context.insert("live2d_cdn_path", &live2d_cdn_path);
-    context.insert("live2d_model_id", &live2d_model_id);
-    context.insert("live2d_model_path", &live2d_model_path);
-    context.insert("live2d_position", &live2d_position);
-    context.insert("live2d_width", &live2d_width);
-    context.insert("live2d_height", &live2d_height);
+    // Live2D - 使用已加载的 settings，避免重复调用
+    context.insert("live2d_enabled", &settings.live2d_enabled);
+    context.insert("live2d_show_on_about", &settings.live2d_show_on_about);
+    context.insert("live2d_cdn_path", &settings.live2d_cdn_path);
+    context.insert("live2d_model_id", &settings.live2d_model_id);
+    context.insert("live2d_model_path", &settings.live2d_model_path);
+    context.insert("live2d_position", &settings.live2d_position);
+    context.insert("live2d_width", &settings.live2d_width);
+    context.insert("live2d_height", &settings.live2d_height);
 
     // 备案信息（针对中国内地）
     let mut beian_enabled = false;
@@ -1127,16 +1124,24 @@ pub fn create_about_context() -> TeraContext {
 
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
+            {
                 beian_enabled = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "icp_number")
+            {
                 icp_number = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_code")
+            {
                 police_record_code = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_content")
+            {
                 police_record_content = setting.value;
             }
         }
@@ -1163,16 +1168,24 @@ pub fn create_friends_context() -> TeraContext {
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
         }
@@ -1185,47 +1198,21 @@ pub fn create_friends_context() -> TeraContext {
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
     context.insert("global_avatar", &global_avatar);
-    
+
     // 使用从数据库加载的模板设置，而不是默认值
     let settings = load_template_settings().unwrap_or_default();
     context.insert("settings", &settings);
-    
+
     // 登录状态（前端会通过 API 检查）
     context.insert("is_logged_in", &false);
     context.insert("username", &"");
 
-    // Live2D 配置
-    let live2d_enabled = if let Ok(settings) = load_template_settings() {
-        settings.live2d_enabled
-    } else {
-        false
-    };
-    let live2d_model_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
-    };
-    let live2d_position = if let Ok(settings) = load_template_settings() {
-        settings.live2d_position.clone()
-    } else {
-        "right".to_string()
-    };
-    let live2d_width = if let Ok(settings) = load_template_settings() {
-        settings.live2d_width.clone()
-    } else {
-        "280".to_string()
-    };
-    let live2d_height = if let Ok(settings) = load_template_settings() {
-        settings.live2d_height.clone()
-    } else {
-        "260".to_string()
-    };
-
-    context.insert("live2d_enabled", &live2d_enabled);
-    context.insert("live2d_model_path", &live2d_model_path);
-    context.insert("live2d_position", &live2d_position);
-    context.insert("live2d_width", &live2d_width);
-    context.insert("live2d_height", &live2d_height);
+    // Live2D - 使用已加载的 settings，避免重复调用
+    context.insert("live2d_enabled", &settings.live2d_enabled);
+    context.insert("live2d_model_path", &settings.live2d_model_path);
+    context.insert("live2d_position", &settings.live2d_position);
+    context.insert("live2d_width", &settings.live2d_width);
+    context.insert("live2d_height", &settings.live2d_height);
 
     // 备案信息（针对中国内地）
     let mut beian_enabled = false;
@@ -1235,16 +1222,24 @@ pub fn create_friends_context() -> TeraContext {
 
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "beian_enabled") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
+            {
                 beian_enabled = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "icp_number") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "icp_number")
+            {
                 icp_number = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_code") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_code")
+            {
                 police_record_code = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "police_record_content") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "police_record_content")
+            {
                 police_record_content = setting.value;
             }
         }
@@ -1275,29 +1270,44 @@ pub fn create_markdown_editor_context() -> TeraContext {
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
             // 加载 switch_notice
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
+            {
                 switch_notice = setting.value == "true";
             }
             // 加载 switch_notice_text
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(
+                &conn,
+                "template_switch_notice_text",
+            ) {
                 switch_notice_text = setting.value;
             }
 
             // 加载 global_avatar
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "global_avatar")
+            {
                 global_avatar = setting.value;
             }
         }
@@ -1310,7 +1320,7 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    
+
     // 使用从数据库加载的模板设置，而不是默认值
     let settings = load_template_settings().unwrap_or_default();
     context.insert("settings", &settings);
@@ -1338,29 +1348,44 @@ pub fn create_admin_context() -> TeraContext {
     // 从数据库加载设置
     if let Ok(pool) = crate::db::get_db_pool_sync() {
         if let Ok(conn) = pool.get() {
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_foods") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_foods")
+            {
                 foodes = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning")
+            {
                 external_link_warning = setting.value == "true";
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_whitelist")
+            {
                 external_link_whitelist = setting.value;
             }
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "external_link_warning_text")
+            {
                 external_link_warning_text = setting.value;
             }
             // 加载 switch_notice
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
+            {
                 switch_notice = setting.value == "true";
             }
             // 加载 switch_notice_text
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice_text") {
+            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(
+                &conn,
+                "template_switch_notice_text",
+            ) {
                 switch_notice_text = setting.value;
             }
 
             // 加载 global_avatar
-            if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, "global_avatar") {
+            if let Ok(Some(setting)) =
+                crate::db::repositories::SettingRepository::get(&conn, "global_avatar")
+            {
                 global_avatar = setting.value;
             }
         }
@@ -1373,7 +1398,7 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
     context.insert("external_link_warning_text", &external_link_warning_text);
-    
+
     // 使用从数据库加载的模板设置，而不是默认值
     let settings = load_template_settings().unwrap_or_default();
     context.insert("settings", &settings);
@@ -1381,56 +1406,15 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("switch_notice_text", &switch_notice_text);
     context.insert("global_avatar", &global_avatar);
 
-    // Live2D - 从数据库加载
-    let live2d_enabled = if let Ok(settings) = load_template_settings() {
-        settings.live2d_enabled
-    } else {
-        false
-    };
-    let live2d_show_on_admin = if let Ok(settings) = load_template_settings() {
-        settings.live2d_show_on_admin
-    } else {
-        false
-    };
-    let live2d_model_id = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_id.clone()
-    } else {
-        "1".to_string()
-    };
-    let live2d_cdn_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_cdn_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget@latest".to_string()
-    };
-    let live2d_model_path = if let Ok(settings) = load_template_settings() {
-        settings.live2d_model_path.clone()
-    } else {
-        "https://unpkg.com/live2d-widget-model-shizuku@latest/assets/shizuku.model.json".to_string()
-    };
-    let live2d_position = if let Ok(settings) = load_template_settings() {
-        settings.live2d_position.clone()
-    } else {
-        "right".to_string()
-    };
-    let live2d_width = if let Ok(settings) = load_template_settings() {
-        settings.live2d_width.clone()
-    } else {
-        "280".to_string()
-    };
-    let live2d_height = if let Ok(settings) = load_template_settings() {
-        settings.live2d_height.clone()
-    } else {
-        "260".to_string()
-    };
+    // Live2D - 使用已加载的 settings，避免重复调用
+    context.insert("live2d_enabled", &settings.live2d_enabled);
+    context.insert("live2d_show_on_admin", &settings.live2d_show_on_admin);
+    context.insert("live2d_cdn_path", &settings.live2d_cdn_path);
+    context.insert("live2d_model_id", &settings.live2d_model_id);
+    context.insert("live2d_model_path", &settings.live2d_model_path);
+    context.insert("live2d_position", &settings.live2d_position);
+    context.insert("live2d_width", &settings.live2d_width);
+    context.insert("live2d_height", &settings.live2d_height);
 
-    context.insert("live2d_enabled", &live2d_enabled);
-    context.insert("live2d_show_on_admin", &live2d_show_on_admin);
-    context.insert("live2d_cdn_path", &live2d_cdn_path);
-    context.insert("live2d_model_id", &live2d_model_id);
-    context.insert("live2d_model_path", &live2d_model_path);
-    context.insert("live2d_position", &live2d_position);
-    context.insert("live2d_width", &live2d_width);
-    context.insert("live2d_height", &live2d_height);
-    
     context
 }
