@@ -353,9 +353,9 @@
               (o.style.transform = "translateY(20px)"));
             const a = e.avatar_url || "/img/avatar.webp",
               s = e.nickname || "未命名",
-              i = e.motto || "",
-              r = e.link_url || "#";
-            ((o.innerHTML = `\n          <img src="${a}" alt="${s}" class="friend-avatar" loading="lazy" onerror="this.src='/img/avatar.webp'">\n          <div class="friend-info">\n            <h2 class="friend-name">${s}</h2>\n            ${i ? `<p class="friend-motto">${i}</p>` : ""}\n            <a href="${r}" target="_blank" rel="noopener noreferrer" class="friend-link">\n              访问博客\n              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>\n                <polyline points="15 3 21 3 21 9"></polyline>\n                <line x1="10" y1="14" x2="21" y2="3"></line>\n              </svg>\n            </a>\n          </div>\n        `),
+              l = e.motto || "",
+              i = e.link_url || "#";
+            ((o.innerHTML = `\n          <img src="${a}" alt="${s}" class="friend-avatar" loading="lazy" onerror="this.src='/img/avatar.webp'">\n          <div class="friend-info">\n            <h2 class="friend-name">${s}</h2>\n            ${l ? `<p class="friend-motto">${l}</p>` : ""}\n            <a href="${i}" target="_blank" rel="noopener noreferrer" class="friend-link">\n              访问博客\n              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>\n                <polyline points="15 3 21 3 21 9"></polyline>\n                <line x1="10" y1="14" x2="21" y2="3"></line>\n              </svg>\n            </a>\n          </div>\n        `),
               n.appendChild(o),
               setTimeout(() => {
                 ((o.style.transition =
