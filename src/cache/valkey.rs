@@ -166,13 +166,11 @@ impl ValkeyCacheBackend {
     }
     /// 检查连接是否健康
     pub async fn health_check(&self) -> Result<(), CacheError> {
-        let conn = self.manager.clone();
-
         // 使用较短的超时时间进行健康检查
         let health_check_timeout = std::cmp::min(self.operation_timeout, Duration::from_secs(3));
 
         tokio::time::timeout(health_check_timeout, async move {
-            let mut conn = conn.clone();
+            let mut conn = self.manager.clone();
             let _: String = redis::cmd("PING").query_async(&mut conn).await?;
             Ok::<(), redis::RedisError>(())
         })
