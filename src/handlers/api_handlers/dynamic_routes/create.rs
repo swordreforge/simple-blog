@@ -169,9 +169,6 @@ pub async fn create_route(
         }
     };
 
-    // 记录操作日志
-    log_route_operation(&repo, id, "create", None, &dynamic_route, &admin_info.1);
-
     // 如果路由启用，热更新到路由表
     if dynamic_route.enabled {
         if let Err(e) = state.dynamic_route_service().reload_route(id).await {
@@ -293,30 +290,4 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
     }
 
     Ok(())
-}
-
-/// 记录路由操作日志
-fn log_route_operation(
-    repo: &crate::db::repositories::DynamicRouteRepository,
-    route_id: i64,
-    action: &str,
-    old_config: Option<&DynamicRoute>,
-    new_config: &DynamicRoute,
-    username: &str,
-) {
-    use serde_json::to_string;
-
-    let old_config_str = old_config.and_then(|c| to_string(c).ok());
-    let new_config_str = to_string(new_config).ok();
-
-    // 记录日志（忽略错误）
-    let _ = repo.log_operation(
-        Some(route_id),
-        action,
-        old_config_str,
-        new_config_str,
-        Some(username.to_string()),
-        None,
-        None,
-    );
 }

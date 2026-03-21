@@ -186,9 +186,6 @@ pub async fn update_route(
 
     match update_result {
         Ok(_) => {
-            // 记录操作日志
-            log_route_operation(&repo, id, "update", Some(&old_route), &updated_route, &admin_info.1);
-
             // 热更新路由表
             if let Err(e) = state.dynamic_route_service().reload_route(id).await {
                 tracing::warn!("路由热更新失败: id={}, error={}", id, e);
@@ -378,9 +375,6 @@ pub async fn patch_route(
 
     match update_result {
         Ok(_) => {
-            // 记录操作日志
-            log_route_operation(&repo, id, "update", Some(&old_route), &updated_route, &admin_info.1);
-
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "路由更新成功",
@@ -495,8 +489,6 @@ pub async fn enable_route(
 
     match update_result {
         Ok(_) => {
-            log_route_operation(&repo, id, "enable", Some(&old_route_clone), &updated_route, &admin_info.1);
-
             // 热更新路由表
             if let Err(e) = state.dynamic_route_service().reload_route(id).await {
                 tracing::warn!("路由热更新失败: id={}, error={}", id, e);
@@ -606,8 +598,6 @@ pub async fn disable_route(
 
     match update_result {
         Ok(_) => {
-            log_route_operation(&repo, id, "disable", Some(&old_route_clone), &updated_route, &admin_info.1);
-
             // 从路由表中移除路由
             state.dynamic_route_service().remove_route(&old_route_clone.path);
 
@@ -635,30 +625,4 @@ pub async fn disable_route(
             }))
         }
     }
-}
-
-/// 记录路由操作日志
-fn log_route_operation(
-    repo: &crate::db::repositories::DynamicRouteRepository,
-    route_id: i64,
-    action: &str,
-    old_config: Option<&DynamicRoute>,
-    new_config: &DynamicRoute,
-    username: &str,
-) {
-    use serde_json::to_string;
-
-    let old_config_str = old_config.and_then(|c| to_string(c).ok());
-    let new_config_str = to_string(new_config).ok();
-
-    // 记录日志（忽略错误）
-    let _ = repo.log_operation(
-        Some(route_id),
-        action,
-        old_config_str,
-        new_config_str,
-        Some(username.to_string()),
-        None,
-        None,
-    );
 }

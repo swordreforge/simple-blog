@@ -64,7 +64,6 @@ async fn batch_enable(
                     match repo.update(id, &route).await {
                         Ok(_) => {
                             success_count += 1;
-                            log_batch_operation(repo, id, "batch_enable", Some(&route), username);
                         }
                         Err(_) => {
                             failed_ids.push(id);
@@ -112,7 +111,6 @@ async fn batch_disable(
                     match repo.update(id, &route).await {
                         Ok(_) => {
                             success_count += 1;
-                            log_batch_operation(repo, id, "batch_disable", Some(&route), username);
                         }
                         Err(_) => {
                             failed_ids.push(id);
@@ -157,7 +155,6 @@ async fn batch_delete(
                 match repo.delete(id).await {
                     Ok(_) => {
                         success_count += 1;
-                        log_batch_operation(repo, id, "batch_delete", Some(&route), username);
                     }
                     Err(_) => {
                         failed_ids.push(id);
@@ -182,29 +179,4 @@ async fn batch_delete(
             "failed_ids": failed_ids
         }
     }))
-}
-
-/// 记录批量操作日志
-fn log_batch_operation(
-    repo: &crate::db::repositories::DynamicRouteRepository,
-    route_id: i64,
-    action: &str,
-    route: Option<&crate::db::models::DynamicRoute>,
-    username: &str,
-) {
-    use serde_json::to_string;
-
-    let old_config_str = route.and_then(|r| to_string(r).ok());
-    let new_config_str = route.and_then(|r| to_string(r).ok());
-
-    // 记录日志（忽略错误）
-    let _ = repo.log_operation(
-        Some(route_id),
-        action,
-        old_config_str,
-        new_config_str,
-        Some(username.to_string()),
-        None,
-        None,
-    );
 }

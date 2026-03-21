@@ -2528,59 +2528,6 @@ impl DynamicRouteRepository {
         Ok(result as i64)
     }
 
-    /// 记录操作日志
-    pub async fn log_operation(
-        &self,
-        route_id: Option<i64>,
-        action: &str,
-        old_config: Option<String>,
-        new_config: Option<String>,
-        created_by: Option<String>,
-        ip_address: Option<String>,
-        user_agent: Option<String>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        conn.execute(
-            "INSERT INTO dynamic_route_logs (route_id, action, old_config, new_config, created_by, ip_address, user_agent, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            params![
-                route_id,
-                action,
-                old_config,
-                new_config,
-                created_by,
-                ip_address,
-                user_agent,
-                Utc::now(),
-            ],
-        )?;
-        Ok(())
-    }
-
-    /// 获取路由统计
-    pub async fn get_stats(&self, route_id: i64) -> Result<Option<DynamicRouteStats>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, route_id, access_count, last_accessed_at, total_response_time_ms, avg_response_time_ms, error_count, updated_at
-             FROM dynamic_route_stats WHERE route_id = ?"
-        )?;
-        
-        let stats = stmt.query_row(params![route_id], |row| {
-            Ok(DynamicRouteStats {
-                id: Some(row.get(0)?),
-                route_id: row.get(1)?,
-                access_count: row.get(2)?,
-                last_accessed_at: row.get(3)?,
-                total_response_time_ms: row.get(4)?,
-                avg_response_time_ms: row.get(5)?,
-                error_count: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        }).optional()?;
-        
-        Ok(stats)
-    }
-
     /// 获取所有启用的路由
     pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;

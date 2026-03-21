@@ -75,9 +75,6 @@ pub async fn delete_route(
                 let _ = repo.delete(id).await;
             }
 
-            // 记录操作日志
-            log_route_operation(&repo, id, "delete", Some(&old_route), &old_route, &admin_info.1);
-
             // 从路由表中移除路由
             state.dynamic_route_service().remove_route(&old_route.path);
 
@@ -93,30 +90,4 @@ pub async fn delete_route(
             }))
         }
     }
-}
-
-/// 记录路由操作日志
-fn log_route_operation(
-    repo: &crate::db::repositories::DynamicRouteRepository,
-    route_id: i64,
-    action: &str,
-    old_config: Option<&crate::db::models::DynamicRoute>,
-    new_config: &crate::db::models::DynamicRoute,
-    username: &str,
-) {
-    use serde_json::to_string;
-
-    let old_config_str = old_config.and_then(|c| to_string(c).ok());
-    let new_config_str = to_string(new_config).ok();
-
-    // 记录日志（忽略错误）
-    let _ = repo.log_operation(
-        Some(route_id),
-        action,
-        old_config_str,
-        new_config_str,
-        Some(username.to_string()),
-        None,
-        None,
-    );
 }

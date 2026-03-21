@@ -706,34 +706,6 @@ pub struct DynamicRoute {
     pub metadata: Option<serde_json::Value>,
 }
 
-/// 动态路由操作日志模型
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct DynamicRouteLog {
-    pub id: Option<i64>,
-    pub route_id: Option<i64>,
-    pub action: String,
-    pub old_config: Option<String>,
-    pub new_config: Option<String>,
-    pub created_at: DateTime<Utc>,
-    pub created_by: Option<String>,
-    pub ip_address: Option<String>,
-    pub user_agent: Option<String>,
-}
-
-/// 动态路由统计模型
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DynamicRouteStats {
-    pub id: Option<i64>,
-    pub route_id: i64,
-    pub access_count: i64,
-    pub last_accessed_at: Option<DateTime<Utc>>,
-    pub total_response_time_ms: i64,
-    pub avg_response_time_ms: f64,
-    pub error_count: i64,
-    pub updated_at: DateTime<Utc>,
-}
-
 /// 创建路由请求
 #[derive(Debug, Deserialize)]
 pub struct CreateRouteRequest {

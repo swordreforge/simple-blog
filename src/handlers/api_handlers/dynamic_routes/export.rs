@@ -298,7 +298,6 @@ pub async fn import_routes(
         match import_result {
             Ok(id) => {
                 imported_count += 1;
-                log_import_operation(&repo, id, &import_route, username);
             }
             Err(e) => {
                 failed_count += 1;
@@ -317,27 +316,4 @@ pub async fn import_routes(
             "errors": errors
         }
     }))
-}
-
-/// 记录导入操作日志
-fn log_import_operation(
-    repo: &crate::db::repositories::DynamicRouteRepository,
-    route_id: i64,
-    route: &crate::db::models::DynamicRoute,
-    username: &str,
-) {
-    use serde_json::to_string;
-
-    let new_config_str = to_string(route).ok();
-
-    // 记录日志（忽略错误）
-    let _ = repo.log_operation(
-        Some(route_id),
-        "import",
-        None,
-        new_config_str,
-        Some(username.to_string()),
-        None,
-        None,
-    );
 }

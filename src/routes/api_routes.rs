@@ -455,9 +455,6 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/admin/dynamic-routes/{id}/disable")
             .route(web::post().to(api_handlers::dynamic_routes::disable_route))
     ).service(
-        web::resource("/api/admin/dynamic-routes/{id}/stats")
-            .route(web::get().to(api_handlers::dynamic_routes::get_route_stats))
-    ).service(
         web::resource("/api/admin/dynamic-routes/{id}/storage-type")
             .route(web::get().to(api_handlers::dynamic_routes::get_route_storage_type))
     );
