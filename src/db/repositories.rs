@@ -485,16 +485,16 @@ impl PassageRepository {
         let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 6]> = SmallVec::new();
 
         if let Some(y) = year {
-            conditions.push("strftime('%Y', created_at) = ?".to_string());
+            conditions.push("created_year = ?".to_string());
             params.push(Box::new(y));
         }
         if let Some(m) = month {
-            conditions.push("strftime('%m', created_at) = ?".to_string());
-            params.push(Box::new(format!("{:02}", m)));
+            conditions.push("created_month = ?".to_string());
+            params.push(Box::new(m));
         }
         if let Some(d) = day {
-            conditions.push("strftime('%d', created_at) = ?".to_string());
-            params.push(Box::new(format!("{:02}", d)));
+            conditions.push("created_day = ?".to_string());
+            params.push(Box::new(d));
         }
 
         let where_clause = conditions.join(" AND ");
@@ -551,16 +551,16 @@ impl PassageRepository {
         let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 3]> = SmallVec::new();
 
         if let Some(y) = year {
-            conditions.push("strftime('%Y', created_at) = ?".to_string());
+            conditions.push("created_year = ?".to_string());
             params.push(Box::new(y));
         }
         if let Some(m) = month {
-            conditions.push("strftime('%m', created_at) = ?".to_string());
-            params.push(Box::new(format!("{:02}", m)));
+            conditions.push("created_month = ?".to_string());
+            params.push(Box::new(m));
         }
         if let Some(d) = day {
-            conditions.push("strftime('%d', created_at) = ?".to_string());
-            params.push(Box::new(format!("{:02}", d)));
+            conditions.push("created_day = ?".to_string());
+            params.push(Box::new(d));
         }
 
         let where_clause = conditions.join(" AND ");
@@ -738,14 +738,14 @@ impl PassageRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             r#"
-            SELECT 
-                strftime('%Y', created_at) as year,
-                strftime('%m', created_at) as month,
+            SELECT
+                created_year as year,
+                created_month as month,
                 COUNT(*) as count
             FROM passages
             WHERE status = 'published'
-            GROUP BY year, month
-            ORDER BY year DESC, month DESC
+            GROUP BY created_year, created_month
+            ORDER BY created_year DESC, created_month DESC
             "#
         )?;
 

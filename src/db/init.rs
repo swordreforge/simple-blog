@@ -276,6 +276,31 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             conn.execute("ALTER TABLE passages ADD COLUMN summarize TEXT", [])?;
             println!("✅ 已添加 summarize 列");
         }
+
+        // 添加日期预计算列（优化查询性能）
+        let has_created_year_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('passages') WHERE name = 'created_year'",
+            [],
+            |row| row.get::<_, i32>(0),
+        ).unwrap_or(0) > 0;
+
+        if !has_created_year_column {
+            println!("⚠️  检测到缺少日期预计算列，正在添加...");
+            conn.execute("ALTER TABLE passages ADD COLUMN created_year INTEGER", [])?;
+            conn.execute("ALTER TABLE passages ADD COLUMN created_month INTEGER", [])?;
+            conn.execute("ALTER TABLE passages ADD COLUMN created_day INTEGER", [])?;
+
+            // 更新现有数据
+            conn.execute(
+                "UPDATE passages SET 
+                 created_year = CAST(strftime('%Y', created_at) AS INTEGER),
+                 created_month = CAST(strftime('%m', created_at) AS INTEGER),
+                 created_day = CAST(strftime('%d', created_at) AS INTEGER)",
+                [],
+            )?;
+
+            println!("✅ 已添加日期预计算列并更新现有数据");
+        }
     }
 
     // 创建文章表（如果不存在）
@@ -317,6 +342,41 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_scheduled ON passages(is_scheduled, published_at)", [])?;
     // 添加复合索引优化统计查询
     conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status_visibility ON passages(status, visibility)", [])?;
+
+    // 创建日期预计算列索引（优化日期筛选查询）
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_created_year ON passages(created_year)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_created_month ON passages(created_month)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_created_day ON passages(created_day)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status_created_year ON passages(status, created_year)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_passages_status_created_ymd ON passages(status, created_year, created_month, created_day)", [])?;
+
+    // 创建触发器：插入时自动计算日期
+    conn.execute(
+        "CREATE TRIGGER IF NOT EXISTS update_passage_created_date_insert
+         AFTER INSERT ON passages
+         BEGIN
+            UPDATE passages SET
+                created_year = CAST(strftime('%Y', NEW.created_at) AS INTEGER),
+                created_month = CAST(strftime('%m', NEW.created_at) AS INTEGER),
+                created_day = CAST(strftime('%d', NEW.created_at) AS INTEGER)
+            WHERE id = NEW.id;
+         END",
+        [],
+    )?;
+
+    // 创建触发器：更新 created_at 时自动计算日期
+    conn.execute(
+        "CREATE TRIGGER IF NOT EXISTS update_passage_created_date_update
+         AFTER UPDATE OF created_at ON passages
+         BEGIN
+            UPDATE passages SET
+                created_year = CAST(strftime('%Y', NEW.created_at) AS INTEGER),
+                created_month = CAST(strftime('%m', NEW.created_at) AS INTEGER),
+                created_day = CAST(strftime('%d', NEW.created_at) AS INTEGER)
+            WHERE id = NEW.id;
+         END",
+        [],
+    )?;
 
     // 创建用户表
     conn.execute(
