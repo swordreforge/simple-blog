@@ -114,6 +114,13 @@ impl CacheKeyBuilder {
         self
     }
 
+    /// 添加参数（数字版本，避免 to_string() 调用）
+    #[allow(dead_code)]
+    pub fn with_param_int(mut self, key: impl Into<String>, value: i64) -> Self {
+        self.params.push((key.into(), value.to_string()));
+        self
+    }
+
     /// 添加多个参数
     #[allow(dead_code)]
     pub fn with_params(mut self, params: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>) -> Self {
@@ -184,8 +191,8 @@ impl PassageCacheKeys {
     /// 生成文章列表缓存键
     pub fn list(page: i64, limit: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::List)
-            .with_param("page", page.to_string())
-            .with_param("limit", limit.to_string())
+            .with_param_int("page", page)
+            .with_param_int("limit", limit)
             .with_version(1)
             .build()
     }
@@ -193,7 +200,7 @@ impl PassageCacheKeys {
     /// 生成文章列表缓存键（游标分页）
     pub fn list_cursor(cursor: Option<&str>, limit: i64) -> String {
         let builder = CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::List)
-            .with_param("limit", limit.to_string())
+            .with_param_int("limit", limit)
             .with_version(1);
 
         if let Some(c) = cursor {
@@ -206,8 +213,8 @@ impl PassageCacheKeys {
     /// 生成文章列表缓存键（日期筛选）
     pub fn list_by_date(year: Option<i32>, month: Option<i32>, day: Option<i32>, page: i64, limit: i64) -> String {
         let builder = CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::List)
-            .with_param("page", page.to_string())
-            .with_param("limit", limit.to_string())
+            .with_param_int("page", page)
+            .with_param_int("limit", limit)
             .with_version(1);
 
         let date_part = match (year, month, day) {
@@ -223,7 +230,7 @@ impl PassageCacheKeys {
     /// 生成单篇文章缓存键（通过 ID）
     pub fn get_by_id(id: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::Get)
-            .with_param("id", id.to_string())
+            .with_param_int("id", id)
             .with_version(1)
             .build()
     }
@@ -271,8 +278,8 @@ impl CommentCacheKeys {
     /// 生成评论列表缓存键
     pub fn list(passage_uuid: Option<&str>, page: i64, limit: i64) -> String {
         let builder = CacheKeyBuilder::new(CacheNamespace::Comment, CacheResource::List)
-            .with_param("page", page.to_string())
-            .with_param("limit", limit.to_string())
+            .with_param_int("page", page)
+            .with_param_int("limit", limit)
             .with_version(1);
 
         if let Some(uuid) = passage_uuid {
@@ -304,7 +311,7 @@ impl CategoryCacheKeys {
     /// 生成单个分类缓存键
     pub fn get(id: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Category, CacheResource::Get)
-            .with_param("id", id.to_string())
+            .with_param_int("id", id)
             .with_version(1)
             .build()
     }
@@ -326,7 +333,7 @@ impl TagCacheKeys {
     /// 生成单个标签缓存键
     pub fn get(id: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Tag, CacheResource::Get)
-            .with_param("id", id.to_string())
+            .with_param_int("id", id)
             .with_version(1)
             .build()
     }

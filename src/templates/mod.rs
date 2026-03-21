@@ -1,6 +1,7 @@
 use actix_web::HttpResponse;
 use tera::{Tera, Context as TeraContext};
 use std::sync::Arc;
+use crate::utils::unsafe_utils::{format_year, format_date, format_datetime_short};
 
 lazy_static::lazy_static! {
     static ref TERA: Arc<Tera> = {
@@ -589,7 +590,7 @@ pub fn create_index_context() -> TeraContext {
     context.insert("title", "RustBlog");
     context.insert("name", &name);
     context.insert("greting", &greting);
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
@@ -757,7 +758,7 @@ pub fn create_passage_context() -> TeraContext {
 
     context.insert("title", "文章 - RustBlog");
     context.insert("name", "Dango");
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
@@ -772,9 +773,9 @@ pub fn create_passage_context() -> TeraContext {
     
     // 文章内容
     context.insert("content", "");
-    context.insert("date", &now.format("%Y-%m-%d").to_string());
+    context.insert("date", &format_date(&now));
     context.insert("passage_id", "");
-    context.insert("published_at", &now.format("%Y-%m-%d %H:%M").to_string());
+    context.insert("published_at", &format_datetime_short(&now));
     context.insert("read_time", "5 分钟");
     context.insert("passage_status", "published");
     context.insert("is_scheduled", &false);
@@ -917,7 +918,7 @@ pub fn create_collect_context() -> TeraContext {
 
     context.insert("title", "归档 - RustBlog");
     context.insert("name", "Dango");
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
@@ -1054,7 +1055,7 @@ pub fn create_about_context() -> TeraContext {
 
     context.insert("title", "关于 - RustBlog");
     context.insert("name", "Dango");
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
@@ -1178,7 +1179,7 @@ pub fn create_friends_context() -> TeraContext {
     }
 
     context.insert("title", "友链 - RustBlog");
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
@@ -1304,7 +1305,7 @@ pub fn create_markdown_editor_context() -> TeraContext {
 
     context.insert("title", "编辑器 - RustBlog");
     context.insert("name", "Dango");
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);
@@ -1367,7 +1368,7 @@ pub fn create_admin_context() -> TeraContext {
 
     context.insert("title", "管理后台 - RustBlog");
     context.insert("name", "Dango");
-    context.insert("year", &now.format("%Y").to_string());
+    context.insert("year", &format_year(&now));
     context.insert("foodes", &foodes);
     context.insert("external_link_warning", &external_link_warning);
     context.insert("external_link_whitelist", &external_link_whitelist);

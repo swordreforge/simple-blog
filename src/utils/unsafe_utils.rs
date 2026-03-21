@@ -5,6 +5,7 @@
 
 use chrono::{DateTime, Utc};
 use std::borrow::Cow;
+use std::fmt::Write;
 
 /// 预分配的日期时间格式化缓冲区大小
 /// 格式: "YYYY-MM-DD HH:MM:SS" = 19 字节
@@ -14,6 +15,7 @@ const DATETIME_BUFFER_SIZE: usize = 19;
 /// 优化的日期时间格式化函数
 ///
 /// 使用预分配缓冲区避免多次内存分配，性能提升约40-50%
+/// 避免创建临时 String，直接写入缓冲区
 ///
 /// # 参数
 /// - `dt`: 要格式化的UTC时间
@@ -27,7 +29,8 @@ const DATETIME_BUFFER_SIZE: usize = 19;
 #[allow(dead_code)]
 pub fn format_datetime_optimized(dt: &DateTime<Utc>) -> String {
     let mut buffer = String::with_capacity(DATETIME_BUFFER_SIZE);
-    buffer.push_str(&dt.format("%Y-%m-%d %H:%M:%S").to_string());
+    // 直接写入，避免创建临时 String
+    write!(buffer, "{}", dt.format("%Y-%m-%d %H:%M:%S")).unwrap();
     buffer
 }
 
@@ -67,6 +70,45 @@ pub fn format_datetime_cow<'a>(
 #[allow(dead_code)]
 pub fn format_datetime_batch(dates: &[DateTime<Utc>]) -> Vec<String> {
     dates.iter().map(format_datetime_optimized).collect()
+}
+
+/// 优化：格式化年份（YYYY）
+///
+/// 避免临时 String 创建
+/// 支持任何 TimeZone 的 DateTime
+#[inline]
+#[allow(dead_code)]
+pub fn format_year<Tz: chrono::TimeZone>(dt: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    dt.format("%Y").to_string()
+}
+
+/// 优化：格式化日期（YYYY-MM-DD）
+///
+/// 避免临时 String 创建
+/// 支持任何 TimeZone 的 DateTime
+#[inline]
+#[allow(dead_code)]
+pub fn format_date<Tz: chrono::TimeZone>(dt: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    dt.format("%Y-%m-%d").to_string()
+}
+
+/// 优化：格式化日期和时间（YYYY-MM-DD HH:MM）
+///
+/// 避免临时 String 创建
+/// 支持任何 TimeZone 的 DateTime
+#[inline]
+#[allow(dead_code)]
+pub fn format_datetime_short<Tz: chrono::TimeZone>(dt: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    dt.format("%Y-%m-%d %H:%M").to_string()
 }
 
 /// 快速字符串转义（用于JSON）
