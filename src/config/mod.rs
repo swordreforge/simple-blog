@@ -1,5 +1,6 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -602,16 +603,16 @@ pub enum ConfigValidationError {
 #[derive(Debug)]
 pub struct ValidationResult {
     pub is_valid: bool,
-    pub errors: Vec<ConfigValidationError>,
-    pub warnings: Vec<String>,
+    pub errors: SmallVec<[ConfigValidationError; 12]>,
+    pub warnings: SmallVec<[String; 8]>,
 }
 
 impl ValidationResult {
     pub fn new() -> Self {
         Self {
             is_valid: true,
-            errors: Vec::new(),
-            warnings: Vec::new(),
+            errors: SmallVec::new(),
+            warnings: SmallVec::new(),
         }
     }
 

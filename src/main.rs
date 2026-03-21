@@ -8,6 +8,7 @@ mod db;
 mod embedded;
 mod error;
 mod geoip;
+use smallvec::SmallVec;
 mod handlers;
 mod id_generator;
 mod json_adapter;
@@ -36,8 +37,8 @@ use std::sync::Arc;
 fn check_first_run(args: &CliArgs) {
     println!("🔍 检查运行环境...");
 
-    let mut issues = Vec::new();
-    let mut warnings = Vec::new();
+    let mut issues: SmallVec<[String; 8]> = SmallVec::new();
+    let mut warnings: SmallVec<[String; 8]> = SmallVec::new();
 
     // 检查数据库文件
     let db_path = Path::new(&args.db_path);
