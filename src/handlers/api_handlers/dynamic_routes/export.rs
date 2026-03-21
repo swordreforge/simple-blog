@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
+use tokio::fs;
 
 /// 导出路由配置
 pub async fn export_routes(
@@ -25,7 +26,7 @@ pub async fn export_routes(
                 if route.route_type == crate::db::models::RouteType::File {
                     if let Some(ref template_path) = route.template_path {
                         // 尝试读取模板文件内容
-                        match std::fs::read_to_string(template_path) {
+                        match fs::read_to_string(template_path).await {
                             Ok(content) => {
                                 tracing::info!("导出 file 类型路由: 已读取模板文件 {}", template_path);
                                 // 将文件内容放到 inline_template 中
@@ -183,7 +184,7 @@ pub async fn import_routes(
 
                         // 确保目录存在
                         if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
-                            if let Err(e) = std::fs::create_dir_all(parent_dir) {
+                            if let Err(e) = fs::create_dir_all(parent_dir).await {
                                 tracing::error!("创建目录失败: {}", e);
                                 failed_count += 1;
                                 errors.push(format!("第{}条路由（创建目录）: {}", index + 1, e));
@@ -193,7 +194,7 @@ pub async fn import_routes(
                         }
 
                         // 写入模板文件
-                        if let Err(e) = std::fs::write(&template_path, inline_template) {
+                        if let Err(e) = fs::write(&template_path, inline_template).await {
                             tracing::error!("写入模板文件失败: {}", e);
                             failed_count += 1;
                             errors.push(format!("第{}条路由（写入模板文件）: {}", index + 1, e));
@@ -216,7 +217,7 @@ pub async fn import_routes(
                         if !std::path::Path::new(&template_path).exists() {
                             // 创建空文件
                             if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
-                                if let Err(e) = std::fs::create_dir_all(parent_dir) {
+                                if let Err(e) = fs::create_dir_all(parent_dir).await {
                                     tracing::error!("创建目录失败: {}", e);
                                     failed_count += 1;
                                     errors.push(format!("第{}条路由（创建目录）: {}", index + 1, e));
@@ -225,7 +226,7 @@ pub async fn import_routes(
                                 }
                             }
 
-                            if let Err(e) = std::fs::write(&template_path, "") {
+                            if let Err(e) = fs::write(&template_path, "").await {
                                 tracing::error!("创建空模板文件失败: {}", e);
                                 failed_count += 1;
                                 errors.push(format!("第{}条路由（创建空模板文件）: {}", index + 1, e));

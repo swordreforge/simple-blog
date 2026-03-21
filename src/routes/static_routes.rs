@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse, Result, middleware};
 use actix_files::Files;
 use std::path::Path;
+use tokio::fs;
 
 /// 配置静态文件路由
 /// 单职责：仅负责静态文件服务的路由配置
@@ -82,7 +83,7 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
-            .body(std::fs::read(file_path)?));
+            .body(fs::read(file_path).await?));
     }
     
     // 如果内嵌文件不存在，尝试从文件系统读取（向后兼容）
@@ -91,7 +92,7 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
-            .body(std::fs::read(file_path)?));
+            .body(fs::read(file_path).await?));
     }
     
     Ok(HttpResponse::NotFound().finish())
@@ -116,7 +117,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
-            .body(std::fs::read(file_path)?));
+            .body(fs::read(file_path).await?));
     }
     
     // 尝试从 static/js 目录读取
@@ -125,7 +126,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
-            .body(std::fs::read(file_path)?));
+            .body(fs::read(file_path).await?));
     }
     
     Ok(HttpResponse::NotFound().finish())
@@ -142,7 +143,7 @@ async fn handle_favicon() -> Result<HttpResponse> {
 
     for path in favicon_paths {
         if Path::new(path).exists() {
-            let metadata = std::fs::metadata(path)?;
+            let metadata = fs::metadata(path).await?;
             let modified = metadata.modified()?;
             let etag = match modified.duration_since(std::time::UNIX_EPOCH) {
                 Ok(duration) => format!("{:x}-{:x}", metadata.len(), duration.as_secs()),
@@ -153,7 +154,7 @@ async fn handle_favicon() -> Result<HttpResponse> {
                 .content_type("image/x-icon")
                 .insert_header(("Cache-Control", "public, max-age=86400"))
                 .insert_header(("ETag", etag))
-                .body(std::fs::read(path)?));
+                .body(fs::read(path).await?));
         }
     }
 

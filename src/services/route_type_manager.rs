@@ -12,6 +12,7 @@ use crate::db::models::{DynamicRoute, RouteType};
 use crate::services::route_storage::{RouteStorage, StorageError};
 use crate::db::repositories::DynamicRouteRepository;
 use crate::services::route_storage::{MemoryRouteStorage, FileRouteStorage};
+use tokio::fs;
 
 /// 路由类型管理器
 ///
@@ -241,7 +242,7 @@ impl RouteTypeManager {
                 let template_path = route.template_path.clone();
                 if let Some(ref path) = template_path {
                     // 读取模板文件内容
-                    let content = std::fs::read_to_string(path)
+                    let content = fs::read_to_string(path).await
                         .map_err(|e| StorageError::FileError(
                             format!("Failed to read template file {}: {}", path, e)
                         ))?;
@@ -277,14 +278,14 @@ impl RouteTypeManager {
 
                     // 确保目录存在
                     if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
-                        std::fs::create_dir_all(parent_dir)
+                        fs::create_dir_all(parent_dir).await
                             .map_err(|e| StorageError::FileError(
                                 format!("Failed to create directory {}: {}", parent_dir.display(), e)
                             ))?;
                     }
 
                     // 写入文件
-                    std::fs::write(&template_path, inline_template)
+                    fs::write(&template_path, inline_template).await
                         .map_err(|e| StorageError::FileError(
                             format!("Failed to write template file {}: {}", template_path, e)
                         ))?;

@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse, HttpRequest};
 use crate::utils::format_datetime_optimized;
+use tokio::fs;
 
 use super::crud::{PassageResponse, UpdatePassageRequest};
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
@@ -256,7 +257,7 @@ pub async fn delete_by_query(
 
     // 删除 Markdown 文件
     if let Some(file_path) = &passage.file_path {
-        if let Err(e) = std::fs::remove_file(file_path) {
+        if let Err(e) = fs::remove_file(file_path).await {
             eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
         }
     }
@@ -273,7 +274,7 @@ pub async fn delete_by_query(
     // 删除附件物理文件
     let mut deleted_files = 0;
     for attachment in &attachments {
-        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+        if let Err(e) = fs::remove_file(&attachment.file_path).await {
             eprintln!("删除附件文件失败 {}: {}", attachment.file_path, e);
         } else {
             deleted_files += 1;

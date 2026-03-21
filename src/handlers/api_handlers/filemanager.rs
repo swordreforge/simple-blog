@@ -3,7 +3,7 @@ use actix_multipart::Multipart;
 use actix_files::NamedFile;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use std::fs;
+use tokio::fs;
 
 /// 文件信息
 #[derive(Debug, Serialize)]
@@ -69,7 +69,7 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     }
     
     // 读取目录内容
-    let entries = match fs::read_dir(path) {
+    let mut entries = match fs::read_dir(path).await {
         Ok(entries) => entries,
         Err(e) => {
             eprintln!("读取目录失败: {}", e);
@@ -82,12 +82,21 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
     };
     
     let mut files: Vec<FileInfo> = Vec::new();
-    
-    for entry in entries.flatten() {
+
+    loop {
+        let entry = match entries.next_entry().await {
+            Ok(Some(entry)) => entry,
+            Ok(None) => break,
+            Err(e) => {
+                eprintln!("读取目录条目失败: {}", e);
+                break;
+            }
+        };
+
         let entry_path = entry.path();
         let metadata = entry_path.metadata().ok();
         let file_name = entry.file_name().to_string_lossy().to_string();
-        
+
         // 提取文件扩展名
         let extension = if metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false) {
             String::new()
@@ -98,7 +107,7 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
                 .map(|ext| format!(".{}", ext))
                 .unwrap_or_default()
         };
-        
+
         let file_info = FileInfo {
             name: file_name.clone(),
             path: entry_path.to_string_lossy().to_string(),
@@ -112,7 +121,7 @@ pub async fn list(query: web::Query<std::collections::HashMap<String, String>>) 
                     datetime.format("%Y-%m-%d %H:%M:%S").to_string()
                 }),
         };
-        
+
         files.push(file_info);
     }
     
@@ -266,7 +275,7 @@ pub async fn create_dir(
     }
 
     // 创建目录
-    match fs::create_dir_all(&full_path) {
+    match fs::create_dir_all(&full_path).await {
         Ok(_) => HttpResponse::Ok().json(CommonResponse {
             success: true,
             message: "目录创建成功".to_string(),
@@ -305,7 +314,7 @@ pub async fn upload(
     let target_dir = Path::new(&safe_path);
 
     // 确保目标目录存在
-    if let Err(e) = fs::create_dir_all(target_dir) {
+    if let Err(e) = fs::create_dir_all(target_dir).await {
         eprintln!("创建目标目录失败: {}", e);
         return HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
@@ -359,7 +368,7 @@ pub async fn upload(
         let file_path = target_dir.join(&filename);
 
         // 保存文件到磁盘
-        if let Err(e) = fs::write(&file_path, &file_bytes) {
+        if let Err(e) = fs::write(&file_path, &file_bytes).await {
             eprintln!("保存文件失败: {}", e);
             return HttpResponse::InternalServerError().json(CommonResponse {
                 success: false,
@@ -421,7 +430,7 @@ pub async fn preview(query: web::Query<std::collections::HashMap<String, String>
     }
 
     // 读取文件内容
-    match fs::read_to_string(path) {
+    match fs::read_to_string(path).await {
         Ok(content) => {
             // 获取文件扩展名
             let extension = path.extension()
@@ -502,7 +511,7 @@ pub async fn rename(req: web::Json<RenameRequest>) -> HttpResponse {
     let new_path = dir.join(&req.new_name);
 
     // 重命名文件
-    match fs::rename(&safe_old_path, &new_path) {
+    match fs::rename(&safe_old_path, &new_path).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
             "message": "重命名成功",
@@ -552,9 +561,9 @@ pub async fn delete(query: web::Query<std::collections::HashMap<String, String>>
 
     // 删除文件或目录
     let result = if path.is_dir() {
-        fs::remove_dir_all(&safe_path)
+        fs::remove_dir_all(&safe_path).await
     } else {
-        fs::remove_file(&safe_path)
+        fs::remove_file(&safe_path).await
     };
 
     match result {

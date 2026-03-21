@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse};
 use crate::db::repositories::Repository;
+use tokio::fs;
 
 /// 获取数据库连接池状态
 pub async fn get_pool_status() -> HttpResponse {
@@ -36,7 +37,7 @@ pub async fn health_check(repo: web::Data<std::sync::Arc<dyn Repository>>) -> Ht
     let connection_ok = repo.get_pool().get().is_ok();
 
     // 获取数据库文件大小
-    let db_size = std::fs::metadata("data/blog.db")
+    let db_size = fs::metadata("data/blog.db").await
         .ok()
         .map(|m| m.len());
 

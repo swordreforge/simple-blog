@@ -11,6 +11,7 @@ use dynamic_route_actix::{RouteTable, SimpleRoute, RouteEntry};
 use crate::db::repositories::DynamicRouteRepository;
 use crate::db::models::{DynamicRoute, HandlerType};
 use crate::services::route_type_manager::RouteTypeManager;
+use tokio::fs;
 
 /// 路由加载统计
 #[derive(Debug, Default, Serialize)]
@@ -56,7 +57,7 @@ impl DynamicRouteService {
                 Ok(routes) => {
                     for route in routes {
                         if route.enabled {
-                            if let Err(e) = self.add_route_to_table(&route) {
+                            if let Err(e) = self.add_route_to_table(&route).await {
                                 tracing::warn!("从内存存储加载路由失败: path={}, error={}", route.path, e);
                                 stats.failed += 1;
                             } else {
@@ -75,7 +76,7 @@ impl DynamicRouteService {
                 Ok(routes) => {
                     for route in routes {
                         if route.enabled {
-                            if let Err(e) = self.add_route_to_table(&route) {
+                            if let Err(e) = self.add_route_to_table(&route).await {
                                 tracing::warn!("从文件存储加载路由失败: path={}, error={}", route.path, e);
                                 stats.failed += 1;
                             } else {
@@ -94,7 +95,7 @@ impl DynamicRouteService {
                 Ok(routes) => {
                     for route in routes {
                         if route.enabled {
-                            if let Err(e) = self.add_route_to_table(&route) {
+                            if let Err(e) = self.add_route_to_table(&route).await {
                                 tracing::warn!("从数据库存储加载路由失败: path={}, error={}", route.path, e);
                                 stats.failed += 1;
                             } else {
@@ -116,7 +117,7 @@ impl DynamicRouteService {
             let count = routes.len();
 
             for route in routes {
-                if let Err(e) = self.add_route_to_table(&route) {
+                if let Err(e) = self.add_route_to_table(&route).await {
                     tracing::warn!("加载路由失败: path={}, error={}", route.path, e);
                 }
             }
@@ -139,7 +140,7 @@ impl DynamicRouteService {
     }
 
     /// 添加路由到路由表
-    fn add_route_to_table(&self, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
+    async fn add_route_to_table(&self, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
         // 规范化路径：确保以 / 开头，移除尾部斜杠（根路径除外），规范化多个连续斜杠
         let normalized_path = normalize_path(&route.path);
         
@@ -165,7 +166,7 @@ impl DynamicRouteService {
                     crate::db::models::RouteType::File => {
                         if let Some(ref path) = route.template_path {
                             // 读取模板文件
-                            match std::fs::read_to_string(path) {
+                            match fs::read_to_string(path).await {
                                 Ok(content) => content,
                                 Err(e) => {
                                     tracing::error!("读取模板文件失败: path={}, error={}", path, e);
@@ -240,7 +241,7 @@ impl DynamicRouteService {
 
             // 如果路由是启用状态，重新加载
             if route.enabled {
-                self.add_route_to_table(&route)?;
+                self.add_route_to_table(&route).await?;
                 tracing::info!("路由热更新成功: path={}, type={}", route.path, route.handler_type);
             }
         }

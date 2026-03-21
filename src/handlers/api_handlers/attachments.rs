@@ -3,6 +3,7 @@ use actix_multipart::Multipart;
 use serde::Serialize;
 use crate::db::models::Attachment;
 use chrono::Utc;
+use tokio::fs;
 
 /// 附件响应
 #[derive(Debug, Serialize)]
@@ -236,15 +237,15 @@ pub async fn upload(
     
     // 保存文件到磁盘
     let file_path = format!("attachments/{}", stored_name);
-    if let Err(e) = std::fs::create_dir_all("attachments") {
+    if let Err(e) = fs::create_dir_all("attachments").await {
         eprintln!("创建附件目录失败: {}", e);
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "success": false,
             "message": "创建附件目录失败"
         }));
     }
-    
-    if let Err(e) = std::fs::write(&file_path, &file_bytes) {
+
+    if let Err(e) = fs::write(&file_path, &file_bytes).await {
         eprintln!("保存文件失败: {}", e);
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "success": false,
@@ -324,7 +325,7 @@ pub async fn delete(
     };
     
     // 删除文件
-    if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+    if let Err(e) = fs::remove_file(&attachment.file_path).await {
         eprintln!("删除文件失败: {}", e);
     }
     
@@ -404,7 +405,7 @@ pub async fn delete_batch(
     let mut files_deleted = 0;
     let mut files_failed = 0;
     for attachment in &attachments {
-        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+        if let Err(e) = fs::remove_file(&attachment.file_path).await {
             eprintln!("删除文件失败 {}: {}", attachment.file_path, e);
             files_failed += 1;
         } else {
@@ -614,7 +615,7 @@ pub async fn download(
     match attachment_repo.get_by_id(id).await {
         Ok(attachment) => {
             // 读取文件内容
-            match std::fs::read(&attachment.file_path) {
+            match fs::read(&attachment.file_path).await {
                 Ok(content) => {
                     HttpResponse::Ok()
                         .insert_header(("Content-Type", attachment.content_type.clone()))

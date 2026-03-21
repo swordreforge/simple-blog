@@ -5,6 +5,7 @@ use crate::view_batch::{ViewRecord, is_local_ip};
 use crate::utils::format_datetime_optimized;
 use chrono::Utc;
 use chrono_tz::Tz;
+use tokio::fs;
 
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
 use super::validation::{ensure_tags_exist, ensure_category_exist};
@@ -940,7 +941,7 @@ pub async fn delete(
     // 2. 删除 Markdown 文件
     let mut deleted_markdown = false;
     if let Some(file_path) = &passage.file_path {
-        if let Err(e) = std::fs::remove_file(file_path) {
+        if let Err(e) = fs::remove_file(file_path).await {
             eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
         } else {
             deleted_markdown = true;
@@ -1075,7 +1076,7 @@ pub async fn delete_batch(
     // 2. 删除 Markdown 文件
     let mut deleted_markdown_files = 0;
     for file_path in &file_paths {
-        if let Err(e) = std::fs::remove_file(file_path) {
+        if let Err(e) = fs::remove_file(file_path).await {
             eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
         } else {
             deleted_markdown_files += 1;
@@ -1095,7 +1096,7 @@ pub async fn delete_batch(
     // 4. 删除附件物理文件
     let mut deleted_files = 0;
     for attachment in &attachments {
-        if let Err(e) = std::fs::remove_file(&attachment.file_path) {
+        if let Err(e) = fs::remove_file(&attachment.file_path).await {
             eprintln!("删除附件文件失败 {}: {}", attachment.file_path, e);
         } else {
             deleted_files += 1;
