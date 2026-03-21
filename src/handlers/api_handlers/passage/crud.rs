@@ -255,16 +255,51 @@ pub async fn list(
         match result {
             Ok(passages) => {
                 // 传统分页响应
-                // 获取总数（总是实时查询，不使用缓存）
-                let total: i64 = if year.is_some() || month.is_some() || day.is_some() {
-                    match passage_repo.count_published_by_date(year, month, day).await {
-                        Ok(c) => c,
-                        Err(_) => passages.len() as i64,
+                // 获取总数（使用缓存优化）
+                let date_filter = match (year, month, day) {
+                    (Some(y), Some(m), Some(d)) => format!("{}-{}-{}", y, m, d),
+                    (Some(y), Some(m), None) => format!("{}-{}", y, m),
+                    (Some(y), None, None) => format!("{}", y),
+                    (None, None, None) => "all".to_string(),
+                    _ => String::new(),
+                };
+
+                let cache_key = format!("passage:count:{}", date_filter);
+                let total: i64 = if let Some(manager) = state.cache.manager() {
+                    // 尝试从缓存获取
+                    if let Some(cached) = manager.get(&cache_key).await {
+                        if let Ok(cached_total) = cached.parse::<i64>() {
+                            tracing::debug!("从缓存获取文章总数: {} -> {}", cache_key, cached_total);
+                            cached_total
+                        } else {
+                            // 缓存解析失败，重新查询
+                            let fresh_total = if year.is_some() || month.is_some() || day.is_some() {
+                                passage_repo.count_published_by_date(year, month, day).await.unwrap_or(passages.len() as i64)
+                            } else {
+                                passage_repo.count_published().await.unwrap_or(passages.len() as i64)
+                            };
+                            // 更新缓存
+                            let _ = manager.set(&cache_key, &fresh_total.to_string()).await;
+                            fresh_total
+                        }
+                    } else {
+                        // 缓存未命中，执行查询
+                        let fresh_total = if year.is_some() || month.is_some() || day.is_some() {
+                            passage_repo.count_published_by_date(year, month, day).await.unwrap_or(passages.len() as i64)
+                        } else {
+                            passage_repo.count_published().await.unwrap_or(passages.len() as i64)
+                        };
+                        // 写入缓存
+                        let _ = manager.set(&cache_key, &fresh_total.to_string()).await;
+                        tracing::debug!("缓存文章总数: {} -> {}", cache_key, fresh_total);
+                        fresh_total
                     }
                 } else {
-                    match passage_repo.count_published().await {
-                        Ok(c) => c,
-                        Err(_) => passages.len() as i64,
+                    // 缓存管理器不可用，直接查询
+                    if year.is_some() || month.is_some() || day.is_some() {
+                        passage_repo.count_published_by_date(year, month, day).await.unwrap_or(passages.len() as i64)
+                    } else {
+                        passage_repo.count_published().await.unwrap_or(passages.len() as i64)
                     }
                 };
 
