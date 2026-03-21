@@ -230,7 +230,7 @@ impl RouteValidator {
         }
 
         // 如果存在额外数据，验证是否为有效的 JSON
-        if let Some(ref data) = extra_data {
+        if let Some(data) = extra_data {
             serde_json::from_str::<serde_json::Value>(data).map_err(|e| {
                 ValidationError::ExtraDataValidationError(format!("Invalid JSON: {}", e))
             })?;

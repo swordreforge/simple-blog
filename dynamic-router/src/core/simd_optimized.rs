@@ -35,8 +35,8 @@ impl SimdComparator {
 
         for i in 0..chunks {
             let offset = i * 32;
-            let a_vec = _mm256_loadu_si256(a_bytes.as_ptr().add(offset) as *const __m256i);
-            let b_vec = _mm256_loadu_si256(b_bytes.as_ptr().add(offset) as *const __m256i);
+            let a_vec = unsafe { _mm256_loadu_si256(a_bytes.as_ptr().add(offset) as *const __m256i) };
+            let b_vec = unsafe { _mm256_loadu_si256(b_bytes.as_ptr().add(offset) as *const __m256i) };
             let cmp = _mm256_cmpeq_epi8(a_vec, b_vec);
 
             // 检查是否所有字节都相等
@@ -100,8 +100,8 @@ impl SimdComparator {
 
         for i in 0..chunks {
             let offset = i * 32;
-            let text_vec = _mm256_loadu_si256(text_bytes.as_ptr().add(offset) as *const __m256i);
-            let prefix_vec = _mm256_loadu_si256(prefix_bytes.as_ptr().add(offset) as *const __m256i);
+            let text_vec = unsafe { _mm256_loadu_si256(text_bytes.as_ptr().add(offset) as *const __m256i) };
+            let prefix_vec = unsafe { _mm256_loadu_si256(prefix_bytes.as_ptr().add(offset) as *const __m256i) };
             let cmp = _mm256_cmpeq_epi8(text_vec, prefix_vec);
 
             if _mm256_movemask_epi8(cmp) != -1 {
@@ -166,8 +166,8 @@ impl SimdComparator {
 
         for i in 0..chunks {
             let offset = i * 32;
-            let a_vec = _mm256_loadu_si256(a_bytes.as_ptr().add(offset) as *const __m256i);
-            let b_vec = _mm256_loadu_si256(b_bytes.as_ptr().add(offset) as *const __m256i);
+            let a_vec = unsafe { _mm256_loadu_si256(a_bytes.as_ptr().add(offset) as *const __m256i) };
+            let b_vec = unsafe { _mm256_loadu_si256(b_bytes.as_ptr().add(offset) as *const __m256i) };
             let cmp = _mm256_cmpeq_epi8(a_vec, b_vec);
 
             // 检查哪些字节相等
@@ -242,7 +242,7 @@ impl SimdComparator {
 
         for i in 0..chunks {
             let offset = i * 32;
-            let text_vec = _mm256_loadu_si256(bytes.as_ptr().add(offset) as *const __m256i);
+            let text_vec = unsafe { _mm256_loadu_si256(bytes.as_ptr().add(offset) as *const __m256i) };
             let cmp = _mm256_cmpeq_epi8(text_vec, target_vec);
 
             // 检查是否有匹配
