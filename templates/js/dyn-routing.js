@@ -278,9 +278,12 @@ async function testRoute() {
         t = document.getElementById("routeType"),
         a = document.getElementById("handlerType"),
         o = document.getElementById("handlerConfig"),
-        n = document.getElementById("contentSource");
+        r = document.getElementById("inlineTemplate"),
+        l = document.getElementById("templatePath"),
+        c = document.getElementById("contentType"),
+        m = document.getElementById("routeMetadata");
     if (e && t && a && o)
-        if (e = e.value.trim(), t = t.value, a = a.value, o = o.value, n = n ? n.value : null, e && t && a) try {
+        if (e = e.value.trim(), t = t.value, a = a.value, o = o.value, e && t && a) try {
             var s = await(await fetch("/api/admin/dynamic-routes/test", {
                 method: "POST",
                 headers: {
@@ -291,7 +294,10 @@ async function testRoute() {
                     path: e,
                     handler_type: a,
                     handler_config: JSON.parse(o),
-                    content_source: n || null
+                    inline_template: r ? r.value.trim() || null : null,
+                    template_path: l ? l.value.trim() || null : null,
+                    content_type_hint: c ? c.value.trim() || null : null,
+                    metadata: m && m.value.trim() ? JSON.parse(m.value.trim()) : null
                 })
             })).json();
             if (s.success) {
