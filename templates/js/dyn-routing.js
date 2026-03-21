@@ -2,8 +2,7 @@ let currentPage = 1,
     pageSize = 20,
     totalRoutes = 0,
     routes = [];
-async 
-function loadRoutes() {
+async function loadRoutes() {
     document.getElementById("routesTableBody").innerHTML = '<tr><td colspan="9" class="loading">加载中...</td></tr>';
     try {
         let e = document.getElementById("filterType").value,
@@ -16,8 +15,7 @@ function loadRoutes() {
         showMessage("error", "网络错误: " + e.message)
     }
 }
-async 
-function loadStats() {
+async function loadStats() {
     try {
         var e, t, a, o, n, s, r = await(await fetch("/api/admin/dynamic-routes?page=1&limit=1000")).json();
         r.success && (t = (e = r.data.routes).filter(e => e.enabled).length, a = e.filter(e => !e.enabled).length, (o = document.getElementById("totalRoutes")) && (o.textContent = e.length), (n = document.getElementById("enabledRoutes")) && (n.textContent = t), s = document.getElementById("disabledRoutes")) && (s.textContent = a), loadStorageStats()
@@ -25,8 +23,7 @@ function loadStats() {
         console.error("加载统计信息失败:", e)
     }
 }
-async 
-function loadStorageStats() {
+async function loadStorageStats() {
     try {
         var e, t, a, o = await(await fetch("/api/admin/dynamic-routes/storage/stats")).json();
         o.database && (e = document.getElementById("databaseRoutes")) && (e.textContent = o.database.total_routes), o.memory && (t = document.getElementById("memoryRoutes")) && (t.textContent = o.memory.total_routes), o.file && (a = document.getElementById("fileRoutes")) && (a.textContent = o.file.total_routes)
@@ -199,8 +196,7 @@ function containsControlChars(t, a = !1) {
     }
     return !1
 }
-async 
-function saveRoute() {
+async function saveRoute() {
     if (isSubmitting) showMessage("modalError", "正在提交中，请稍候...");
     else {
         var t = document.getElementById("routeId").value,
@@ -277,8 +273,7 @@ function saveRoute() {
         else showMessage("modalError", "路由路径不能为空")
     }
 }
-async 
-function testRoute() {
+async function testRoute() {
     var e = document.getElementById("routePath"),
         t = document.getElementById("routeType"),
         a = document.getElementById("handlerType"),
@@ -309,8 +304,7 @@ function testRoute() {
         } else alert("请先填写路由路径、选择路由类型和处理器类型");
         else alert("缺少必要的表单元素")
 }
-async 
-function toggleRoute(e, t) {
+async function toggleRoute(e, t) {
     t = t ? "enable" : "disable";
     try {
         var a = await(await fetch(`/api/admin/dynamic-routes/${e}/` + t, {
@@ -321,8 +315,7 @@ function toggleRoute(e, t) {
         showMessage("error", "网络错误: " + e.message)
     }
 }
-async 
-function deleteRoute(e) {
+async function deleteRoute(e) {
     if (confirm("确定要删除这个路由吗？")) try {
         var t = await(await fetch("/api/admin/dynamic-routes/" + e, {
             method: "DELETE"
@@ -332,8 +325,7 @@ function deleteRoute(e) {
         showMessage("error", "网络错误: " + e.message)
     }
 }
-async 
-function exportRoutes() {
+async function exportRoutes() {
     try {
         var e, t, a, o = await(await fetch("/api/admin/dynamic-routes/export")).json();
         o.success ? (e = new Blob([JSON.stringify(o.data, null, 2)], {
@@ -351,8 +343,7 @@ function showImportModal() {
 function closeImportModal() {
     document.getElementById("importModal").classList.remove("active")
 }
-async 
-function importRoutes() {
+async function importRoutes() {
     var e = document.getElementById("importConfig").value.trim();
     if (e) try {
         var t, a = JSON.parse(e),
@@ -514,8 +505,7 @@ function openStorageModal() {
 function closeStorageModal() {
     document.getElementById("storageModal").classList.remove("active"), document.getElementById("storageMessage").style.display = "none"
 }
-async 
-function refreshStorageStats() {
+async function refreshStorageStats() {
     try {
         var e = await(await fetch("/api/admin/dynamic-routes/storage/stats")).json();
         e.database && (document.getElementById("storageDatabaseTotal").textContent = e.database.total_routes, document.getElementById("storageDatabaseEnabled").textContent = e.database.enabled_routes, document.getElementById("storageDatabaseDisabled").textContent = e.database.disabled_routes, document.getElementById("storageDatabaseMemory").textContent = e.database.memory_usage_bytes), e.memory && (document.getElementById("storageMemoryTotal").textContent = e.memory.total_routes, document.getElementById("storageMemoryEnabled").textContent = e.memory.enabled_routes, document.getElementById("storageMemoryDisabled").textContent = e.memory.disabled_routes, document.getElementById("storageMemoryMemory").textContent = e.memory.memory_usage_bytes), e.file && (document.getElementById("storageFileTotal").textContent = e.file.total_routes, document.getElementById("storageFileEnabled").textContent = e.file.enabled_routes, document.getElementById("storageFileDisabled").textContent = e.file.disabled_routes, document.getElementById("storageFileMemory").textContent = e.file.memory_usage_bytes), e.database && (document.getElementById("databaseRoutes").textContent = e.database.total_routes), e.memory && (document.getElementById("memoryRoutes").textContent = e.memory.total_routes), e.file && (document.getElementById("fileRoutes").textContent = e.file.total_routes)
@@ -523,8 +513,7 @@ function refreshStorageStats() {
         console.error("加载存储统计失败:", e), showMessage("storageError", "加载存储统计失败: " + e.message)
     }
 }
-async 
-function batchMigrateRoutes() {
+async function batchMigrateRoutes() {
     var e = document.getElementById("migrateFrom").value,
         t = document.getElementById("migrateTo").value;
     if (e === t) showMessage("storageError", "源存储类型和目标存储类型不能相同");
@@ -544,8 +533,7 @@ function batchMigrateRoutes() {
         showMessage("storageError", "网络错误: " + e.message)
     }
 }
-async 
-function clearStorage() {
+async function clearStorage() {
     var e = document.getElementById("clearStorageType").value;
     if (confirm(`确定要清空 ${e} 存储中的所有路由吗？此操作不可逆。`)) try {
         var t = await(await fetch("/api/admin/dynamic-routes/storage/clear/" + e, {
