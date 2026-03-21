@@ -2,7 +2,7 @@ let currentPage = 1,
     pageSize = 20,
     totalRoutes = 0,
     routes = [];
-async
+async 
 function loadRoutes() {
     document.getElementById("routesTableBody").innerHTML = '<tr><td colspan="9" class="loading">加载中...</td></tr>';
     try {
@@ -16,7 +16,7 @@ function loadRoutes() {
         showMessage("error", "网络错误: " + e.message)
     }
 }
-async
+async 
 function loadStats() {
     try {
         var e, t, a, o, n, s, r = await(await fetch("/api/admin/dynamic-routes?page=1&limit=1000")).json();
@@ -25,7 +25,7 @@ function loadStats() {
         console.error("加载统计信息失败:", e)
     }
 }
-async
+async 
 function loadStorageStats() {
     try {
         var e, t, a, o = await(await fetch("/api/admin/dynamic-routes/storage/stats")).json();
@@ -158,10 +158,13 @@ function showAddModal() {
             contentTypeGroup: "style.display",
             inlineTemplateGroup: "style.display",
             templatePathGroup: "style.display",
-            routeModal: "classList"
+            routeModal: "classList",
+            groupId: "value",
+            isPrimaryEntry: "checked",
+            groupName: "value"
         }))
         if (!document.getElementById(e)) return console.error(`元素 ${e} 不存在`), void alert(`页面加载错误：找不到元素 ${e}，请刷新页面重试`);
-    document.getElementById("modalTitle").textContent = "添加路由", document.getElementById("routeId").value = "", document.getElementById("routeName").value = "", document.getElementById("routeType").value = "database", document.getElementById("routePath").value = "", document.getElementById("handlerType").value = "", document.getElementById("handlerConfig").value = "", document.getElementById("contentType").value = "", document.getElementById("inlineTemplate").value = "", document.getElementById("templatePath").value = "", document.getElementById("routeMetadata").value = "", document.getElementById("routePriority").value = "0", document.getElementById("routeEnabled").checked = !0, document.getElementById("modalMessage").innerHTML = "", document.getElementById("contentTypeGroup").style.display = "none", document.getElementById("inlineTemplateGroup").style.display = "none", document.getElementById("templatePathGroup").style.display = "none";
+    document.getElementById("modalTitle").textContent = "添加路由", document.getElementById("routeId").value = "", document.getElementById("routeName").value = "", document.getElementById("routeType").value = "database", document.getElementById("routePath").value = "", document.getElementById("handlerType").value = "", document.getElementById("handlerConfig").value = "", document.getElementById("contentType").value = "", document.getElementById("inlineTemplate").value = "", document.getElementById("templatePath").value = "", document.getElementById("routeMetadata").value = "", document.getElementById("routePriority").value = "0", document.getElementById("routeEnabled").checked = !0, document.getElementById("modalMessage").innerHTML = "", document.getElementById("contentTypeGroup").style.display = "none", document.getElementById("inlineTemplateGroup").style.display = "none", document.getElementById("templatePathGroup").style.display = "none", document.getElementById("groupId").value = "", document.getElementById("isPrimaryEntry").checked = !1, document.getElementById("groupName").value = "";
     var a = document.getElementById("uploadFileBtn");
     a && (a.style.display = "none"), document.getElementById("routeModal").classList.add("active")
 }
@@ -196,7 +199,7 @@ function containsControlChars(t, a = !1) {
     }
     return !1
 }
-async
+async 
 function saveRoute() {
     if (isSubmitting) showMessage("modalError", "正在提交中，请稍候...");
     else {
@@ -274,7 +277,7 @@ function saveRoute() {
         else showMessage("modalError", "路由路径不能为空")
     }
 }
-async
+async 
 function testRoute() {
     var e = document.getElementById("routePath"),
         t = document.getElementById("routeType"),
@@ -306,7 +309,7 @@ function testRoute() {
         } else alert("请先填写路由路径、选择路由类型和处理器类型");
         else alert("缺少必要的表单元素")
 }
-async
+async 
 function toggleRoute(e, t) {
     t = t ? "enable" : "disable";
     try {
@@ -318,7 +321,7 @@ function toggleRoute(e, t) {
         showMessage("error", "网络错误: " + e.message)
     }
 }
-async
+async 
 function deleteRoute(e) {
     if (confirm("确定要删除这个路由吗？")) try {
         var t = await(await fetch("/api/admin/dynamic-routes/" + e, {
@@ -329,7 +332,7 @@ function deleteRoute(e) {
         showMessage("error", "网络错误: " + e.message)
     }
 }
-async
+async 
 function exportRoutes() {
     try {
         var e, t, a, o = await(await fetch("/api/admin/dynamic-routes/export")).json();
@@ -348,7 +351,7 @@ function showImportModal() {
 function closeImportModal() {
     document.getElementById("importModal").classList.remove("active")
 }
-async
+async 
 function importRoutes() {
     var e = document.getElementById("importConfig").value.trim();
     if (e) try {
@@ -511,7 +514,7 @@ function openStorageModal() {
 function closeStorageModal() {
     document.getElementById("storageModal").classList.remove("active"), document.getElementById("storageMessage").style.display = "none"
 }
-async
+async 
 function refreshStorageStats() {
     try {
         var e = await(await fetch("/api/admin/dynamic-routes/storage/stats")).json();
@@ -520,7 +523,7 @@ function refreshStorageStats() {
         console.error("加载存储统计失败:", e), showMessage("storageError", "加载存储统计失败: " + e.message)
     }
 }
-async
+async 
 function batchMigrateRoutes() {
     var e = document.getElementById("migrateFrom").value,
         t = document.getElementById("migrateTo").value;
@@ -541,7 +544,7 @@ function batchMigrateRoutes() {
         showMessage("storageError", "网络错误: " + e.message)
     }
 }
-async
+async 
 function clearStorage() {
     var e = document.getElementById("clearStorageType").value;
     if (confirm(`确定要清空 ${e} 存储中的所有路由吗？此操作不可逆。`)) try {
