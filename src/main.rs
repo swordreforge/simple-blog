@@ -1,3 +1,4 @@
+mod allocator;
 mod config;
 mod routes;
 mod handlers;
@@ -106,6 +107,13 @@ fn check_first_run(args: &CliArgs) {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // 初始化内存管理器
+    if let Err(e) = allocator::init_allocator() {
+        eprintln!("⚠️  内存管理器初始化失败: {}", e);
+    } else {
+        allocator::print_allocator_info();
+    }
+
     // 解析命令行参数
     let mut args = CliArgs::parse();
 
