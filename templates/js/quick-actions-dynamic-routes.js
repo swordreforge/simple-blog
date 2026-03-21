@@ -26,11 +26,39 @@
     </svg>`,
     star: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+    </svg>`,
+    user: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <circle cx="12" cy="7" r="4"></circle>
+    </svg>`,
+    settings: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>`,
+    folder: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+    </svg>`,
+    home: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>`,
+    archive: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="21 8 21 21 3 21 3 8"></polyline>
+      <rect x="1" y="3" width="22" height="5"></rect>
+      <line x1="10" y1="12" x2="14" y2="12"></line>
     </svg>`
   };
 
   // 根据路由路径或名称选择合适的图标
   function selectIcon(route) {
+    // 优先使用 metadata 中的自定义图标
+    if (route.metadata && route.metadata.menu_icon) {
+      const iconType = route.metadata.menu_icon;
+      if (iconMap[iconType]) {
+        return iconMap[iconType];
+      }
+    }
+
     const path = route.path.toLowerCase();
     const name = (route.route_name || '').toLowerCase();
 
@@ -74,16 +102,27 @@
 
       const routes = result.data.routes;
       
-      // 过滤出静态模板类型且已启用的路由
-      const staticRoutes = routes.filter(route => 
-        route.handler_type === 'static' && 
-        route.enabled === true &&
-        route.path && 
-        route.path.length > 0
-      );
+      // 过滤出主要入口的路由
+      const primaryRoutes = routes.filter(route => {
+        if (!route.enabled || route.handler_type !== 'static') {
+          return false;
+        }
 
-      if (staticRoutes.length === 0) {
-        console.log('没有找到静态模板类型的动态路由');
+        // 检查路由组信息（直接访问独立字段）
+        const groupId = route.group_id;
+
+        // 如果没有路由组配置，使用原有的 metadata.show_in_quick_menu 字段
+        if (!groupId) {
+          const metadata = route.metadata || {};
+          return metadata.show_in_quick_menu === true;
+        }
+
+        // 如果有路由组配置，只显示主要入口
+        return route.is_primary_entry === true;
+      });
+
+      if (primaryRoutes.length === 0) {
+        console.log('没有找到主要入口路由');
         return;
       }
 
@@ -96,26 +135,29 @@
         quickActionsContent.appendChild(divider);
       }
 
-      // 添加动态路由快捷操作项
-      staticRoutes.forEach(route => {
+      // 添加主要入口路由快捷操作项
+      primaryRoutes.forEach(route => {
         const displayName = route.route_name || route.path;
         const icon = selectIcon(route);
+        const groupName = route.metadata?.group_name;
         
         const actionItem = document.createElement('a');
-        actionItem.className = 'quick-action-item dynamic-route-item';
+        actionItem.className = 'quick-action-item dynamic-route-item primary-entry';
         actionItem.href = route.path;
-        actionItem.title = displayName;
+        actionItem.title = groupName ? `${displayName} - ${groupName}` : displayName;
         actionItem.setAttribute('data-route-id', route.id || '');
+        actionItem.setAttribute('data-group-id', route.group_id || '');
         
         actionItem.innerHTML = `
           ${icon}
           <span>${escapeHtml(displayName)}</span>
+          ${groupName ? `<small style="display:block;font-size:0.75em;color:rgba(255,255,255,0.6);margin-top:2px;">${escapeHtml(groupName)}</small>` : ''}
         `;
 
         quickActionsContent.appendChild(actionItem);
       });
 
-      console.log(`已添加 ${staticRoutes.length} 个动态路由到快捷操作栏`);
+      console.log(`已添加 ${primaryRoutes.length} 个主要入口路由到快捷操作栏`);
 
     } catch (error) {
       console.error('加载动态路由到快捷操作栏失败:', error);
