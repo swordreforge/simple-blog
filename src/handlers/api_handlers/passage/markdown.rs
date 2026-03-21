@@ -32,7 +32,8 @@ pub fn convert_markdown_to_html(markdown: &str) -> String {
     options.insert(Options::ENABLE_TASKLISTS);
 
     let parser = Parser::new_ext(markdown, options);
-    let mut html_output = String::new();
+    // HTML 通常比 Markdown 大 1.5-2 倍，预分配容量避免重分配
+    let mut html_output = String::with_capacity(markdown.len() * 2);
     html::push_html(&mut html_output, parser);
 
     // 无锁插入缓存

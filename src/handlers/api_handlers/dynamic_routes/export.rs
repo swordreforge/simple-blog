@@ -108,7 +108,9 @@ pub async fn import_routes(
     let mut imported_count = 0;
     let mut skipped_count = 0;
     let mut failed_count = 0;
-    let mut errors = Vec::new();
+    // 预分配错误收集容量，假设最多 10% 的路由会失败
+    let error_capacity = (routes.len() / 10).max(1);
+    let mut errors = Vec::with_capacity(error_capacity);
 
     for (index, route_value) in routes.iter().enumerate() {
         // 解析路由配置

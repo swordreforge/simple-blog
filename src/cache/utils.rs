@@ -268,13 +268,11 @@ pub async fn invalidate_passage_cache_granular(
     month: Option<i32>,
     day: Option<i32>,
 ) {
-    let mut keys_to_invalidate = vec![
-        // 清除文章详情缓存
-        PassageCacheKeys::get_by_uuid(passage_uuid),
-        PassageCacheKeys::get_by_id(passage_id),
-        // 清除文章列表缓存（所有）
-        PassageCacheKeys::list_pattern().to_string(),
-    ];
+    // 预分配容量，最多 7 个键（3 个固定 + 1 个分类 + 3 个日期）
+    let mut keys_to_invalidate = Vec::with_capacity(7);
+    keys_to_invalidate.push(PassageCacheKeys::get_by_uuid(passage_uuid));
+    keys_to_invalidate.push(PassageCacheKeys::get_by_id(passage_id));
+    keys_to_invalidate.push(PassageCacheKeys::list_pattern().to_string());
 
     // 清除分类列表缓存
     if let Some(cat) = category {

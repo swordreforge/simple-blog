@@ -1250,7 +1250,8 @@ pub async fn delete_batch(
             // 清除缓存（优化：使用批量删除）
             if let Some(manager) = state.cache.manager() {
                 // 构造批量删除的键列表
-                let mut cache_keys = Vec::new();
+                // 预分配容量，已知数量为 uuids.len() + ids.len()
+                let mut cache_keys = Vec::with_capacity(uuids.len() + ids.len());
                 for uuid in &uuids {
                     cache_keys.push(format!("passage:get:{}", uuid));
                 }

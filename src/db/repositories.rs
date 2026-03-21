@@ -502,7 +502,9 @@ impl PassageRepository {
         let conn = self.pool.get()?;
 
         // 构建 WHERE 条件
-        let mut conditions = vec!["status = 'published'".to_string()];
+        // 最多 4 个条件（status + year + month + day），每个约 20 字符
+        let mut conditions = Vec::with_capacity(4);
+        conditions.push("status = 'published'".to_string());
         // 使用SmallVec优化小数组，减少堆分配（最多6个参数：year, month, day, limit, offset）
         let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 6]> = SmallVec::new();
 
@@ -652,7 +654,14 @@ impl PassageRepository {
             return Ok(0);
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!("DELETE FROM passages WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
@@ -737,7 +746,14 @@ impl PassageRepository {
             return Ok(Vec::new());
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE id IN ({})",
@@ -930,7 +946,14 @@ impl CommentRepository {
             return Ok(0);
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!("DELETE FROM comments WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
@@ -1390,7 +1413,14 @@ impl CategoryRepository {
             return Ok(0);
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!("DELETE FROM categories WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
@@ -1551,7 +1581,14 @@ impl TagRepository {
             return Ok(0);
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!("DELETE FROM tags WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
@@ -1758,7 +1795,14 @@ impl UserRepository {
             return Ok(0);
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!("DELETE FROM users WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
@@ -1970,7 +2014,14 @@ impl AttachmentRepository {
             return Ok(Vec::new());
         }
         let conn = self.pool.get()?;
-        let placeholders = uuids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + uuids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(uuids.len() * 2 - 1);
+        for (i, _) in uuids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE passage_uuid IN ({})", placeholders
@@ -2049,7 +2100,14 @@ impl AttachmentRepository {
             return Ok(0);
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!("DELETE FROM attachments WHERE id IN ({})", placeholders);
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
@@ -2065,7 +2123,14 @@ impl AttachmentRepository {
             return Ok(Vec::new());
         }
         let conn = self.pool.get()?;
-        let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
+        let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
+        for (i, _) in ids.iter().enumerate() {
+            if i > 0 {
+                placeholders.push(',');
+            }
+            placeholders.push('?');
+        }
         let sql = format!(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE id IN ({})", placeholders
@@ -2624,7 +2689,8 @@ impl DynamicRouteRepository {
         let conn = self.pool.get()?;
 
         // 构建查询条件
-        let mut where_clause = String::new();
+        // 预分配容量，最多约 50 字符 (" WHERE route_type = ? AND enabled = ?")
+        let mut where_clause = String::with_capacity(50);
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
 
         if route_type.is_some() || enabled.is_some() {

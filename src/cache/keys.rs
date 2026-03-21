@@ -143,7 +143,11 @@ impl CacheKeyBuilder {
     /// 构建缓存键
     #[allow(dead_code)]
     pub fn build(self) -> String {
-        let mut parts = vec![self.namespace.to_string(), self.resource.to_string()];
+        // 预分配容量：2 个固定部分 + params.len() + 可能的版本号
+        let capacity = 2 + self.params.len() + if self.version.is_some() { 1 } else { 0 };
+        let mut parts = Vec::with_capacity(capacity);
+        parts.push(self.namespace.to_string());
+        parts.push(self.resource.to_string());
 
         // 添加参数
         for (key, value) in self.params {
