@@ -2323,7 +2323,7 @@ impl DynamicRouteRepository {
             END as next_id FROM dynamic_routes",
             [],
             |row| row.get(0),
-        ).unwrap_or_else(|_| 1);
+        ).unwrap_or(1);
 
         conn.execute(
             "INSERT INTO dynamic_routes (id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, group_id, is_primary_entry, metadata, created_at, updated_at)

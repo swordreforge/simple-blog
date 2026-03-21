@@ -360,7 +360,7 @@ pub async fn invalidate_specific_category_cache(
         let _ = mgr.delete_pattern(&format!("passage:list:category:{}", category_name)).await;
 
         // 清除分类本身的缓存
-        let _ = mgr.delete_pattern(&format!("category:get:*")).await;
+        let _ = mgr.delete_pattern("category:get:*").await;
 
         // 清除分类列表缓存
         let _ = mgr.delete_pattern("category:list:*").await;

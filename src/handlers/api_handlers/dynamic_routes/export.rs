@@ -124,11 +124,7 @@ pub async fn import_routes(
             conflict
         } else {
             // 兼容性：只检查数据库
-            if let Ok(Some(_)) = repo.get_by_path(&route.path).await {
-                true
-            } else {
-                false
-            }
+            matches!(repo.get_by_path(&route.path).await, Ok(Some(_)))
         };
 
         if has_conflict {
