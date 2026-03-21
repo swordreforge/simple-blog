@@ -114,7 +114,9 @@
         // 如果没有路由组配置，使用原有的 metadata.show_in_quick_menu 字段
         if (!groupId) {
           const metadata = route.metadata || {};
-          return metadata.show_in_quick_menu === true;
+          // 如果 show_in_quick_menu 未设置，默认显示该路由
+          // 如果设置为 false，则不显示
+          return metadata.show_in_quick_menu !== false;
         }
 
         // 如果有路由组配置，只显示主要入口
