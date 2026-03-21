@@ -2326,8 +2326,8 @@ impl DynamicRouteRepository {
         ).unwrap_or_else(|_| 1);
 
         conn.execute(
-            "INSERT INTO dynamic_routes (id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, metadata, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO dynamic_routes (id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, group_id, is_primary_entry, metadata, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 next_id,
                 &route.route_name,
@@ -2341,6 +2341,8 @@ impl DynamicRouteRepository {
                 &route.enabled,
                 &route.priority,
                 &route.created_by,
+                &route.group_id,
+                &route.is_primary_entry,
                 &route.metadata.as_ref().map(|v| v.to_string()),
                 &route.created_at,
                 &route.updated_at,
@@ -2353,7 +2355,7 @@ impl DynamicRouteRepository {
     pub async fn get_by_id(&self, id: i64) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE id = ?"
         )?;
 
@@ -2373,7 +2375,9 @@ impl DynamicRouteRepository {
                 created_at: row.get(11)?,
                 updated_at: row.get(12)?,
                 created_by: row.get(13)?,
-                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
+                group_id: row.get(14)?,
+                is_primary_entry: row.get(15)?,
+                metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         }).optional()?;
         
@@ -2384,29 +2388,32 @@ impl DynamicRouteRepository {
     pub async fn get_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
-             FROM dynamic_routes WHERE path = ?"
-        )?;
-
-        let route = stmt.query_row(params![path], |row| {
-            Ok(DynamicRoute {
-                id: Some(row.get(0)?),
-                route_name: row.get(1)?,
-                route_type: row.get(2)?,
-                path: row.get(3)?,
-                handler_type: row.get(4)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                inline_template: row.get(6)?,
-                template_path: row.get(7)?,
-                content_type_hint: row.get(8)?,
-                enabled: row.get(9)?,
-                priority: row.get(10)?,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
-                created_by: row.get(13)?,
-                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
-            })
-        }).optional()?;
+                    "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
+                     FROM dynamic_routes WHERE path = ?"
+                )?;
+        
+        
+                let route = stmt.query_row(params![path], |row| {
+                    Ok(DynamicRoute {
+                        id: Some(row.get(0)?),
+                        route_name: row.get(1)?,
+                        route_type: row.get(2)?,
+                        path: row.get(3)?,
+                        handler_type: row.get(4)?,
+                        handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
+                        inline_template: row.get(6)?,
+                        template_path: row.get(7)?,
+                        content_type_hint: row.get(8)?,
+                        enabled: row.get(9)?,
+                        priority: row.get(10)?,
+                        created_at: row.get(11)?,
+                        updated_at: row.get(12)?,
+                        created_by: row.get(13)?,
+                        group_id: row.get(14)?,
+                        is_primary_entry: row.get(15)?,
+                        metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
+                    })
+                }).optional()?;
 
         Ok(route)
     }
@@ -2451,7 +2458,7 @@ impl DynamicRouteRepository {
 
         // 获取列表
         let query = format!(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes{} ORDER BY priority DESC, id ASC LIMIT ? OFFSET ?",
             where_clause
         );
@@ -2478,7 +2485,9 @@ impl DynamicRouteRepository {
                 created_at: row.get(11)?,
                 updated_at: row.get(12)?,
                 created_by: row.get(13)?,
-                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
+                group_id: row.get(14)?,
+                is_primary_entry: row.get(15)?,
+                metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         
@@ -2489,7 +2498,7 @@ impl DynamicRouteRepository {
     pub async fn update(&self, id: i64, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
-            "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, inline_template=?, template_path=?, content_type_hint=?, enabled=?, priority=?, metadata=?, updated_at=?
+            "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, inline_template=?, template_path=?, content_type_hint=?, enabled=?, priority=?, group_id=?, is_primary_entry=?, metadata=?, updated_at=?
              WHERE id=?",
             params![
                 &route.route_name,
@@ -2502,6 +2511,8 @@ impl DynamicRouteRepository {
                 &route.content_type_hint,
                 &route.enabled,
                 &route.priority,
+                &route.group_id,
+                &route.is_primary_entry,
                 &route.metadata.as_ref().map(|v| v.to_string()),
                 &route.updated_at,
                 id,
@@ -2531,7 +2542,7 @@ impl DynamicRouteRepository {
     pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, metadata
+            "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
         )?;
 
@@ -2551,7 +2562,9 @@ impl DynamicRouteRepository {
                 created_at: row.get(11)?,
                 updated_at: row.get(12)?,
                 created_by: row.get(13)?,
-                metadata: row.get::<_, Option<String>>(14)?.and_then(|s| serde_json::from_str(&s).ok()),
+                group_id: row.get(14)?,
+                is_primary_entry: row.get(15)?,
+                metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
             })
         })?.collect::<Result<Vec<_>, _>>()?;
         

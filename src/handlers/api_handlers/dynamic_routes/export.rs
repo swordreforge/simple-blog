@@ -151,6 +151,8 @@ pub async fn import_routes(
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
             created_by: Some(username.to_string()),
+            group_id: route.group_id,
+            is_primary_entry: route.is_primary_entry,
             metadata: route.metadata,
         };
 

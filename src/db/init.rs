@@ -596,6 +596,26 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             }
         ).unwrap_or(false);
 
+        // 检查是否有 group_id 列
+        let has_group_id_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'group_id'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
+        // 检查是否有 is_primary_entry 列
+        let has_is_primary_entry_column = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('dynamic_routes') WHERE name = 'is_primary_entry'",
+            [],
+            |row| {
+                let count: i64 = row.get(0)?;
+                Ok(count > 0)
+            }
+        ).unwrap_or(false);
+
         // 如果表已存在但没有 route_name 列，则添加该列
         if !has_route_name_column {
             println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 route_name 列...");
@@ -623,6 +643,22 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             conn.execute("ALTER TABLE dynamic_routes ADD COLUMN content_type_hint TEXT", [])?;
             println!("✅ 已添加 content_type_hint 列");
         }
+
+        // 如果表已存在但没有 group_id 列，则添加该列
+        if !has_group_id_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 group_id 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN group_id TEXT", [])?;
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_group_id ON dynamic_routes(group_id)", [])?;
+            println!("✅ 已添加 group_id 列和索引");
+        }
+
+        // 如果表已存在但没有 is_primary_entry 列，则添加该列
+        if !has_is_primary_entry_column {
+            println!("⚠️  检测到旧版 dynamic_routes 表结构，正在添加 is_primary_entry 列...");
+            conn.execute("ALTER TABLE dynamic_routes ADD COLUMN is_primary_entry BOOLEAN", [])?;
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_is_primary_entry ON dynamic_routes(is_primary_entry)", [])?;
+            println!("✅ 已添加 is_primary_entry 列和索引");
+        }
     }
 
     // 创建动态路由表
@@ -642,6 +678,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now')),
             created_by TEXT,
+            group_id TEXT,
+            is_primary_entry BOOLEAN,
             metadata TEXT
         )",
         [],
@@ -652,6 +690,8 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_priority ON dynamic_routes(priority DESC)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_inline_template ON dynamic_routes(inline_template)", [])?;
     conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_template_path ON dynamic_routes(template_path)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_group_id ON dynamic_routes(group_id)", [])?;
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dynamic_routes_is_primary_entry ON dynamic_routes(is_primary_entry)", [])?;
 
     // 创建动态路由表更新时间戳触发器
     conn.execute(

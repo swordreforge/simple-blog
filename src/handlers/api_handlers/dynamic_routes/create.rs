@@ -73,6 +73,8 @@ pub async fn create_route(
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
         created_by: Some(admin_info.1.clone()),
+        group_id: route.group_id,
+        is_primary_entry: route.is_primary_entry,
         metadata: route.metadata.clone(),
     };
 

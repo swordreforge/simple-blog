@@ -702,7 +702,11 @@ pub struct DynamicRoute {
     pub updated_at: DateTime<Utc>,
     /// 创建者
     pub created_by: Option<String>,
-    /// 扩展元数据 (JSON)
+    /// 路由组 ID（可选，用于将相关路由归为一组）
+    pub group_id: Option<String>,
+    /// 是否为主要入口（可选，只有主要入口会显示在快捷菜单中）
+    pub is_primary_entry: Option<bool>,
+    /// 扩展元数据 (JSON) - 用于存储辅助信息如图标、描述等
     pub metadata: Option<serde_json::Value>,
 }
 
@@ -719,6 +723,8 @@ pub struct CreateRouteRequest {
     pub content_type_hint: Option<String>,
     pub enabled: Option<bool>,
     pub priority: Option<i32>,
+    pub group_id: Option<String>,
+    pub is_primary_entry: Option<bool>,
     pub metadata: Option<serde_json::Value>,
 }
 
@@ -735,6 +741,8 @@ pub struct UpdateRouteRequest {
     pub content_type_hint: Option<String>,
     pub enabled: Option<bool>,
     pub priority: Option<i32>,
+    pub group_id: Option<String>,
+    pub is_primary_entry: Option<bool>,
     pub metadata: Option<serde_json::Value>,
 }
 

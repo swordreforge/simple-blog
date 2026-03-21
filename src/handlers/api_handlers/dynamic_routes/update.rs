@@ -154,6 +154,8 @@ pub async fn update_route(
         created_at: old_route.created_at,
         updated_at: chrono::Utc::now(),
         created_by: old_route.created_by.clone(),
+        group_id: update_data.group_id.or_else(|| old_route.group_id.clone()),
+        is_primary_entry: update_data.is_primary_entry.or(old_route.is_primary_entry),
         metadata: update_data.metadata.or_else(|| old_route.metadata.clone()),
     };
 
@@ -358,6 +360,8 @@ pub async fn patch_route(
         created_at: old_route.created_at,
         updated_at: chrono::Utc::now(),
         created_by: old_route.created_by.clone(),
+        group_id: update_data.group_id.or_else(|| old_route.group_id.clone()),
+        is_primary_entry: update_data.is_primary_entry.or(old_route.is_primary_entry),
         metadata: update_data.metadata.or_else(|| old_route.metadata.clone()),
     };
 
