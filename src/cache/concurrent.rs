@@ -77,11 +77,10 @@ impl Drop for CacheLockGuard {
             let locks = Arc::clone(&self.local_locks);
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_secs(5)).await;
-                if let Some(entry) = locks.get(&key) {
-                    if entry.available_permits() > 0 {
+                if let Some(entry) = locks.get(&key)
+                    && entry.available_permits() > 0 {
                         locks.remove(&key);
                     }
-                }
             });
         }
     }

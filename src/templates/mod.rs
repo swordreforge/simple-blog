@@ -28,8 +28,8 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
         let path_str = path.as_ref();
 
         // 只处理 templates 目录下的 HTML 文件
-        if path_str.starts_with("templates/") && path_str.ends_with(".html") {
-            if let Some(content) = EmbeddedAssets::get(&path) {
+        if path_str.starts_with("templates/") && path_str.ends_with(".html")
+            && let Some(content) = EmbeddedAssets::get(&path) {
                 // 移除 "templates/" 前缀，保留子目录结构
                 // 例如: "templates/admin/admin.html" -> "admin/admin.html"
                 let name = path_str.strip_prefix("templates/").unwrap();
@@ -41,7 +41,6 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
                 // 使用 add_raw_template 方法直接添加模板内容
                 tera.add_raw_template(name, content_str)?;
             }
-        }
     }
 
     if found_templates.is_empty() {
@@ -572,8 +571,8 @@ pub fn create_index_context() -> TeraContext {
     let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载模板设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             // 加载 name
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_name")
@@ -638,7 +637,6 @@ pub fn create_index_context() -> TeraContext {
                 global_avatar = setting.value;
             }
         }
-    }
 
     // 备案信息（针对中国内地）
     let mut beian_enabled = false;
@@ -646,8 +644,8 @@ pub fn create_index_context() -> TeraContext {
     let mut police_record_code = "".to_string();
     let mut police_record_content = "".to_string();
 
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
             {
@@ -669,7 +667,6 @@ pub fn create_index_context() -> TeraContext {
                 police_record_content = setting.value;
             }
         }
-    }
 
     context.insert("title", "RustBlog");
     context.insert("name", &name);
@@ -724,8 +721,8 @@ pub fn create_passage_context() -> TeraContext {
     let mut _footer_glass_color = "rgba(220, 138, 221, 0.25)".to_string();
 
     // 从数据库加载设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_foods")
             {
@@ -768,7 +765,6 @@ pub fn create_passage_context() -> TeraContext {
                 _footer_glass_color = setting.value;
             }
         }
-    }
 
     // 从数据库加载切换界面提示设置
     let mut switch_notice = false;
@@ -782,8 +778,8 @@ pub fn create_passage_context() -> TeraContext {
     let mut sponsor_description = "如果您觉得这个博客对您有帮助，欢迎赞助支持！".to_string();
     let mut sponsor_button_text = "❤️ 赞助支持".to_string();
 
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_switch_notice")
             {
@@ -830,7 +826,6 @@ pub fn create_passage_context() -> TeraContext {
                 sponsor_button_text = setting.value;
             }
         }
-    }
 
     context.insert("title", "文章 - RustBlog");
     context.insert("name", "Dango");
@@ -881,8 +876,8 @@ pub fn create_passage_context() -> TeraContext {
     let mut police_record_code = "".to_string();
     let mut police_record_content = "".to_string();
 
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
             {
@@ -904,7 +899,6 @@ pub fn create_passage_context() -> TeraContext {
                 police_record_content = setting.value;
             }
         }
-    }
 
     context.insert("beian_enabled", &beian_enabled);
     context.insert("icp_number", &icp_number);
@@ -929,8 +923,8 @@ pub fn create_collect_context() -> TeraContext {
     let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_foods")
             {
@@ -972,7 +966,6 @@ pub fn create_collect_context() -> TeraContext {
                 global_avatar = setting.value;
             }
         }
-    }
 
     context.insert("title", "归档 - RustBlog");
     context.insert("name", "Dango");
@@ -1005,8 +998,8 @@ pub fn create_collect_context() -> TeraContext {
     let mut police_record_code = "".to_string();
     let mut police_record_content = "".to_string();
 
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
             {
@@ -1028,7 +1021,6 @@ pub fn create_collect_context() -> TeraContext {
                 police_record_content = setting.value;
             }
         }
-    }
 
     context.insert("beian_enabled", &beian_enabled);
     context.insert("icp_number", &icp_number);
@@ -1053,8 +1045,8 @@ pub fn create_about_context() -> TeraContext {
     let global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_foods")
             {
@@ -1089,7 +1081,6 @@ pub fn create_about_context() -> TeraContext {
                 switch_notice_text = setting.value;
             }
         }
-    }
 
     context.insert("title", "关于 - RustBlog");
     context.insert("name", "Dango");
@@ -1122,8 +1113,8 @@ pub fn create_about_context() -> TeraContext {
     let mut police_record_code = "".to_string();
     let mut police_record_content = "".to_string();
 
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
             {
@@ -1145,7 +1136,6 @@ pub fn create_about_context() -> TeraContext {
                 police_record_content = setting.value;
             }
         }
-    }
 
     context.insert("beian_enabled", &beian_enabled);
     context.insert("icp_number", &icp_number);
@@ -1166,8 +1156,8 @@ pub fn create_friends_context() -> TeraContext {
     let global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_foods")
             {
@@ -1189,7 +1179,6 @@ pub fn create_friends_context() -> TeraContext {
                 external_link_warning_text = setting.value;
             }
         }
-    }
 
     context.insert("title", "友链 - RustBlog");
     context.insert("year", &format_year(&now));
@@ -1220,8 +1209,8 @@ pub fn create_friends_context() -> TeraContext {
     let mut police_record_code = "".to_string();
     let mut police_record_content = "".to_string();
 
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "beian_enabled")
             {
@@ -1243,7 +1232,6 @@ pub fn create_friends_context() -> TeraContext {
                 police_record_content = setting.value;
             }
         }
-    }
 
     context.insert("beian_enabled", &beian_enabled);
     context.insert("icp_number", &icp_number);
@@ -1268,8 +1256,8 @@ pub fn create_markdown_editor_context() -> TeraContext {
     let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_foods")
             {
@@ -1311,7 +1299,6 @@ pub fn create_markdown_editor_context() -> TeraContext {
                 global_avatar = setting.value;
             }
         }
-    }
 
     context.insert("title", "编辑器 - RustBlog");
     context.insert("name", "Dango");
@@ -1346,8 +1333,8 @@ pub fn create_admin_context() -> TeraContext {
     let mut global_avatar = "/img/avatar.webp".to_string();
 
     // 从数据库加载设置
-    if let Ok(pool) = crate::db::get_db_pool_sync() {
-        if let Ok(conn) = pool.get() {
+    if let Ok(pool) = crate::db::get_db_pool_sync()
+        && let Ok(conn) = pool.get() {
             if let Ok(Some(setting)) =
                 crate::db::repositories::SettingRepository::get(&conn, "template_foods")
             {
@@ -1389,7 +1376,6 @@ pub fn create_admin_context() -> TeraContext {
                 global_avatar = setting.value;
             }
         }
-    }
 
     context.insert("title", "管理后台 - RustBlog");
     context.insert("name", "Dango");

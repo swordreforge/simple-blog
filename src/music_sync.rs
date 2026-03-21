@@ -236,11 +236,10 @@ impl MusicSyncService {
                 Ok(ft) => ft,
                 Err(_) => continue,
             };
-            if !file_type.is_dir() {
-                if let Ok(name) = entry.file_name().into_string() {
+            if !file_type.is_dir()
+                && let Ok(name) = entry.file_name().into_string() {
                     files_in_dir.insert(name);
                 }
-            }
         }
 
         // 获取数据库中的所有文件
@@ -251,8 +250,8 @@ impl MusicSyncService {
 
         let mut deleted_count = 0;
         for track in tracks {
-            if !files_in_dir.contains(&track.file_name) {
-                if let Some(id) = track.id {
+            if !files_in_dir.contains(&track.file_name)
+                && let Some(id) = track.id {
                     match music_repo.delete(id).await {
                         Ok(_) => {
                             deleted_count += 1;
@@ -266,7 +265,6 @@ impl MusicSyncService {
                         }
                     }
                 }
-            }
         }
 
         Ok(deleted_count)

@@ -121,19 +121,17 @@ impl ViewBatchProcessor {
                                 batch.push(record);
 
                                 // 达到批量大小，立即写入
-                                if batch.len() >= adaptive_state.current_batch_size {
-                                    if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                if batch.len() >= adaptive_state.current_batch_size
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
                                         eprintln!("批量写入阅读记录失败: {}", e);
                                     }
-                                }
                             }
                             None => {
                                 // 通道关闭，写入剩余记录并退出
-                                if !batch.is_empty() {
-                                    if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                if !batch.is_empty()
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
                                         eprintln!("批量写入阅读记录失败: {}", e);
                                     }
-                                }
                                 break;
                             }
                         }
@@ -141,11 +139,10 @@ impl ViewBatchProcessor {
                     // 定时器触发
                     _ = interval.tick() => {
                         // 超时，写入当前批次
-                        if !batch.is_empty() {
-                            if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                        if !batch.is_empty()
+                            && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
                                 eprintln!("批量写入阅读记录失败: {}", e);
                             }
-                        }
                     }
                     // 自适应调整检查
                     _ = adaptive_interval.tick() => {
@@ -163,19 +160,17 @@ impl ViewBatchProcessor {
                                 batch.push(record);
 
                                 // 达到批量大小，立即写入
-                                if batch.len() >= config.batch_size {
-                                    if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                if batch.len() >= config.batch_size
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
                                         eprintln!("批量写入阅读记录失败: {}", e);
                                     }
-                                }
                             }
                             None => {
                                 // 通道关闭，写入剩余记录并退出
-                                if !batch.is_empty() {
-                                    if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                if !batch.is_empty()
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
                                         eprintln!("批量写入阅读记录失败: {}", e);
                                     }
-                                }
                                 break;
                             }
                         }
@@ -183,11 +178,10 @@ impl ViewBatchProcessor {
                     // 定时器触发
                     _ = interval.tick() => {
                         // 超时，写入当前批次
-                        if !batch.is_empty() {
-                            if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                        if !batch.is_empty()
+                            && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
                                 eprintln!("批量写入阅读记录失败: {}", e);
                             }
-                        }
                     }
                 }
             }

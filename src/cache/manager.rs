@@ -268,11 +268,10 @@ impl CacheManager {
             if self.check_health().await.is_err() {
                 eprintln!("⚠️  Valkey 仍然不健康，使用备用缓存");
                 // 仍然不健康，使用备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         return fallback.get(key).await;
                     }
-                }
                 return None;
             } else {
                 println!("✅ Valkey 已恢复健康状态");
@@ -335,11 +334,10 @@ impl CacheManager {
                 }
 
                 // 如果启用了降级，尝试从备用缓存获取
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         return fallback.get(key).await;
                     }
-                }
                 None
             }
         }
@@ -358,11 +356,10 @@ impl CacheManager {
             } else {
                 eprintln!("⚠️  Valkey 仍然不健康，使用备用缓存");
                 // 仍然不健康，直接使用备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         return fallback.set(key, value, ttl).await;
                     }
-                }
                 return Err(CacheError::ConnectionError(
                     "Primary cache unhealthy and no fallback available".to_string(),
                 ));
@@ -381,11 +378,10 @@ impl CacheManager {
                 self.record_operation(false);
 
                 // 如果启用了降级，同时设置到备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         let _ = fallback.set(key, value, ttl).await;
                     }
-                }
                 Ok(())
             }
             Err(e) => {
@@ -464,11 +460,10 @@ impl CacheManager {
                 }
 
                 // 主缓存失败，尝试降级到备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         return fallback.set(key, value, ttl).await;
                     }
-                }
                 Err(e)
             }
         }
@@ -480,11 +475,10 @@ impl CacheManager {
         let primary_result = self.primary.delete(key).await;
 
         // 从备用缓存删除
-        if self.fallback_enabled.load(Ordering::Relaxed) {
-            if let Some(fallback) = &self.fallback {
+        if self.fallback_enabled.load(Ordering::Relaxed)
+            && let Some(fallback) = &self.fallback {
                 let _ = fallback.delete(key).await;
             }
-        }
 
         primary_result
     }
@@ -500,11 +494,10 @@ impl CacheManager {
         let primary_result = self.primary.delete_many(keys).await;
 
         // 从备用缓存删除
-        if self.fallback_enabled.load(Ordering::Relaxed) {
-            if let Some(fallback) = &self.fallback {
+        if self.fallback_enabled.load(Ordering::Relaxed)
+            && let Some(fallback) = &self.fallback {
                 let _ = fallback.delete_many(keys).await;
             }
-        }
 
         primary_result
     }
@@ -515,21 +508,19 @@ impl CacheManager {
         match self.primary.delete_pattern(pattern).await {
             Ok(()) => {
                 // 从备用缓存删除（如果启用）
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         let _ = fallback.delete_pattern(pattern).await;
                     }
-                }
                 Ok(())
             }
             Err(e) => {
                 // 主缓存删除失败，尝试仅删除备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed) {
-                    if let Some(fallback) = &self.fallback {
+                if self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback {
                         eprintln!("⚠️  主缓存 delete_pattern 失败: {}, 仅删除备用缓存", e);
                         return fallback.delete_pattern(pattern).await;
                     }
-                }
                 Err(e)
             }
         }

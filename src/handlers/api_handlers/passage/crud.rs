@@ -242,11 +242,10 @@ pub async fn list(
                 );
 
                 // 存储到缓存（TTL 5 分钟）
-                if let Some(manager) = state.cache.manager() {
-                    if let Ok(json_str) = serde_json::to_string(&response) {
+                if let Some(manager) = state.cache.manager()
+                    && let Ok(json_str) = serde_json::to_string(&response) {
                         let _ = manager.set(&cache_key, &json_str).await;
                     }
-                }
 
                 HttpResponse::Ok()
                     .insert_header(("Cache-Control", "public, max-age=60"))
@@ -407,11 +406,10 @@ pub async fn list(
                 });
 
                 // 存储到缓存（TTL 5 分钟）
-                if let Some(manager) = state.cache.manager() {
-                    if let Ok(json_str) = serde_json::to_string(&response) {
+                if let Some(manager) = state.cache.manager()
+                    && let Ok(json_str) = serde_json::to_string(&response) {
                         let _ = manager.set(&cache_key, &json_str).await;
                     }
-                }
 
                 HttpResponse::Ok()
                     .insert_header(("Cache-Control", "public, max-age=60"))
@@ -507,9 +505,9 @@ pub async fn get(
         }));
     }
 
-    if passage.is_scheduled {
-        if let Some(published_at) = passage.published_at {
-            if published_at > Utc::now() && (role != "admin" || role.is_empty()) {
+    if passage.is_scheduled
+        && let Some(published_at) = passage.published_at
+            && published_at > Utc::now() && (role != "admin" || role.is_empty()) {
                 return HttpResponse::Ok().json(serde_json::json!({
                     "success": false,
                     "message": "文章尚未发布",
@@ -517,25 +515,20 @@ pub async fn get(
                     "published_at": format_datetime_optimized(&published_at)
                 }));
             }
-        }
-    }
 
     // 生成缓存键
     let cache_key = format!("passage:get:{}", param);
 
     // 尝试从缓存获取（仅对公开文章缓存）
-    if passage.status.is_published() && passage.visibility.is_public() {
-        if let Some(manager) = state.cache.manager() {
-            if let Some(cached_data) = manager.get(&cache_key).await {
-                if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
+    if passage.status.is_published() && passage.visibility.is_public()
+        && let Some(manager) = state.cache.manager()
+            && let Some(cached_data) = manager.get(&cache_key).await
+                && let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
                     return HttpResponse::Ok()
                         .insert_header(("Cache-Control", "public, max-age=300"))
                         .insert_header(("X-Cache", "HIT"))
                         .json(response);
                 }
-            }
-        }
-    }
 
     // 缓存未命中，继续处理
 
@@ -601,15 +594,13 @@ pub async fn get(
     let etag = format!("\"{:x}\"", Md5::digest(etag_data.as_bytes()));
 
     // 检查 If-None-Match
-    if let Some(if_none_match) = req.headers().get("if-none-match") {
-        if let Ok(if_none_match_str) = if_none_match.to_str() {
-            if if_none_match_str == etag {
+    if let Some(if_none_match) = req.headers().get("if-none-match")
+        && let Ok(if_none_match_str) = if_none_match.to_str()
+            && if_none_match_str == etag {
                 return HttpResponse::NotModified()
                     .insert_header(("ETag", etag))
                     .finish();
             }
-        }
-    }
 
     let response_json = serde_json::json!({
         "success": true,
@@ -617,13 +608,11 @@ pub async fn get(
     });
 
     // 存储到缓存（仅对公开文章，TTL 10 分钟）
-    if passage.status.is_published() && passage.visibility.is_public() {
-        if let Some(manager) = state.cache.manager() {
-            if let Ok(json_str) = serde_json::to_string(&response_json) {
+    if passage.status.is_published() && passage.visibility.is_public()
+        && let Some(manager) = state.cache.manager()
+            && let Ok(json_str) = serde_json::to_string(&response_json) {
                 let _ = manager.set(&cache_key, &json_str).await;
             }
-        }
-    }
 
     HttpResponse::Ok()
         .insert_header(("ETag", etag))
@@ -896,8 +885,8 @@ pub async fn update(
     }
 
     // 如果内容或标题更新了，同时更新 Markdown 文件
-    if file_updated {
-        if let Some(ref file_path) = passage.file_path {
+    if file_updated
+        && let Some(ref file_path) = passage.file_path {
             let content_to_save = passage.original_content.as_ref().unwrap_or({
                 // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
                 &passage.content
@@ -916,7 +905,6 @@ pub async fn update(
                 }
             }
         }
-    }
 
     // 自动生成摘要（总是重新生成，不使用前端提供的摘要）
     use crate::services::summarize_service::SummarizeService;
@@ -1296,16 +1284,14 @@ pub async fn get_latest(state: web::Data<crate::app_state::AppState>) -> HttpRes
 
     // 尝试从缓存获取
     let cache_key = "passage:latest";
-    if let Some(manager) = state.cache.manager() {
-        if let Some(cached_data) = manager.get(cache_key).await {
-            if let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
+    if let Some(manager) = state.cache.manager()
+        && let Some(cached_data) = manager.get(cache_key).await
+            && let Ok(response) = serde_json::from_str::<serde_json::Value>(&cached_data) {
                 return HttpResponse::Ok()
                     .insert_header(("Cache-Control", "public, max-age=60"))
                     .insert_header(("X-Cache", "HIT"))
                     .json(response);
             }
-        }
-    }
 
     // 从数据库获取最新发布的文章
     match passage_repo.get_latest_published().await {
@@ -1328,11 +1314,10 @@ pub async fn get_latest(state: web::Data<crate::app_state::AppState>) -> HttpRes
             });
 
             // 缓存响应
-            if let Some(manager) = state.cache.manager() {
-                if let Ok(json_str) = serde_json::to_string(&response) {
+            if let Some(manager) = state.cache.manager()
+                && let Ok(json_str) = serde_json::to_string(&response) {
                     let _ = manager.set(cache_key, &json_str).await;
                 }
-            }
 
             HttpResponse::Ok()
                 .insert_header(("Cache-Control", "public, max-age=60"))

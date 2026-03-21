@@ -200,11 +200,10 @@ pub async fn create_route(
     };
 
     // 如果路由启用，热更新到路由表
-    if dynamic_route.enabled {
-        if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+    if dynamic_route.enabled
+        && let Err(e) = state.dynamic_route_service().reload_route(id).await {
             tracing::warn!("路由热更新失败: id={}, error={}", id, e);
         }
-    }
 
     HttpResponse::Created().json(serde_json::json!({
         "success": true,
@@ -230,27 +229,24 @@ fn contains_control_chars(s: &str) -> bool {
 /// 验证路由配置
 fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
     // 验证控制字符
-    if let Some(ref route_name) = route.route_name {
-        if contains_control_chars(route_name) {
+    if let Some(ref route_name) = route.route_name
+        && contains_control_chars(route_name) {
             return Err("路由名称不能包含控制字符".to_string());
         }
-    }
 
     if contains_control_chars(&route.path) {
         return Err("路由路径不能包含控制字符".to_string());
     }
 
-    if let Some(ref template_path) = route.template_path {
-        if contains_control_chars(template_path) {
+    if let Some(ref template_path) = route.template_path
+        && contains_control_chars(template_path) {
             return Err("模板路径不能包含控制字符".to_string());
         }
-    }
 
-    if let Some(ref metadata) = route.metadata {
-        if contains_control_chars(&metadata.to_string()) {
+    if let Some(ref metadata) = route.metadata
+        && contains_control_chars(&metadata.to_string()) {
             return Err("扩展元数据不能包含控制字符".to_string());
         }
-    }
 
     // 验证路径格式
     if !route.path.starts_with('/') {

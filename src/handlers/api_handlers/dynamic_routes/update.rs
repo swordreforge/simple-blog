@@ -83,45 +83,41 @@ pub async fn update_route(
     };
 
     // 验证控制字符
-    if let Some(ref route_name) = update_data.route_name {
-        if contains_control_chars(route_name) {
+    if let Some(ref route_name) = update_data.route_name
+        && contains_control_chars(route_name) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "路由名称不能包含控制字符"
             }));
         }
-    }
 
-    if let Some(ref new_path) = update_data.path {
-        if contains_control_chars(new_path) {
+    if let Some(ref new_path) = update_data.path
+        && contains_control_chars(new_path) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "路由路径不能包含控制字符"
             }));
         }
-    }
 
-    if let Some(ref template_path) = update_data.template_path {
-        if contains_control_chars(template_path) {
+    if let Some(ref template_path) = update_data.template_path
+        && contains_control_chars(template_path) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "模板路径不能包含控制字符"
             }));
         }
-    }
 
-    if let Some(ref metadata) = update_data.metadata {
-        if contains_control_chars(&metadata.to_string()) {
+    if let Some(ref metadata) = update_data.metadata
+        && contains_control_chars(&metadata.to_string()) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "扩展元数据不能包含控制字符"
             }));
         }
-    }
 
     // 检查路径冲突（如果路径被修改）
-    if let Some(ref new_path) = update_data.path {
-        if new_path != &old_route.path {
+    if let Some(ref new_path) = update_data.path
+        && new_path != &old_route.path {
             // 检查是否与预定义静态路由冲突
             if conflicts_with_static_route(new_path) {
                 return HttpResponse::Conflict().json(serde_json::json!({
@@ -138,7 +134,6 @@ pub async fn update_route(
                 }));
             }
         }
-    }
 
     // 构建更新后的路由 - 使用old_route的所有字段作为默认值
     let updated_route = DynamicRoute {
@@ -316,53 +311,47 @@ pub async fn patch_route(
     };
 
     // 验证控制字符
-    if let Some(ref route_name) = update_data.route_name {
-        if contains_control_chars(route_name) {
+    if let Some(ref route_name) = update_data.route_name
+        && contains_control_chars(route_name) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "路由名称不能包含控制字符"
             }));
         }
-    }
 
-    if let Some(ref new_path) = update_data.path {
-        if contains_control_chars(new_path) {
+    if let Some(ref new_path) = update_data.path
+        && contains_control_chars(new_path) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "路由路径不能包含控制字符"
             }));
         }
-    }
 
-    if let Some(ref template_path) = update_data.template_path {
-        if contains_control_chars(template_path) {
+    if let Some(ref template_path) = update_data.template_path
+        && contains_control_chars(template_path) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "模板路径不能包含控制字符"
             }));
         }
-    }
 
-    if let Some(ref metadata) = update_data.metadata {
-        if contains_control_chars(&metadata.to_string()) {
+    if let Some(ref metadata) = update_data.metadata
+        && contains_control_chars(&metadata.to_string()) {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
                 "message": "扩展元数据不能包含控制字符"
             }));
-        }
-    };
+        };
 
     // 检查路径冲突（如果路径被修改）
-    if let Some(ref new_path) = update_data.path {
-        if new_path != &old_route.path {
-            if let Ok(Some(_)) = repo.get_by_path(new_path).await {
+    if let Some(ref new_path) = update_data.path
+        && new_path != &old_route.path
+            && let Ok(Some(_)) = repo.get_by_path(new_path).await {
                 return HttpResponse::Conflict().json(serde_json::json!({
                     "success": false,
                     "message": "路径已存在"
                 }));
             }
-        }
-    }
 
     // 构建更新后的路由 - 使用old_route的所有字段作为默认值
     let updated_route = DynamicRoute {

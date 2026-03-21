@@ -197,11 +197,10 @@ pub async fn upload(
             if !passage_id_str.is_empty() {
                 let passage_repo = state.passage_repository();
 
-                if let Ok(id) = passage_id_str.parse::<i64>() {
-                    if let Ok(passage) = passage_repo.get_by_id(id).await {
+                if let Ok(id) = passage_id_str.parse::<i64>()
+                    && let Ok(passage) = passage_repo.get_by_id(id).await {
                         passage_uuid = passage.uuid;
                     }
-                }
             }
             continue;
         }

@@ -45,11 +45,10 @@ impl AuditLogger {
             println!("AUDIT: {}", log_line);
         }
 
-        if self.log_to_file {
-            if let Err(e) = self.write_to_file(&log_line) {
+        if self.log_to_file
+            && let Err(e) = self.write_to_file(&log_line) {
                 eprintln!("Failed to write audit log to file: {}", e);
             }
-        }
     }
 
     /// 写入日志文件

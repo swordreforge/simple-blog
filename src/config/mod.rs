@@ -295,11 +295,10 @@ impl CliArgs {
         }
 
         // 数据库配置
-        if let Some(database) = config.database {
-            if let Some(path) = database.path {
+        if let Some(database) = config.database
+            && let Some(path) = database.path {
                 self.db_path = path;
             }
-        }
 
         // 模板配置
         if let Some(templates) = config.templates {
@@ -312,18 +311,16 @@ impl CliArgs {
         }
 
         // 静态文件配置
-        if let Some(static_files) = config.static_files {
-            if let Some(dir) = static_files.dir {
+        if let Some(static_files) = config.static_files
+            && let Some(dir) = static_files.dir {
                 self.static_dir = dir;
             }
-        }
 
         // GeoIP 配置
-        if let Some(geoip) = config.geoip {
-            if let Some(database_path) = geoip.database_path {
+        if let Some(geoip) = config.geoip
+            && let Some(database_path) = geoip.database_path {
                 self.geoip_db_path = database_path;
             }
-        }
 
         // TLS 配置
         if let Some(tls) = config.tls {
@@ -339,18 +336,16 @@ impl CliArgs {
         }
 
         // 日志配置
-        if let Some(logging) = config.logging {
-            if let Some(level) = logging.level {
+        if let Some(logging) = config.logging
+            && let Some(level) = logging.level {
                 self.log_level = level;
             }
-        }
 
         // JWT 配置
-        if let Some(jwt) = config.jwt {
-            if let Some(secret) = jwt.secret {
+        if let Some(jwt) = config.jwt
+            && let Some(secret) = jwt.secret {
                 self.jwt_secret = Some(secret);
             }
-        }
 
         // 缓存配置
         if let Some(cache) = config.cache {
@@ -646,11 +641,10 @@ impl CliArgs {
         }
 
         // 验证 Worker 数量
-        if let Some(workers) = self.workers {
-            if workers < 1 {
+        if let Some(workers) = self.workers
+            && workers < 1 {
                 result.add_error(ConfigValidationError::InvalidWorkers(workers));
             }
-        }
 
         // 验证数据库路径
         if !Path::new(&self.db_path)
@@ -695,16 +689,14 @@ impl CliArgs {
             if self.tls_cert.is_none() || self.tls_key.is_none() {
                 result.add_error(ConfigValidationError::TlsMissingCredentials);
             } else {
-                if let Some(ref cert) = self.tls_cert {
-                    if !Path::new(cert).exists() {
+                if let Some(ref cert) = self.tls_cert
+                    && !Path::new(cert).exists() {
                         result.add_error(ConfigValidationError::TlsCertNotFound(cert.clone()));
                     }
-                }
-                if let Some(ref key) = self.tls_key {
-                    if !Path::new(key).exists() {
+                if let Some(ref key) = self.tls_key
+                    && !Path::new(key).exists() {
                         result.add_error(ConfigValidationError::TlsKeyNotFound(key.clone()));
                     }
-                }
             }
         }
 
@@ -716,11 +708,10 @@ impl CliArgs {
         }
 
         // 验证 JWT 密钥
-        if let Some(ref secret) = self.jwt_secret {
-            if secret.len() < 32 {
+        if let Some(ref secret) = self.jwt_secret
+            && secret.len() < 32 {
                 result.add_error(ConfigValidationError::JwtSecretTooShort);
             }
-        }
 
         // 验证缓存配置
         if self.enable_cache {
@@ -743,30 +734,26 @@ impl CliArgs {
         }
 
         // 验证超时配置
-        if let Some(keep_alive) = self.keep_alive {
-            if keep_alive < 1 {
+        if let Some(keep_alive) = self.keep_alive
+            && keep_alive < 1 {
                 result.add_warning("Keep-alive 超时值过小，建议至少 30 秒".to_string());
             }
-        }
 
-        if let Some(keep_alive_timeout) = self.keep_alive_timeout {
-            if keep_alive_timeout < 1 {
+        if let Some(keep_alive_timeout) = self.keep_alive_timeout
+            && keep_alive_timeout < 1 {
                 result.add_warning("Keep-alive 连接超时值过小，建议至少 30 秒".to_string());
             }
-        }
 
-        if let Some(client_timeout) = self.client_timeout {
-            if client_timeout < 1 {
+        if let Some(client_timeout) = self.client_timeout
+            && client_timeout < 1 {
                 result.add_warning("客户端请求超时值过小，建议至少 30 秒".to_string());
             }
-        }
 
         // 验证最大连接数
-        if let Some(max_connections) = self.max_connections {
-            if max_connections < 10 {
+        if let Some(max_connections) = self.max_connections
+            && max_connections < 10 {
                 result.add_warning("最大连接数过小，建议至少 100".to_string());
             }
-        }
 
         result
     }

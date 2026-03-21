@@ -23,8 +23,8 @@ pub async fn export_routes(
         Ok((mut routes, total)) => {
             // 对 file 类型的路由进行特殊处理：读取模板文件内容到 inline_template
             for route in &mut routes {
-                if route.route_type == crate::db::models::RouteType::File {
-                    if let Some(ref template_path) = route.template_path {
+                if route.route_type == crate::db::models::RouteType::File
+                    && let Some(ref template_path) = route.template_path {
                         // 尝试读取模板文件内容
                         match fs::read_to_string(template_path).await {
                             Ok(content) => {
@@ -45,7 +45,6 @@ pub async fn export_routes(
                             }
                         }
                     }
-                }
             }
 
             let export_data = serde_json::json!({
@@ -200,15 +199,14 @@ pub async fn import_routes(
                             .unwrap_or_else(|| format!("data/routes/routes/route_{}.html", db_id));
 
                         // 确保目录存在
-                        if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
-                            if let Err(e) = fs::create_dir_all(parent_dir).await {
+                        if let Some(parent_dir) = std::path::Path::new(&template_path).parent()
+                            && let Err(e) = fs::create_dir_all(parent_dir).await {
                                 tracing::error!("创建目录失败: {}", e);
                                 failed_count += 1;
                                 errors.push(format!("第{}条路由（创建目录）: {}", index + 1, e));
                                 let _ = repo.delete(db_id).await;
                                 continue;
                             }
-                        }
 
                         // 写入模板文件
                         if let Err(e) = fs::write(&template_path, inline_template).await {
@@ -235,8 +233,7 @@ pub async fn import_routes(
                         if !std::path::Path::new(&template_path).exists() {
                             // 创建空文件
                             if let Some(parent_dir) = std::path::Path::new(&template_path).parent()
-                            {
-                                if let Err(e) = fs::create_dir_all(parent_dir).await {
+                                && let Err(e) = fs::create_dir_all(parent_dir).await {
                                     tracing::error!("创建目录失败: {}", e);
                                     failed_count += 1;
                                     errors.push(format!(
@@ -247,7 +244,6 @@ pub async fn import_routes(
                                     let _ = repo.delete(db_id).await;
                                     continue;
                                 }
-                            }
 
                             if let Err(e) = fs::write(&template_path, "").await {
                                 tracing::error!("创建空模板文件失败: {}", e);
@@ -314,11 +310,10 @@ pub async fn import_routes(
             }
 
             // 如果路由启用，热更新到路由表
-            if import_route.enabled {
-                if let Err(e) = state.dynamic_route_service().reload_route(db_id).await {
+            if import_route.enabled
+                && let Err(e) = state.dynamic_route_service().reload_route(db_id).await {
                     tracing::warn!("导入路由热更新失败: id={}, error={}", db_id, e);
                 }
-            }
 
             Ok(db_id)
         } else {
@@ -329,11 +324,10 @@ pub async fn import_routes(
                     import_route.id = Some(id);
 
                     // 如果路由启用，热更新到路由表
-                    if import_route.enabled {
-                        if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+                    if import_route.enabled
+                        && let Err(e) = state.dynamic_route_service().reload_route(id).await {
                             tracing::warn!("导入路由热更新失败: id={}, error={}", id, e);
                         }
-                    }
                     Ok(id)
                 }
                 Err(e) => Err(e),

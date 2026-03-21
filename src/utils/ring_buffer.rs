@@ -54,13 +54,13 @@ impl<T: Clone> RingBuffer<T> {
         };
 
         // 使用 unsafe 避免边界检查（因为我们已经确保索引有效）
-        let old_data = unsafe {
+        
+
+        unsafe {
             let mut data_guard = self.data.lock();
             let slot = data_guard.get_unchecked_mut(index as usize);
             slot.replace(entry)
-        };
-
-        old_data
+        }
     }
 
     /// 读取指定位置的数据

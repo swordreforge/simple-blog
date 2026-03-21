@@ -136,8 +136,8 @@ impl MemoryRouteStorage {
                 interval_timer.tick().await;
 
                 // 定期清理已禁用的路由（可选功能）
-                if let Ok(mut routes) = routes.write() {
-                    if let Ok(mut path_index) = path_index.write() {
+                if let Ok(mut routes) = routes.write()
+                    && let Ok(mut path_index) = path_index.write() {
                         // 清理已禁用的路由
                         let disabled_routes: Vec<i64> = routes
                             .iter()
@@ -170,7 +170,6 @@ impl MemoryRouteStorage {
                             }
                         }
                     }
-                }
             }
         });
     }
@@ -216,14 +215,13 @@ impl RouteStorage for MemoryRouteStorage {
         route.id = Some(id);
 
         // 检查路径冲突
-        if let Some(&existing_id) = path_index.get(&route.path) {
-            if existing_id != id {
+        if let Some(&existing_id) = path_index.get(&route.path)
+            && existing_id != id {
                 return Err(StorageError::AlreadyExists(format!(
                     "Path '{}' already exists with ID {}",
                     route.path, existing_id
                 )));
             }
-        }
 
         // 更新路径索引
         if let Some(old_route) = routes.get(&id) {
@@ -422,13 +420,11 @@ impl FileRouteStorage {
             if let Some(file_name) = path.file_name().and_then(|s| s.to_str()) {
                 // 解析文件名：route_123_backup_20260317_100000.json
                 let pattern = format!("route_{}_backup_", route_id);
-                if file_name.starts_with(&pattern) && file_name.ends_with(".json") {
-                    if let Ok(metadata) = entry.metadata() {
-                        if let Ok(modified) = metadata.modified() {
+                if file_name.starts_with(&pattern) && file_name.ends_with(".json")
+                    && let Ok(metadata) = entry.metadata()
+                        && let Ok(modified) = metadata.modified() {
                             backup_files.push((path, modified));
                         }
-                    }
-                }
             }
         }
 
@@ -458,13 +454,11 @@ impl FileRouteStorage {
             })?;
             let path = entry.path();
 
-            if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
-                if let Some(id_str) = file_name.strip_prefix("route_") {
-                    if let Ok(id) = id_str.parse::<i64>() {
+            if let Some(file_name) = path.file_stem().and_then(|s| s.to_str())
+                && let Some(id_str) = file_name.strip_prefix("route_")
+                    && let Ok(id) = id_str.parse::<i64>() {
                         max_id = max_id.max(id);
                     }
-                }
-            }
         }
 
         Ok(max_id + 1)
@@ -492,8 +486,8 @@ impl FileRouteStorage {
                 }
 
                 // 读取文件以统计启用状态
-                if let Ok(content) = fs::read_to_string(&path) {
-                    if let Ok(route) = serde_json::from_str::<DynamicRoute>(&content) {
+                if let Ok(content) = fs::read_to_string(&path)
+                    && let Ok(route) = serde_json::from_str::<DynamicRoute>(&content) {
                         total += 1;
                         if route.enabled {
                             enabled += 1;
@@ -501,7 +495,6 @@ impl FileRouteStorage {
                             disabled += 1;
                         }
                     }
-                }
             }
         }
 
@@ -579,15 +572,12 @@ impl RouteStorage for FileRouteStorage {
             })?;
             let file_path = entry.path();
 
-            if file_path.extension().and_then(|s| s.to_str()) == Some("json") {
-                if let Ok(content) = fs::read_to_string(&file_path) {
-                    if let Ok(route) = serde_json::from_str::<DynamicRoute>(&content) {
-                        if route.path == path {
+            if file_path.extension().and_then(|s| s.to_str()) == Some("json")
+                && let Ok(content) = fs::read_to_string(&file_path)
+                    && let Ok(route) = serde_json::from_str::<DynamicRoute>(&content)
+                        && route.path == path {
                             return Ok(Some(route));
                         }
-                    }
-                }
-            }
         }
 
         Ok(None)

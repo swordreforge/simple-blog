@@ -72,8 +72,8 @@ pub async fn update_by_query(
     }
 
     // 如果内容或标题更新了，同时更新 Markdown 文件
-    if file_updated {
-        if let Some(ref file_path) = passage.file_path {
+    if file_updated
+        && let Some(ref file_path) = passage.file_path {
             let content_to_save = passage.original_content.as_ref().unwrap_or({
                 // 如果没有原始内容，从 HTML 逆向生成（不推荐，但作为后备方案）
                 &passage.content
@@ -92,7 +92,6 @@ pub async fn update_by_query(
                 }
             }
         }
-    }
     if let Some(ref summary) = req_json.summary {
         passage.summary = Some(summary.clone());
     }
@@ -286,11 +285,10 @@ pub async fn delete_by_query(
     };
 
     // 删除 Markdown 文件
-    if let Some(file_path) = &passage.file_path {
-        if let Err(e) = fs::remove_file(file_path).await {
+    if let Some(file_path) = &passage.file_path
+        && let Err(e) = fs::remove_file(file_path).await {
             eprintln!("删除 Markdown 文件失败 {}: {}", file_path, e);
         }
-    }
 
     // 查询关联的附件
     let attachments = match attachment_repo
