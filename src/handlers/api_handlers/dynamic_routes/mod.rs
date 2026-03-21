@@ -7,6 +7,7 @@ pub mod batch;
 pub mod export;
 pub mod storage;
 pub mod public;
+pub mod quick_menu;
 
 pub use list::*;
 pub use create::*;
@@ -17,3 +18,4 @@ pub use batch::*;
 pub use export::*;
 pub use storage::*;
 pub use public::*;
+pub use quick_menu::*;

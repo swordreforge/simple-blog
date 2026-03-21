@@ -408,6 +408,9 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource("/api/routes/public")
             .route(web::get().to(api_handlers::dynamic_routes::list_public_routes))
+    ).service(
+        web::resource("/api/quick-menu/routes")
+            .route(web::get().to(api_handlers::dynamic_routes::get_quick_menu_routes))
     );
 
     // 管理员 API - 动态路由

@@ -9,6 +9,7 @@ pub struct PublicListQuery {
     page: Option<i64>,
     limit: Option<i64>,
     handler_type: Option<String>,
+    group_id: Option<String>,
 }
 
 /// 获取公开路由列表（无需管理员权限）
@@ -70,6 +71,15 @@ pub async fn list_public_routes(
             .collect()
     } else {
         enabled_routes
+    };
+
+    // 根据group_id参数过滤（可选）
+    let filtered_routes = if let Some(ref group_id) = query.group_id {
+        filtered_routes.into_iter()
+            .filter(|r| r.group_id.as_ref() == Some(group_id))
+            .collect()
+    } else {
+        filtered_routes
     };
 
     // 计算总数
