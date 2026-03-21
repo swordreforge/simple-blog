@@ -706,6 +706,44 @@
             >
             <div class="field-description">启用后路由将立即生效</div>
           </div>
+          <div class="form-group">
+            <div class="field-info">
+              <label for="groupId">路由组 ID</label>
+              <span class="info-icon" title="将多个相关路由归为一组">ℹ️</span>
+            </div>
+            <input
+              id="groupId"
+              placeholder="例如: user_center（可选，用于分组相关路由）"
+            />
+            <div class="field-description">
+              将多个相关路由归为一组，组中只有一个路由会显示在快捷菜单
+            </div>
+          </div>
+          <div class="form-group" id="groupSettings" style="display: none;">
+            <div class="field-info">
+              <label>
+                <input type="checkbox" id="isPrimaryEntry" />
+                设为主要入口（显示在快捷菜单）
+              </label>
+              <span class="info-icon" title="只有主要入口会显示在快捷操作栏中">ℹ️</span>
+            </div>
+            <div class="field-description">
+              只有主要入口会显示在快捷操作栏中，其他路由可通过主要入口访问
+            </div>
+          </div>
+          <div class="form-group" id="groupNameGroup" style="display: none;">
+            <div class="field-info">
+              <label for="groupName">路由组名称</label>
+              <span class="info-icon" title="路由组的显示名称">ℹ️</span>
+            </div>
+            <input
+              id="groupName"
+              placeholder="例如: 用户中心"
+            />
+            <div class="field-description">
+              路由组的显示名称（可选，用于管理界面）
+            </div>
+          </div>
           <div class="form-group form-full-width">
             <div class="field-info">
               <label for="routeMetadata">扩展元数据</label>
@@ -980,5 +1018,27 @@
     }
     document.addEventListener("DOMContentLoaded", createParticles);
   </script>
-  <script src="/js/dyn-routing.js"></script>
+  <script>
+    // 路由组 ID 输入时显示相关设置
+    document.addEventListener('DOMContentLoaded', function() {
+        const groupIdInput = document.getElementById('groupId');
+        const groupSettings = document.getElementById('groupSettings');
+        const groupNameGroup = document.getElementById('groupNameGroup');
+        
+        if (groupIdInput) {
+            groupIdInput.addEventListener('input', function() {
+                if (groupSettings && groupNameGroup) {
+                    if (this.value.trim()) {
+                        groupSettings.style.display = 'block';
+                        groupNameGroup.style.display = 'block';
+                    } else {
+                        groupSettings.style.display = 'none';
+                        groupNameGroup.style.display = 'none';
+                    }
+                }
+            });
+        }
+    });
+</script>
+<script src="/js/dyn-routing.js"></script>
 </html>

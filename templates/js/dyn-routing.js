@@ -169,9 +169,11 @@ function showAddModal() {
 function editRoute(t) {
     var e = routes.find(e => e.id === t);
     if (e) {
-        for (const a of["modalTitle", "routeId", "routeName", "routeType", "routePath", "handlerType", "contentType", "handlerConfig", "routePriority", "routeEnabled", "inlineTemplate", "templatePath", "routeMetadata", "modalMessage", "routeModal"])
+        for (const a of["modalTitle", "routeId", "routeName", "routeType", "routePath", "handlerType", "contentType", "handlerConfig", "routePriority", "routeEnabled", "inlineTemplate", "templatePath", "routeMetadata", "modalMessage", "routeModal", "groupId", "isPrimaryEntry", "groupName", "groupSettings", "groupNameGroup"])
             if (!document.getElementById(a)) return console.error(`元素 ${a} 不存在`), void alert(`页面加载错误：找不到元素 ${a}，请刷新页面重试`);
-        document.getElementById("modalTitle").textContent = "编辑路由", document.getElementById("routeId").value = e.id, document.getElementById("routeName").value = e.route_name || "", document.getElementById("routeType").value = e.route_type || "database", document.getElementById("routePath").value = e.path, document.getElementById("handlerType").value = e.handler_type, document.getElementById("contentType").value = e.content_type_hint || "", document.getElementById("handlerConfig").value = JSON.stringify(e.handler_config, null, 2), document.getElementById("routePriority").value = e.priority, document.getElementById("routeEnabled").checked = e.enabled, document.getElementById("inlineTemplate").value = e.inline_template || "", document.getElementById("templatePath").value = e.template_path || "", document.getElementById("routeMetadata").value = e.metadata ? JSON.stringify(e.metadata, null, 2) : "", document.getElementById("modalMessage").innerHTML = "", updateHandlerFields(), document.getElementById("routeModal").classList.add("active")
+        document.getElementById("modalTitle").textContent = "编辑路由", document.getElementById("routeId").value = e.id, document.getElementById("routeName").value = e.route_name || "", document.getElementById("routeType").value = e.route_type || "database", document.getElementById("routePath").value = e.path, document.getElementById("handlerType").value = e.handler_type, document.getElementById("contentType").value = e.content_type_hint || "", document.getElementById("handlerConfig").value = JSON.stringify(e.handler_config, null, 2), document.getElementById("routePriority").value = e.priority, document.getElementById("routeEnabled").checked = e.enabled, document.getElementById("inlineTemplate").value = e.inline_template || "", document.getElementById("templatePath").value = e.template_path || "", document.getElementById("routeMetadata").value = e.metadata ? JSON.stringify(e.metadata, null, 2) : "", document.getElementById("modalMessage").innerHTML = "", updateHandlerFields(), document.getElementById("routeModal").classList.add("active");
+        var n = e.metadata || {};
+        document.getElementById("groupId").value = e.group_id || n.group_id || "", document.getElementById("isPrimaryEntry").checked = e.is_primary_entry || n.is_primary_entry || !1, document.getElementById("groupName").value = n.group_name || "", document.getElementById("groupId").dispatchEvent(new Event("input"))
     }
 }
 
@@ -228,6 +230,10 @@ function saveRoute() {
                     } catch (e) {
                         return void showMessage("modalError", "扩展元数据必须是有效的JSON格式")
                     }
+                    var p = document.getElementById("groupId").value.trim(),
+                        g = document.getElementById("isPrimaryEntry").checked,
+                        y = document.getElementById("groupName").value.trim();
+                    p && (e = e || {}, e.group_name = y || null);
                     if (i = JSON.parse(r), "database" === o || "memory" === o) {
                         if (u) return void showMessage("modalError", o + " 类型路由不支持 template_path 字段")
                     } else if ("file" === o) {
@@ -245,7 +251,9 @@ function saveRoute() {
                         template_path: u || null,
                         metadata: e,
                         enabled: c,
-                        priority: m
+                        priority: m,
+                        group_id: p || null,
+                        is_primary_entry: g || null
                     }, isSubmitting = !0, (a = document.querySelector("#routeForm .btn-primary")) && (a.disabled = !0, a.textContent = "提交中...");
                     try {
                         var y = await(await fetch(t ? "/api/admin/dynamic-routes/" + t : "/api/admin/dynamic-routes", {
