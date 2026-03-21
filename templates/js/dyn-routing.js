@@ -214,7 +214,7 @@ async function saveRoute() {
         if (a && containsControlChars(a)) showMessage("modalError", "路由名称不能包含控制字符");
         else if (n && containsControlChars(n)) showMessage("modalError", "路由路径不能包含控制字符");
         else if (u && containsControlChars(u)) showMessage("modalError", "模板路径不能包含控制字符");
-        else if (i && containsControlChars(i)) showMessage("modalError", "扩展元数据不能包含控制字符");
+        else if (i && containsControlChars(i, true)) showMessage("modalError", "扩展元数据不能包含非法控制字符");
         else if (n)
             if (o)
                 if (s) {
@@ -252,7 +252,7 @@ async function saveRoute() {
                         enabled: c,
                         priority: m,
                         group_id: p || null,
-                        is_primary_entry: g || null
+                        is_primary_entry: g
                     }, isSubmitting = !0, (a = document.querySelector("#routeForm .btn-primary")) && (a.disabled = !0, a.textContent = "提交中...");
                     try {
                         var y = await(await fetch(t ? "/api/admin/dynamic-routes/" + t : "/api/admin/dynamic-routes", {
