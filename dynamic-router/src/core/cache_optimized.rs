@@ -121,25 +121,21 @@ impl CompactRadixTree {
                 }
                 
                 // 如果没有找到，尝试参数化子节点
-                if !found {
-                    if let Some(param_index) = node.param_child_index {
-                        if let Some(param_node) = self.nodes.get(param_index) {
-                            if let RadixNodeType::Parameter(param_name) = &param_node.node_type {
+                if !found
+                    && let Some(param_index) = node.param_child_index
+                        && let Some(param_node) = self.nodes.get(param_index)
+                            && let RadixNodeType::Parameter(param_name) = &param_node.node_type {
                                 params.push((param_name.clone(), segment.to_string()));
                                 current_index = param_index;
                                 found = true;
                             }
-                        }
-                    }
-                }
                 
                 // 如果还是没有找到，尝试通配符子节点
-                if !found {
-                    if let Some(wildcard_index) = node.wildcard_child_index {
+                if !found
+                    && let Some(wildcard_index) = node.wildcard_child_index {
                         current_index = wildcard_index;
                         found = true;
                     }
-                }
                 
                 if !found {
                     return None;
@@ -149,13 +145,11 @@ impl CompactRadixTree {
             }
         }
         
-        if let Some(node) = self.nodes.get(current_index) {
-            if let Some(route_index) = node.route_index {
-                if let Some(route) = self.routes.get(route_index) {
+        if let Some(node) = self.nodes.get(current_index)
+            && let Some(route_index) = node.route_index
+                && let Some(route) = self.routes.get(route_index) {
                     return Some((route, params));
                 }
-            }
-        }
         
         None
     }
@@ -194,11 +188,10 @@ impl CompactRadixTree {
             }
             RadixNodeType::Parameter(_) => {
                 // 查找或创建参数化子节点
-                if let Some(parent) = self.nodes.get(parent_index) {
-                    if let Some(param_index) = parent.param_child_index {
+                if let Some(parent) = self.nodes.get(parent_index)
+                    && let Some(param_index) = parent.param_child_index {
                         return param_index;
                     }
-                }
                 
                 let new_index = self.nodes.len();
                 self.nodes.push(CompactRadixNode::new(node_type));
@@ -211,11 +204,10 @@ impl CompactRadixTree {
             }
             RadixNodeType::Wildcard => {
                 // 查找或创建通配符子节点
-                if let Some(parent) = self.nodes.get(parent_index) {
-                    if let Some(wildcard_index) = parent.wildcard_child_index {
+                if let Some(parent) = self.nodes.get(parent_index)
+                    && let Some(wildcard_index) = parent.wildcard_child_index {
                         return wildcard_index;
                     }
-                }
                 
                 let new_index = self.nodes.len();
                 self.nodes.push(CompactRadixNode::new(node_type));
@@ -251,19 +243,17 @@ impl CompactRadixTree {
                     }
                 }
                 
-                if !found {
-                    if let Some(param_index) = node.param_child_index {
+                if !found
+                    && let Some(param_index) = node.param_child_index {
                         current_index = param_index;
                         found = true;
                     }
-                }
                 
-                if !found {
-                    if let Some(wildcard_index) = node.wildcard_child_index {
+                if !found
+                    && let Some(wildcard_index) = node.wildcard_child_index {
                         current_index = wildcard_index;
                         found = true;
                     }
-                }
                 
                 if !found {
                     return None;
@@ -273,15 +263,14 @@ impl CompactRadixTree {
             }
         }
         
-        if let Some(node) = self.nodes.get_mut(current_index) {
-            if let Some(route_index) = node.route_index.take() {
+        if let Some(node) = self.nodes.get_mut(current_index)
+            && let Some(route_index) = node.route_index.take() {
                 return self.routes.get(route_index).map(|_| {
                     // 注意：这里简化处理，实际应该从routes中移除
                     // 但为了保持索引一致性，这里不实际移除
                     Box::new(super::SimpleRoute::new("removed", "text/plain")) as Box<dyn super::RouteEntry>
                 });
             }
-        }
         
         None
     }
@@ -483,11 +472,10 @@ impl CacheOptimizedRouteTable {
         // 如果在哈希分片中找不到，则需要在所有分片中搜索
         // 这对于参数化路由是必要的，因为 /user/{id} 和 /user/123 的哈希值不同
         for (i, shard) in self.shards.iter().enumerate() {
-            if i != shard_idx {
-                if let Some(result) = shard.find(path) {
+            if i != shard_idx
+                && let Some(result) = shard.find(path) {
                     return Some(result);
                 }
-            }
         }
 
         None

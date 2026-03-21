@@ -307,11 +307,10 @@ impl SmartString {
         // 对于短字符串，使用小字符串优化
         if s.len() <= 23 {
             // 尝试从池获取
-            if let Ok(pool) = GLOBAL_PATH_POOL.try_lock() {
-                if let Some(pooled) = pool.get(s) {
+            if let Ok(pool) = GLOBAL_PATH_POOL.try_lock()
+                && let Some(pooled) = pool.get(s) {
                     return SmartString::Pooled(pooled);
                 }
-            }
             SmartString::Small(SmallString::from(s))
         } else {
             // 长字符串尝试从池获取

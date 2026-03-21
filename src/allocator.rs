@@ -5,22 +5,31 @@
 //! - mimalloc: 低碎片化，内存使用更高效
 //! - 系统默认: 无需额外依赖
 
+#[cfg(all(
+    not(feature = "jemalloc"),
+    not(feature = "mimalloc-alloc"),
+    not(feature = "tcmalloc-alloc")
+))]
 use std::alloc::System;
 
 #[cfg(feature = "jemalloc")]
 use tikv_jemallocator::Jemalloc;
 
-#[cfg(feature = "mimalloc")]
+#[cfg(all(not(feature = "jemalloc"), feature = "mimalloc-alloc"))]
 use mimalloc::MiMalloc;
 
-#[cfg(feature = "tcmalloc")]
+#[cfg(all(
+    not(feature = "jemalloc"),
+    not(feature = "mimalloc-alloc"),
+    feature = "tcmalloc-alloc"
+))]
 use tcmalloc::TCMalloc;
 
 // 默认使用系统分配器
 #[cfg(all(
     not(feature = "jemalloc"),
-    not(feature = "mimalloc"),
-    not(feature = "tcmalloc")
+    not(feature = "mimalloc-alloc"),
+    not(feature = "tcmalloc-alloc")
 ))]
 #[global_allocator]
 static GLOBAL: System = System;
@@ -31,15 +40,15 @@ static GLOBAL: System = System;
 static GLOBAL: Jemalloc = Jemalloc;
 
 // mimalloc 分配器（推荐用于低内存使用）
-#[cfg(all(not(feature = "jemalloc"), feature = "mimalloc"))]
+#[cfg(all(not(feature = "jemalloc"), feature = "mimalloc-alloc"))]
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 // tcmalloc 分配器（备选方案）
 #[cfg(all(
     not(feature = "jemalloc"),
-    not(feature = "mimalloc"),
-    feature = "tcmalloc"
+    not(feature = "mimalloc-alloc"),
+    feature = "tcmalloc-alloc"
 ))]
 #[global_allocator]
 static GLOBAL: TCMalloc = TCMalloc;
@@ -211,7 +220,9 @@ fn init_jemalloc() -> Result<(), String> {
     )];
 
     for (key, value) in opts {
-        std::env::set_var(key, value);
+        unsafe {
+            std::env::set_var(key, value);
+        }
         tracing::debug!("设置 {} = {}", key, value);
     }
 
@@ -256,7 +267,9 @@ fn init_mimalloc() -> Result<(), String> {
     ];
 
     for (key, value) in opts {
-        std::env::set_var(key, value);
+        unsafe {
+            std::env::set_var(key, value);
+        }
         tracing::debug!("设置 {} = {}", key, value);
     }
 
@@ -282,7 +295,9 @@ fn init_tcmalloc() -> Result<(), String> {
     ];
 
     for (key, value) in opts {
-        std::env::set_var(key, value);
+        unsafe {
+            std::env::set_var(key, value);
+        }
         tracing::debug!("设置 {} = {}", key, value);
     }
 

@@ -3166,7 +3166,6 @@ name = "rustblog-wip-for-summarize-in-zh-cn"
 version = "0.1.0"
 dependencies = [
  "jieba-rs",
- "lazy_static",
  "regex",
 ]
 

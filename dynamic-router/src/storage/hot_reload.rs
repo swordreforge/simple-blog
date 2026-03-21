@@ -128,13 +128,12 @@ where
         let debounce_duration = self.config.debounce_duration;
 
         let mut watcher = notify::recommended_watcher(move |res| {
-            if let Ok(event) = res {
-                if let Err(e) =
+            if let Ok(event) = res
+                && let Err(e) =
                     handle_file_event(event, routes.clone(), storage.clone(), debounce_duration)
                 {
                     eprintln!("Error handling file event: {}", e);
                 }
-            }
         })?;
 
         // 开始监听

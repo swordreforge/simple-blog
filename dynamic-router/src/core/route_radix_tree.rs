@@ -211,8 +211,8 @@ impl RadixNode {
         }
 
         // 2. 尝试参数化匹配
-        if let Some(ref param_child) = self.param_child {
-            if let RadixNodeType::Parameter(param_name) = &param_child.node_type {
+        if let Some(ref param_child) = self.param_child
+            && let RadixNodeType::Parameter(param_name) = &param_child.node_type {
                 let mut new_params = params.clone();
                 new_params.push((param_name.clone(), segment.to_string()));
 
@@ -220,7 +220,6 @@ impl RadixNode {
                     return Some(result);
                 }
             }
-        }
 
         // 3. 尝试通配符匹配（匹配剩余所有路径）
         if let Some(ref wildcard_child) = self.wildcard_child {
@@ -282,8 +281,8 @@ impl RadixNode {
         }
 
         // 尝试参数化节点
-        if let Some(ref mut param_child) = self.param_child {
-            if let Some(route) = param_child.remove_segments(segments, idx + 1) {
+        if let Some(ref mut param_child) = self.param_child
+            && let Some(route) = param_child.remove_segments(segments, idx + 1) {
                 if param_child.route.is_none()
                     && param_child.children.is_empty()
                     && param_child.param_child.is_none()
@@ -293,11 +292,10 @@ impl RadixNode {
                 }
                 return Some(route);
             }
-        }
 
         // 尝试通配符节点
-        if let Some(ref mut wildcard_child) = self.wildcard_child {
-            if let Some(route) = wildcard_child.remove_segments(segments, idx + 1) {
+        if let Some(ref mut wildcard_child) = self.wildcard_child
+            && let Some(route) = wildcard_child.remove_segments(segments, idx + 1) {
                 if wildcard_child.route.is_none()
                     && wildcard_child.children.is_empty()
                     && wildcard_child.param_child.is_none()
@@ -307,7 +305,6 @@ impl RadixNode {
                 }
                 return Some(route);
             }
-        }
 
         None
     }
@@ -361,8 +358,8 @@ impl RadixNode {
         }
 
         // 遍历参数化子节点
-        if let Some(ref param_child) = self.param_child {
-            if let RadixNodeType::Parameter(param_name) = &param_child.node_type {
+        if let Some(ref param_child) = self.param_child
+            && let RadixNodeType::Parameter(param_name) = &param_child.node_type {
                 let new_prefix = if prefix.is_empty() {
                     format!("{{{}}}", param_name)
                 } else {
@@ -370,7 +367,6 @@ impl RadixNode {
                 };
                 param_child.list_paths(&new_prefix, paths);
             }
-        }
 
         // 遍历通配符子节点
         if let Some(ref wildcard_child) = self.wildcard_child {

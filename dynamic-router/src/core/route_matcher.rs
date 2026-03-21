@@ -145,14 +145,13 @@ impl RoutePattern {
     /// 提取通配符捕获名称
     fn extract_wildcard_name(path: &str) -> Option<String> {
         // 检查是否是命名通配符，如 /static/{*path}
-        if let Some(start) = path.find("{*") {
-            if let Some(end) = path.find('}') {
+        if let Some(start) = path.find("{*")
+            && let Some(end) = path.find('}') {
                 let name = path[start + 2..end].to_string();
                 if !name.is_empty() {
                     return Some(name);
                 }
             }
-        }
         None
     }
 

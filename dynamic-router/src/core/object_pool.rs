@@ -443,12 +443,11 @@ where
     fn pull(&self) -> T {
         // 尝试从所有子池中获取对象
         for sub_pool in self.sub_pools.iter() {
-            if let Ok(mut pool) = sub_pool.try_lock() {
-                if let Some(item) = pool.pop() {
+            if let Ok(mut pool) = sub_pool.try_lock()
+                && let Some(item) = pool.pop() {
                     self.size.fetch_sub(1, Ordering::Relaxed);
                     return item;
                 }
-            }
         }
         
         // 所有子池都为空，创建新对象
@@ -476,13 +475,12 @@ where
         for offset in 0..self.sub_pools.len() {
             let pool_index = (start_pool_index + offset) % self.sub_pools.len();
 
-            if let Ok(mut pool) = self.sub_pools[pool_index].try_lock() {
-                if pool.len() < self.sub_pool_capacity {
+            if let Ok(mut pool) = self.sub_pools[pool_index].try_lock()
+                && pool.len() < self.sub_pool_capacity {
                     pool.push(item);
                     self.size.fetch_add(1, Ordering::Relaxed);
                     return; // 成功推送，返回
                 }
-            }
         }
         // 所有子池都满了或锁失败，丢弃对象
     }

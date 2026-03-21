@@ -293,14 +293,14 @@ impl RouteTable {
         // 缓存未命中，从 Radix Tree 查找
         let shard_idx = Self::shard_index(path);
         let guard = self.shards[shard_idx].read().unwrap();
-        let result = guard.inner.find(path).map(|(route, _params)| {
+        
+
+        guard.inner.find(path).map(|(route, _params)| {
             let route_arc = std::sync::Arc::clone(route);
             // 将结果写入缓存
             self.cache.insert(path, route_arc.clone());
             route_arc
-        });
-
-        result
+        })
     }
 
     /// 获取路由的数量

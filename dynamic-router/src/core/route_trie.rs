@@ -158,15 +158,14 @@ impl TrieNode {
         let segment = segments[idx];
 
         // 1. 优先尝试精确匹配的静态节点
-        if let Some(child) = self.children.get(segment) {
-            if let Some(result) = child.find_segments(segments, idx + 1, params.clone()) {
+        if let Some(child) = self.children.get(segment)
+            && let Some(result) = child.find_segments(segments, idx + 1, params.clone()) {
                 return Some(result);
             }
-        }
 
         // 2. 尝试参数化匹配
-        if let Some(ref param_child) = self.param_child {
-            if let TrieNodeType::Parameter(param_name) = &param_child.node_type {
+        if let Some(ref param_child) = self.param_child
+            && let TrieNodeType::Parameter(param_name) = &param_child.node_type {
                 let mut new_params = params.clone();
                 new_params.push((param_name.clone(), segment.to_string()));
 
@@ -174,7 +173,6 @@ impl TrieNode {
                     return Some(result);
                 }
             }
-        }
 
         // 3. 尝试通配符匹配（匹配剩余所有路径）
         if let Some(ref wildcard_child) = self.wildcard_child {
@@ -219,19 +217,18 @@ impl TrieNode {
         let segment = segments[idx];
 
         // 尝试静态节点
-        if let Some(child) = self.children.get_mut(segment) {
-            if let Some(route) = child.remove_segments(segments, idx + 1) {
+        if let Some(child) = self.children.get_mut(segment)
+            && let Some(route) = child.remove_segments(segments, idx + 1) {
                 // 如果子节点没有路由和子节点，可以删除
                 if child.route.is_none() && child.children.is_empty() && child.param_child.is_none() && child.wildcard_child.is_none() {
                     self.children.remove(segment);
                 }
                 return Some(route);
             }
-        }
 
         // 尝试参数化节点
-        if let Some(ref mut param_child) = self.param_child {
-            if let Some(route) = param_child.remove_segments(segments, idx + 1) {
+        if let Some(ref mut param_child) = self.param_child
+            && let Some(route) = param_child.remove_segments(segments, idx + 1) {
                 if param_child.route.is_none()
                     && param_child.children.is_empty()
                     && param_child.param_child.is_none()
@@ -241,11 +238,10 @@ impl TrieNode {
                 }
                 return Some(route);
             }
-        }
 
         // 尝试通配符节点
-        if let Some(ref mut wildcard_child) = self.wildcard_child {
-            if let Some(route) = wildcard_child.remove_segments(segments, idx + 1) {
+        if let Some(ref mut wildcard_child) = self.wildcard_child
+            && let Some(route) = wildcard_child.remove_segments(segments, idx + 1) {
                 if wildcard_child.route.is_none()
                     && wildcard_child.children.is_empty()
                     && wildcard_child.param_child.is_none()
@@ -255,7 +251,6 @@ impl TrieNode {
                 }
                 return Some(route);
             }
-        }
 
         None
     }
@@ -309,8 +304,8 @@ impl TrieNode {
         }
 
         // 遍历参数化子节点
-        if let Some(ref param_child) = self.param_child {
-            if let TrieNodeType::Parameter(param_name) = &param_child.node_type {
+        if let Some(ref param_child) = self.param_child
+            && let TrieNodeType::Parameter(param_name) = &param_child.node_type {
                 let new_prefix = if prefix.is_empty() {
                     format!("{{{}}}", param_name)
                 } else {
@@ -318,7 +313,6 @@ impl TrieNode {
                 };
                 param_child.list_paths(&new_prefix, paths);
             }
-        }
 
         // 遍历通配符子节点
         if let Some(ref wildcard_child) = self.wildcard_child {
