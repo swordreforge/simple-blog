@@ -2,10 +2,10 @@
 //!
 //! 提供路由存储类型管理和迁移的 API 端点
 
-use actix_web::{web, HttpResponse, Result};
-use serde::{Deserialize, Serialize};
 use crate::app_state::AppState;
 use crate::db::models::RouteType;
+use actix_web::{HttpResponse, Result, web};
+use serde::{Deserialize, Serialize};
 
 /// 获取存储统计信息
 #[derive(Serialize)]
@@ -39,12 +39,12 @@ pub struct BatchMigrateRoutesRequest {
 }
 
 /// 获取存储统计信息
-pub async fn get_storage_stats(
-    state: web::Data<AppState>,
-) -> Result<HttpResponse> {
-    let route_type_manager = state.route_type_manager.as_ref()
+pub async fn get_storage_stats(state: web::Data<AppState>) -> Result<HttpResponse> {
+    let route_type_manager = state
+        .route_type_manager
+        .as_ref()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("路由类型管理器未初始化"))?;
-    
+
     match route_type_manager.get_storage_stats().await {
         Ok(stats) => {
             let response = StorageStatsResponse {
@@ -67,7 +67,7 @@ pub async fn get_storage_stats(
                     memory_usage_bytes: stats.file.memory_usage_bytes,
                 },
             };
-            
+
             Ok(HttpResponse::Ok().json(response))
         }
         Err(e) => {
@@ -85,9 +85,11 @@ pub async fn migrate_route(
     state: web::Data<AppState>,
     req: web::Json<MigrateRouteRequest>,
 ) -> Result<HttpResponse> {
-    let route_type_manager = state.route_type_manager.as_ref()
+    let route_type_manager = state
+        .route_type_manager
+        .as_ref()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("路由类型管理器未初始化"))?;
-    
+
     // 首先查找路由的当前存储类型
     let from_type = match route_type_manager.load_route(req.route_id, None).await {
         Ok(Some(route)) => route.route_type,
@@ -105,7 +107,7 @@ pub async fn migrate_route(
             })));
         }
     };
-    
+
     // 执行迁移
     match route_type_manager.migrate_route(req.route_id, from_type, req.target_type).await {
         Ok(_) => {
@@ -129,17 +131,20 @@ pub async fn batch_migrate_routes(
     state: web::Data<AppState>,
     req: web::Json<BatchMigrateRoutesRequest>,
 ) -> Result<HttpResponse> {
-    let route_type_manager = state.route_type_manager.as_ref()
+    let route_type_manager = state
+        .route_type_manager
+        .as_ref()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("路由类型管理器未初始化"))?;
-    
-    match route_type_manager.migrate_all_routes(req.source_type, req.target_type).await {
-        Ok(count) => {
-            Ok(HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": format!("成功迁移 {} 条路由", count),
-                "count": count
-            })))
-        }
+
+    match route_type_manager
+        .migrate_all_routes(req.source_type, req.target_type)
+        .await
+    {
+        Ok(count) => Ok(HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": format!("成功迁移 {} 条路由", count),
+            "count": count
+        }))),
         Err(e) => {
             tracing::error!("批量迁移路由失败: {}", e);
             Ok(HttpResponse::InternalServerError().json(serde_json::json!({
@@ -155,16 +160,16 @@ pub async fn clear_storage(
     state: web::Data<AppState>,
     route_type: web::Path<RouteType>,
 ) -> Result<HttpResponse> {
-    let route_type_manager = state.route_type_manager.as_ref()
+    let route_type_manager = state
+        .route_type_manager
+        .as_ref()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("路由类型管理器未初始化"))?;
-    
+
     match route_type_manager.clear_storage(*route_type).await {
-        Ok(_) => {
-            Ok(HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": format!("清空 {:?} 存储成功", route_type)
-            })))
-        }
+        Ok(_) => Ok(HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": format!("清空 {:?} 存储成功", route_type)
+        }))),
         Err(e) => {
             tracing::error!("清空存储失败: {}", e);
             Ok(HttpResponse::InternalServerError().json(serde_json::json!({
@@ -180,36 +185,47 @@ pub async fn get_route_storage_type(
     state: web::Data<AppState>,
     route_id: web::Path<i64>,
 ) -> Result<HttpResponse> {
-    let route_type_manager = state.route_type_manager.as_ref()
+    let route_type_manager = state
+        .route_type_manager
+        .as_ref()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("路由类型管理器未初始化"))?;
-    
+
     // 尝试从各个存储类型中查找路由
     let route_id = route_id.into_inner();
-    
+
     // 先尝试从数据库加载
-    if let Ok(Some(_)) = route_type_manager.load_route(route_id, Some(RouteType::Database)).await {
+    if let Ok(Some(_)) = route_type_manager
+        .load_route(route_id, Some(RouteType::Database))
+        .await
+    {
         return Ok(HttpResponse::Ok().json(serde_json::json!({
             "route_id": route_id,
             "storage_type": "database"
         })));
     }
-    
+
     // 尝试从内存加载
-    if let Ok(Some(_)) = route_type_manager.load_route(route_id, Some(RouteType::Memory)).await {
+    if let Ok(Some(_)) = route_type_manager
+        .load_route(route_id, Some(RouteType::Memory))
+        .await
+    {
         return Ok(HttpResponse::Ok().json(serde_json::json!({
             "route_id": route_id,
             "storage_type": "memory"
         })));
     }
-    
+
     // 尝试从文件加载
-    if let Ok(Some(_)) = route_type_manager.load_route(route_id, Some(RouteType::File)).await {
+    if let Ok(Some(_)) = route_type_manager
+        .load_route(route_id, Some(RouteType::File))
+        .await
+    {
         return Ok(HttpResponse::Ok().json(serde_json::json!({
             "route_id": route_id,
             "storage_type": "file"
         })));
     }
-    
+
     // 都找不到
     Ok(HttpResponse::NotFound().json(serde_json::json!({
         "error": "路由不存在",

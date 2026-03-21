@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse};
-use actix_multipart::Multipart;
-use serde::{Deserialize, Serialize};
 use crate::audio_metadata::{extract_metadata, fallback_metadata};
+use actix_multipart::Multipart;
+use actix_web::{HttpResponse, web};
 use futures_util::stream::StreamExt;
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use std::path::Path;
 
 /// 音乐轨道响应
 #[derive(Debug, Serialize)]
@@ -39,7 +39,8 @@ pub async fn playlist(state: web::Data<crate::app_state::AppState>) -> HttpRespo
 
     match music_repo.get_all_without_pagination().await {
         Ok(tracks) => {
-            let data: Vec<MusicTrackResponse> = tracks.into_iter()
+            let data: Vec<MusicTrackResponse> = tracks
+                .into_iter()
                 .map(|track| MusicTrackResponse {
                     id: track.id.unwrap_or(0),
                     title: track.title,
@@ -308,10 +309,9 @@ pub async fn delete(
         match music_repo.get_all_without_pagination().await {
             Ok(all_tracks) => {
                 // 统计使用此封面的音乐数量（排除当前要删除的音乐）
-                let cover_usage_count = all_tracks.iter()
-                    .filter(|track| {
-                        track.id != track_info.id && track.cover_image == cover_image
-                    })
+                let cover_usage_count = all_tracks
+                    .iter()
+                    .filter(|track| track.id != track_info.id && track.cover_image == cover_image)
                     .count();
 
                 // 只有当没有其他音乐使用此封面时，才删除封面图片
@@ -322,7 +322,10 @@ pub async fn delete(
                         // 不中断流程，继续删除数据库记录
                     }
                 } else {
-                    println!("封面图片 {} 被 {} 个其他音乐使用，跳过删除", cover_image, cover_usage_count);
+                    println!(
+                        "封面图片 {} 被 {} 个其他音乐使用，跳过删除",
+                        cover_image, cover_usage_count
+                    );
                 }
             }
             Err(e) => {
@@ -451,8 +454,8 @@ pub async fn upload(
         }
 
         // 提取音频元数据
-        let metadata = extract_metadata(&file_path)
-            .unwrap_or_else(|_| fallback_metadata(&unique_filename));
+        let metadata =
+            extract_metadata(&file_path).unwrap_or_else(|_| fallback_metadata(&unique_filename));
 
         // 确定标题和艺术家
         let title = metadata.title.unwrap_or_else(|| {

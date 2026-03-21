@@ -123,7 +123,10 @@ impl CacheKeyBuilder {
 
     /// 添加多个参数
     #[allow(dead_code)]
-    pub fn with_params(mut self, params: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>) -> Self {
+    pub fn with_params(
+        mut self,
+        params: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
+    ) -> Self {
         for (key, value) in params {
             self.params.push((key.into(), value.into()));
         }
@@ -140,10 +143,7 @@ impl CacheKeyBuilder {
     /// 构建缓存键
     #[allow(dead_code)]
     pub fn build(self) -> String {
-        let mut parts = vec![
-            self.namespace.to_string(),
-            self.resource.to_string(),
-        ];
+        let mut parts = vec![self.namespace.to_string(), self.resource.to_string()];
 
         // 添加参数
         for (key, value) in self.params {
@@ -161,10 +161,7 @@ impl CacheKeyBuilder {
     /// 构建模式（用于批量删除）
     #[allow(dead_code)]
     pub fn build_pattern(self) -> String {
-        let mut parts = vec![
-            self.namespace.to_string(),
-            self.resource.to_string(),
-        ];
+        let mut parts = vec![self.namespace.to_string(), self.resource.to_string()];
 
         // 添加参数（最后一个使用通配符）
         if let Some((key, _)) = self.params.last() {
@@ -211,7 +208,13 @@ impl PassageCacheKeys {
     }
 
     /// 生成文章列表缓存键（日期筛选）
-    pub fn list_by_date(year: Option<i32>, month: Option<i32>, day: Option<i32>, page: i64, limit: i64) -> String {
+    pub fn list_by_date(
+        year: Option<i32>,
+        month: Option<i32>,
+        day: Option<i32>,
+        page: i64,
+        limit: i64,
+    ) -> String {
         let builder = CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::List)
             .with_param_int("page", page)
             .with_param_int("limit", limit)
@@ -444,7 +447,10 @@ mod tests {
     #[test]
     fn test_passage_cache_keys_cursor() {
         let key = PassageCacheKeys::list_cursor(Some("2026-02-14 10:00:00+00:00|123"), 10);
-        assert_eq!(key, "passage:list:limit:10:cursor:2026-02-14 10:00:00+00:00|123:v1");
+        assert_eq!(
+            key,
+            "passage:list:limit:10:cursor:2026-02-14 10:00:00+00:00|123:v1"
+        );
 
         let key = PassageCacheKeys::list_cursor(None, 10);
         assert_eq!(key, "passage:list:limit:10:cursor:first:v1");

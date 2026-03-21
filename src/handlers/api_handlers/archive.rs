@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::Serialize;
 
 /// 归档响应
@@ -12,19 +12,20 @@ pub struct ArchiveResponse {
 /// 获取文章归档列表
 pub async fn list(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
     let passage_repo = state.passage_repository();
-    
+
     // 使用聚合查询获取归档统计（优化：避免加载所有文章）
     match passage_repo.get_archive_stats().await {
         Ok(stats) => {
             // 转换为响应格式
-            let data: Vec<ArchiveResponse> = stats.into_iter()
+            let data: Vec<ArchiveResponse> = stats
+                .into_iter()
                 .map(|stat| ArchiveResponse {
                     year: stat.year,
                     month: stat.month,
                     count: stat.count,
                 })
                 .collect();
-            
+
             HttpResponse::Ok()
                 .insert_header(("Cache-Control", "no-cache, no-store, must-revalidate"))
                 .insert_header(("Pragma", "no-cache"))

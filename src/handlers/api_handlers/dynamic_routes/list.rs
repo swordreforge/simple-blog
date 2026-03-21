@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse};
-use serde::Deserialize;
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
+use actix_web::{HttpResponse, web};
+use serde::Deserialize;
 
 /// 查询参数
 #[derive(Debug, Deserialize)]
@@ -31,7 +31,9 @@ pub async fn list_routes(
     let limit = query.limit.unwrap_or(20);
 
     // 解析route_type参数
-    let route_type = query.route_type.as_ref()
+    let route_type = query
+        .route_type
+        .as_ref()
         .and_then(|s| crate::db::models::RouteType::from_str(s));
 
     // 使用 RouteTypeManager 获取所有存储类型的路由
@@ -79,7 +81,10 @@ pub async fn list_routes(
 
     // 根据enabled参数过滤
     let filtered_routes = if let Some(enabled) = query.enabled {
-        routes.into_iter().filter(|r| r.enabled == enabled).collect()
+        routes
+            .into_iter()
+            .filter(|r| r.enabled == enabled)
+            .collect()
     } else {
         routes
     };
@@ -125,47 +130,35 @@ pub async fn get_route(
     // 使用 RouteTypeManager 获取路由
     if let Some(manager) = state.route_type_manager() {
         match manager.load_route(id, None).await {
-            Ok(Some(route)) => {
-                HttpResponse::Ok().json(serde_json::json!({
-                    "success": true,
-                    "data": route
-                }))
-            }
-            Ok(None) => {
-                HttpResponse::NotFound().json(serde_json::json!({
-                    "success": false,
-                    "message": "路由不存在"
-                }))
-            }
-            Err(e) => {
-                HttpResponse::InternalServerError().json(serde_json::json!({
-                    "success": false,
-                    "message": format!("查询失败: {}", e)
-                }))
-            }
+            Ok(Some(route)) => HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": route
+            })),
+            Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "路由不存在"
+            })),
+            Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": format!("查询失败: {}", e)
+            })),
         }
     } else {
         // 兼容性：如果没有 RouteTypeManager，只从数据库加载
         let repo = state.dynamic_route_repository();
         match repo.get_by_id(id).await {
-            Ok(Some(route)) => {
-                HttpResponse::Ok().json(serde_json::json!({
-                    "success": true,
-                    "data": route
-                }))
-            }
-            Ok(None) => {
-                HttpResponse::NotFound().json(serde_json::json!({
-                    "success": false,
-                    "message": "路由不存在"
-                }))
-            }
-            Err(e) => {
-                HttpResponse::InternalServerError().json(serde_json::json!({
-                    "success": false,
-                    "message": format!("查询失败: {}", e)
-                }))
-            }
+            Ok(Some(route)) => HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "data": route
+            })),
+            Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+                "success": false,
+                "message": "路由不存在"
+            })),
+            Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+                "success": false,
+                "message": format!("查询失败: {}", e)
+            })),
         }
     }
 }

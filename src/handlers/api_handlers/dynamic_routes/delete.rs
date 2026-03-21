@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
+use actix_web::{HttpResponse, web};
 
 /// 删除路由
 pub async fn delete_route(
@@ -11,10 +11,12 @@ pub async fn delete_route(
     // 权限检查
     let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     let id = path.into_inner();
@@ -59,12 +61,13 @@ pub async fn delete_route(
     // 删除路由 - 使用 RouteTypeManager 从正确的存储后端删除
     let delete_result = if let Some(manager) = state.route_type_manager() {
         let storage = manager.get_storage(&old_route.route_type);
-        storage.delete_route(id).await
+        storage
+            .delete_route(id)
+            .await
             .map_err(|e| format!("删除失败: {}", e))
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
-        repo.delete(id).await
-            .map_err(|e| e.to_string())
+        repo.delete(id).await.map_err(|e| e.to_string())
     };
 
     match delete_result {
@@ -83,11 +86,9 @@ pub async fn delete_route(
                 "message": "路由删除成功"
             }))
         }
-        Err(e) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": e
-            }))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "success": false,
+            "message": e
+        })),
     }
 }

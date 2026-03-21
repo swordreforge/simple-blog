@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::Serialize;
 
 /// 统计数据响应
@@ -11,7 +11,10 @@ pub struct StatsResponse {
 }
 
 /// 获取统计数据
-pub async fn get_stats(state: web::Data<crate::app_state::AppState>, req: actix_web::HttpRequest) -> HttpResponse {
+pub async fn get_stats(
+    state: web::Data<crate::app_state::AppState>,
+    req: actix_web::HttpRequest,
+) -> HttpResponse {
     // 鉴权检查
     if req.cookie("auth_token").is_none() {
         return crate::middleware::auth::missing_token_response();
@@ -23,15 +26,15 @@ pub async fn get_stats(state: web::Data<crate::app_state::AppState>, req: actix_
     let passage_repo = state.passage_repository();
     let comment_repo = state.comment_repository();
     let user_repo = state.user_repository();
-    
+
     // 获取各项统计
     let passages = passage_repo.count().await.unwrap_or(0);
     let comments = comment_repo.count().await.unwrap_or(0);
     let users = user_repo.count().await.unwrap_or(0);
-    
+
     // 视图数（暂时返回0，需要从ArticleView表中查询）
     let views = 0;
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "data": StatsResponse {

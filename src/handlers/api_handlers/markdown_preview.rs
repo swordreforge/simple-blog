@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::Serialize;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Markdown 预览响应
 #[derive(Debug, Serialize)]
@@ -21,9 +21,8 @@ pub struct MarkdownPreviewData {
 
 /// 验证并规范化 markdown 文件路径
 fn validate_markdown_path(path: &str) -> Result<PathBuf, String> {
-    let cwd = std::env::current_dir()
-        .map_err(|_| "无法获取当前目录".to_string())?;
-    
+    let cwd = std::env::current_dir().map_err(|_| "无法获取当前目录".to_string())?;
+
     // URL 解码路径
     let decoded_path = match urlencoding::decode(path) {
         Ok(decoded) => decoded.into_owned(),
@@ -31,32 +30,44 @@ fn validate_markdown_path(path: &str) -> Result<PathBuf, String> {
             return Err(format!("URL 解码失败: {}", e));
         }
     };
-    
+
     // 规范化用户路径
     let normalized_path = Path::new(&decoded_path);
     let normalized_path: PathBuf = normalized_path
         .components()
-        .filter(|comp| !matches!(comp, std::path::Component::ParentDir | std::path::Component::CurDir))
+        .filter(|comp| {
+            !matches!(
+                comp,
+                std::path::Component::ParentDir | std::path::Component::CurDir
+            )
+        })
         .collect();
-    
+
     // 构建完整路径
     let full_path = cwd.join("markdown").join(&normalized_path);
 
     // 确保文件以 .md 结尾
     if full_path.extension().is_none_or(|ext| ext != "md") {
-        return Err(format!("文件必须是 .md 格式，当前扩展名: {:?}", full_path.extension()));
+        return Err(format!(
+            "文件必须是 .md 格式，当前扩展名: {:?}",
+            full_path.extension()
+        ));
     }
-    
+
     // 检查文件是否存在
     if !full_path.exists() {
-        return Err(format!("文件不存在: {}, 完整路径: {}", path, full_path.display()));
+        return Err(format!(
+            "文件不存在: {}, 完整路径: {}",
+            path,
+            full_path.display()
+        ));
     }
-    
+
     // 检查是否是文件
     if !full_path.is_file() {
         return Err(format!("路径不是文件: {}", path));
     }
-    
+
     Ok(full_path)
 }
 
@@ -69,17 +80,15 @@ fn extract_markdown_title(content: &str) -> String {
             return stripped.trim().to_string();
         }
     }
-    
+
     // 如果没有找到标题，使用文件名
     "无标题".to_string()
 }
 
 /// Markdown 预览 API
 pub async fn preview(query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
-    let path_str = query.get("path")
-        .cloned()
-        .unwrap_or_default();
-    
+    let path_str = query.get("path").cloned().unwrap_or_default();
+
     // 验证路径
     let full_path = match validate_markdown_path(&path_str) {
         Ok(p) => p,
@@ -91,7 +100,7 @@ pub async fn preview(query: web::Query<std::collections::HashMap<String, String>
             });
         }
     };
-    
+
     // 读取文件内容
     let content = match fs::read_to_string(&full_path) {
         Ok(c) => c,
@@ -103,10 +112,10 @@ pub async fn preview(query: web::Query<std::collections::HashMap<String, String>
             });
         }
     };
-    
+
     // 提取标题
     let title = extract_markdown_title(&content);
-    
+
     // 获取文件名
     let file_name = full_path
         .file_name()
@@ -115,8 +124,7 @@ pub async fn preview(query: web::Query<std::collections::HashMap<String, String>
         .to_string();
 
     // 获取相对路径
-    let cwd = std::env::current_dir()
-        .unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     let markdown_base = cwd.join("markdown");
     let file_path = full_path
         .strip_prefix(&markdown_base)
@@ -124,7 +132,7 @@ pub async fn preview(query: web::Query<std::collections::HashMap<String, String>
         .and_then(|p| p.to_str())
         .unwrap_or(&path_str)
         .to_string();
-    
+
     HttpResponse::Ok().json(MarkdownPreviewResponse {
         success: true,
         data: Some(MarkdownPreviewData {

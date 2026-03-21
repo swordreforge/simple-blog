@@ -1,9 +1,9 @@
-use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
-use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{DynamicRoute, UpdateRouteRequest};
+use crate::middleware::auth::check_admin_auth;
 use crate::routes::conflicts_with_static_route;
 use actix_web::web::Bytes;
+use actix_web::{HttpResponse, web};
 
 /// 检查字符串是否包含控制字符
 fn contains_control_chars(s: &str) -> bool {
@@ -24,10 +24,12 @@ pub async fn update_route(
     // 权限检查
     let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     let id = path.into_inner();
@@ -141,14 +143,24 @@ pub async fn update_route(
     // 构建更新后的路由 - 使用old_route的所有字段作为默认值
     let updated_route = DynamicRoute {
         id: old_route.id,
-        route_name: update_data.route_name.or_else(|| old_route.route_name.clone()),
+        route_name: update_data
+            .route_name
+            .or_else(|| old_route.route_name.clone()),
         route_type: update_data.route_type.unwrap_or(old_route.route_type),
         path: update_data.path.unwrap_or_else(|| old_route.path.clone()),
         handler_type: update_data.handler_type.unwrap_or(old_route.handler_type),
-        handler_config: update_data.handler_config.unwrap_or_else(|| old_route.handler_config.clone()),
-        inline_template: update_data.inline_template.or_else(|| old_route.inline_template.clone()),
-        template_path: update_data.template_path.or_else(|| old_route.template_path.clone()),
-        content_type_hint: update_data.content_type_hint.or_else(|| old_route.content_type_hint.clone()),
+        handler_config: update_data
+            .handler_config
+            .unwrap_or_else(|| old_route.handler_config.clone()),
+        inline_template: update_data
+            .inline_template
+            .or_else(|| old_route.inline_template.clone()),
+        template_path: update_data
+            .template_path
+            .or_else(|| old_route.template_path.clone()),
+        content_type_hint: update_data
+            .content_type_hint
+            .or_else(|| old_route.content_type_hint.clone()),
         enabled: update_data.enabled.unwrap_or(old_route.enabled),
         priority: update_data.priority.unwrap_or(old_route.priority),
         created_at: old_route.created_at,
@@ -178,11 +190,12 @@ pub async fn update_route(
                     Ok(())
                 }
             }
-            Err(e) => Err(e.to_string())
+            Err(e) => Err(e.to_string()),
         }
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
-        repo.update(id, &updated_route).await
+        repo.update(id, &updated_route)
+            .await
             .map_err(|e| e.to_string())
     };
 
@@ -220,7 +233,12 @@ pub async fn update_route(
                 }));
             }
 
-            tracing::error!("更新路由失败: id={}, path={}, error={}", id, updated_route.path, error_msg);
+            tracing::error!(
+                "更新路由失败: id={}, path={}, error={}",
+                id,
+                updated_route.path,
+                error_msg
+            );
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": error_msg
@@ -239,10 +257,12 @@ pub async fn patch_route(
     // 权限检查
     let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     let id = path.into_inner();
@@ -347,14 +367,24 @@ pub async fn patch_route(
     // 构建更新后的路由 - 使用old_route的所有字段作为默认值
     let updated_route = DynamicRoute {
         id: old_route.id,
-        route_name: update_data.route_name.or_else(|| old_route.route_name.clone()),
+        route_name: update_data
+            .route_name
+            .or_else(|| old_route.route_name.clone()),
         route_type: update_data.route_type.unwrap_or(old_route.route_type),
         path: update_data.path.unwrap_or_else(|| old_route.path.clone()),
         handler_type: update_data.handler_type.unwrap_or(old_route.handler_type),
-        handler_config: update_data.handler_config.unwrap_or_else(|| old_route.handler_config.clone()),
-        inline_template: update_data.inline_template.or_else(|| old_route.inline_template.clone()),
-        template_path: update_data.template_path.or_else(|| old_route.template_path.clone()),
-        content_type_hint: update_data.content_type_hint.or_else(|| old_route.content_type_hint.clone()),
+        handler_config: update_data
+            .handler_config
+            .unwrap_or_else(|| old_route.handler_config.clone()),
+        inline_template: update_data
+            .inline_template
+            .or_else(|| old_route.inline_template.clone()),
+        template_path: update_data
+            .template_path
+            .or_else(|| old_route.template_path.clone()),
+        content_type_hint: update_data
+            .content_type_hint
+            .or_else(|| old_route.content_type_hint.clone()),
         enabled: update_data.enabled.unwrap_or(old_route.enabled),
         priority: update_data.priority.unwrap_or(old_route.priority),
         created_at: old_route.created_at,
@@ -368,23 +398,24 @@ pub async fn patch_route(
     // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
     let update_result = if let Some(manager) = state.route_type_manager() {
         let storage = manager.get_storage(&updated_route.route_type);
-        storage.save_route(&updated_route).await
+        storage
+            .save_route(&updated_route)
+            .await
             .map(|_| ())
             .map_err(|e| format!("更新失败: {}", e))
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
-        repo.update(id, &updated_route).await
+        repo.update(id, &updated_route)
+            .await
             .map_err(|e| e.to_string())
     };
 
     match update_result {
-        Ok(_) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "路由更新成功",
-                "data": updated_route
-            }))
-        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "路由更新成功",
+            "data": updated_route
+        })),
         Err(e) => {
             let error_msg = e.to_string();
 
@@ -406,7 +437,12 @@ pub async fn patch_route(
                 }));
             }
 
-            tracing::error!("更新路由失败: id={}, path={}, error={}", id, updated_route.path, error_msg);
+            tracing::error!(
+                "更新路由失败: id={}, path={}, error={}",
+                id,
+                updated_route.path,
+                error_msg
+            );
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": error_msg
@@ -424,10 +460,12 @@ pub async fn enable_route(
     // 权限检查
     let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     let id = path.into_inner();
@@ -482,12 +520,15 @@ pub async fn enable_route(
     // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
     let update_result = if let Some(manager) = state.route_type_manager() {
         let storage = manager.get_storage(&updated_route.route_type);
-        storage.save_route(&updated_route).await
+        storage
+            .save_route(&updated_route)
+            .await
             .map(|_| ())
             .map_err(|e| format!("操作失败: {}", e))
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
-        repo.update(id, &updated_route).await
+        repo.update(id, &updated_route)
+            .await
             .map_err(|e| e.to_string())
     };
 
@@ -533,10 +574,12 @@ pub async fn disable_route(
     // 权限检查
     let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     let id = path.into_inner();
@@ -591,19 +634,24 @@ pub async fn disable_route(
     // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
     let update_result = if let Some(manager) = state.route_type_manager() {
         let storage = manager.get_storage(&updated_route.route_type);
-        storage.save_route(&updated_route).await
+        storage
+            .save_route(&updated_route)
+            .await
             .map(|_| ())
             .map_err(|e| format!("操作失败: {}", e))
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
-        repo.update(id, &updated_route).await
+        repo.update(id, &updated_route)
+            .await
             .map_err(|e| e.to_string())
     };
 
     match update_result {
         Ok(_) => {
             // 从路由表中移除路由
-            state.dynamic_route_service().remove_route(&old_route_clone.path);
+            state
+                .dynamic_route_service()
+                .remove_route(&old_route_clone.path);
 
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// 文章状态枚举
@@ -74,8 +74,7 @@ impl rusqlite::types::ToSql for PassageStatus {
 impl rusqlite::types::FromSql for PassageStatus {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s: String = rusqlite::types::FromSql::column_result(value)?;
-        Self::from_str(&s)
-            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+        Self::from_str(&s).ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
     }
 }
 
@@ -132,7 +131,10 @@ impl PassageVisibility {
     #[allow(dead_code)]
     #[inline]
     pub fn requires_auth(&self) -> bool {
-        matches!(self, PassageVisibility::Private | PassageVisibility::Protected)
+        matches!(
+            self,
+            PassageVisibility::Private | PassageVisibility::Protected
+        )
     }
 }
 
@@ -146,8 +148,7 @@ impl rusqlite::types::ToSql for PassageVisibility {
 impl rusqlite::types::FromSql for PassageVisibility {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s: String = rusqlite::types::FromSql::column_result(value)?;
-        Self::from_str(&s)
-            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+        Self::from_str(&s).ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
     }
 }
 
@@ -219,8 +220,7 @@ impl rusqlite::types::ToSql for UserRole {
 impl rusqlite::types::FromSql for UserRole {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s: String = rusqlite::types::FromSql::column_result(value)?;
-        Self::from_str(&s)
-            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+        Self::from_str(&s).ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
     }
 }
 
@@ -285,8 +285,7 @@ impl rusqlite::types::ToSql for UserStatus {
 impl rusqlite::types::FromSql for UserStatus {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s: String = rusqlite::types::FromSql::column_result(value)?;
-        Self::from_str(&s)
-            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+        Self::from_str(&s).ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
     }
 }
 
@@ -303,17 +302,17 @@ pub struct Passage {
     pub updated_at: DateTime<Utc>,
 
     // 冷字段：较少访问的，放在后面
-    pub uuid: Option<String>,  // Flake UUID
+    pub uuid: Option<String>, // Flake UUID
     pub content: String,
     pub original_content: Option<String>,
     pub summary: Option<String>,
-    pub summarize: Option<String>,  // 自动生成的摘要
+    pub summarize: Option<String>, // 自动生成的摘要
     pub author: String,
-    pub tags: String,  // JSON 数组字符串
+    pub tags: String, // JSON 数组字符串
     pub category: String,
     pub file_path: Option<String>,
     pub published_at: Option<DateTime<Utc>>,
-    pub cover_image: Option<String>,  // 封面图片路径
+    pub cover_image: Option<String>, // 封面图片路径
 }
 
 impl Passage {
@@ -409,7 +408,7 @@ pub struct Comment {
     pub id: Option<i64>,
     pub username: String,
     pub content: String,
-    pub passage_uuid: String,  // 使用 uuid 而不是 passage_id
+    pub passage_uuid: String, // 使用 uuid 而不是 passage_id
     pub created_at: DateTime<Utc>,
 }
 
@@ -497,7 +496,7 @@ pub struct Attachment {
     pub file_type: String,
     pub content_type: String,
     pub file_size: i64,
-    pub passage_uuid: Option<String>,  // 使用 uuid 而不是 passage_id
+    pub passage_uuid: Option<String>, // 使用 uuid 而不是 passage_id
     pub visibility: PassageVisibility,
     pub show_in_passage: bool,
     pub uploaded_at: DateTime<Utc>,
@@ -602,8 +601,7 @@ impl rusqlite::types::ToSql for RouteType {
 impl rusqlite::types::FromSql for RouteType {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s: String = rusqlite::types::FromSql::column_result(value)?;
-        Self::from_str(&s)
-            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+        Self::from_str(&s).ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
     }
 }
 
@@ -666,8 +664,7 @@ impl rusqlite::types::ToSql for HandlerType {
 impl rusqlite::types::FromSql for HandlerType {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s: String = rusqlite::types::FromSql::column_result(value)?;
-        Self::from_str(&s)
-            .ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
+        Self::from_str(&s).ok_or_else(|| rusqlite::types::FromSqlError::InvalidType)
     }
 }
 

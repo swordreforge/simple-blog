@@ -17,7 +17,11 @@ use mimalloc::MiMalloc;
 use tcmalloc::TCMalloc;
 
 // 默认使用系统分配器
-#[cfg(all(not(feature = "jemalloc"), not(feature = "mimalloc"), not(feature = "tcmalloc")))]
+#[cfg(all(
+    not(feature = "jemalloc"),
+    not(feature = "mimalloc"),
+    not(feature = "tcmalloc")
+))]
 #[global_allocator]
 static GLOBAL: System = System;
 
@@ -32,7 +36,11 @@ static GLOBAL: Jemalloc = Jemalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 // tcmalloc 分配器（备选方案）
-#[cfg(all(not(feature = "jemalloc"), not(feature = "mimalloc"), feature = "tcmalloc"))]
+#[cfg(all(
+    not(feature = "jemalloc"),
+    not(feature = "mimalloc"),
+    feature = "tcmalloc"
+))]
 #[global_allocator]
 static GLOBAL: TCMalloc = TCMalloc;
 
@@ -59,10 +67,18 @@ impl AllocatorType {
         #[cfg(all(not(feature = "jemalloc"), feature = "mimalloc-alloc"))]
         return AllocatorType::MiMalloc;
 
-        #[cfg(all(not(feature = "jemalloc"), not(feature = "mimalloc-alloc"), feature = "tcmalloc-alloc"))]
+        #[cfg(all(
+            not(feature = "jemalloc"),
+            not(feature = "mimalloc-alloc"),
+            feature = "tcmalloc-alloc"
+        ))]
         return AllocatorType::TCMalloc;
 
-        #[cfg(all(not(feature = "jemalloc"), not(feature = "mimalloc-alloc"), not(feature = "tcmalloc-alloc")))]
+        #[cfg(all(
+            not(feature = "jemalloc"),
+            not(feature = "mimalloc-alloc"),
+            not(feature = "tcmalloc-alloc")
+        ))]
         return AllocatorType::System;
     }
 
@@ -142,14 +158,14 @@ fn init_system_malloc() {
     let opts = [
         // 设置mmap阈值：大于此大小的分配使用mmap而非brk
         // mmap的内存可以被独立释放，减少内存碎片
-        ("MALLOC_MMAP_THRESHOLD_", "32768"),  // 32KB
+        ("MALLOC_MMAP_THRESHOLD_", "32768"), // 32KB
         // 设置mmap最大数量：限制mmap的映射数量
         ("MALLOC_MMAP_MAX_", "65536"),
         // 设置top释放阈值：当arena的top chunk大于此值时才释放
         // 较小的值会让内存更快归还系统
         ("MALLOC_TOP_PAD_", "0"),
         // 设置trim阈值：控制何时向系统归还内存
-        ("MALLOC_TRIM_THRESHOLD_", "4096"),  // 4KB
+        ("MALLOC_TRIM_THRESHOLD_", "4096"), // 4KB
         // 设置对齐：默认为16字节，较小的对齐可能节省空间
         ("MALLOC_ALIGNMENT", "8"),
     ];
@@ -189,12 +205,10 @@ fn init_jemalloc() -> Result<(), String> {
     // - opt_abort:true: 分配失败时直接 abort，避免静默失败
     // - oversize_threshold:0: 禁用 oversize 机制，强制使用标准分配路径
     // - prof:false: 关闭性能分析，减少运行时开销
-    let opts = [
-        (
-            "MALLOC_CONF",
-            "background_thread:false,dirty_decay_ms:2000,muzzy_decay_ms:5000,narenas:1,lg_tcache_max:12,lg_dirty_mult:0,opt_lg_extent_max_active_fit:0,opt_thp:never,opt_abort:true,oversize_threshold:0,prof:false",
-        ),
-    ];
+    let opts = [(
+        "MALLOC_CONF",
+        "background_thread:false,dirty_decay_ms:2000,muzzy_decay_ms:5000,narenas:1,lg_tcache_max:12,lg_dirty_mult:0,opt_lg_extent_max_active_fit:0,opt_thp:never,opt_abort:true,oversize_threshold:0,prof:false",
+    )];
 
     for (key, value) in opts {
         std::env::set_var(key, value);
@@ -313,11 +327,12 @@ mod tests {
     fn test_allocator_type() {
         let allocator = AllocatorType::current();
         println!("当前分配器: {}", allocator.name());
-        assert!(matches!(allocator,
-            AllocatorType::System |
-            AllocatorType::Jemalloc |
-            AllocatorType::MiMalloc |
-            AllocatorType::TCMalloc
+        assert!(matches!(
+            allocator,
+            AllocatorType::System
+                | AllocatorType::Jemalloc
+                | AllocatorType::MiMalloc
+                | AllocatorType::TCMalloc
         ));
     }
 

@@ -1,107 +1,108 @@
-use actix_web::web;
 use crate::handlers::api_handlers;
+use actix_web::web;
 
 /// 配置 API 路由
 /// 单职责：仅负责 API 接口的路由配置
 pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
     // 认证相关 API
-    cfg.service(
-        web::resource("/api/login")
-            .route(web::post().to(api_handlers::auth::login))
-    ).service(
-        web::resource("/api/register")
-            .route(web::post().to(api_handlers::auth::register))
-    ).service(
-        web::resource("/api/logout")
-            .route(web::post().to(api_handlers::auth::logout))
-    ).service(
-        web::resource("/api/check")
-            .route(web::get().to(api_handlers::auth::check))
-    );
+    cfg.service(web::resource("/api/login").route(web::post().to(api_handlers::auth::login)))
+        .service(web::resource("/api/register").route(web::post().to(api_handlers::auth::register)))
+        .service(web::resource("/api/logout").route(web::post().to(api_handlers::auth::logout)))
+        .service(web::resource("/api/check").route(web::get().to(api_handlers::auth::check)));
 
     // 设置相关 API
     cfg.service(
         web::resource("/api/settings")
             .route(web::get().to(api_handlers::settings::get))
-            .route(web::post().to(api_handlers::settings::update))
-    ).service(
+            .route(web::post().to(api_handlers::settings::update)),
+    )
+    .service(
         web::resource("/api/settings/appearance")
             .route(web::get().to(api_handlers::settings::get_appearance))
             .route(web::post().to(api_handlers::settings::update_appearance))
             .route(web::put().to(api_handlers::settings::update_appearance))
-            .route(web::patch().to(api_handlers::settings::update_appearance))
-    ).service(
+            .route(web::patch().to(api_handlers::settings::update_appearance)),
+    )
+    .service(
         web::resource("/api/settings/music")
             .route(web::get().to(api_handlers::settings::get_music))
             .route(web::put().to(api_handlers::settings::update_music))
-            .route(web::patch().to(api_handlers::settings::update_music_partial))
-    ).service(
+            .route(web::patch().to(api_handlers::settings::update_music_partial)),
+    )
+    .service(
         web::resource("/api/settings/template")
             .route(web::get().to(api_handlers::settings::get_template))
-            .route(web::patch().to(api_handlers::settings::update_template))
-    ).service(
-        web::resource("/api/settings/all")
-            .route(web::get().to(api_handlers::settings::get_all))
-    ).service(
+            .route(web::patch().to(api_handlers::settings::update_template)),
+    )
+    .service(
+        web::resource("/api/settings/all").route(web::get().to(api_handlers::settings::get_all)),
+    )
+    .service(
         web::resource("/api/settings/single")
-            .route(web::put().to(api_handlers::settings::update_single))
+            .route(web::put().to(api_handlers::settings::update_single)),
     );
 
     // 音乐相关 API
-    cfg.service(
-        web::resource("/api/music/list")
-            .route(web::get().to(api_handlers::music::list))
-    ).service(
-        web::resource("/api/music/playlist")
-            .route(web::get().to(api_handlers::music::playlist))
-    ).service(
-        web::resource("/api/music/upload")
-            .route(web::post().to(api_handlers::music::upload))
-    ).service(
-        web::resource("/api/music/play/{id}")
-            .route(web::get().to(api_handlers::music::play))
-    ).service(
-        web::resource("/api/music/{id}")
-            .route(web::put().to(api_handlers::music::update))
-            .route(web::delete().to(api_handlers::music::delete))
-    ).service(
-        web::resource("/api/music/{id}/cover")
-            .route(web::post().to(api_handlers::music::upload_cover))
-    );
+    cfg.service(web::resource("/api/music/list").route(web::get().to(api_handlers::music::list)))
+        .service(
+            web::resource("/api/music/playlist")
+                .route(web::get().to(api_handlers::music::playlist)),
+        )
+        .service(
+            web::resource("/api/music/upload").route(web::post().to(api_handlers::music::upload)),
+        )
+        .service(
+            web::resource("/api/music/play/{id}").route(web::get().to(api_handlers::music::play)),
+        )
+        .service(
+            web::resource("/api/music/{id}")
+                .route(web::put().to(api_handlers::music::update))
+                .route(web::delete().to(api_handlers::music::delete)),
+        )
+        .service(
+            web::resource("/api/music/{id}/cover")
+                .route(web::post().to(api_handlers::music::upload_cover)),
+        );
 
     // 附件相关 API
     cfg.service(
         web::resource("/api/attachments")
             .route(web::get().to(api_handlers::attachments::list))
-            .route(web::post().to(api_handlers::attachments::upload))
-    ).service(
+            .route(web::post().to(api_handlers::attachments::upload)),
+    )
+    .service(
         web::resource("/api/attachments/upload")
-            .route(web::post().to(api_handlers::attachments::upload))
-    ).service(
+            .route(web::post().to(api_handlers::attachments::upload)),
+    )
+    .service(
         web::resource("/api/attachments/by-date")
-            .route(web::get().to(api_handlers::attachments::list_by_date))
-    ).service(
+            .route(web::get().to(api_handlers::attachments::list_by_date)),
+    )
+    .service(
         web::resource("/api/attachments/{id}")
-            .route(web::delete().to(api_handlers::attachments::delete))
-    ).service(
+            .route(web::delete().to(api_handlers::attachments::delete)),
+    )
+    .service(
         web::resource("/api/attachments/{id}/download")
-            .route(web::get().to(api_handlers::attachments::download))
+            .route(web::get().to(api_handlers::attachments::download)),
     );
 
     // 管理员 API - 附件
     cfg.service(
         web::resource("/api/admin/attachments")
             .route(web::get().to(api_handlers::attachments::list))
-            .route(web::post().to(api_handlers::attachments::upload))
-    ).service(
+            .route(web::post().to(api_handlers::attachments::upload)),
+    )
+    .service(
         web::resource("/api/admin/attachments/batch-delete")
-            .route(web::post().to(api_handlers::attachments::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::attachments::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/attachments/{id}")
             .route(web::get().to(api_handlers::attachments::get))
             .route(web::put().to(api_handlers::attachments::update))
             .route(web::delete().to(api_handlers::attachments::delete))
-            .route(web::patch().to(api_handlers::attachments::update))
+            .route(web::patch().to(api_handlers::attachments::update)),
     );
 
     // 评论 API
@@ -109,153 +110,175 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
         web::resource("/api/comments")
             .route(web::get().to(api_handlers::comment::list))
             .route(web::post().to(api_handlers::comment::create))
-            .route(web::delete().to(api_handlers::comment::delete))
-    ).service(
+            .route(web::delete().to(api_handlers::comment::delete)),
+    )
+    .service(
         web::resource("/api/comments/batch-delete")
-            .route(web::post().to(api_handlers::comment::delete_batch))
+            .route(web::post().to(api_handlers::comment::delete_batch)),
     );
 
     // 管理员 API - 评论
     cfg.service(
         web::resource("/api/admin/comments")
             .route(web::get().to(api_handlers::comment::list))
-            .route(web::post().to(api_handlers::comment::create))
-    ).service(
+            .route(web::post().to(api_handlers::comment::create)),
+    )
+    .service(
         web::resource("/api/admin/comments/batch-delete")
-            .route(web::post().to(api_handlers::comment::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::comment::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/comments/{id}")
-            .route(web::delete().to(api_handlers::comment::delete))
+            .route(web::delete().to(api_handlers::comment::delete)),
     );
 
     // 管理员 API - 统计
     cfg.service(
-        web::resource("/api/admin/stats")
-            .route(web::get().to(api_handlers::stats::get_stats))
+        web::resource("/api/admin/stats").route(web::get().to(api_handlers::stats::get_stats)),
     );
 
     // 管理员 API - 分析
     cfg.service(
         web::resource("/api/admin/analytics")
-            .route(web::get().to(api_handlers::analytics::most_viewed))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::most_viewed)),
+    )
+    .service(
         web::resource("/api/admin/analytics/most-viewed")
-            .route(web::get().to(api_handlers::analytics::most_viewed))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::most_viewed)),
+    )
+    .service(
         web::resource("/api/admin/analytics/view-sources")
-            .route(web::get().to(api_handlers::analytics::view_sources))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::view_sources)),
+    )
+    .service(
         web::resource("/api/admin/analytics/view-trend")
-            .route(web::get().to(api_handlers::analytics::view_trend))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::view_trend)),
+    )
+    .service(
         web::resource("/api/admin/analytics/article-stats")
-            .route(web::get().to(api_handlers::analytics::article_stats))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::article_stats)),
+    )
+    .service(
         web::resource("/api/admin/analytics/view-by-city")
-            .route(web::get().to(api_handlers::analytics::view_by_city))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::view_by_city)),
+    )
+    .service(
         web::resource("/api/admin/analytics/view-by-ip")
-            .route(web::get().to(api_handlers::analytics::view_by_ip))
+            .route(web::get().to(api_handlers::analytics::view_by_ip)),
     );
 
     // 关于页面 API
     cfg.service(
         web::resource("/api/about")
             .route(web::get().to(api_handlers::about::get))
-            .route(web::post().to(api_handlers::about::update))
-    ).service(
+            .route(web::post().to(api_handlers::about::update)),
+    )
+    .service(
         web::resource("/api/about/main-cards/admin")
-            .route(web::get().to(api_handlers::about::get_main_cards_admin))
-    ).service(
+            .route(web::get().to(api_handlers::about::get_main_cards_admin)),
+    )
+    .service(
         web::resource("/api/about/sub-cards/admin")
-            .route(web::get().to(api_handlers::about::get_sub_cards_admin))
-    ).service(
+            .route(web::get().to(api_handlers::about::get_sub_cards_admin)),
+    )
+    .service(
         web::resource("/api/about/main-cards")
             .route(web::get().to(api_handlers::about::get_main_cards))
-            .route(web::post().to(api_handlers::about::create_main_card))
-    ).service(
+            .route(web::post().to(api_handlers::about::create_main_card)),
+    )
+    .service(
         web::resource("/api/about/main-cards/update")
-            .route(web::put().to(api_handlers::about::update_main_card))
-    ).service(
+            .route(web::put().to(api_handlers::about::update_main_card)),
+    )
+    .service(
         web::resource("/api/about/main-cards/delete")
-            .route(web::delete().to(api_handlers::about::delete_main_card))
-    ).service(
+            .route(web::delete().to(api_handlers::about::delete_main_card)),
+    )
+    .service(
         web::resource("/api/about/main-cards/enabled")
-            .route(web::put().to(api_handlers::about::toggle_main_card_enabled))
-    ).service(
+            .route(web::put().to(api_handlers::about::toggle_main_card_enabled)),
+    )
+    .service(
         web::resource("/api/about/sub-cards")
             .route(web::get().to(api_handlers::about::get_sub_cards))
-            .route(web::post().to(api_handlers::about::create_sub_card))
-    ).service(
+            .route(web::post().to(api_handlers::about::create_sub_card)),
+    )
+    .service(
         web::resource("/api/about/sub-cards/update")
-            .route(web::put().to(api_handlers::about::update_sub_card))
-    ).service(
+            .route(web::put().to(api_handlers::about::update_sub_card)),
+    )
+    .service(
         web::resource("/api/about/sub-cards/delete")
-            .route(web::delete().to(api_handlers::about::delete_sub_card))
-    ).service(
+            .route(web::delete().to(api_handlers::about::delete_sub_card)),
+    )
+    .service(
         web::resource("/api/about/sub-cards/enabled")
-            .route(web::put().to(api_handlers::about::toggle_sub_card_enabled))
+            .route(web::put().to(api_handlers::about::toggle_sub_card_enabled)),
     );
 
     // 用户信息 API
-    cfg.service(
-        web::resource("/api/user/info")
-            .route(web::get().to(api_handlers::user::info))
-    );
+    cfg.service(web::resource("/api/user/info").route(web::get().to(api_handlers::user::info)));
 
     // 管理员 API - 用户
     cfg.service(
         web::resource("/api/admin/users")
             .route(web::get().to(api_handlers::user::admin_list))
-            .route(web::post().to(api_handlers::user::create))
-    ).service(
+            .route(web::post().to(api_handlers::user::create)),
+    )
+    .service(
         web::resource("/api/admin/users/batch-delete")
-            .route(web::post().to(api_handlers::user::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::user::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/users/{id}")
             .route(web::get().to(api_handlers::user::get))
             .route(web::put().to(api_handlers::user::update))
             .route(web::patch().to(api_handlers::user::update))
-            .route(web::delete().to(api_handlers::user::delete))
+            .route(web::delete().to(api_handlers::user::delete)),
     );
 
     // ECC 加密 API
     cfg.service(
         web::resource("/api/crypto/public-key")
-            .route(web::get().to(api_handlers::crypto::get_public_key))
+            .route(web::get().to(api_handlers::crypto::get_public_key)),
     );
 
     // Markdown 编辑器 API
     cfg.service(
         web::resource("/api/markdown-editor/save")
-            .route(web::post().to(api_handlers::markdown_editor::save))
+            .route(web::post().to(api_handlers::markdown_editor::save)),
     );
 
     // Markdown 预览 API
     cfg.service(
         web::resource("/api/markdown/preview")
-            .route(web::get().to(api_handlers::markdown_preview::preview))
+            .route(web::get().to(api_handlers::markdown_preview::preview)),
     );
 
     // 分析 API
     cfg.service(
         web::resource("/api/analytics/most-viewed")
-            .route(web::get().to(api_handlers::analytics::most_viewed))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::most_viewed)),
+    )
+    .service(
         web::resource("/api/analytics/view-sources")
-            .route(web::get().to(api_handlers::analytics::view_sources))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::view_sources)),
+    )
+    .service(
         web::resource("/api/analytics/view-trend")
-            .route(web::get().to(api_handlers::analytics::view_trend))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::view_trend)),
+    )
+    .service(
         web::resource("/api/analytics/article-stats")
-            .route(web::get().to(api_handlers::analytics::article_stats))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::article_stats)),
+    )
+    .service(
         web::resource("/api/analytics/view-by-city")
-            .route(web::get().to(api_handlers::analytics::view_by_city))
-    ).service(
+            .route(web::get().to(api_handlers::analytics::view_by_city)),
+    )
+    .service(
         web::resource("/api/analytics/view-by-ip")
-            .route(web::get().to(api_handlers::analytics::view_by_ip))
+            .route(web::get().to(api_handlers::analytics::view_by_ip)),
     );
 
     // 文件管理 API
@@ -264,31 +287,32 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::filemanager::list))
             .route(web::post().to(api_handlers::filemanager::upload))
             .route(web::put().to(api_handlers::filemanager::rename))
-            .route(web::delete().to(api_handlers::filemanager::delete))
-    ).service(
+            .route(web::delete().to(api_handlers::filemanager::delete)),
+    )
+    .service(
         web::resource("/api/files/download")
-            .route(web::get().to(api_handlers::filemanager::download))
-    ).service(
+            .route(web::get().to(api_handlers::filemanager::download)),
+    )
+    .service(
         web::resource("/api/files/create-dir")
-            .route(web::post().to(api_handlers::filemanager::create_dir))
-    ).service(
+            .route(web::post().to(api_handlers::filemanager::create_dir)),
+    )
+    .service(
         web::resource("/api/files/preview")
-            .route(web::get().to(api_handlers::filemanager::preview))
+            .route(web::get().to(api_handlers::filemanager::preview)),
     );
 
     // 文章相关 API
     cfg.service(
-        web::resource("/api/passage/list")
-            .route(web::get().to(api_handlers::passage::list))
-    ).service(
+        web::resource("/api/passage/list").route(web::get().to(api_handlers::passage::list)),
+    )
+    .service(
         web::resource("/api/passage/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
             .route(web::put().to(api_handlers::passage::update))
-            .route(web::delete().to(api_handlers::passage::delete))
-    ).service(
-        web::resource("/api/passage")
-            .route(web::post().to(api_handlers::passage::create))
-    );
+            .route(web::delete().to(api_handlers::passage::delete)),
+    )
+    .service(web::resource("/api/passage").route(web::post().to(api_handlers::passage::create)));
 
     // 管理员 API - 文章
     cfg.service(
@@ -296,169 +320,180 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(api_handlers::passage::get_by_query))
             .route(web::post().to(api_handlers::passage::create))
             .route(web::put().to(api_handlers::passage::update_by_query))
-            .route(web::delete().to(api_handlers::passage::delete_by_query))
-    ).service(
+            .route(web::delete().to(api_handlers::passage::delete_by_query)),
+    )
+    .service(
         web::resource("/api/admin/passages/batch-delete")
-            .route(web::post().to(api_handlers::passage::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::passage::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/passages/{uuid}")
             .route(web::get().to(api_handlers::passage::get))
             .route(web::put().to(api_handlers::passage::update))
-            .route(web::delete().to(api_handlers::passage::delete))
+            .route(web::delete().to(api_handlers::passage::delete)),
     );
 
     // 兼容 Go 版本的路由
     cfg.service(
         web::resource("/api/passages")
             .route(web::get().to(api_handlers::passage::list))
-            .route(web::post().to(api_handlers::passage::create))
-    ).service(
+            .route(web::post().to(api_handlers::passage::create)),
+    )
+    .service(
         web::resource("/api/passages/latest")
-            .route(web::get().to(api_handlers::passage::get_latest))
-    ).service(
-        web::resource("/api/passages/{uuid}")
-            .route(web::get().to(api_handlers::passage::get))
-    ).service(
-        web::resource("/api/tags")
-            .route(web::get().to(api_handlers::tags::list))
-    ).service(
-        web::resource("/api/categories")
-            .route(web::get().to(api_handlers::categories::list))
-    ).service(
-        web::resource("/api/archive")
-            .route(web::get().to(api_handlers::archive::list))
-    ).service(
-        web::resource("/api/upload")
-            .route(web::post().to(api_handlers::upload::upload))
-    ).service(
-        web::resource("/api/sync")
-            .route(web::post().to(api_handlers::sync::sync))
-    );
+            .route(web::get().to(api_handlers::passage::get_latest)),
+    )
+    .service(web::resource("/api/passages/{uuid}").route(web::get().to(api_handlers::passage::get)))
+    .service(web::resource("/api/tags").route(web::get().to(api_handlers::tags::list)))
+    .service(web::resource("/api/categories").route(web::get().to(api_handlers::categories::list)))
+    .service(web::resource("/api/archive").route(web::get().to(api_handlers::archive::list)))
+    .service(web::resource("/api/upload").route(web::post().to(api_handlers::upload::upload)))
+    .service(web::resource("/api/sync").route(web::post().to(api_handlers::sync::sync)));
 
     // 管理员 API - 分类
     cfg.service(
         web::resource("/api/admin/categories")
             .route(web::get().to(api_handlers::categories::admin_list))
-            .route(web::post().to(api_handlers::categories::create))
-    ).service(
+            .route(web::post().to(api_handlers::categories::create)),
+    )
+    .service(
         web::resource("/api/admin/categories/batch-delete")
-            .route(web::post().to(api_handlers::categories::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::categories::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/categories/{id}")
             .route(web::get().to(api_handlers::categories::get))
             .route(web::put().to(api_handlers::categories::update))
-            .route(web::delete().to(api_handlers::categories::delete))
+            .route(web::delete().to(api_handlers::categories::delete)),
     );
 
     // 管理员 API - 标签
     cfg.service(
         web::resource("/api/admin/tags")
             .route(web::get().to(api_handlers::tags::admin_list))
-            .route(web::post().to(api_handlers::tags::create))
-    ).service(
+            .route(web::post().to(api_handlers::tags::create)),
+    )
+    .service(
         web::resource("/api/admin/tags/batch-delete")
-            .route(web::post().to(api_handlers::tags::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::tags::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/tags/{id}")
             .route(web::get().to(api_handlers::tags::get))
             .route(web::put().to(api_handlers::tags::update))
-            .route(web::delete().to(api_handlers::tags::delete))
+            .route(web::delete().to(api_handlers::tags::delete)),
     );
 
     // 数据库统计和健康检查 API
     cfg.service(
         web::resource("/api/db/pool-status")
-            .route(web::get().to(api_handlers::db_stats::get_pool_status))
-    ).service(
-        web::resource("/api/db/health")
-            .route(web::get().to(api_handlers::db_stats::health_check))
+            .route(web::get().to(api_handlers::db_stats::get_pool_status)),
+    )
+    .service(
+        web::resource("/api/db/health").route(web::get().to(api_handlers::db_stats::health_check)),
     );
 
     // 友链 API
     cfg.service(
         web::resource("/api/friend-links")
             .route(web::get().to(api_handlers::friend_link::list))
-            .route(web::post().to(api_handlers::friend_link::create))
-    ).service(
+            .route(web::post().to(api_handlers::friend_link::create)),
+    )
+    .service(
         web::resource("/api/friend-links/{id}")
             .route(web::get().to(api_handlers::friend_link::get))
             .route(web::put().to(api_handlers::friend_link::update))
-            .route(web::delete().to(api_handlers::friend_link::delete))
+            .route(web::delete().to(api_handlers::friend_link::delete)),
     );
 
     // 管理员 API - 友链
     cfg.service(
         web::resource("/api/admin/friend-links/batch-delete")
-            .route(web::post().to(api_handlers::admin_friend_link::delete_batch))
-    ).service(
+            .route(web::post().to(api_handlers::admin_friend_link::delete_batch)),
+    )
+    .service(
         web::resource("/api/admin/friend-links/batch-update-status")
-            .route(web::post().to(api_handlers::admin_friend_link::batch_update_status))
-    ).service(
+            .route(web::post().to(api_handlers::admin_friend_link::batch_update_status)),
+    )
+    .service(
         web::resource("/api/admin/friend-links")
             .route(web::get().to(api_handlers::admin_friend_link::list))
-            .route(web::post().to(api_handlers::admin_friend_link::create))
-    ).service(
+            .route(web::post().to(api_handlers::admin_friend_link::create)),
+    )
+    .service(
         web::resource("/api/admin/friend-links/{id}")
             .route(web::get().to(api_handlers::admin_friend_link::get))
             .route(web::put().to(api_handlers::admin_friend_link::update))
-            .route(web::delete().to(api_handlers::admin_friend_link::delete))
+            .route(web::delete().to(api_handlers::admin_friend_link::delete)),
     );
 
     // 公开 API - 动态路由（无需管理员权限）
     cfg.service(
         web::resource("/api/routes/public")
-            .route(web::get().to(api_handlers::dynamic_routes::list_public_routes))
-    ).service(
+            .route(web::get().to(api_handlers::dynamic_routes::list_public_routes)),
+    )
+    .service(
         web::resource("/api/quick-menu/routes")
-            .route(web::get().to(api_handlers::dynamic_routes::get_quick_menu_routes))
+            .route(web::get().to(api_handlers::dynamic_routes::get_quick_menu_routes)),
     );
 
     // 管理员 API - 动态路由
     cfg.service(
         web::resource("/api/admin/dynamic-routes")
             .route(web::get().to(api_handlers::dynamic_routes::list_routes))
-            .route(web::post().to(api_handlers::dynamic_routes::create_route))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::create_route)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/test")
-            .route(web::post().to(api_handlers::dynamic_routes::test_route))
+            .route(web::post().to(api_handlers::dynamic_routes::test_route)),
     );
 
     // 管理员 API - 路由存储管理 (必须在 /{id}/* 路由之前)
     cfg.service(
         web::resource("/api/admin/dynamic-routes/storage/stats")
-            .route(web::get().to(api_handlers::dynamic_routes::get_storage_stats))
-    ).service(
+            .route(web::get().to(api_handlers::dynamic_routes::get_storage_stats)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/storage/migrate")
-            .route(web::post().to(api_handlers::dynamic_routes::migrate_route))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::migrate_route)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/storage/batch-migrate")
-            .route(web::post().to(api_handlers::dynamic_routes::batch_migrate_routes))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::batch_migrate_routes)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/storage/clear/{route_type}")
-            .route(web::post().to(api_handlers::dynamic_routes::clear_storage))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::clear_storage)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/batch")
-            .route(web::post().to(api_handlers::dynamic_routes::batch_operations))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::batch_operations)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/export")
-            .route(web::get().to(api_handlers::dynamic_routes::export_routes))
-    ).service(
+            .route(web::get().to(api_handlers::dynamic_routes::export_routes)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/import")
-            .route(web::post().to(api_handlers::dynamic_routes::import_routes))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::import_routes)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/{id}")
             .route(web::get().to(api_handlers::dynamic_routes::get_route))
             .route(web::put().to(api_handlers::dynamic_routes::update_route))
             .route(web::patch().to(api_handlers::dynamic_routes::patch_route))
-            .route(web::delete().to(api_handlers::dynamic_routes::delete_route))
-    ).service(
+            .route(web::delete().to(api_handlers::dynamic_routes::delete_route)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/{id}/enable")
-            .route(web::post().to(api_handlers::dynamic_routes::enable_route))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::enable_route)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/{id}/disable")
-            .route(web::post().to(api_handlers::dynamic_routes::disable_route))
-    ).service(
+            .route(web::post().to(api_handlers::dynamic_routes::disable_route)),
+    )
+    .service(
         web::resource("/api/admin/dynamic-routes/{id}/storage-type")
-            .route(web::get().to(api_handlers::dynamic_routes::get_route_storage_type))
+            .route(web::get().to(api_handlers::dynamic_routes::get_route_storage_type)),
     );
 }

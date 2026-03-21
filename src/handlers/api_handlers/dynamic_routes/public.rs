@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse};
-use serde::Deserialize;
 use crate::app_state::AppState;
 use crate::db::models::HandlerType;
+use actix_web::{HttpResponse, web};
+use serde::Deserialize;
 
 /// 查询参数
 #[derive(Debug, Deserialize)]
@@ -60,13 +60,12 @@ pub async fn list_public_routes(
     };
 
     // 过滤出已启用的路由
-    let enabled_routes: Vec<_> = routes.into_iter()
-        .filter(|r| r.enabled)
-        .collect();
+    let enabled_routes: Vec<_> = routes.into_iter().filter(|r| r.enabled).collect();
 
     // 根据handler_type参数过滤
     let filtered_routes = if let Some(ht) = handler_type {
-        enabled_routes.into_iter()
+        enabled_routes
+            .into_iter()
             .filter(|r| r.handler_type == ht)
             .collect()
     } else {
@@ -75,7 +74,8 @@ pub async fn list_public_routes(
 
     // 根据group_id参数过滤（可选）
     let filtered_routes = if let Some(ref group_id) = query.group_id {
-        filtered_routes.into_iter()
+        filtered_routes
+            .into_iter()
             .filter(|r| r.group_id.as_ref() == Some(group_id))
             .collect()
     } else {

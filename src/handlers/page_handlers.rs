@@ -1,14 +1,9 @@
-use actix_web::{web, HttpResponse, HttpRequest};
-use actix_files::NamedFile;
 use crate::templates::{
-    render_template,
-    create_index_context,
-    create_passage_context,
-    create_collect_context,
-    create_about_context,
-    create_friends_context,
-    create_markdown_editor_context,
+    create_about_context, create_collect_context, create_friends_context, create_index_context,
+    create_markdown_editor_context, create_passage_context, render_template,
 };
+use actix_files::NamedFile;
+use actix_web::{HttpRequest, HttpResponse, web};
 
 /// 主页处理器
 pub async fn index() -> HttpResponse {
@@ -59,7 +54,7 @@ pub async fn keyboard_test() -> HttpResponse {
         Ok(file) => {
             let req = actix_web::test::TestRequest::default().to_http_request();
             file.into_response(&req)
-        },
+        }
         Err(_) => HttpResponse::NotFound().body("Keyboard test page not found"),
     }
 }
@@ -67,8 +62,7 @@ pub async fn keyboard_test() -> HttpResponse {
 /// 管理后台
 pub async fn admin(req: HttpRequest) -> HttpResponse {
     // 从 cookie 中获取 token
-    let token = req.cookie("auth_token")
-        .map(|c| c.value().to_string());
+    let token = req.cookie("auth_token").map(|c| c.value().to_string());
 
     if let Some(token_str) = token {
         // 验证 token
@@ -102,7 +96,8 @@ pub async fn admin(req: HttpRequest) -> HttpResponse {
     match crate::templates::load_appearance_settings() {
         Ok(appearance_settings) => {
             // 将外观设置转换为模板设置
-            let template_settings = crate::templates::appearance_to_template_settings(&appearance_settings);
+            let template_settings =
+                crate::templates::appearance_to_template_settings(&appearance_settings);
             context.insert("settings", &template_settings);
         }
         Err(e) => {
@@ -118,8 +113,7 @@ pub async fn admin(req: HttpRequest) -> HttpResponse {
 /// 动态路由管理页面
 pub async fn dyn_routing(req: HttpRequest) -> HttpResponse {
     // 从 cookie 中获取 token
-    let token = req.cookie("auth_token")
-        .map(|c| c.value().to_string());
+    let token = req.cookie("auth_token").map(|c| c.value().to_string());
 
     if let Some(token_str) = token {
         // 验证 token
@@ -163,7 +157,7 @@ pub async fn status_page(path: web::Path<u16>) -> HttpResponse {
 pub async fn render_status_page(status: u16) -> HttpResponse {
     // 根据状态码选择对应的模板文件
     let template_name = format!("status/{}.html", status);
-    
+
     // 创建上下文
     let mut context = tera::Context::new();
     let status_text = match status {
@@ -177,14 +171,14 @@ pub async fn render_status_page(status: u16) -> HttpResponse {
         999 => "Unknown Error",
         _ => "Unknown Status",
     };
-    
+
     context.insert("status_code", &status);
     context.insert("status_text", &status_text);
-    
+
     // 使用新的渲染函数，支持自定义状态码
     let http_status = actix_web::http::StatusCode::from_u16(status)
         .unwrap_or(actix_web::http::StatusCode::NOT_FOUND);
-    
+
     crate::templates::render_template_with_status(&template_name, &context, http_status).await
 }
 
@@ -196,7 +190,7 @@ pub async fn handle_default_status(req: HttpRequest) -> HttpResponse {
     } else {
         405
     };
-    
+
     let template_name = format!("status/{}.html", status_code);
     let mut context = tera::Context::new();
     let status_text = match status_code {
@@ -204,13 +198,13 @@ pub async fn handle_default_status(req: HttpRequest) -> HttpResponse {
         405 => "Method Not Allowed",
         _ => "Unknown Status",
     };
-    
+
     context.insert("status_code", &status_code);
     context.insert("status_text", &status_text);
-    
+
     let http_status = actix_web::http::StatusCode::from_u16(status_code)
         .unwrap_or(actix_web::http::StatusCode::NOT_FOUND);
-    
+
     crate::templates::render_template_with_status(&template_name, &context, http_status).await
 }
 

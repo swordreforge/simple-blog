@@ -144,17 +144,16 @@ pub async fn invalidate_cache_patterns(
 /// // 文章创建、更新或删除后调用
 /// invalidate_all_passage_cache(app_cache.manager()).await;
 /// ```
-pub async fn invalidate_all_passage_cache(
-    manager: Option<&crate::cache::manager::CacheManager>,
-) {
+pub async fn invalidate_all_passage_cache(manager: Option<&crate::cache::manager::CacheManager>) {
     invalidate_cache_patterns(
         manager,
         &[
             &PassageCacheKeys::list_pattern(),
             &PassageCacheKeys::get_pattern(),
             &PassageCacheKeys::latest_pattern(),
-        ]
-    ).await;
+        ],
+    )
+    .await;
 }
 
 /// 失效单篇文章缓存
@@ -223,12 +222,7 @@ pub async fn invalidate_passage_and_list_cache(
     invalidate_passage_cache(manager, passage_id, passage_uuid).await;
 
     // 再失效列表缓存（因为文章状态可能改变）
-    invalidate_cache_patterns(
-        manager,
-        &[
-            &PassageCacheKeys::list_pattern(),
-        ]
-    ).await;
+    invalidate_cache_patterns(manager, &[&PassageCacheKeys::list_pattern()]).await;
 }
 
 /// 细粒度失效文章缓存
@@ -330,9 +324,7 @@ pub async fn invalidate_passage_cache_granular(
 /// invalidate_category_cache(app_cache.manager()).await;
 /// ```
 #[allow(dead_code)]
-pub async fn invalidate_category_cache(
-    manager: Option<&crate::cache::manager::CacheManager>,
-) {
+pub async fn invalidate_category_cache(manager: Option<&crate::cache::manager::CacheManager>) {
     invalidate_all_passage_cache(manager).await;
 }
 
@@ -357,7 +349,9 @@ pub async fn invalidate_specific_category_cache(
 ) {
     if let Some(mgr) = manager {
         // 清除该分类的列表缓存
-        let _ = mgr.delete_pattern(&format!("passage:list:category:{}", category_name)).await;
+        let _ = mgr
+            .delete_pattern(&format!("passage:list:category:{}", category_name))
+            .await;
 
         // 清除分类本身的缓存
         let _ = mgr.delete_pattern("category:get:*").await;
@@ -381,9 +375,7 @@ pub async fn invalidate_specific_category_cache(
 /// invalidate_tag_cache(app_cache.manager()).await;
 /// ```
 #[allow(dead_code)]
-pub async fn invalidate_tag_cache(
-    manager: Option<&crate::cache::manager::CacheManager>,
-) {
+pub async fn invalidate_tag_cache(manager: Option<&crate::cache::manager::CacheManager>) {
     invalidate_all_passage_cache(manager).await;
 }
 
@@ -415,10 +407,7 @@ pub async fn invalidate_comment_cache(
     }
 
     // 失效评论列表缓存
-    invalidate_cache_patterns(
-        manager,
-        &["comment:*"]
-    ).await;
+    invalidate_cache_patterns(manager, &["comment:*"]).await;
 }
 
 #[cfg(test)]
@@ -441,7 +430,10 @@ mod tests {
     #[test]
     fn test_invalidate_all_passage_cache_patterns() {
         // 测试缓存模式字符串是否正确
-        let patterns = [PassageCacheKeys::list_pattern(), PassageCacheKeys::get_pattern()];
+        let patterns = [
+            PassageCacheKeys::list_pattern(),
+            PassageCacheKeys::get_pattern(),
+        ];
         assert_eq!(patterns.len(), 2);
         assert_eq!(patterns[0], "passage:list:*");
         assert_eq!(patterns[1], "passage:get:*");

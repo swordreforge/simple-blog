@@ -1,8 +1,8 @@
 //! 文章服务 - 处理文章相关的业务逻辑
 
-use std::sync::Arc;
 use chrono::Utc;
 use pulldown_cmark::{Parser, html};
+use std::sync::Arc;
 
 use crate::db::models::Passage;
 use crate::db::repositories::PassageRepository;
@@ -71,7 +71,7 @@ impl PassageService {
             content: html_content,
             original_content: Some(content),
             summary,
-            summarize: None,  // 将在创建时自动生成
+            summarize: None, // 将在创建时自动生成
             author,
             tags,
             category,
@@ -85,25 +85,33 @@ impl PassageService {
             updated_at: now,
         };
 
-        self.passage_repo.create(&passage).await
+        self.passage_repo
+            .create(&passage)
+            .await
             .map_err(|e| crate::error::AppError::Database(e.to_string()))
     }
 
     /// 根据 ID 获取文章
     pub async fn get_passage_by_id(&self, id: i64) -> Result<Passage> {
-        self.passage_repo.get_by_id(id).await
+        self.passage_repo
+            .get_by_id(id)
+            .await
             .map_err(|e| crate::error::AppError::Database(e.to_string()))
     }
 
     /// 根据 UUID 获取文章
     pub async fn get_passage_by_uuid(&self, uuid: &str) -> Result<Passage> {
-        self.passage_repo.get_by_uuid(uuid).await
+        self.passage_repo
+            .get_by_uuid(uuid)
+            .await
             .map_err(|e| crate::error::AppError::Database(e.to_string()))
     }
 
     /// 更新文章
     pub async fn update_passage(&self, passage: Passage) -> Result<()> {
-        self.passage_repo.update(&passage).await
+        self.passage_repo
+            .update(&passage)
+            .await
             .map_err(|e| crate::error::AppError::Database(e.to_string()))
     }
 

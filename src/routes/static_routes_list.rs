@@ -51,7 +51,9 @@ pub fn conflicts_with_static_route(path: &str) -> bool {
     // 检查前缀冲突（静态路由作为前缀）
     for static_route in &static_routes {
         // 如果静态路由是路径的前缀，或者路径是静态路由的前缀
-        if path.starts_with(&format!("{}/", static_route)) || static_route.starts_with(&format!("{}/", path)) {
+        if path.starts_with(&format!("{}/", static_route))
+            || static_route.starts_with(&format!("{}/", path))
+        {
             return true;
         }
     }

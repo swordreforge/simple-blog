@@ -1,7 +1,7 @@
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use serde::{Deserialize, Serialize};
 use chrono::{Duration, Utc};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
@@ -34,7 +34,12 @@ impl JwtService {
     }
 
     /// 生成 JWT token
-    pub fn generate_token(&self, user_id: i64, username: &str, role: &str) -> crate::error::Result<String> {
+    pub fn generate_token(
+        &self,
+        user_id: i64,
+        username: &str,
+        role: &str,
+    ) -> crate::error::Result<String> {
         use crate::error::AppError;
 
         let now = Utc::now();
@@ -94,7 +99,7 @@ pub fn init_jwt_secret(base_dir: &Path, jwt_secret: Option<&str>) -> String {
     // 检查是否需要生成新密钥
     let need_generate = match jwt_secret {
         Some(secret) => secret.is_empty(), // 空字符串则生成
-        None => false, // None表示未提供，不生成
+        None => false,                     // None表示未提供，不生成
     };
 
     // 尝试从文件读取（只有在不生成新密钥时）
@@ -119,7 +124,7 @@ pub fn init_jwt_secret(base_dir: &Path, jwt_secret: Option<&str>) -> String {
 
     // 生成新的随机密钥并保存
     let new_secret = generate_random_secret();
-    
+
     // 确保data目录存在
     if let Some(parent) = jwt_secret_file.parent() {
         fs::create_dir_all(parent).ok();
@@ -151,7 +156,8 @@ pub fn init_jwt_service(secret: &str) -> crate::error::Result<()> {
     use crate::error::AppError;
 
     let service = JwtService::new(secret);
-    JWT_SERVICE.set(service)
+    JWT_SERVICE
+        .set(service)
         .map_err(|_| AppError::Internal("JWT service already initialized".to_string()))
 }
 
@@ -162,12 +168,17 @@ pub fn init_jwt_service(secret: &str) -> crate::error::Result<()> {
 pub fn get_jwt_service() -> crate::error::Result<&'static JwtService> {
     use crate::error::AppError;
 
-    JWT_SERVICE.get()
+    JWT_SERVICE
+        .get()
         .ok_or_else(|| AppError::Internal("JWT service not initialized".to_string()))
 }
 
 /// 生成 token（使用全局服务）
-pub fn generate_token(user_id: i64, username: &str, role: crate::db::models::UserRole) -> crate::error::Result<String> {
+pub fn generate_token(
+    user_id: i64,
+    username: &str,
+    role: crate::db::models::UserRole,
+) -> crate::error::Result<String> {
     use crate::error::AppError;
 
     let service = get_jwt_service()

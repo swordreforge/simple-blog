@@ -1,8 +1,8 @@
+use crate::audio_metadata::extract_metadata;
+use crate::db::repositories::{MusicTrackRepository, Repository};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use crate::db::repositories::{MusicTrackRepository, Repository};
-use crate::audio_metadata::extract_metadata;
 use std::sync::Arc;
 
 /// 音乐同步服务
@@ -73,15 +73,21 @@ impl MusicSyncService {
 
             // 查找匹配的封面
             let cover_image = if let Some(ts) = &timestamp {
-                covers_map.get(ts).map(|cover| format!("/music/covers/{}", cover))
+                covers_map
+                    .get(ts)
+                    .map(|cover| format!("/music/covers/{}", cover))
             } else {
                 None
-            }.unwrap_or_default();
+            }
+            .unwrap_or_default();
 
             // 如果文件已存在于数据库中，更新封面信息
             if existing_files.contains(&file_name) {
                 if !cover_image.is_empty() {
-                    match music_repo.update_cover_by_filename(&file_name, &cover_image).await {
+                    match music_repo
+                        .update_cover_by_filename(&file_name, &cover_image)
+                        .await
+                    {
                         Ok(_) => {
                             updated_count += 1;
                             println!("Updated cover for: {} -> {}", file_name, cover_image);
@@ -99,15 +105,18 @@ impl MusicSyncService {
             let metadata = match extract_metadata(&full_path) {
                 Ok(m) => m,
                 Err(e) => {
-                    eprintln!("Warning: Failed to extract metadata for {}: {}", file_name, e);
+                    eprintln!(
+                        "Warning: Failed to extract metadata for {}: {}",
+                        file_name, e
+                    );
                     crate::audio_metadata::fallback_metadata(&file_name)
                 }
             };
 
             // 准备标题和艺术家
-            let title = metadata.title.unwrap_or_else(|| {
-                Self::clean_title(&file_name)
-            });
+            let title = metadata
+                .title
+                .unwrap_or_else(|| Self::clean_title(&file_name));
             let artist = metadata.artist.unwrap_or_else(|| "未知艺术家".to_string());
             let duration = "未知".to_string();
 
@@ -187,8 +196,13 @@ impl MusicSyncService {
     }
 
     /// 获取数据库中已存在的文件
-    async fn get_existing_files(&self, music_repo: &MusicTrackRepository) -> Result<std::collections::HashSet<String>, String> {
-        let tracks = music_repo.get_all_without_pagination().await
+    async fn get_existing_files(
+        &self,
+        music_repo: &MusicTrackRepository,
+    ) -> Result<std::collections::HashSet<String>, String> {
+        let tracks = music_repo
+            .get_all_without_pagination()
+            .await
             .map_err(|e| format!("Failed to get existing files: {}", e))?;
 
         let mut files = std::collections::HashSet::new();
@@ -200,7 +214,11 @@ impl MusicSyncService {
     }
 
     /// 清理数据库中不存在的文件记录
-    async fn cleanup_orphaned_files(&self, music_repo: &MusicTrackRepository, music_dir: &str) -> Result<usize, String> {
+    async fn cleanup_orphaned_files(
+        &self,
+        music_repo: &MusicTrackRepository,
+        music_dir: &str,
+    ) -> Result<usize, String> {
         let entries = match fs::read_dir(music_dir) {
             Ok(e) => e,
             Err(e) => return Err(format!("Failed to read music directory: {}", e)),
@@ -226,7 +244,9 @@ impl MusicSyncService {
         }
 
         // 获取数据库中的所有文件
-        let tracks = music_repo.get_all_without_pagination().await
+        let tracks = music_repo
+            .get_all_without_pagination()
+            .await
             .map_err(|e| format!("Failed to get tracks: {}", e))?;
 
         let mut deleted_count = 0;
@@ -239,7 +259,10 @@ impl MusicSyncService {
                             println!("Removed orphaned music record: {}", track.file_name);
                         }
                         Err(e) => {
-                            eprintln!("Warning: Failed to delete orphaned record {}: {}", track.file_name, e);
+                            eprintln!(
+                                "Warning: Failed to delete orphaned record {}: {}",
+                                track.file_name, e
+                            );
                         }
                     }
                 }
@@ -257,7 +280,10 @@ impl MusicSyncService {
             .unwrap_or("")
             .to_lowercase();
 
-        matches!(ext.as_str(), "mp3" | "wav" | "ogg" | "m4a" | "flac" | "aac" | "wma")
+        matches!(
+            ext.as_str(),
+            "mp3" | "wav" | "ogg" | "m4a" | "flac" | "aac" | "wma"
+        )
     }
 
     /// 提取文件名中的时间戳（格式：timestamp_filename.ext）

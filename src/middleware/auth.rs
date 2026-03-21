@@ -1,5 +1,5 @@
-use actix_web::{dev::Payload, Error, FromRequest, HttpRequest, HttpResponse, HttpMessage};
-use std::future::{ready, Ready};
+use actix_web::{Error, FromRequest, HttpMessage, HttpRequest, HttpResponse, dev::Payload};
+use std::future::{Ready, ready};
 
 /// 用户 ID 键
 #[derive(Debug, Clone)]
@@ -26,7 +26,7 @@ impl FromRequest for UserIDKey {
         } else {
             // 修复：拒绝未认证请求
             ready(Err(actix_web::error::ErrorUnauthorized(
-                "Authentication required"
+                "Authentication required",
             )))
         }
     }
@@ -42,7 +42,7 @@ impl FromRequest for UsernameKey {
         } else {
             // 修复：拒绝未认证请求
             ready(Err(actix_web::error::ErrorUnauthorized(
-                "Authentication required"
+                "Authentication required",
             )))
         }
     }
@@ -58,7 +58,7 @@ impl FromRequest for RoleKey {
         } else {
             // 修复：拒绝未认证请求
             ready(Err(actix_web::error::ErrorUnauthorized(
-                "Authentication required"
+                "Authentication required",
             )))
         }
     }
@@ -69,18 +69,16 @@ impl FromRequest for RoleKey {
 pub fn check_admin_auth(req: &actix_web::HttpRequest) -> Option<(i64, String, String)> {
     let token = req.cookie("auth_token").map(|c| c.value().to_string());
     match token {
-        Some(token_str) => {
-            match crate::jwt::validate_token(&token_str) {
-                Ok(claims) => {
-                    if claims.role == "admin" {
-                        Some((claims.user_id, claims.username, claims.role))
-                    } else {
-                        None
-                    }
+        Some(token_str) => match crate::jwt::validate_token(&token_str) {
+            Ok(claims) => {
+                if claims.role == "admin" {
+                    Some((claims.user_id, claims.username, claims.role))
+                } else {
+                    None
                 }
-                Err(_) => None,
             }
-        }
+            Err(_) => None,
+        },
         None => None,
     }
 }

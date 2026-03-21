@@ -2,11 +2,11 @@ use super::backend::{CacheBackend, CacheConfig, CacheError};
 use super::concurrent::get_null_value;
 use super::local::LocalCacheBackend;
 use super::valkey::ValkeyCacheBackend;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use dashmap::DashMap;
 use crate::utils::OperationHistoryBuffer;
+use dashmap::DashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
 
 /// 降级配置
 #[derive(Debug, Clone)]
@@ -28,7 +28,7 @@ pub struct DegradationConfig {
 impl Default for DegradationConfig {
     fn default() -> Self {
         Self {
-            consecutive_failures_threshold: 5,  // 连续失败 5 次才降级（增加阈值，避免过早降级）
+            consecutive_failures_threshold: 5, // 连续失败 5 次才降级（增加阈值，避免过早降级）
             critical_error_threshold: 3,       // 连续 3 次严重错误就降级（增加阈值）
             enable_sliding_window: true,       // 默认启用滑动窗口
             sliding_window_seconds: 120,       // 120 秒窗口（增加窗口时间）
@@ -50,9 +50,9 @@ pub struct CacheManager {
     // 滑动窗口：使用环形缓冲区优化性能
     operation_history: Arc<OperationHistoryBuffer>,
     valkey_backend: Option<Arc<ValkeyCacheBackend>>,
-    valkey_url: Option<String>,  // 保存 Valkey URL 用于重连
+    valkey_url: Option<String>, // 保存 Valkey URL 用于重连
     health_check_task: Option<Arc<tokio::task::JoinHandle<()>>>,
-    reconnect_task: Option<Arc<tokio::task::JoinHandle<()>>>,  // 重连任务
+    reconnect_task: Option<Arc<tokio::task::JoinHandle<()>>>, // 重连任务
     // 上次检查滑动窗口的时间（避免频繁检查）
     last_sliding_window_check: Arc<AtomicUsize>,
     // 并发安全配置
@@ -99,11 +99,13 @@ impl CacheManager {
         let (primary, fallback, valkey_backend): (
             Arc<dyn CacheBackend>,
             Option<Arc<dyn CacheBackend>>,
-            Option<Arc<ValkeyCacheBackend>>
+            Option<Arc<ValkeyCacheBackend>>,
         ) = match backend_type {
             "valkey" | "redis" => {
                 let url = valkey_url.ok_or_else(|| {
-                    CacheError::ConnectionError("Valkey URL is required for valkey backend".to_string())
+                    CacheError::ConnectionError(
+                        "Valkey URL is required for valkey backend".to_string(),
+                    )
                 })?;
 
                 match ValkeyCacheBackend::new(url, Some("rustblog:".to_string())).await {
@@ -113,18 +115,21 @@ impl CacheManager {
                         // 执行健康检查
                         if let Err(e) = valkey.health_check().await {
                             tracing::warn!("Valkey 健康检查失败: {}, 降级到本地缓存", e);
-                            let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                            let local = Arc::new(LocalCacheBackend::new(Some(10000)))
+                                as Arc<dyn CacheBackend>;
                             (local, None, None)
                         } else {
                             let valkey_arc = Arc::new(valkey);
                             let valkey_dyn = Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>;
-                            let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                            let local = Arc::new(LocalCacheBackend::new(Some(10000)))
+                                as Arc<dyn CacheBackend>;
                             (valkey_dyn, Some(local), Some(valkey_arc))
                         }
                     }
                     Err(e) => {
                         tracing::warn!("Valkey 连接失败: {}, 使用本地缓存降级", e);
-                        let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                        let local =
+                            Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                         (local, None, None)
                     }
                 }
@@ -142,30 +147,37 @@ impl CacheManager {
                             // 执行健康检查
                             if let Err(e) = valkey.health_check().await {
                                 println!("⚠️  Valkey 不可用（健康检查失败: {}），使用本地缓存", e);
-                                let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                                let local = Arc::new(LocalCacheBackend::new(Some(10000)))
+                                    as Arc<dyn CacheBackend>;
                                 (local, None, None)
                             } else {
                                 println!("✅ 自动检测到 Valkey，使用 Valkey 缓存");
                                 let valkey_arc = Arc::new(valkey);
                                 let valkey_dyn = Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>;
-                                let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                                let local = Arc::new(LocalCacheBackend::new(Some(10000)))
+                                    as Arc<dyn CacheBackend>;
                                 (valkey_dyn, Some(local), Some(valkey_arc))
                             }
                         }
                         Err(e) => {
                             println!("⚠️  Valkey 不可用（连接失败: {}），使用本地缓存", e);
-                            let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                            let local = Arc::new(LocalCacheBackend::new(Some(10000)))
+                                as Arc<dyn CacheBackend>;
                             (local, None, None)
                         }
                     }
                 } else {
                     println!("⚠️  未配置 Valkey URL，使用本地缓存");
-                    let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
+                    let local =
+                        Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                     (local, None, None)
                 }
             }
             _ => {
-                return Err(CacheError::Unknown(format!("Unknown cache backend: {}", backend_type)));
+                return Err(CacheError::Unknown(format!(
+                    "Unknown cache backend: {}",
+                    backend_type
+                )));
             }
         };
 
@@ -175,8 +187,8 @@ impl CacheManager {
         let degradation_config = DegradationConfig::default();
         // 使用环形缓冲区优化滑动窗口性能
         let operation_history = Arc::new(OperationHistoryBuffer::new(
-            1000,  // 容量
-            degradation_config.sliding_window_seconds,  // 窗口时间
+            1000,                                      // 容量
+            degradation_config.sliding_window_seconds, // 窗口时间
         ));
         let last_sliding_window_check = Arc::new(AtomicUsize::new(0));
         let enable_cache_lock = true;
@@ -197,7 +209,8 @@ impl CacheManager {
                         backend,
                         primary_healthy_clone,
                         consecutive_failures_clone,
-                    ).await;
+                    )
+                    .await;
                 }
             })))
         } else {
@@ -219,7 +232,8 @@ impl CacheManager {
                     consecutive_failures_clone,
                     fallback_enabled_clone,
                     degradation_config_clone,
-                ).await;
+                )
+                .await;
             })))
         } else {
             None
@@ -286,7 +300,8 @@ impl CacheManager {
 
                 // 检查是否应该降级（连续失败或滑动窗口失败率）
                 let should_degrade = if self.valkey_backend.is_some() {
-                    let consecutive_threshold = self.degradation_config.consecutive_failures_threshold;
+                    let consecutive_threshold =
+                        self.degradation_config.consecutive_failures_threshold;
 
                     // 优化：限制滑动窗口检查频率，避免高并发时频繁遍历
                     let sliding_window_triggered = if self.should_check_sliding_window() {
@@ -296,12 +311,16 @@ impl CacheManager {
                     };
 
                     if failures >= consecutive_threshold {
-                        eprintln!("⚠️  Valkey 连续失败 {} 次（阈值: {}），触发降级",
-                                  failures, consecutive_threshold);
+                        eprintln!(
+                            "⚠️  Valkey 连续失败 {} 次（阈值: {}），触发降级",
+                            failures, consecutive_threshold
+                        );
                         true
                     } else if sliding_window_triggered {
-                        eprintln!("⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
-                                  self.degradation_config.sliding_window_failure_rate);
+                        eprintln!(
+                            "⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
+                            self.degradation_config.sliding_window_failure_rate
+                        );
                         true
                     } else {
                         false
@@ -344,7 +363,9 @@ impl CacheManager {
                         return fallback.set(key, value, ttl).await;
                     }
                 }
-                return Err(CacheError::ConnectionError("Primary cache unhealthy and no fallback available".to_string()));
+                return Err(CacheError::ConnectionError(
+                    "Primary cache unhealthy and no fallback available".to_string(),
+                ));
             }
         }
 
@@ -391,30 +412,46 @@ impl CacheManager {
                     };
 
                     if failures >= threshold {
-                        eprintln!("⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}, 触发降级",
-                                  if is_critical_error { "严重错误" } else { "普通错误" },
-                                  failures, threshold,
-                                  if is_critical_error {
-                                      self.degradation_config.critical_error_threshold
-                                  } else {
-                                      self.degradation_config.consecutive_failures_threshold
-                                  },
-                                  e);
+                        eprintln!(
+                            "⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}, 触发降级",
+                            if is_critical_error {
+                                "严重错误"
+                            } else {
+                                "普通错误"
+                            },
+                            failures,
+                            threshold,
+                            if is_critical_error {
+                                self.degradation_config.critical_error_threshold
+                            } else {
+                                self.degradation_config.consecutive_failures_threshold
+                            },
+                            e
+                        );
                         true
                     } else if sliding_window_triggered {
-                        eprintln!("⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
-                                  self.degradation_config.sliding_window_failure_rate);
+                        eprintln!(
+                            "⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
+                            self.degradation_config.sliding_window_failure_rate
+                        );
                         true
                     } else {
-                        eprintln!("⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}",
-                                  if is_critical_error { "严重错误" } else { "普通错误" },
-                                  failures, threshold,
-                                  if is_critical_error {
-                                      self.degradation_config.critical_error_threshold
-                                  } else {
-                                      self.degradation_config.consecutive_failures_threshold
-                                  },
-                                  e);
+                        eprintln!(
+                            "⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}",
+                            if is_critical_error {
+                                "严重错误"
+                            } else {
+                                "普通错误"
+                            },
+                            failures,
+                            threshold,
+                            if is_critical_error {
+                                self.degradation_config.critical_error_threshold
+                            } else {
+                                self.degradation_config.consecutive_failures_threshold
+                            },
+                            e
+                        );
                         false
                     }
                 } else {
@@ -527,7 +564,8 @@ impl CacheManager {
         }
 
         // 更新最后检查时间
-        self.last_sliding_window_check.store(now_secs as usize, Ordering::Relaxed);
+        self.last_sliding_window_check
+            .store(now_secs as usize, Ordering::Relaxed);
         true
     }
 
@@ -541,7 +579,8 @@ impl CacheManager {
         let threshold = self.degradation_config.sliding_window_failure_rate;
 
         // 使用环形缓冲区计算失败率
-        self.operation_history.should_degrade(threshold, MIN_SAMPLE_SIZE)
+        self.operation_history
+            .should_degrade(threshold, MIN_SAMPLE_SIZE)
     }
 
     /// 记录操作结果到滑动窗口（使用环形缓冲区优化）
@@ -560,8 +599,8 @@ impl CacheManager {
         primary_healthy: Arc<AtomicBool>,
         consecutive_failures: Arc<AtomicUsize>,
     ) {
-        const HEALTH_CHECK_INTERVAL: Duration = Duration::from_secs(15);  // 每 15 秒检查一次（提高频率）
-        const QUICK_CHECK_INTERVAL: Duration = Duration::from_secs(5);    // 快速检查间隔（在不健康时）
+        const HEALTH_CHECK_INTERVAL: Duration = Duration::from_secs(15); // 每 15 秒检查一次（提高频率）
+        const QUICK_CHECK_INTERVAL: Duration = Duration::from_secs(5); // 快速检查间隔（在不健康时）
 
         let mut interval = tokio::time::interval(HEALTH_CHECK_INTERVAL);
         let mut quick_check = false;
@@ -680,8 +719,8 @@ impl CacheManager {
 
         // 2. 使用 DashMap 防止缓存击穿（比 Mutex<HashMap 性能更好）
         // 注意：这里简化实现，生产环境应该使用分布式锁（如 Valkey SETNX）
-        use tokio::sync::Mutex;
         use std::sync::Arc;
+        use tokio::sync::Mutex;
 
         // 为每个键创建一个锁
         lazy_static::lazy_static! {

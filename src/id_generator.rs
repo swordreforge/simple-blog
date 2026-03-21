@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use once_cell::sync::Lazy;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 /// 无锁 ID 生成器，使用原子操作和 Snowflake 算法
 pub struct IdGenerator {
@@ -58,7 +58,8 @@ impl IdGenerator {
             } else {
                 // 新的毫秒，重置序列号
                 self.sequence.store(0, Ordering::Release);
-                self.last_timestamp.store(current_timestamp, Ordering::Release);
+                self.last_timestamp
+                    .store(current_timestamp, Ordering::Release);
                 return self.compose_id(current_timestamp, 0);
             }
         }
@@ -100,7 +101,7 @@ static ID_GENERATOR: Lazy<IdGenerator> = Lazy::new(|| {
 });
 
 /// 生成全局唯一 ID 的便捷函数
-/// 
+///
 /// # 返回
 /// 返回生成的唯一 ID 字符串
 pub fn generate_unique_id() -> String {
@@ -110,21 +111,21 @@ pub fn generate_unique_id() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_id_generation() {
         let generator = IdGenerator::new(1);
         let id1 = generator.generate_id();
         let id2 = generator.generate_id();
-        
+
         assert_ne!(id1, id2, "生成的 ID 应该是唯一的");
     }
-    
+
     #[test]
     fn test_global_id_generation() {
         let id1 = generate_unique_id();
         let id2 = generate_unique_id();
-        
+
         assert_ne!(id1, id2, "全局生成的 ID 应该是唯一的");
     }
 }

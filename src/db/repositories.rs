@@ -1,8 +1,8 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{params, OptionalExtension};
-use std::sync::Arc;
+use rusqlite::{OptionalExtension, params};
 use smallvec::SmallVec;
+use std::sync::Arc;
 
 use super::models::*;
 
@@ -10,16 +10,16 @@ use super::models::*;
 pub fn get_machine_id() -> [u8; 6] {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
-    
+
     // 尝试获取主机名并哈希
     let hostname = std::env::var("HOSTNAME")
         .or_else(|_| std::env::var("COMPUTERNAME"))
         .unwrap_or_else(|_| "default-host".to_string());
-    
+
     let mut hasher = DefaultHasher::new();
     hostname.hash(&mut hasher);
     let hash = hasher.finish();
-    
+
     // 取哈希值的低6个字节作为 machine ID
     let bytes = hash.to_be_bytes();
     [bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]]
@@ -72,9 +72,9 @@ impl PassageRepository {
         // 检查是否启用文章摘要功能
         use crate::services::summarize_service::SummarizeService;
         let summarize = match SettingRepository::get(&conn, "passage_summarize_enabled") {
-            Ok(Some(setting)) if setting.value == "true" => {
-                Some(SummarizeService::generate_summary_from_markdown(&passage.content))
-            }
+            Ok(Some(setting)) if setting.value == "true" => Some(
+                SummarizeService::generate_summary_from_markdown(&passage.content),
+            ),
             _ => None,
         };
 
@@ -113,7 +113,7 @@ impl PassageRepository {
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE id = ?"
         )?;
-        
+
         let passage = stmt.query_row(params![id], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
@@ -136,7 +136,7 @@ impl PassageRepository {
                 updated_at: row.get(17)?,
             })
         })?;
-        
+
         Ok(passage)
     }
 
@@ -147,7 +147,7 @@ impl PassageRepository {
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE uuid = ?"
         )?;
-        
+
         let passage = stmt.query_row(params![uuid], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
@@ -170,18 +170,21 @@ impl PassageRepository {
                 updated_at: row.get(17)?,
             })
         })?;
-        
+
         Ok(passage)
     }
 
     /// 根据文件路径获取文章
-    pub async fn get_by_file_path(&self, file_path: &str) -> Result<Passage, Box<dyn std::error::Error>> {
+    pub async fn get_by_file_path(
+        &self,
+        file_path: &str,
+    ) -> Result<Passage, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE file_path = ?"
         )?;
-        
+
         let passage = stmt.query_row(params![file_path], |row| {
             Ok(Passage {
                 id: Some(row.get(0)?),
@@ -204,110 +207,24 @@ impl PassageRepository {
                 updated_at: row.get(17)?,
             })
         })?;
-        
+
         Ok(passage)
     }
 
     /// 获取所有文章
-    pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
+    pub async fn get_all(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
-        
-        let passages = stmt.query_map(params![limit, offset], |row| {
-            Ok(Passage {
-                id: Some(row.get(0)?),
-                uuid: Some(row.get(1)?),
-                title: row.get(2)?,
-                content: row.get(3)?,
-                original_content: row.get(4)?,
-                summary: row.get(5)?,
-                summarize: row.get(6)?,
-                author: row.get(6)?,
-                tags: row.get(8)?,
-                category: row.get(9)?,
-                status: row.get(10)?,
-                file_path: row.get(11)?,
-                visibility: row.get(12)?,
-                is_scheduled: row.get(13)?,
-                published_at: row.get(14)?,
-                cover_image: row.get(15)?,
-                created_at: row.get(16)?,
-                updated_at: row.get(17)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
-        Ok(passages)
-    }
 
-    /// 获取已发布的文章
-    pub async fn get_published(&self, limit: i64, offset: i64) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
-             FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
-        )?;
-
-        let passages = stmt.query_map(params![limit, offset], |row| {
-            Ok(Passage {
-                id: Some(row.get(0)?),
-                uuid: Some(row.get(1)?),
-                title: row.get(2)?,
-                content: row.get(3)?,
-                original_content: row.get(4)?,
-                summary: row.get(5)?,
-                summarize: row.get(6)?,
-                author: row.get(6)?,
-                tags: row.get(8)?,
-                category: row.get(9)?,
-                status: row.get(10)?,
-                file_path: row.get(11)?,
-                visibility: row.get(12)?,
-                is_scheduled: row.get(13)?,
-                published_at: row.get(14)?,
-                cover_image: row.get(15)?,
-                created_at: row.get(16)?,
-                updated_at: row.get(17)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-
-        Ok(passages)
-    }
-
-    /// 使用游标分页获取已发布的文章（性能优化）
-    /// cursor: (created_at, id) 格式为 "created_at:id"
-    pub async fn get_published_cursor(&self, cursor: Option<String>, limit: i64) -> Result<(Vec<Passage>, Option<String>), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
-
-        if let Some(cursor_str) = cursor {
-            // 解析游标（支持新旧两种格式：'|' 和 ':'）
-            // 优先使用 '|' 分隔符（新格式），如果不成功则尝试 ':'（旧格式，向后兼容）
-            let (created_at_str, id_str) = if let Some(pos) = cursor_str.find('|') {
-                // 新格式：created_at|id
-                (cursor_str[..pos].to_string(), cursor_str[pos + 1..].to_string())
-            } else {
-                // 旧格式：created_at:id
-                // 时间戳格式为 "YYYY-MM-DD HH:MM:SS"，包含冒号
-                // 需要从右向左查找最后一个冒号作为分隔符
-                if let Some(pos) = cursor_str.rfind(':') {
-                    (cursor_str[..pos].to_string(), cursor_str[pos + 1..].to_string())
-                } else {
-                    return Err("Invalid cursor format".into());
-                }
-            };
-            
-            let query = r#"
-                SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
-                FROM passages 
-                WHERE status = 'published' AND (created_at < ? OR (created_at = ? AND id < ?))
-                ORDER BY created_at DESC, id DESC
-                LIMIT ?
-            "#;
-            
-            let mut stmt = conn.prepare(query)?;
-            let passages = stmt.query_map(params![created_at_str, created_at_str, id_str, limit], |row| {
+        let passages = stmt
+            .query_map(params![limit, offset], |row| {
                 Ok(Passage {
                     id: Some(row.get(0)?),
                     uuid: Some(row.get(1)?),
@@ -315,7 +232,7 @@ impl PassageRepository {
                     content: row.get(3)?,
                     original_content: row.get(4)?,
                     summary: row.get(5)?,
-                summarize: row.get(6)?,
+                    summarize: row.get(6)?,
                     author: row.get(6)?,
                     tags: row.get(8)?,
                     category: row.get(9)?,
@@ -328,12 +245,129 @@ impl PassageRepository {
                     created_at: row.get(16)?,
                     updated_at: row.get(17)?,
                 })
-            })?.collect::<Result<Vec<_>, _>>()?;
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(passages)
+    }
+
+    /// 获取已发布的文章
+    pub async fn get_published(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+             FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
+        )?;
+
+        let passages = stmt
+            .query_map(params![limit, offset], |row| {
+                Ok(Passage {
+                    id: Some(row.get(0)?),
+                    uuid: Some(row.get(1)?),
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    original_content: row.get(4)?,
+                    summary: row.get(5)?,
+                    summarize: row.get(6)?,
+                    author: row.get(6)?,
+                    tags: row.get(8)?,
+                    category: row.get(9)?,
+                    status: row.get(10)?,
+                    file_path: row.get(11)?,
+                    visibility: row.get(12)?,
+                    is_scheduled: row.get(13)?,
+                    published_at: row.get(14)?,
+                    cover_image: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(passages)
+    }
+
+    /// 使用游标分页获取已发布的文章（性能优化）
+    /// cursor: (created_at, id) 格式为 "created_at:id"
+    pub async fn get_published_cursor(
+        &self,
+        cursor: Option<String>,
+        limit: i64,
+    ) -> Result<(Vec<Passage>, Option<String>), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+
+        if let Some(cursor_str) = cursor {
+            // 解析游标（支持新旧两种格式：'|' 和 ':'）
+            // 优先使用 '|' 分隔符（新格式），如果不成功则尝试 ':'（旧格式，向后兼容）
+            let (created_at_str, id_str) = if let Some(pos) = cursor_str.find('|') {
+                // 新格式：created_at|id
+                (
+                    cursor_str[..pos].to_string(),
+                    cursor_str[pos + 1..].to_string(),
+                )
+            } else {
+                // 旧格式：created_at:id
+                // 时间戳格式为 "YYYY-MM-DD HH:MM:SS"，包含冒号
+                // 需要从右向左查找最后一个冒号作为分隔符
+                if let Some(pos) = cursor_str.rfind(':') {
+                    (
+                        cursor_str[..pos].to_string(),
+                        cursor_str[pos + 1..].to_string(),
+                    )
+                } else {
+                    return Err("Invalid cursor format".into());
+                }
+            };
+
+            let query = r#"
+                SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                FROM passages 
+                WHERE status = 'published' AND (created_at < ? OR (created_at = ? AND id < ?))
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+            "#;
+
+            let mut stmt = conn.prepare(query)?;
+            let passages = stmt
+                .query_map(
+                    params![created_at_str, created_at_str, id_str, limit],
+                    |row| {
+                        Ok(Passage {
+                            id: Some(row.get(0)?),
+                            uuid: Some(row.get(1)?),
+                            title: row.get(2)?,
+                            content: row.get(3)?,
+                            original_content: row.get(4)?,
+                            summary: row.get(5)?,
+                            summarize: row.get(6)?,
+                            author: row.get(6)?,
+                            tags: row.get(8)?,
+                            category: row.get(9)?,
+                            status: row.get(10)?,
+                            file_path: row.get(11)?,
+                            visibility: row.get(12)?,
+                            is_scheduled: row.get(13)?,
+                            published_at: row.get(14)?,
+                            cover_image: row.get(15)?,
+                            created_at: row.get(16)?,
+                            updated_at: row.get(17)?,
+                        })
+                    },
+                )?
+                .collect::<Result<Vec<_>, _>>()?;
 
             // 计算下一页游标（使用最后一条记录）
             // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
             let next_cursor = passages.last().map(|p| {
-                format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
+                format!(
+                    "{}|{}",
+                    p.created_at.format("%Y-%m-%d %H:%M:%S%:z"),
+                    p.id.unwrap_or(0)
+                )
             });
 
             Ok((passages, next_cursor))
@@ -346,61 +380,56 @@ impl PassageRepository {
                 ORDER BY created_at DESC, id DESC
                 LIMIT ?
             "#;
-            
+
             let mut stmt = conn.prepare(query)?;
-            let passages = stmt.query_map(params![limit], |row| {
-                Ok(Passage {
-                    id: Some(row.get(0)?),
-                    uuid: Some(row.get(1)?),
-                    title: row.get(2)?,
-                    content: row.get(3)?,
-                    original_content: row.get(4)?,
-                    summary: row.get(5)?,
-                summarize: row.get(6)?,
-                    author: row.get(6)?,
-                    tags: row.get(8)?,
-                    category: row.get(9)?,
-                    status: row.get(10)?,
-                    file_path: row.get(11)?,
-                    visibility: row.get(12)?,
-                    is_scheduled: row.get(13)?,
-                    published_at: row.get(14)?,
-                    cover_image: row.get(15)?,
-                    created_at: row.get(16)?,
-                    updated_at: row.get(17)?,
-                })
-            })?.collect::<Result<Vec<_>, _>>()?;
+            let passages = stmt
+                .query_map(params![limit], |row| {
+                    Ok(Passage {
+                        id: Some(row.get(0)?),
+                        uuid: Some(row.get(1)?),
+                        title: row.get(2)?,
+                        content: row.get(3)?,
+                        original_content: row.get(4)?,
+                        summary: row.get(5)?,
+                        summarize: row.get(6)?,
+                        author: row.get(6)?,
+                        tags: row.get(8)?,
+                        category: row.get(9)?,
+                        status: row.get(10)?,
+                        file_path: row.get(11)?,
+                        visibility: row.get(12)?,
+                        is_scheduled: row.get(13)?,
+                        published_at: row.get(14)?,
+                        cover_image: row.get(15)?,
+                        created_at: row.get(16)?,
+                        updated_at: row.get(17)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
 
             // 计算下一页游标（使用最后一条记录）
 
-                        // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
+            // 使用与数据库存储格式一致的格式：YYYY-MM-DD HH:MM:SS+00:00
 
-                        let next_cursor = passages.last().map(|p| {
+            let next_cursor = passages.last().map(|p| {
+                format!(
+                    "{}|{}",
+                    p.created_at.format("%Y-%m-%d %H:%M:%S%:z"),
+                    p.id.unwrap_or(0)
+                )
+            });
 
-                            format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
+            Ok((passages, next_cursor))
+        }
+    }
 
-                        });
+    /// 获取最新一篇已发布的文章
+    pub async fn get_latest_published(
+        &self,
+    ) -> Result<Option<Passage>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
 
-            
-
-            
-
-                        Ok((passages, next_cursor))
-
-                    }
-
-                }
-
-            
-
-                /// 获取最新一篇已发布的文章
-                pub async fn get_latest_published(&self) -> Result<Option<Passage>, Box<dyn std::error::Error>> {
-
-                    let conn = self.pool.get()?;
-
-            
-
-                    let query = r#"
+        let query = r#"
 
                         SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
 
@@ -414,59 +443,52 @@ impl PassageRepository {
 
                     "#;
 
-            
+        let mut stmt = conn.prepare(query)?;
 
-                    let mut stmt = conn.prepare(query)?;
+        let passage = stmt
+            .query_row(params![], |row| {
+                Ok(Passage {
+                    id: Some(row.get(0)?),
 
-                    let passage = stmt.query_row(params![], |row| {
+                    uuid: Some(row.get(1)?),
 
-                        Ok(Passage {
+                    title: row.get(2)?,
 
-                            id: Some(row.get(0)?),
+                    content: row.get(3)?,
 
-                            uuid: Some(row.get(1)?),
+                    original_content: row.get(4)?,
 
-                            title: row.get(2)?,
+                    summary: row.get(5)?,
 
-                            content: row.get(3)?,
+                    summarize: row.get(6)?,
 
-                            original_content: row.get(4)?,
+                    author: row.get(7)?,
 
-                            summary: row.get(5)?,
+                    tags: row.get(8)?,
 
-                            summarize: row.get(6)?,
+                    category: row.get(9)?,
 
-                            author: row.get(7)?,
+                    status: row.get(10)?,
 
-                            tags: row.get(8)?,
+                    file_path: row.get(11)?,
 
-                            category: row.get(9)?,
+                    visibility: row.get(12)?,
 
-                            status: row.get(10)?,
+                    is_scheduled: row.get(13)?,
 
-                            file_path: row.get(11)?,
+                    published_at: row.get(14)?,
 
-                            visibility: row.get(12)?,
+                    cover_image: row.get(15)?,
 
-                            is_scheduled: row.get(13)?,
+                    created_at: row.get(16)?,
 
-                            published_at: row.get(14)?,
+                    updated_at: row.get(17)?,
+                })
+            })
+            .optional()?;
 
-                            cover_image: row.get(15)?,
-
-                            created_at: row.get(16)?,
-
-                            updated_at: row.get(17)?,
-
-                        })
-
-                    }).optional()?;
-
-            
-
-                    Ok(passage)
-
-                }
+        Ok(passage)
+    }
 
     /// 按日期获取已发布的文章（支持年、月、日筛选）
     pub async fn get_published_by_date(
@@ -510,28 +532,30 @@ impl PassageRepository {
         sql_params.push(&offset);
 
         let mut stmt = conn.prepare(&sql)?;
-        let passages = stmt.query_map(sql_params.as_slice(), |row| {
-            Ok(Passage {
-                id: Some(row.get(0)?),
-                uuid: Some(row.get(1)?),
-                title: row.get(2)?,
-                content: row.get(3)?,
-                original_content: row.get(4)?,
-                summary: row.get(5)?,
-                summarize: row.get(6)?,
-                author: row.get(6)?,
-                tags: row.get(8)?,
-                category: row.get(9)?,
-                status: row.get(10)?,
-                file_path: row.get(11)?,
-                visibility: row.get(12)?,
-                is_scheduled: row.get(13)?,
-                published_at: row.get(14)?,
-                cover_image: row.get(15)?,
-                created_at: row.get(16)?,
-                updated_at: row.get(17)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let passages = stmt
+            .query_map(sql_params.as_slice(), |row| {
+                Ok(Passage {
+                    id: Some(row.get(0)?),
+                    uuid: Some(row.get(1)?),
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    original_content: row.get(4)?,
+                    summary: row.get(5)?,
+                    summarize: row.get(6)?,
+                    author: row.get(6)?,
+                    tags: row.get(8)?,
+                    category: row.get(9)?,
+                    status: row.get(10)?,
+                    file_path: row.get(11)?,
+                    visibility: row.get(12)?,
+                    is_scheduled: row.get(13)?,
+                    published_at: row.get(14)?,
+                    cover_image: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(passages)
     }
@@ -580,9 +604,9 @@ impl PassageRepository {
         // 检查是否启用文章摘要功能
         use crate::services::summarize_service::SummarizeService;
         let summarize = match SettingRepository::get(&conn, "passage_summarize_enabled") {
-            Ok(Some(setting)) if setting.value == "true" => {
-                Some(SummarizeService::generate_summary_from_markdown(&passage.content))
-            }
+            Ok(Some(setting)) if setting.value == "true" => Some(
+                SummarizeService::generate_summary_from_markdown(&passage.content),
+            ),
             _ => None,
         };
 
@@ -630,7 +654,8 @@ impl PassageRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("DELETE FROM passages WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         // 使缓存失效
         self.invalidate_cache();
@@ -654,7 +679,8 @@ impl PassageRepository {
         // 更新缓存
         let mut cache = self.count_cache.write();
         *cache = Some(count);
-        self.cache_valid.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.cache_valid
+            .store(true, std::sync::atomic::Ordering::Relaxed);
 
         Ok(count)
     }
@@ -671,31 +697,42 @@ impl PassageRepository {
 
         // 缓存未命中，查询数据库
         let conn = self.pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages WHERE status = 'published'", [], |row| row.get(0))?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM passages WHERE status = 'published'",
+            [],
+            |row| row.get(0),
+        )?;
 
         // 更新缓存
         let mut cache = self.count_published_cache.write();
         *cache = Some(count);
-        self.cache_valid.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.cache_valid
+            .store(true, std::sync::atomic::Ordering::Relaxed);
 
         Ok(count)
     }
 
     /// 使缓存失效（在创建、更新、删除文章时调用）
     pub fn invalidate_cache(&self) {
-        self.cache_valid.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.cache_valid
+            .store(false, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// 获取所有分类
     pub async fn get_all_categories(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare("SELECT DISTINCT category FROM passages WHERE category IS NOT NULL AND category != '' ORDER BY category")?;
-        let categories = stmt.query_map([], |row| row.get(0))?.collect::<Result<Vec<_>, _>>()?;
+        let categories = stmt
+            .query_map([], |row| row.get(0))?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(categories)
     }
 
     /// 批量获取文章（修复 N+1 查询问题）
-    pub async fn get_by_ids(&self, ids: &[i64]) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
+    pub async fn get_by_ids(
+        &self,
+        ids: &[i64],
+    ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
@@ -706,30 +743,33 @@ impl PassageRepository {
              FROM passages WHERE id IN ({})",
             placeholders
         );
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let mut stmt = conn.prepare(&sql)?;
-        let passages = stmt.query_map(params.as_slice(), |row| {
-            Ok(Passage {
-                id: Some(row.get(0)?),
-                uuid: Some(row.get(1)?),
-                title: row.get(2)?,
-                content: row.get(3)?,
-                original_content: row.get(4)?,
-                summary: row.get(5)?,
-                summarize: row.get(6)?,
-                author: row.get(6)?,
-                tags: row.get(8)?,
-                category: row.get(9)?,
-                status: row.get(10)?,
-                file_path: row.get(11)?,
-                visibility: row.get(12)?,
-                is_scheduled: row.get(13)?,
-                published_at: row.get(14)?,
-                cover_image: row.get(15)?,
-                created_at: row.get(16)?,
-                updated_at: row.get(17)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let passages = stmt
+            .query_map(params.as_slice(), |row| {
+                Ok(Passage {
+                    id: Some(row.get(0)?),
+                    uuid: Some(row.get(1)?),
+                    title: row.get(2)?,
+                    content: row.get(3)?,
+                    original_content: row.get(4)?,
+                    summary: row.get(5)?,
+                    summarize: row.get(6)?,
+                    author: row.get(6)?,
+                    tags: row.get(8)?,
+                    category: row.get(9)?,
+                    status: row.get(10)?,
+                    file_path: row.get(11)?,
+                    visibility: row.get(12)?,
+                    is_scheduled: row.get(13)?,
+                    published_at: row.get(14)?,
+                    cover_image: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(passages)
     }
 
@@ -746,16 +786,18 @@ impl PassageRepository {
             WHERE status = 'published'
             GROUP BY created_year, created_month
             ORDER BY created_year DESC, created_month DESC
-            "#
+            "#,
         )?;
 
-        let stats = stmt.query_map([], |row| {
-            Ok(ArchiveStats {
-                year: row.get(0)?,
-                month: row.get(1)?,
-                count: row.get(2)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let stats = stmt
+            .query_map([], |row| {
+                Ok(ArchiveStats {
+                    year: row.get(0)?,
+                    month: row.get(1)?,
+                    count: row.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(stats)
     }
@@ -780,16 +822,18 @@ impl PassageRepository {
                 count
             FROM tag_counts
             ORDER BY count DESC
-            "#
+            "#,
         )?;
 
-        let stats = stmt.query_map([], |row| {
-            Ok(TagStats {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                count: row.get(2)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let stats = stmt
+            .query_map([], |row| {
+                Ok(TagStats {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    count: row.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(stats)
     }
@@ -821,42 +865,55 @@ impl CommentRepository {
     }
 
     /// 根据文章 UUID 获取评论
-    pub async fn get_by_passage_uuid(&self, passage_uuid: &str, limit: i64, offset: i64) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+    pub async fn get_by_passage_uuid(
+        &self,
+        passage_uuid: &str,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, content, passage_uuid, created_at FROM comments WHERE passage_uuid = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
-        
-        let comments = stmt.query_map(params![passage_uuid, limit, offset], |row| {
-            Ok(Comment {
-                id: Some(row.get(0)?),
-                username: row.get(1)?,
-                content: row.get(2)?,
-                passage_uuid: row.get(3)?,
-                created_at: row.get(4)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let comments = stmt
+            .query_map(params![passage_uuid, limit, offset], |row| {
+                Ok(Comment {
+                    id: Some(row.get(0)?),
+                    username: row.get(1)?,
+                    content: row.get(2)?,
+                    passage_uuid: row.get(3)?,
+                    created_at: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(comments)
     }
 
     /// 获取所有评论
-    pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+    pub async fn get_all(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, content, passage_uuid, created_at FROM comments ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
-        
-        let comments = stmt.query_map(params![limit, offset], |row| {
-            Ok(Comment {
-                id: Some(row.get(0)?),
-                username: row.get(1)?,
-                content: row.get(2)?,
-                passage_uuid: row.get(3)?,
-                created_at: row.get(4)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let comments = stmt
+            .query_map(params![limit, offset], |row| {
+                Ok(Comment {
+                    id: Some(row.get(0)?),
+                    username: row.get(1)?,
+                    content: row.get(2)?,
+                    passage_uuid: row.get(3)?,
+                    created_at: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(comments)
     }
 
@@ -875,7 +932,8 @@ impl CommentRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("DELETE FROM comments WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
     }
@@ -888,9 +946,16 @@ impl CommentRepository {
     }
 
     /// 根据文章 UUID 获取评论数
-    pub async fn count_by_passage_uuid(&self, passage_uuid: &str) -> Result<i64, Box<dyn std::error::Error>> {
+    pub async fn count_by_passage_uuid(
+        &self,
+        passage_uuid: &str,
+    ) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM comments WHERE passage_uuid = ?", params![passage_uuid], |row| row.get(0))?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM comments WHERE passage_uuid = ?",
+            params![passage_uuid],
+            |row| row.get(0),
+        )?;
         Ok(count)
     }
 }
@@ -906,96 +971,115 @@ impl ArticleViewRepository {
     }
 
     /// 获取最多阅读的文章
-    pub async fn get_most_viewed_articles(&self, limit: i64) -> Result<Vec<PopularArticleStats>, Box<dyn std::error::Error>> {
+    pub async fn get_most_viewed_articles(
+        &self,
+        limit: i64,
+    ) -> Result<Vec<PopularArticleStats>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT p.id, p.title, p.author, COUNT(av.id) as view_count FROM passages p 
              LEFT JOIN article_views av ON p.uuid = av.passage_uuid 
-             GROUP BY p.id ORDER BY view_count DESC LIMIT ?"
+             GROUP BY p.id ORDER BY view_count DESC LIMIT ?",
         )?;
-        
-        let articles = stmt.query_map(params![limit], |row| {
-            Ok(PopularArticleStats {
-                id: Some(row.get(0)?),
-                title: row.get(1)?,
-                author: row.get(2)?,
-                view_count: row.get(3)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let articles = stmt
+            .query_map(params![limit], |row| {
+                Ok(PopularArticleStats {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    author: row.get(2)?,
+                    view_count: row.get(3)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(articles)
     }
 
     /// 获取阅读来源（按国家统计）
-    pub async fn get_view_sources(&self, days: i64) -> Result<Vec<ViewSourceStats>, Box<dyn std::error::Error>> {
+    pub async fn get_view_sources(
+        &self,
+        days: i64,
+    ) -> Result<Vec<ViewSourceStats>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT country, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
-             GROUP BY country ORDER BY count DESC"
+             GROUP BY country ORDER BY count DESC",
         )?;
-        
-        let sources = stmt.query_map(params![-days], |row| {
-            Ok(ViewSourceStats {
-                country: row.get(0)?,
-                count: row.get(1)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let sources = stmt
+            .query_map(params![-days], |row| {
+                Ok(ViewSourceStats {
+                    country: row.get(0)?,
+                    count: row.get(1)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(sources)
     }
 
     /// 获取阅读趋势
-    pub async fn get_view_trend(&self, days: i64) -> Result<Vec<ViewTrendStats>, Box<dyn std::error::Error>> {
+    pub async fn get_view_trend(
+        &self,
+        days: i64,
+    ) -> Result<Vec<ViewTrendStats>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT view_date, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
-             GROUP BY view_date ORDER BY view_date"
+             GROUP BY view_date ORDER BY view_date",
         )?;
-        
-        let trend = stmt.query_map(params![-days], |row| {
-            Ok(ViewTrendStats {
-                date: row.get(0)?,
-                count: row.get(1)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let trend = stmt
+            .query_map(params![-days], |row| {
+                Ok(ViewTrendStats {
+                    date: row.get(0)?,
+                    count: row.get(1)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(trend)
     }
 
     /// 获取单篇文章的统计信息
-    pub async fn get_article_stats(&self, passage_uuid: &str, days: i64) -> Result<ArticleStatsData, Box<dyn std::error::Error>> {
+    pub async fn get_article_stats(
+        &self,
+        passage_uuid: &str,
+        days: i64,
+    ) -> Result<ArticleStatsData, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        
+
         // 获取文章信息
         let passage = self.pool.get()?.query_row(
             "SELECT id, title FROM passages WHERE uuid = ?",
             params![passage_uuid],
-            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)),
         )?;
-        
+
         // 获取总浏览量
         let total_views: i64 = conn.query_row(
             "SELECT COUNT(*) FROM article_views WHERE passage_uuid = ? AND view_date >= date('now', ? || ' days')",
             params![passage_uuid, -days],
             |row| row.get(0)
         )?;
-        
+
         // 获取独立访客数
         let unique_visitors: i64 = conn.query_row(
             "SELECT COUNT(DISTINCT ip) FROM article_views WHERE passage_uuid = ? AND view_date >= date('now', ? || ' days')",
             params![passage_uuid, -days],
             |row| row.get(0)
         )?;
-        
+
         // 获取平均停留时间
         let avg_duration: f64 = conn.query_row(
             "SELECT AVG(duration) FROM article_views WHERE passage_uuid = ? AND view_date >= date('now', ? || ' days')",
             params![passage_uuid, -days],
             |row| row.get(0)
         ).unwrap_or(0.0);
-        
+
         Ok(ArticleStatsData {
             article_id: passage.0,
             title: passage.1,
@@ -1006,48 +1090,58 @@ impl ArticleViewRepository {
     }
 
     /// 获取按城市统计的阅读数据
-    pub async fn get_view_by_city(&self, days: i64) -> Result<Vec<CityStatsData>, Box<dyn std::error::Error>> {
+    pub async fn get_view_by_city(
+        &self,
+        days: i64,
+    ) -> Result<Vec<CityStatsData>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT city, country, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
-             GROUP BY city, country ORDER BY count DESC"
+             GROUP BY city, country ORDER BY count DESC",
         )?;
-        
-        let cities = stmt.query_map(params![-days], |row| {
-            Ok(CityStatsData {
-                city: row.get(0)?,
-                country: row.get(1)?,
-                count: row.get(2)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let cities = stmt
+            .query_map(params![-days], |row| {
+                Ok(CityStatsData {
+                    city: row.get(0)?,
+                    country: row.get(1)?,
+                    count: row.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(cities)
     }
 
     /// 获取按IP统计的访问数据
-    pub async fn get_view_by_ip(&self, days: i64) -> Result<Vec<IPStatsData>, Box<dyn std::error::Error>> {
+    pub async fn get_view_by_ip(
+        &self,
+        days: i64,
+    ) -> Result<Vec<IPStatsData>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT ip, country, city, region, COUNT(*) as count, 
                     MIN(view_time) as first_visit, MAX(view_time) as last_visit 
              FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
-             GROUP BY ip, country, city, region ORDER BY count DESC LIMIT 100"
+             GROUP BY ip, country, city, region ORDER BY count DESC LIMIT 100",
         )?;
-        
-        let ips = stmt.query_map(params![-days], |row| {
-            Ok(IPStatsData {
-                ip: row.get(0)?,
-                country: row.get(1)?,
-                city: row.get(2)?,
-                region: row.get(3)?,
-                count: row.get(4)?,
-                first_visit: row.get(5)?,
-                last_visit: row.get(6)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let ips = stmt
+            .query_map(params![-days], |row| {
+                Ok(IPStatsData {
+                    ip: row.get(0)?,
+                    country: row.get(1)?,
+                    city: row.get(2)?,
+                    region: row.get(3)?,
+                    count: row.get(4)?,
+                    first_visit: row.get(5)?,
+                    last_visit: row.get(6)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(ips)
     }
 }
@@ -1105,30 +1199,38 @@ pub struct SettingRepository;
 
 impl SettingRepository {
     /// 获取设置值
-    pub fn get(conn: &rusqlite::Connection, key: &str) -> Result<Option<Setting>, Box<dyn std::error::Error>> {
+    pub fn get(
+        conn: &rusqlite::Connection,
+        key: &str,
+    ) -> Result<Option<Setting>, Box<dyn std::error::Error>> {
         let mut stmt = conn.prepare(
             "SELECT id, key, value, type, description, category, created_at, updated_at 
-             FROM settings WHERE key = ?"
+             FROM settings WHERE key = ?",
         )?;
-        
-        let setting = stmt.query_row(params![key], |row| {
-            Ok(Setting {
-                id: Some(row.get(0)?),
-                key: row.get(1)?,
-                value: row.get(2)?,
-                r#type: row.get(3)?,
-                description: row.get(4)?,
-                category: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
+
+        let setting = stmt
+            .query_row(params![key], |row| {
+                Ok(Setting {
+                    id: Some(row.get(0)?),
+                    key: row.get(1)?,
+                    value: row.get(2)?,
+                    r#type: row.get(3)?,
+                    description: row.get(4)?,
+                    category: row.get(5)?,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
+                })
             })
-        }).optional()?;
-        
+            .optional()?;
+
         Ok(setting)
     }
 
     /// 设置值
-    pub fn set(conn: &rusqlite::Connection, setting: &Setting) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set(
+        conn: &rusqlite::Connection,
+        setting: &Setting,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // 使用 query_row 执行 INSERT OR REPLACE，因为它可能返回结果
         conn.query_row(
             "INSERT OR REPLACE INTO settings (key, value, type, description, category, created_at, updated_at) 
@@ -1182,7 +1284,7 @@ impl CategoryRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
-             FROM categories WHERE id = ?"
+             FROM categories WHERE id = ?",
         )?;
 
         let category = stmt.query_row(params![id], |row| {
@@ -1206,7 +1308,7 @@ impl CategoryRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
-             FROM categories WHERE name = ?"
+             FROM categories WHERE name = ?",
         )?;
 
         let category = stmt.query_row(params![name], |row| {
@@ -1226,30 +1328,34 @@ impl CategoryRepository {
     }
 
     /// 获取所有分类
-    pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Category>, Box<dyn std::error::Error>> {
+    pub async fn get_all(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Category>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at 
-             FROM categories ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?"
+             FROM categories ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?",
         )?;
-        
-        let categories = stmt.query_map(params![limit, offset], |row| {
-            Ok(Category {
-                id: Some(row.get(0)?),
-                name: row.get(1)?,
-                description: row.get(2)?,
-                icon: row.get(3)?,
-                sort_order: row.get(4)?,
-                is_enabled: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let categories = stmt
+            .query_map(params![limit, offset], |row| {
+                Ok(Category {
+                    id: Some(row.get(0)?),
+                    name: row.get(1)?,
+                    description: row.get(2)?,
+                    icon: row.get(3)?,
+                    sort_order: row.get(4)?,
+                    is_enabled: row.get(5)?,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(categories)
     }
-
-
 
     /// 更新分类
     pub async fn update(&self, category: &Category) -> Result<(), Box<dyn std::error::Error>> {
@@ -1286,7 +1392,8 @@ impl CategoryRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("DELETE FROM categories WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
     }
@@ -1336,7 +1443,7 @@ impl TagRepository {
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags WHERE id = ?"
         )?;
-        
+
         let tag = stmt.query_row(params![id], |row| {
             Ok(Tag {
                 id: Some(row.get(0)?),
@@ -1350,7 +1457,7 @@ impl TagRepository {
                 updated_at: row.get(8)?,
             })
         })?;
-        
+
         Ok(tag)
     }
 
@@ -1361,7 +1468,7 @@ impl TagRepository {
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags WHERE name = ?"
         )?;
-        
+
         let tag = stmt.query_row(params![name], |row| {
             Ok(Tag {
                 id: Some(row.get(0)?),
@@ -1375,32 +1482,38 @@ impl TagRepository {
                 updated_at: row.get(8)?,
             })
         })?;
-        
+
         Ok(tag)
     }
 
     /// 获取所有标签
-    pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Tag>, Box<dyn std::error::Error>> {
+    pub async fn get_all(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Tag>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?"
         )?;
-        
-        let tags = stmt.query_map(params![limit, offset], |row| {
-            Ok(Tag {
-                id: Some(row.get(0)?),
-                name: row.get(1)?,
-                description: row.get(2)?,
-                color: row.get(3)?,
-                category_id: row.get(4)?,
-                sort_order: row.get(5)?,
-                is_enabled: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let tags = stmt
+            .query_map(params![limit, offset], |row| {
+                Ok(Tag {
+                    id: Some(row.get(0)?),
+                    name: row.get(1)?,
+                    description: row.get(2)?,
+                    color: row.get(3)?,
+                    category_id: row.get(4)?,
+                    sort_order: row.get(5)?,
+                    is_enabled: row.get(6)?,
+                    created_at: row.get(7)?,
+                    updated_at: row.get(8)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(tags)
     }
 
@@ -1440,7 +1553,8 @@ impl TagRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("DELETE FROM tags WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
     }
@@ -1487,7 +1601,7 @@ impl UserRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, password, email, role, status, created_at, updated_at
-             FROM users WHERE id = ?"
+             FROM users WHERE id = ?",
         )?;
 
         let user = stmt.query_row(params![id], |row| {
@@ -1503,7 +1617,7 @@ impl UserRepository {
             let status = match status_str.as_str() {
                 "active" => UserStatus::Active,
                 "disabled" | "inactive" | "banned" => UserStatus::Disabled,
-                
+
                 _ => UserStatus::Active,
             };
 
@@ -1523,11 +1637,14 @@ impl UserRepository {
     }
 
     /// 根据用户名获取用户
-    pub async fn get_by_username(&self, username: &str) -> Result<User, Box<dyn std::error::Error>> {
+    pub async fn get_by_username(
+        &self,
+        username: &str,
+    ) -> Result<User, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, password, email, role, status, created_at, updated_at
-             FROM users WHERE username = ?"
+             FROM users WHERE username = ?",
         )?;
 
         let user = stmt.query_row(params![username], |row| {
@@ -1543,7 +1660,7 @@ impl UserRepository {
             let status = match status_str.as_str() {
                 "active" => UserStatus::Active,
                 "disabled" | "inactive" | "banned" => UserStatus::Disabled,
-                
+
                 _ => UserStatus::Active,
             };
 
@@ -1563,41 +1680,47 @@ impl UserRepository {
     }
 
     /// 获取所有用户
-    pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<User>, Box<dyn std::error::Error>> {
+    pub async fn get_all(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<User>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, password, email, role, status, created_at, updated_at
-             FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?"
+             FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?",
         )?;
 
-        let users = stmt.query_map(params![limit, offset], |row| {
-            let role_str: String = row.get(4)?;
-            let role = match role_str.as_str() {
-                "admin" => UserRole::Admin,
-                "editor" => UserRole::Editor,
-                "subscriber" | "user" => UserRole::Subscriber,
-                _ => UserRole::Subscriber,
-            };
+        let users = stmt
+            .query_map(params![limit, offset], |row| {
+                let role_str: String = row.get(4)?;
+                let role = match role_str.as_str() {
+                    "admin" => UserRole::Admin,
+                    "editor" => UserRole::Editor,
+                    "subscriber" | "user" => UserRole::Subscriber,
+                    _ => UserRole::Subscriber,
+                };
 
-            let status_str: String = row.get(5)?;
-            let status = match status_str.as_str() {
-                "active" => UserStatus::Active,
-                "disabled" | "inactive" | "banned" => UserStatus::Disabled,
-                
-                _ => UserStatus::Active,
-            };
+                let status_str: String = row.get(5)?;
+                let status = match status_str.as_str() {
+                    "active" => UserStatus::Active,
+                    "disabled" | "inactive" | "banned" => UserStatus::Disabled,
 
-            Ok(User {
-                id: Some(row.get(0)?),
-                username: row.get(1)?,
-                password: row.get(2)?,
-                email: row.get(3)?,
-                role,
-                status,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+                    _ => UserStatus::Active,
+                };
+
+                Ok(User {
+                    id: Some(row.get(0)?),
+                    username: row.get(1)?,
+                    password: row.get(2)?,
+                    email: row.get(3)?,
+                    role,
+                    status,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(users)
     }
@@ -1637,7 +1760,8 @@ impl UserRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("DELETE FROM users WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
     }
@@ -1660,26 +1784,30 @@ impl MusicTrackRepository {
         Self { pool }
     }
 
-    pub async fn get_all_without_pagination(&self) -> Result<Vec<MusicTrack>, Box<dyn std::error::Error>> {
+    pub async fn get_all_without_pagination(
+        &self,
+    ) -> Result<Vec<MusicTrack>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
-             FROM music_tracks ORDER BY created_at DESC"
+             FROM music_tracks ORDER BY created_at DESC",
         )?;
-        
-        let tracks = stmt.query_map([], |row| {
-            Ok(MusicTrack {
-                id: Some(row.get(0)?),
-                title: row.get(1)?,
-                artist: row.get(2)?,
-                file_path: row.get(3)?,
-                file_name: row.get(4)?,
-                duration: row.get(5)?,
-                cover_image: row.get(6)?,
-                created_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let tracks = stmt
+            .query_map([], |row| {
+                Ok(MusicTrack {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    artist: row.get(2)?,
+                    file_path: row.get(3)?,
+                    file_name: row.get(4)?,
+                    duration: row.get(5)?,
+                    cover_image: row.get(6)?,
+                    created_at: row.get(7)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(tracks)
     }
 
@@ -1701,7 +1829,11 @@ impl MusicTrackRepository {
         Ok(())
     }
 
-    pub async fn update_title(&self, id: i64, title: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn update_title(
+        &self,
+        id: i64,
+        title: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
             "UPDATE music_tracks SET title = ? WHERE id = ?",
@@ -1710,7 +1842,11 @@ impl MusicTrackRepository {
         Ok(())
     }
 
-    pub async fn update_cover(&self, id: i64, cover_image: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn update_cover(
+        &self,
+        id: i64,
+        cover_image: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
             "UPDATE music_tracks SET cover_image = ? WHERE id = ?",
@@ -1719,7 +1855,11 @@ impl MusicTrackRepository {
         Ok(())
     }
 
-    pub async fn update_cover_by_filename(&self, file_name: &str, cover_image: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn update_cover_by_filename(
+        &self,
+        file_name: &str,
+        cover_image: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
             "UPDATE music_tracks SET cover_image = ? WHERE file_name = ?",
@@ -1732,9 +1872,9 @@ impl MusicTrackRepository {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
-             FROM music_tracks WHERE id = ?"
+             FROM music_tracks WHERE id = ?",
         )?;
-        
+
         let track = stmt.query_row(params![id], |row| {
             Ok(MusicTrack {
                 id: Some(row.get(0)?),
@@ -1747,7 +1887,7 @@ impl MusicTrackRepository {
                 created_at: row.get(7)?,
             })
         })?;
-        
+
         Ok(track)
     }
 
@@ -1768,29 +1908,35 @@ impl AttachmentRepository {
         Self { pool }
     }
 
-    pub async fn get_all(&self, limit: i64, offset: i64) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+    pub async fn get_all(
+        &self,
+        limit: i64,
+        offset: i64,
+    ) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments ORDER BY uploaded_at DESC LIMIT ? OFFSET ?"
         )?;
-        
-        let attachments = stmt.query_map(params![limit, offset], |row| {
-            Ok(Attachment {
-                id: Some(row.get(0)?),
-                file_name: row.get(1)?,
-                stored_name: row.get(2)?,
-                file_path: row.get(3)?,
-                file_type: row.get(4)?,
-                content_type: row.get(5)?,
-                file_size: row.get(6)?,
-                passage_uuid: row.get(7)?,
-                visibility: row.get(8)?,
-                show_in_passage: row.get(9)?,
-                uploaded_at: row.get(10)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let attachments = stmt
+            .query_map(params![limit, offset], |row| {
+                Ok(Attachment {
+                    id: Some(row.get(0)?),
+                    file_name: row.get(1)?,
+                    stored_name: row.get(2)?,
+                    file_path: row.get(3)?,
+                    file_type: row.get(4)?,
+                    content_type: row.get(5)?,
+                    file_size: row.get(6)?,
+                    passage_uuid: row.get(7)?,
+                    visibility: row.get(8)?,
+                    show_in_passage: row.get(9)?,
+                    uploaded_at: row.get(10)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(attachments)
     }
 
@@ -1815,10 +1961,11 @@ impl AttachmentRepository {
         Ok(())
     }
 
-
-
     /// 根据文章 UUID 列表查询附件
-    pub async fn get_by_passage_uuids(&self, uuids: Vec<String>) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+    pub async fn get_by_passage_uuids(
+        &self,
+        uuids: Vec<String>,
+    ) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
         if uuids.is_empty() {
             return Ok(Vec::new());
         }
@@ -1828,24 +1975,29 @@ impl AttachmentRepository {
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE passage_uuid IN ({})", placeholders
         );
-        let params: Vec<&dyn rusqlite::ToSql> = uuids.iter().map(|uuid| uuid as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> = uuids
+            .iter()
+            .map(|uuid| uuid as &dyn rusqlite::ToSql)
+            .collect();
 
         let mut stmt = conn.prepare(&sql)?;
-        let attachments = stmt.query_map(params.as_slice(), |row| {
-            Ok(Attachment {
-                id: Some(row.get(0)?),
-                file_name: row.get(1)?,
-                stored_name: row.get(2)?,
-                file_path: row.get(3)?,
-                file_type: row.get(4)?,
-                content_type: row.get(5)?,
-                file_size: row.get(6)?,
-                passage_uuid: row.get(7)?,
-                visibility: row.get(8)?,
-                show_in_passage: row.get(9)?,
-                uploaded_at: row.get(10)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let attachments = stmt
+            .query_map(params.as_slice(), |row| {
+                Ok(Attachment {
+                    id: Some(row.get(0)?),
+                    file_name: row.get(1)?,
+                    stored_name: row.get(2)?,
+                    file_path: row.get(3)?,
+                    file_type: row.get(4)?,
+                    content_type: row.get(5)?,
+                    file_size: row.get(6)?,
+                    passage_uuid: row.get(7)?,
+                    visibility: row.get(8)?,
+                    show_in_passage: row.get(9)?,
+                    uploaded_at: row.get(10)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(attachments)
     }
@@ -1856,7 +2008,7 @@ impl AttachmentRepository {
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE id = ?"
         )?;
-        
+
         let attachment = stmt.query_row(params![id], |row| {
             Ok(Attachment {
                 id: Some(row.get(0)?),
@@ -1872,7 +2024,7 @@ impl AttachmentRepository {
                 uploaded_at: row.get(10)?,
             })
         })?;
-        
+
         Ok(attachment)
     }
 
@@ -1899,12 +2051,16 @@ impl AttachmentRepository {
         let conn = self.pool.get()?;
         let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let sql = format!("DELETE FROM attachments WHERE id IN ({})", placeholders);
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let rows_affected = conn.execute(&sql, params.as_slice())?;
         Ok(rows_affected)
     }
 
-    pub async fn get_by_ids(&self, ids: Vec<i64>) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+    pub async fn get_by_ids(
+        &self,
+        ids: Vec<i64>,
+    ) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
@@ -1914,24 +2070,27 @@ impl AttachmentRepository {
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE id IN ({})", placeholders
         );
-        let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
 
         let mut stmt = conn.prepare(&sql)?;
-        let attachments = stmt.query_map(params.as_slice(), |row| {
-            Ok(Attachment {
-                id: Some(row.get(0)?),
-                file_name: row.get(1)?,
-                stored_name: row.get(2)?,
-                file_path: row.get(3)?,
-                file_type: row.get(4)?,
-                content_type: row.get(5)?,
-                file_size: row.get(6)?,
-                passage_uuid: row.get(7)?,
-                visibility: row.get(8)?,
-                show_in_passage: row.get(9)?,
-                uploaded_at: row.get(10)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let attachments = stmt
+            .query_map(params.as_slice(), |row| {
+                Ok(Attachment {
+                    id: Some(row.get(0)?),
+                    file_name: row.get(1)?,
+                    stored_name: row.get(2)?,
+                    file_path: row.get(3)?,
+                    file_type: row.get(4)?,
+                    content_type: row.get(5)?,
+                    file_size: row.get(6)?,
+                    passage_uuid: row.get(7)?,
+                    visibility: row.get(8)?,
+                    show_in_passage: row.get(9)?,
+                    uploaded_at: row.get(10)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(attachments)
     }
@@ -1953,21 +2112,23 @@ impl AboutMainCardRepository {
             "SELECT id, title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_main_cards ORDER BY sort_order"
         )?;
-        
-        let cards = stmt.query_map([], |row| {
-            Ok(AboutMainCard {
-                id: Some(row.get(0)?),
-                title: row.get(1)?,
-                icon: row.get(2)?,
-                layout_type: row.get(3)?,
-                custom_css: row.get(4)?,
-                sort_order: row.get(5)?,
-                is_enabled: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let cards = stmt
+            .query_map([], |row| {
+                Ok(AboutMainCard {
+                    id: Some(row.get(0)?),
+                    title: row.get(1)?,
+                    icon: row.get(2)?,
+                    layout_type: row.get(3)?,
+                    custom_css: row.get(4)?,
+                    sort_order: row.get(5)?,
+                    is_enabled: row.get(6)?,
+                    created_at: row.get(7)?,
+                    updated_at: row.get(8)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(cards)
     }
 
@@ -1977,7 +2138,7 @@ impl AboutMainCardRepository {
             "SELECT id, title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_main_cards WHERE id = ?"
         )?;
-        
+
         let card = stmt.query_row(params![id], |row| {
             Ok(AboutMainCard {
                 id: Some(row.get(0)?),
@@ -1991,7 +2152,7 @@ impl AboutMainCardRepository {
                 updated_at: row.get(8)?,
             })
         })?;
-        
+
         Ok(card)
     }
 
@@ -2057,24 +2218,26 @@ impl AboutSubCardRepository {
             "SELECT id, main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_sub_cards ORDER BY sort_order"
         )?;
-        
-        let cards = stmt.query_map([], |row| {
-            Ok(AboutSubCard {
-                id: Some(row.get(0)?),
-                main_card_id: row.get(1)?,
-                title: row.get(2)?,
-                description: row.get(3)?,
-                icon: row.get(4)?,
-                link_url: row.get(5)?,
-                layout_type: row.get(6)?,
-                custom_css: row.get(7)?,
-                sort_order: row.get(8)?,
-                is_enabled: row.get(9)?,
-                created_at: row.get(10)?,
-                updated_at: row.get(11)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let cards = stmt
+            .query_map([], |row| {
+                Ok(AboutSubCard {
+                    id: Some(row.get(0)?),
+                    main_card_id: row.get(1)?,
+                    title: row.get(2)?,
+                    description: row.get(3)?,
+                    icon: row.get(4)?,
+                    link_url: row.get(5)?,
+                    layout_type: row.get(6)?,
+                    custom_css: row.get(7)?,
+                    sort_order: row.get(8)?,
+                    is_enabled: row.get(9)?,
+                    created_at: row.get(10)?,
+                    updated_at: row.get(11)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(cards)
     }
 
@@ -2084,7 +2247,7 @@ impl AboutSubCardRepository {
             "SELECT id, main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_sub_cards WHERE id = ?"
         )?;
-        
+
         let card = stmt.query_row(params![id], |row| {
             Ok(AboutSubCard {
                 id: Some(row.get(0)?),
@@ -2101,7 +2264,7 @@ impl AboutSubCardRepository {
                 updated_at: row.get(11)?,
             })
         })?;
-        
+
         Ok(card)
     }
 
@@ -2177,63 +2340,74 @@ impl FriendLinkRepository {
     pub async fn get_all(&self) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE is_enabled = 1 ORDER BY sort_order ASC, created_at DESC")?;
-        
-        let links = stmt.query_map([], |row| {
-            Ok(FriendLink {
-                id: Some(row.get(0)?),
-                nickname: row.get(1)?,
-                link_url: row.get(2)?,
-                avatar_url: row.get(3)?,
-                motto: row.get(4)?,
-                sort_order: row.get(5)?,
-                is_enabled: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let links = stmt
+            .query_map([], |row| {
+                Ok(FriendLink {
+                    id: Some(row.get(0)?),
+                    nickname: row.get(1)?,
+                    link_url: row.get(2)?,
+                    avatar_url: row.get(3)?,
+                    motto: row.get(4)?,
+                    sort_order: row.get(5)?,
+                    is_enabled: row.get(6)?,
+                    created_at: row.get(7)?,
+                    updated_at: row.get(8)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(links)
     }
 
-    pub async fn get_all_including_disabled(&self) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
+    pub async fn get_all_including_disabled(
+        &self,
+    ) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links ORDER BY sort_order ASC, created_at DESC")?;
-        
-        let links = stmt.query_map([], |row| {
-            Ok(FriendLink {
-                id: Some(row.get(0)?),
-                nickname: row.get(1)?,
-                link_url: row.get(2)?,
-                avatar_url: row.get(3)?,
-                motto: row.get(4)?,
-                sort_order: row.get(5)?,
-                is_enabled: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+
+        let links = stmt
+            .query_map([], |row| {
+                Ok(FriendLink {
+                    id: Some(row.get(0)?),
+                    nickname: row.get(1)?,
+                    link_url: row.get(2)?,
+                    avatar_url: row.get(3)?,
+                    motto: row.get(4)?,
+                    sort_order: row.get(5)?,
+                    is_enabled: row.get(6)?,
+                    created_at: row.get(7)?,
+                    updated_at: row.get(8)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(links)
     }
 
-    pub async fn get_by_id(&self, id: i64) -> Result<Option<FriendLink>, Box<dyn std::error::Error>> {
+    pub async fn get_by_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<FriendLink>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE id = ?")?;
-        
-        let link = stmt.query_row(params![id], |row| {
-            Ok(FriendLink {
-                id: Some(row.get(0)?),
-                nickname: row.get(1)?,
-                link_url: row.get(2)?,
-                avatar_url: row.get(3)?,
-                motto: row.get(4)?,
-                sort_order: row.get(5)?,
-                is_enabled: row.get(6)?,
-                created_at: row.get(7)?,
-                updated_at: row.get(8)?,
+
+        let link = stmt
+            .query_row(params![id], |row| {
+                Ok(FriendLink {
+                    id: Some(row.get(0)?),
+                    nickname: row.get(1)?,
+                    link_url: row.get(2)?,
+                    avatar_url: row.get(3)?,
+                    motto: row.get(4)?,
+                    sort_order: row.get(5)?,
+                    is_enabled: row.get(6)?,
+                    created_at: row.get(7)?,
+                    updated_at: row.get(8)?,
+                })
             })
-        }).optional()?;
-        
+            .optional()?;
+
         Ok(link)
     }
 
@@ -2285,7 +2459,11 @@ impl FriendLinkRepository {
     #[allow(dead_code)]
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM friend_links WHERE is_enabled = 1", [], |row| row.get(0))?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM friend_links WHERE is_enabled = 1",
+            [],
+            |row| row.get(0),
+        )?;
         Ok(count)
     }
 }
@@ -2308,8 +2486,9 @@ impl DynamicRouteRepository {
         let conn = self.pool.get()?;
 
         // 查找最小的未使用ID（ID复用逻辑）
-        let next_id: i64 = conn.query_row(
-            "SELECT CASE
+        let next_id: i64 = conn
+            .query_row(
+                "SELECT CASE
                 WHEN MIN(id) > 1 THEN 1
                 ELSE (
                     SELECT MIN(id) + 1
@@ -2321,9 +2500,10 @@ impl DynamicRouteRepository {
                     )
                 )
             END as next_id FROM dynamic_routes",
-            [],
-            |row| row.get(0),
-        ).unwrap_or(1);
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(1);
 
         conn.execute(
             "INSERT INTO dynamic_routes (id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_by, group_id, is_primary_entry, metadata, created_at, updated_at)
@@ -2352,68 +2532,83 @@ impl DynamicRouteRepository {
     }
 
     /// 根据ID获取路由
-    pub async fn get_by_id(&self, id: i64) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
+    pub async fn get_by_id(
+        &self,
+        id: i64,
+    ) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE id = ?"
         )?;
 
-        let route = stmt.query_row(params![id], |row| {
-            Ok(DynamicRoute {
-                id: Some(row.get(0)?),
-                route_name: row.get(1)?,
-                route_type: row.get(2)?,
-                path: row.get(3)?,
-                handler_type: row.get(4)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                inline_template: row.get(6)?,
-                template_path: row.get(7)?,
-                content_type_hint: row.get(8)?,
-                enabled: row.get(9)?,
-                priority: row.get(10)?,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
-                created_by: row.get(13)?,
-                group_id: row.get(14)?,
-                is_primary_entry: row.get(15)?,
-                metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
+        let route = stmt
+            .query_row(params![id], |row| {
+                Ok(DynamicRoute {
+                    id: Some(row.get(0)?),
+                    route_name: row.get(1)?,
+                    route_type: row.get(2)?,
+                    path: row.get(3)?,
+                    handler_type: row.get(4)?,
+                    handler_config: serde_json::from_str(&row.get::<_, String>(5)?)
+                        .unwrap_or_default(),
+                    inline_template: row.get(6)?,
+                    template_path: row.get(7)?,
+                    content_type_hint: row.get(8)?,
+                    enabled: row.get(9)?,
+                    priority: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
+                    created_by: row.get(13)?,
+                    group_id: row.get(14)?,
+                    is_primary_entry: row.get(15)?,
+                    metadata: row
+                        .get::<_, Option<String>>(16)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                })
             })
-        }).optional()?;
-        
+            .optional()?;
+
         Ok(route)
     }
 
     /// 根据路径获取路由
-    pub async fn get_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
+    pub async fn get_by_path(
+        &self,
+        path: &str,
+    ) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
                     "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
                      FROM dynamic_routes WHERE path = ?"
                 )?;
-        
-        
-                let route = stmt.query_row(params![path], |row| {
-                    Ok(DynamicRoute {
-                        id: Some(row.get(0)?),
-                        route_name: row.get(1)?,
-                        route_type: row.get(2)?,
-                        path: row.get(3)?,
-                        handler_type: row.get(4)?,
-                        handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                        inline_template: row.get(6)?,
-                        template_path: row.get(7)?,
-                        content_type_hint: row.get(8)?,
-                        enabled: row.get(9)?,
-                        priority: row.get(10)?,
-                        created_at: row.get(11)?,
-                        updated_at: row.get(12)?,
-                        created_by: row.get(13)?,
-                        group_id: row.get(14)?,
-                        is_primary_entry: row.get(15)?,
-                        metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
-                    })
-                }).optional()?;
+
+        let route = stmt
+            .query_row(params![path], |row| {
+                Ok(DynamicRoute {
+                    id: Some(row.get(0)?),
+                    route_name: row.get(1)?,
+                    route_type: row.get(2)?,
+                    path: row.get(3)?,
+                    handler_type: row.get(4)?,
+                    handler_config: serde_json::from_str(&row.get::<_, String>(5)?)
+                        .unwrap_or_default(),
+                    inline_template: row.get(6)?,
+                    template_path: row.get(7)?,
+                    content_type_hint: row.get(8)?,
+                    enabled: row.get(9)?,
+                    priority: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
+                    created_by: row.get(13)?,
+                    group_id: row.get(14)?,
+                    is_primary_entry: row.get(15)?,
+                    metadata: row
+                        .get::<_, Option<String>>(16)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                })
+            })
+            .optional()?;
 
         Ok(route)
     }
@@ -2427,20 +2622,20 @@ impl DynamicRouteRepository {
         enabled: Option<bool>,
     ) -> Result<(Vec<DynamicRoute>, i64), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        
+
         // 构建查询条件
         let mut where_clause = String::new();
         let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
-        
+
         if route_type.is_some() || enabled.is_some() {
             where_clause.push_str(" WHERE ");
         }
-        
+
         if let Some(rt) = route_type {
             where_clause.push_str("route_type = ?");
             params.push(Box::new(rt));
         }
-        
+
         if let Some(en) = enabled {
             if route_type.is_some() {
                 where_clause.push_str(" AND ");
@@ -2448,12 +2643,12 @@ impl DynamicRouteRepository {
             where_clause.push_str("enabled = ?");
             params.push(Box::new(en));
         }
-        
+
         // 获取总数
         let total: i64 = conn.query_row(
             &format!("SELECT COUNT(*) FROM dynamic_routes{}", where_clause),
             rusqlite::params_from_iter(params.iter()),
-            |row| row.get(0)
+            |row| row.get(0),
         )?;
 
         // 获取列表
@@ -2469,33 +2664,42 @@ impl DynamicRouteRepository {
         final_params.push(Box::new(limit));
         final_params.push(Box::new(offset));
 
-        let routes = stmt.query_map(rusqlite::params_from_iter(final_params.iter()), |row| {
-            Ok(DynamicRoute {
-                id: Some(row.get(0)?),
-                route_name: row.get(1)?,
-                route_type: row.get(2)?,
-                path: row.get(3)?,
-                handler_type: row.get(4)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                inline_template: row.get(6)?,
-                template_path: row.get(7)?,
-                content_type_hint: row.get(8)?,
-                enabled: row.get(9)?,
-                priority: row.get(10)?,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
-                created_by: row.get(13)?,
-                group_id: row.get(14)?,
-                is_primary_entry: row.get(15)?,
-                metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+        let routes = stmt
+            .query_map(rusqlite::params_from_iter(final_params.iter()), |row| {
+                Ok(DynamicRoute {
+                    id: Some(row.get(0)?),
+                    route_name: row.get(1)?,
+                    route_type: row.get(2)?,
+                    path: row.get(3)?,
+                    handler_type: row.get(4)?,
+                    handler_config: serde_json::from_str(&row.get::<_, String>(5)?)
+                        .unwrap_or_default(),
+                    inline_template: row.get(6)?,
+                    template_path: row.get(7)?,
+                    content_type_hint: row.get(8)?,
+                    enabled: row.get(9)?,
+                    priority: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
+                    created_by: row.get(13)?,
+                    group_id: row.get(14)?,
+                    is_primary_entry: row.get(15)?,
+                    metadata: row
+                        .get::<_, Option<String>>(16)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok((routes, total))
     }
 
     /// 更新路由
-    pub async fn update(&self, id: i64, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn update(
+        &self,
+        id: i64,
+        route: &DynamicRoute,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         conn.execute(
             "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, inline_template=?, template_path=?, content_type_hint=?, enabled=?, priority=?, group_id=?, is_primary_entry=?, metadata=?, updated_at=?
@@ -2529,11 +2733,14 @@ impl DynamicRouteRepository {
     }
 
     /// 根据类型删除路由
-    pub async fn delete_by_type(&self, route_type: RouteType) -> Result<i64, Box<dyn std::error::Error>> {
+    pub async fn delete_by_type(
+        &self,
+        route_type: RouteType,
+    ) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
         let result = conn.execute(
             "DELETE FROM dynamic_routes WHERE route_type=?",
-            params![route_type]
+            params![route_type],
         )?;
         Ok(result as i64)
     }
@@ -2546,28 +2753,33 @@ impl DynamicRouteRepository {
              FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
         )?;
 
-        let routes = stmt.query_map([], |row| {
-            Ok(DynamicRoute {
-                id: Some(row.get(0)?),
-                route_name: row.get(1)?,
-                route_type: row.get(2)?,
-                path: row.get(3)?,
-                handler_type: row.get(4)?,
-                handler_config: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or_default(),
-                inline_template: row.get(6)?,
-                template_path: row.get(7)?,
-                content_type_hint: row.get(8)?,
-                enabled: row.get(9)?,
-                priority: row.get(10)?,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
-                created_by: row.get(13)?,
-                group_id: row.get(14)?,
-                is_primary_entry: row.get(15)?,
-                metadata: row.get::<_, Option<String>>(16)?.and_then(|s| serde_json::from_str(&s).ok()),
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
-        
+        let routes = stmt
+            .query_map([], |row| {
+                Ok(DynamicRoute {
+                    id: Some(row.get(0)?),
+                    route_name: row.get(1)?,
+                    route_type: row.get(2)?,
+                    path: row.get(3)?,
+                    handler_type: row.get(4)?,
+                    handler_config: serde_json::from_str(&row.get::<_, String>(5)?)
+                        .unwrap_or_default(),
+                    inline_template: row.get(6)?,
+                    template_path: row.get(7)?,
+                    content_type_hint: row.get(8)?,
+                    enabled: row.get(9)?,
+                    priority: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
+                    created_by: row.get(13)?,
+                    group_id: row.get(14)?,
+                    is_primary_entry: row.get(15)?,
+                    metadata: row
+                        .get::<_, Option<String>>(16)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+
         Ok(routes)
     }
 
@@ -2595,7 +2807,10 @@ impl DynamicRouteRepository {
     /// 在清空所有路由后调用此方法，重置自增ID从1开始
     pub async fn reset_auto_increment(&self) -> Result<(), Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
-        conn.execute("DELETE FROM sqlite_sequence WHERE name='dynamic_routes'", [])?;
+        conn.execute(
+            "DELETE FROM sqlite_sequence WHERE name='dynamic_routes'",
+            [],
+        )?;
         Ok(())
     }
 }
@@ -2631,7 +2846,10 @@ mod tests {
 
         assert_eq!(passage.title, "Test Article");
         assert_eq!(passage.status, crate::db::models::PassageStatus::Published);
-        assert_eq!(passage.visibility, crate::db::models::PassageVisibility::Public);
+        assert_eq!(
+            passage.visibility,
+            crate::db::models::PassageVisibility::Public
+        );
     }
 
     #[test]
@@ -2647,7 +2865,7 @@ mod tests {
     #[test]
     fn test_dynamic_route_model_with_new_fields() {
         // 测试 DynamicRoute 模型包含新字段
-        use crate::db::models::{DynamicRoute, RouteType, HandlerType};
+        use crate::db::models::{DynamicRoute, HandlerType, RouteType};
         use serde_json::json;
 
         let now = Utc::now();
@@ -2666,11 +2884,16 @@ mod tests {
             created_at: now,
             updated_at: now,
             created_by: Some("test_user".to_string()),
+            group_id: None,
+            is_primary_entry: None,
             metadata: Some(json!({"key": "value"})),
         };
 
         assert_eq!(route.path, "/test/route");
-        assert_eq!(route.inline_template, Some("<html><body>Test</body></html>".to_string()));
+        assert_eq!(
+            route.inline_template,
+            Some("<html><body>Test</body></html>".to_string())
+        );
         assert_eq!(route.content_type_hint, Some("text/html".to_string()));
         assert!(route.enabled);
     }

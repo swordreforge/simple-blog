@@ -1,9 +1,9 @@
-use pulldown_cmark::{Parser, html, Options};
-use once_cell::sync::Lazy;
-use std::time::Duration;
 use moka::sync::Cache;
+use once_cell::sync::Lazy;
+use pulldown_cmark::{Options, Parser, html};
 use std::fs;
 use std::path::Path;
+use std::time::Duration;
 
 /// 将 Markdown 转换为 HTML（带缓存，使用 moka 无锁缓存）
 pub fn convert_markdown_to_html(markdown: &str) -> String {
@@ -45,13 +45,11 @@ pub fn convert_markdown_to_html(markdown: &str) -> String {
 pub fn update_markdown_file(file_path: &str, content: &str) -> Result<(), String> {
     // 创建目录
     if let Some(parent) = Path::new(file_path).parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("创建目录失败: {}", e))?;
+        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
     }
 
     // 写入文件
-    fs::write(file_path, content)
-        .map_err(|e| format!("写入文件失败: {}", e))?;
+    fs::write(file_path, content).map_err(|e| format!("写入文件失败: {}", e))?;
 
     Ok(())
 }
@@ -76,7 +74,8 @@ pub fn update_markdown_file_name(old_path: &str, new_title: &str, content: &str)
             return old_path.to_string();
         }
 
-        new_path.to_str()
+        new_path
+            .to_str()
             .map(|s| s.to_string())
             .unwrap_or_else(|| old_path.to_string())
     } else {

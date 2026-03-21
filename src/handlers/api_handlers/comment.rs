@@ -1,10 +1,10 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use serde::{Deserialize, Serialize};
+use actix_web::{HttpRequest, HttpResponse, web};
 use chrono_tz::Tz;
+use serde::{Deserialize, Serialize};
 
 /// 将 Markdown 转换为 HTML
 fn convert_markdown_to_html(markdown: &str) -> String {
-    use pulldown_cmark::{Parser, html, Options};
+    use pulldown_cmark::{Options, Parser, html};
 
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
@@ -58,7 +58,7 @@ pub async fn list(
     req: HttpRequest,
 ) -> HttpResponse {
     let comment_repo = state.comment_repository();
-    
+
     // 从请求头获取时区，默认使用 UTC
     let user_timezone: Tz = req
         .headers()
@@ -66,37 +66,42 @@ pub async fn list(
         .and_then(|header| header.to_str().ok())
         .and_then(|tz_str| tz_str.parse::<Tz>().ok())
         .unwrap_or(Tz::UTC);
-    
+
     // 验证并设置默认值
     let page = query.page.filter(|&p| p > 0).unwrap_or(1);
     let limit = query.limit.filter(|&l| l > 0 && l <= 1000).unwrap_or(10);
     let offset = (page - 1) * limit;
-    
+
     let comments = if let Some(ref passage_uuid) = query.passage_uuid {
-        comment_repo.get_by_passage_uuid(passage_uuid, limit as i64, offset as i64).await
+        comment_repo
+            .get_by_passage_uuid(passage_uuid, limit as i64, offset as i64)
+            .await
     } else {
         comment_repo.get_all(limit as i64, offset as i64).await
     };
-    
+
     let total = if let Some(ref passage_uuid) = query.passage_uuid {
         comment_repo.count_by_passage_uuid(passage_uuid).await
     } else {
         comment_repo.count().await
     };
-    
+
     match (comments, total) {
         (Ok(comments), Ok(total)) => {
-            let data: Vec<CommentResponse> = comments.into_iter().map(|c| {
-                let local_time = c.created_at.with_timezone(&user_timezone);
-                CommentResponse {
-                    id: c.id.unwrap_or(0),
-                    username: c.username,
-                    content: c.content,
-                    passage_uuid: c.passage_uuid,
-                    created_at: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
-                }
-            }).collect();
-            
+            let data: Vec<CommentResponse> = comments
+                .into_iter()
+                .map(|c| {
+                    let local_time = c.created_at.with_timezone(&user_timezone);
+                    CommentResponse {
+                        id: c.id.unwrap_or(0),
+                        username: c.username,
+                        content: c.content,
+                        passage_uuid: c.passage_uuid,
+                        created_at: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    }
+                })
+                .collect();
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "data": data,
@@ -110,7 +115,7 @@ pub async fn list(
         _ => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "获取评论列表失败".to_string(),
-        })
+        }),
     }
 }
 
@@ -127,7 +132,7 @@ pub async fn create(
             message: "用户名、内容和文章UUID不能为空".to_string(),
         });
     }
-    
+
     let comment_repo = state.comment_repository();
 
     // 将 Markdown 转换为 HTML
@@ -163,11 +168,11 @@ pub async fn create(
                     created_at: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
                 }
             }))
-        },
+        }
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "创建评论失败".to_string(),
-        })
+        }),
     }
 }
 
@@ -186,16 +191,16 @@ pub async fn delete(
     }
 
     let id = path.into_inner();
-    
+
     if id <= 0 {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
             message: "无效的评论ID".to_string(),
         });
     }
-    
+
     let comment_repo = state.comment_repository();
-    
+
     match comment_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(CommonResponse {
             success: true,
@@ -204,7 +209,7 @@ pub async fn delete(
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "删除评论失败".to_string(),
-        })
+        }),
     }
 }
 
@@ -234,7 +239,7 @@ pub async fn delete_batch(
             message: "评论ID列表不能为空".to_string(),
         });
     }
-    
+
     let comment_repo = state.comment_repository();
 
     match comment_repo.delete_batch(req_json.ids.clone()).await {
@@ -246,6 +251,6 @@ pub async fn delete_batch(
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "批量删除评论失败".to_string(),
-        })
+        }),
     }
 }

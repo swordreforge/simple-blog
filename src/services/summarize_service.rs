@@ -63,7 +63,7 @@ impl SummarizeService {
     pub fn generate_summary_from_markdown(markdown_content: &str) -> String {
         // 从 Markdown 中提取纯文本
         let plain_text = Self::extract_plain_text_from_markdown(markdown_content);
-        
+
         // 生成摘要
         Self::generate_summary(&plain_text)
     }
@@ -83,42 +83,84 @@ impl SummarizeService {
         let mut text = markdown_content.to_string();
 
         // 移除标题标记 (# ## ### 等)
-        text = regex::Regex::new(r"^#+\s+").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"^#+\s+")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除粗体标记 (**text** 或 __text__)
-        text = regex::Regex::new(r"\*\*([^*]+)\*\*").unwrap().replace_all(&text, "$1").to_string();
-        text = regex::Regex::new(r"__([^_]+)__").unwrap().replace_all(&text, "$1").to_string();
+        text = regex::Regex::new(r"\*\*([^*]+)\*\*")
+            .unwrap()
+            .replace_all(&text, "$1")
+            .to_string();
+        text = regex::Regex::new(r"__([^_]+)__")
+            .unwrap()
+            .replace_all(&text, "$1")
+            .to_string();
 
         // 移除斜体标记 (*text* 或 _text_)
-        text = regex::Regex::new(r"\*([^*]+)\*").unwrap().replace_all(&text, "$1").to_string();
-        text = regex::Regex::new(r"_([^_]+)_").unwrap().replace_all(&text, "$1").to_string();
+        text = regex::Regex::new(r"\*([^*]+)\*")
+            .unwrap()
+            .replace_all(&text, "$1")
+            .to_string();
+        text = regex::Regex::new(r"_([^_]+)_")
+            .unwrap()
+            .replace_all(&text, "$1")
+            .to_string();
 
         // 移除代码块 (```code```)
-        text = regex::Regex::new(r"```[\s\S]*?```").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"```[\s\S]*?```")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除行内代码 (`code`)
-        text = regex::Regex::new(r"`([^`]+)`").unwrap().replace_all(&text, "$1").to_string();
+        text = regex::Regex::new(r"`([^`]+)`")
+            .unwrap()
+            .replace_all(&text, "$1")
+            .to_string();
 
         // 移除链接 [text](url)
-        text = regex::Regex::new(r"\[([^\]]+)\]\([^\)]+\)").unwrap().replace_all(&text, "$1").to_string();
+        text = regex::Regex::new(r"\[([^\]]+)\]\([^\)]+\)")
+            .unwrap()
+            .replace_all(&text, "$1")
+            .to_string();
 
         // 移除图片 ![alt](url)
-        text = regex::Regex::new(r"!\[([^\]]*)\]\([^\)]+\)").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"!\[([^\]]*)\]\([^\)]+\)")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除引用标记 (> )
-        text = regex::Regex::new(r"(?m)^>\s+").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"(?m)^>\s+")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除列表标记 (- 或 *)
-        text = regex::Regex::new(r"(?m)^[\-\*]\s+").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"(?m)^[\-\*]\s+")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除数字列表标记 (1. 2. 等)
-        text = regex::Regex::new(r"(?m)^\d+\.\s+").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"(?m)^\d+\.\s+")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除水平线 (--- 或 ***)
-        text = regex::Regex::new(r"(?m)^[\-\*]{3,}\s*$").unwrap().replace_all(&text, "").to_string();
+        text = regex::Regex::new(r"(?m)^[\-\*]{3,}\s*$")
+            .unwrap()
+            .replace_all(&text, "")
+            .to_string();
 
         // 移除多余空行
-        text = regex::Regex::new(r"\n\s*\n\s*\n").unwrap().replace_all(&text, "\n\n").to_string();
+        text = regex::Regex::new(r"\n\s*\n\s*\n")
+            .unwrap()
+            .replace_all(&text, "\n\n")
+            .to_string();
 
         // 移除行首尾空白
         text.trim().to_string()
@@ -137,7 +179,7 @@ impl SummarizeService {
     #[allow(dead_code)]
     pub fn generate_summary_with_limit(content: &str, max_length: usize) -> String {
         let summary = Self::generate_summary(content);
-        
+
         if summary.chars().count() <= max_length {
             summary
         } else {
@@ -156,10 +198,10 @@ mod tests {
     fn test_generate_summary() {
         let content = "人工智能是计算机科学的一个分支。它试图了解智能的实质。人工智能包括机器学习、深度学习等技术。这些技术在图像识别、自然语言处理等领域有广泛应用。机器学习是人工智能的核心技术之一。深度学习是机器学习的一种特殊形式。神经网络是深度学习的基础。";
         let summary = SummarizeService::generate_summary(content);
-        
+
         // 摘要应该不为空
         assert!(!summary.is_empty());
-        
+
         // 摘要应该比原文短
         assert!(summary.len() < content.len());
     }
@@ -168,7 +210,7 @@ mod tests {
     fn test_generate_summary_empty() {
         let content = "";
         let summary = SummarizeService::generate_summary(content);
-        
+
         assert!(summary.is_empty());
     }
 
@@ -176,7 +218,7 @@ mod tests {
     fn test_generate_summary_short() {
         let content = "短文本";
         let summary = SummarizeService::generate_summary(content);
-        
+
         // 短文本应该原样返回
         assert_eq!(summary, "短文本");
     }
@@ -185,13 +227,13 @@ mod tests {
     fn test_extract_plain_text_from_markdown() {
         let markdown = "# 标题\n\n这是一段**粗体**和*斜体*文本。\n\n```\ncode block\n```";
         let plain_text = SummarizeService::extract_plain_text_from_markdown(markdown);
-        
+
         // 应该移除 Markdown 标记
         assert!(!plain_text.contains("#"));
         assert!(!plain_text.contains("**"));
         assert!(!plain_text.contains("*"));
         assert!(!plain_text.contains("```"));
-        
+
         // 应该保留文本内容
         assert!(plain_text.contains("标题"));
         assert!(plain_text.contains("粗体"));
@@ -202,7 +244,7 @@ mod tests {
     fn test_generate_summary_from_markdown() {
         let markdown = "# 人工智能概述\n\n人工智能是计算机科学的一个分支。它试图了解智能的实质。人工智能包括机器学习、深度学习等技术。";
         let summary = SummarizeService::generate_summary_from_markdown(markdown);
-        
+
         // 摘要应该不为空
         assert!(!summary.is_empty());
     }
@@ -212,7 +254,7 @@ mod tests {
         let content = "人工智能是计算机科学的一个分支。它试图了解智能的实质。人工智能包括机器学习、深度学习等技术。这些技术在图像识别、自然语言处理等领域有广泛应用。";
         let max_length = 50;
         let summary = SummarizeService::generate_summary_with_limit(content, max_length);
-        
+
         // 摘要长度应该不超过限制（使用字符数而不是字节数）
         assert!(summary.chars().count() <= max_length);
     }

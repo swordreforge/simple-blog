@@ -2,8 +2,8 @@
 //!
 //! 配置动态路由的分发器和优先级
 
-use actix_web::web;
 use crate::handlers::dynamic_route_handlers;
+use actix_web::web;
 
 /// 配置动态路由
 ///
@@ -12,7 +12,7 @@ pub fn configure_dynamic_routes(cfg: &mut web::ServiceConfig) {
     // 健康检查端点 - 必须在通配符路由之前配置
     cfg.service(
         web::resource("/health/dynamic-route")
-            .route(web::get().to(dynamic_route_handlers::health_check))
+            .route(web::get().to(dynamic_route_handlers::health_check)),
     );
 
     // 动态路由分发器 - 作为兜底路由
@@ -22,6 +22,6 @@ pub fn configure_dynamic_routes(cfg: &mut web::ServiceConfig) {
             .route(web::get().to(dynamic_route_handlers::handle_dynamic_route))
             .route(web::post().to(dynamic_route_handlers::handle_dynamic_route))
             .route(web::put().to(dynamic_route_handlers::handle_dynamic_route))
-            .route(web::delete().to(dynamic_route_handlers::handle_dynamic_route))
+            .route(web::delete().to(dynamic_route_handlers::handle_dynamic_route)),
     );
 }

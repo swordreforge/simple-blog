@@ -1,10 +1,10 @@
-use actix_web::{web, HttpResponse};
-use serde::Serialize;
 use crate::db::repositories::{PassageRepository, Repository};
-use std::sync::Arc;
-use std::path::{Path, PathBuf};
+use actix_web::{HttpResponse, web};
+use chrono::{DateTime, NaiveDate, Utc};
+use serde::Serialize;
 use std::fs;
-use chrono::{Utc, NaiveDate, DateTime};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 /// 同步响应
 #[derive(Debug, Serialize)]
@@ -22,40 +22,49 @@ pub struct SyncResult {
 /// 同步处理器 - 从 markdown 目录同步文章到数据库
 pub async fn sync(repo: web::Data<Arc<dyn Repository>>) -> HttpResponse {
     let passage_repo = PassageRepository::new(repo.get_pool().clone());
-    
+
     // 遍历 markdown 目录
     let markdown_dir = Path::new("markdown");
-    
+
     if !markdown_dir.exists() {
         return HttpResponse::Ok().json(SyncResponse {
             success: false,
             message: "markdown 目录不存在".to_string(),
         });
     }
-    
+
     let mut synced_count = 0;
     let mut updated_count = 0;
     let mut deleted_count = 0;
-    
+
     // 递归遍历目录并同步文件
-    match sync_directory_async(markdown_dir, &passage_repo, &mut synced_count, &mut updated_count, &mut deleted_count).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(SyncResponse {
-                success: true,
-                message: format!("同步成功: {} 篇文章已同步, {} 篇文章已更新, {} 篇文章已删除", synced_count, updated_count, deleted_count),
-            })
-        }
-        Err(e) => {
-            HttpResponse::Ok().json(SyncResponse {
-                success: false,
-                message: format!("同步失败: {}", e),
-            })
-        }
+    match sync_directory_async(
+        markdown_dir,
+        &passage_repo,
+        &mut synced_count,
+        &mut updated_count,
+        &mut deleted_count,
+    )
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().json(SyncResponse {
+            success: true,
+            message: format!(
+                "同步成功: {} 篇文章已同步, {} 篇文章已更新, {} 篇文章已删除",
+                synced_count, updated_count, deleted_count
+            ),
+        }),
+        Err(e) => HttpResponse::Ok().json(SyncResponse {
+            success: false,
+            message: format!("同步失败: {}", e),
+        }),
     }
 }
 
 /// 内部同步函数 - 用于启动时的自动同步
-pub async fn sync_directory_internal(passage_repo: &PassageRepository) -> Result<SyncResult, String> {
+pub async fn sync_directory_internal(
+    passage_repo: &PassageRepository,
+) -> Result<SyncResult, String> {
     let markdown_dir = Path::new("markdown");
 
     if !markdown_dir.exists() {
@@ -63,12 +72,19 @@ pub async fn sync_directory_internal(passage_repo: &PassageRepository) -> Result
             message: "markdown 目录不存在，跳过同步".to_string(),
         });
     }
-    
+
     let mut synced_count = 0;
     let mut updated_count = 0;
     let mut deleted_count = 0;
-    
-    sync_directory_async(markdown_dir, passage_repo, &mut synced_count, &mut updated_count, &mut deleted_count).await?;
+
+    sync_directory_async(
+        markdown_dir,
+        passage_repo,
+        &mut synced_count,
+        &mut updated_count,
+        &mut deleted_count,
+    )
+    .await?;
 
     Ok(SyncResult {
         message: format!(
@@ -89,14 +105,14 @@ async fn sync_directory_async(
     // 使用显式栈来模拟递归
     let mut dir_stack: Vec<PathBuf> = vec![dir.to_path_buf()];
     let mut md_files: Vec<PathBuf> = Vec::new();
-    
+
     while let Some(current_dir) = dir_stack.pop() {
         let entries = fs::read_dir(&current_dir).map_err(|e| format!("读取目录失败: {}", e))?;
-        
+
         for entry in entries {
             let entry = entry.map_err(|e| format!("读取条目失败: {}", e))?;
             let path = entry.path();
-            
+
             if path.is_dir() {
                 dir_stack.push(path);
             } else if path.extension().is_some_and(|ext| ext == "md") {
@@ -104,7 +120,7 @@ async fn sync_directory_async(
             }
         }
     }
-    
+
     // 同步所有 markdown 文件
     for path in md_files {
         match sync_markdown_file_async(&path, passage_repo, synced_count, updated_count).await {
@@ -114,10 +130,10 @@ async fn sync_directory_async(
             }
         }
     }
-    
+
     // 清理数据库中不存在的文件记录
     cleanup_orphaned_passages(passage_repo, dir, deleted_count).await?;
-    
+
     Ok(())
 }
 
@@ -129,35 +145,35 @@ async fn sync_markdown_file_async(
     updated_count: &mut usize,
 ) -> Result<(), String> {
     // 读取文件内容
-    let content = fs::read_to_string(path)
-        .map_err(|e| format!("读取文件失败: {}", e))?;
-    
+    let content = fs::read_to_string(path).map_err(|e| format!("读取文件失败: {}", e))?;
+
     // 提取标题（从文件名）
-    let title = path.file_stem()
+    let title = path
+        .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("未命名文章")
         .to_string();
-    
+
     // 获取相对路径
     let file_path = path.to_string_lossy().to_string();
-    
+
     // 从路径提取日期（格式：markdown/YYYY/MM/DD/filename.md）
     let created_at = extract_date_from_path(&file_path).unwrap_or_else(Utc::now);
-    
+
     // 转换 markdown 为 HTML
     let html_content = convert_markdown_to_html(&content);
-    
+
     // 生成摘要
     let summary = {
         use crate::services::summarize_service::SummarizeService;
         Some(SummarizeService::generate_summary_from_markdown(&content))
     };
-    
+
     // 不自动生成标签，保持为空数组
     let tags_json = "[]".to_string();
-    
+
     let now = Utc::now();
-    
+
     // 检查是否已存在
     if let Ok(existing) = passage_repo.get_by_file_path(&file_path).await {
         // 更新现有文章 - 保留原有的标签和分类等元数据
@@ -168,24 +184,25 @@ async fn sync_markdown_file_async(
             content: html_content,
             original_content: Some(content.clone()),
             summary,
-            summarize: None,  // 将在更新时自动生成
+            summarize: None, // 将在更新时自动生成
             author: existing.author,
-            tags: existing.tags, // 保留原有标签
+            tags: existing.tags,         // 保留原有标签
             category: existing.category, // 保留原有分类
-            status: existing.status, // 保留原有状态
+            status: existing.status,     // 保留原有状态
             file_path: Some(file_path.clone()),
-            visibility: existing.visibility, // 保留原有可见性
+            visibility: existing.visibility,     // 保留原有可见性
             is_scheduled: existing.is_scheduled, // 保留原有定时发布设置
             published_at: existing.published_at, // 保留原有发布时间
-            cover_image: existing.cover_image, // 保留原有封面
+            cover_image: existing.cover_image,   // 保留原有封面
             created_at: existing.created_at,
             updated_at: now,
         };
-        
+
         // 更新文章（使用 SQL 直接更新）
-        update_passage(passage_repo, &updated_passage).await
+        update_passage(passage_repo, &updated_passage)
+            .await
             .map_err(|e| format!("更新文章失败: {}", e))?;
-        
+
         *updated_count += 1;
         println!("✏️  已更新文章: {}", file_path);
     } else {
@@ -197,7 +214,7 @@ async fn sync_markdown_file_async(
             content: html_content,
             original_content: Some(content.clone()),
             summary,
-            summarize: None,  // 将在创建时自动生成
+            summarize: None, // 将在创建时自动生成
             author: "Admin".to_string(),
             tags: tags_json.clone(),
             category: "未分类".to_string(),
@@ -210,14 +227,16 @@ async fn sync_markdown_file_async(
             created_at,
             updated_at: now,
         };
-        
-        passage_repo.create(&passage).await
+
+        passage_repo
+            .create(&passage)
+            .await
             .map_err(|e| format!("创建文章失败: {}", e))?;
-        
+
         *synced_count += 1;
         println!("✅ 已同步文章: {}", file_path);
     }
-    
+
     Ok(())
 }
 
@@ -225,10 +244,10 @@ async fn sync_markdown_file_async(
 fn extract_date_from_path(file_path: &str) -> Option<DateTime<Utc>> {
     // 移除 markdown/ 前缀
     let path = file_path.strip_prefix("markdown/")?;
-    
+
     // 分割路径
     let parts: Vec<&str> = path.split('/').collect();
-    
+
     // 检查是否有 年/月/日 格式
     if parts.len() >= 3 {
         let year = parts[0].parse::<i32>().ok()?;
@@ -256,10 +275,10 @@ async fn update_passage(
 ) -> Result<(), String> {
     use crate::db::get_db_pool_sync;
     use rusqlite::params;
-    
+
     let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
     let conn = pool.get().map_err(|e| format!("获取连接失败: {}", e))?;
-    
+
     if let Some(id) = passage.id {
         conn.execute(
             "UPDATE passages SET title = ?, content = ?, original_content = ?, summary = ?, tags = ?, updated_at = ? WHERE id = ?",
@@ -274,7 +293,7 @@ async fn update_passage(
             ],
         ).map_err(|e| format!("更新失败: {}", e))?;
     }
-    
+
     Ok(())
 }
 
@@ -286,21 +305,21 @@ async fn cleanup_orphaned_passages(
 ) -> Result<(), String> {
     use crate::db::get_db_pool_sync;
     use rusqlite::params;
-    
+
     let pool = get_db_pool_sync().map_err(|e| format!("获取数据库连接失败: {}", e))?;
     let conn = pool.get().map_err(|e| format!("获取连接失败: {}", e))?;
-    
+
     // 获取所有有 file_path 的文章
-    let mut stmt = conn.prepare("SELECT id, file_path FROM passages WHERE file_path IS NOT NULL")
+    let mut stmt = conn
+        .prepare("SELECT id, file_path FROM passages WHERE file_path IS NOT NULL")
         .map_err(|e| format!("查询失败: {}", e))?;
-    
-    let passage_rows = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, i64>(0)?,
-            row.get::<_, Option<String>>(1)?,
-        ))
-    }).map_err(|e| format!("查询失败: {}", e))?;
-    
+
+    let passage_rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, Option<String>>(1)?))
+        })
+        .map_err(|e| format!("查询失败: {}", e))?;
+
     for (id, file_path) in passage_rows.flatten() {
         if let Some(fp) = file_path {
             let full_path = Path::new(&fp);
@@ -312,13 +331,13 @@ async fn cleanup_orphaned_passages(
             }
         }
     }
-    
+
     Ok(())
 }
 
 /// 将 Markdown 转换为 HTML
 fn convert_markdown_to_html(markdown: &str) -> String {
-    use pulldown_cmark::{Parser, html, Options};
+    use pulldown_cmark::{Options, Parser, html};
 
     // 配置选项，启用表格和其他扩展
     let mut options = Options::empty();

@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
 use crate::jwt::generate_token;
+use actix_web::{HttpResponse, Responder, web};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
@@ -57,9 +57,16 @@ pub async fn login(
     let username = std::mem::take(&mut req.username);
 
     // 获取密码（支持明文和加密两种方式）
-    let password = if !req.encrypted_password.is_empty() && !req.session_id.is_empty() && !req.client_public_key.is_empty() {
+    let password = if !req.encrypted_password.is_empty()
+        && !req.session_id.is_empty()
+        && !req.client_public_key.is_empty()
+    {
         // 使用ECC加密方式，需要解密
-        match decrypt_password(&req.encrypted_password, &req.session_id, &req.client_public_key) {
+        match decrypt_password(
+            &req.encrypted_password,
+            &req.session_id,
+            &req.client_public_key,
+        ) {
             Ok(p) => p,
             Err(e) => {
                 return HttpResponse::BadRequest().json(AuthResponse {
@@ -120,7 +127,7 @@ pub async fn login(
                     .path("/")
                     .http_only(true)
                     .max_age(actix_web::cookie::time::Duration::hours(24))
-                    .finish()
+                    .finish(),
             );
 
             response.json(AuthResponse {
@@ -136,22 +143,18 @@ pub async fn login(
                 }),
             })
         }
-        Ok(false) => {
-            HttpResponse::Unauthorized().json(AuthResponse {
-                success: false,
-                message: String::from("用户名或密码错误"),
-                token: None,
-                user: None,
-            })
-        }
-        Err(e) => {
-            HttpResponse::InternalServerError().json(AuthResponse {
-                success: false,
-                message: format!("密码验证失败: {}", e),
-                token: None,
-                user: None,
-            })
-        }
+        Ok(false) => HttpResponse::Unauthorized().json(AuthResponse {
+            success: false,
+            message: String::from("用户名或密码错误"),
+            token: None,
+            user: None,
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(AuthResponse {
+            success: false,
+            message: format!("密码验证失败: {}", e),
+            token: None,
+            user: None,
+        }),
     }
 }
 
@@ -161,16 +164,30 @@ pub async fn register(
     mut req: web::Json<RegisterRequest>,
     state: web::Data<crate::app_state::AppState>,
 ) -> impl Responder {
-    use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
+    use argon2::{
+        Argon2, PasswordHasher,
+        password_hash::{SaltString, rand_core::OsRng},
+    };
 
     let username = std::mem::take(&mut req.username);
     let email = std::mem::take(&mut req.email);
-    let role = if let Some(r) = req.role.take() { r } else { String::from("user") };
+    let role = if let Some(r) = req.role.take() {
+        r
+    } else {
+        String::from("user")
+    };
 
     // 获取密码（支持明文和加密两种方式）
-    let password = if !req.encrypted_password.is_empty() && !req.session_id.is_empty() && !req.client_public_key.is_empty() {
+    let password = if !req.encrypted_password.is_empty()
+        && !req.session_id.is_empty()
+        && !req.client_public_key.is_empty()
+    {
         // 使用ECC加密方式，需要解密
-        match decrypt_password(&req.encrypted_password, &req.session_id, &req.client_public_key) {
+        match decrypt_password(
+            &req.encrypted_password,
+            &req.session_id,
+            &req.client_public_key,
+        ) {
             Ok(p) => p,
             Err(e) => {
                 return HttpResponse::BadRequest().json(AuthResponse {
@@ -228,92 +245,70 @@ pub async fn register(
 
     // 创建用户
 
-        let user_role = match role.as_str() {
+    let user_role = match role.as_str() {
+        "admin" => crate::db::models::UserRole::Admin,
 
-            "admin" => crate::db::models::UserRole::Admin,
+        "editor" => crate::db::models::UserRole::Editor,
 
-            "editor" => crate::db::models::UserRole::Editor,
+        _ => crate::db::models::UserRole::Subscriber,
+    };
 
-            _ => crate::db::models::UserRole::Subscriber,
+    let new_user = crate::db::models::User {
+        id: None,
 
-        };
+        username: String::from(&username),
 
-    
+        email: String::from(&email),
 
-        let new_user = crate::db::models::User {
+        password: hashed_password,
 
-            id: None,
+        role: user_role,
 
-            username: String::from(&username),
+        status: crate::db::models::UserStatus::Active,
 
-            email: String::from(&email),
+        created_at: chrono::Utc::now(),
 
-            password: hashed_password,
+        updated_at: chrono::Utc::now(),
+    };
 
-            role: user_role,
+    match user_repo.create(&new_user).await {
+        Ok(_) => {
+            // 获取创建的用户
 
-            status: crate::db::models::UserStatus::Active,
+            let user = user_repo.get_by_username(&username).await;
 
-            created_at: chrono::Utc::now(),
+            match user {
+                Ok(u) => {
+                    // 生成 JWT token
 
-            updated_at: chrono::Utc::now(),
+                    let user_id = u.id.unwrap_or(0);
 
-        };
+                    let token = match generate_token(user_id, &u.username, u.role) {
+                        Ok(t) => t,
 
-    
+                        Err(e) => {
+                            return HttpResponse::InternalServerError().json(AuthResponse {
+                                success: false,
 
-        match user_repo.create(&new_user).await {
+                                message: format!("生成 token 失败: {}", e),
 
-            Ok(_) => {
+                                token: None,
 
-                // 获取创建的用户
+                                user: None,
+                            });
+                        }
+                    };
 
-                let user = user_repo.get_by_username(&username).await;
+                    // 设置 cookie
 
-                match user {
+                    let mut response = HttpResponse::Ok();
 
-                    Ok(u) => {
-
-                        // 生成 JWT token
-
-                        let user_id = u.id.unwrap_or(0);
-
-                        let token = match generate_token(user_id, &u.username, u.role) {
-
-                            Ok(t) => t,
-
-                            Err(e) => {
-
-                                return HttpResponse::InternalServerError().json(AuthResponse {
-
-                                    success: false,
-
-                                    message: format!("生成 token 失败: {}", e),
-
-                                    token: None,
-
-                                    user: None,
-
-                                });
-
-                            }
-
-                        };
-
-    
-
-                        // 设置 cookie
-
-                        let mut response = HttpResponse::Ok();
-
-                        response.cookie(
-
-                            actix_web::cookie::Cookie::build("auth_token", token.clone())
-
-                                .path("/")
+                    response.cookie(
+                        actix_web::cookie::Cookie::build("auth_token", token.clone())
+                            .path("/")
                             .http_only(true)
                             .max_age(actix_web::cookie::time::Duration::hours(24))
-                            .finish()
+                            .finish(),
                     );
 
                     response.json(AuthResponse {
@@ -329,24 +324,20 @@ pub async fn register(
                         }),
                     })
                 }
-                Err(_e) => {
-                    HttpResponse::Ok().json(AuthResponse {
-                        success: true,
-                        message: String::from("注册成功，但无法获取用户信息"),
-                        token: Some(format!("token_{}", username)),
-                        user: None,
-                    })
-                }
+                Err(_e) => HttpResponse::Ok().json(AuthResponse {
+                    success: true,
+                    message: String::from("注册成功，但无法获取用户信息"),
+                    token: Some(format!("token_{}", username)),
+                    user: None,
+                }),
             }
         }
-        Err(e) => {
-            HttpResponse::InternalServerError().json(AuthResponse {
-                success: false,
-                message: format!("注册失败: {}", e),
-                token: None,
-                user: None,
-            })
-        }
+        Err(e) => HttpResponse::InternalServerError().json(AuthResponse {
+            success: false,
+            message: format!("注册失败: {}", e),
+            token: None,
+            user: None,
+        }),
     }
 }
 
@@ -358,7 +349,7 @@ pub async fn logout() -> impl Responder {
             .path("/")
             .http_only(true)
             .max_age(actix_web::cookie::time::Duration::ZERO)
-            .finish()
+            .finish(),
     );
     response.json(serde_json::json!({
         "success": true,
@@ -377,11 +368,11 @@ pub async fn check() -> impl Responder {
 /// 验证密码（使用 Argon2id）
 pub fn verify_password(password: &str, hashed_password: &str) -> Result<bool, String> {
     use argon2::{Argon2, PasswordHash, PasswordVerifier};
-    
+
     // 解析哈希值
     let parsed_hash = PasswordHash::new(hashed_password)
         .map_err(|e| format!("Failed to parse password hash: {}", e))?;
-    
+
     // 验证密码
     let argon2 = Argon2::default();
     match argon2.verify_password(password.as_bytes(), &parsed_hash) {
@@ -391,11 +382,16 @@ pub fn verify_password(password: &str, hashed_password: &str) -> Result<bool, St
 }
 
 /// 解密密码（使用ECC）
-pub fn decrypt_password(encrypted_password: &str, session_id: &str, client_public_key: &str) -> Result<String, String> {
+pub fn decrypt_password(
+    encrypted_password: &str,
+    session_id: &str,
+    client_public_key: &str,
+) -> Result<String, String> {
     use super::crypto::GLOBAL_SESSION_MANAGER;
 
     // 获取会话
-    let session = GLOBAL_SESSION_MANAGER.get_session(session_id)
+    let session = GLOBAL_SESSION_MANAGER
+        .get_session(session_id)
         .ok_or_else(|| format!("Session not found: {}", session_id))?;
 
     // 检查会话是否过期

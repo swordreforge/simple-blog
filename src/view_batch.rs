@@ -1,13 +1,13 @@
 //! 阅读记录批量处理模块
-//! 
+//!
 //! 使用 tokio::sync::mpsc 通道批量写入阅读记录
 //! 预期效果：数据库写入减少 80-90%
 
-use tokio::sync::mpsc;
-use std::sync::Arc;
-use std::time::Duration;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::sync::mpsc;
 
 /// 阅读记录消息
 #[derive(Debug, Clone)]
@@ -41,11 +41,11 @@ pub struct BatchConfig {
 impl Default for BatchConfig {
     fn default() -> Self {
         Self {
-            batch_size: 100,      // 每100条记录批量写入
-            batch_timeout: 5,     // 5秒超时自动写入
-            adaptive: true,       // 启用自适应
-            min_batch_size: 50,   // 最小50条
-            max_batch_size: 500,  // 最大500条
+            batch_size: 100,       // 每100条记录批量写入
+            batch_timeout: 5,      // 5秒超时自动写入
+            adaptive: true,        // 启用自适应
+            min_batch_size: 50,    // 最小50条
+            max_batch_size: 500,   // 最大500条
             adaptive_interval: 30, // 每30秒调整一次
         }
     }
@@ -72,11 +72,11 @@ impl ViewBatchProcessor {
     /// 创建新的批量处理器
     pub fn new(pool: Arc<Pool<SqliteConnectionManager>>, config: BatchConfig) -> Self {
         let (tx, rx) = mpsc::unbounded_channel::<ViewRecord>();
-        
+
         let handle = tokio::spawn(async move {
             Self::batch_processor(pool, rx, config).await;
         });
-        
+
         Self {
             tx,
             _handle: handle,
@@ -84,7 +84,10 @@ impl ViewBatchProcessor {
     }
 
     /// 记录阅读（异步发送）
-    pub fn record_view(&self, record: ViewRecord) -> Result<(), Box<mpsc::error::SendError<ViewRecord>>> {
+    pub fn record_view(
+        &self,
+        record: ViewRecord,
+    ) -> Result<(), Box<mpsc::error::SendError<ViewRecord>>> {
         self.tx.send(record).map_err(Box::new)
     }
 
@@ -103,10 +106,11 @@ impl ViewBatchProcessor {
 
         let mut batch = Vec::with_capacity(adaptive_state.current_batch_size);
         let mut interval = tokio::time::interval(Duration::from_secs(config.batch_timeout));
-        
+
         if config.adaptive {
-            let mut adaptive_interval = tokio::time::interval(Duration::from_secs(config.adaptive_interval));
-            
+            let mut adaptive_interval =
+                tokio::time::interval(Duration::from_secs(config.adaptive_interval));
+
             loop {
                 tokio::select! {
                     // 接收新记录
@@ -115,7 +119,7 @@ impl ViewBatchProcessor {
                             Some(record) => {
                                 adaptive_state.records_received += 1;
                                 batch.push(record);
-                                
+
                                 // 达到批量大小，立即写入
                                 if batch.len() >= adaptive_state.current_batch_size {
                                     if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
@@ -157,7 +161,7 @@ impl ViewBatchProcessor {
                         match result {
                             Some(record) => {
                                 batch.push(record);
-                                
+
                                 // 达到批量大小，立即写入
                                 if batch.len() >= config.batch_size {
                                     if let Err(e) = Self::flush_batch(&pool, &mut batch).await {
@@ -202,43 +206,49 @@ impl ViewBatchProcessor {
 
         let records_per_second = state.records_received as f64 / config.adaptive_interval as f64;
         let target_batch_size = Self::calculate_target_batch_size(records_per_second, config);
-        
+
         // 平滑调整批量大小
         let adjustment = (target_batch_size as i32 - state.current_batch_size as i32) / 2;
         let new_batch_size = (state.current_batch_size as i32 + adjustment) as usize;
-        
+
         // 限制在最小和最大值之间
         let new_batch_size = new_batch_size.clamp(config.min_batch_size, config.max_batch_size);
-        
+
         if new_batch_size != state.current_batch_size {
-            println!("📊 自适应调整批量大小: {} -> {} (记录速率: {:.1}/秒)", 
-                state.current_batch_size, new_batch_size, records_per_second);
-            
+            println!(
+                "📊 自适应调整批量大小: {} -> {} (记录速率: {:.1}/秒)",
+                state.current_batch_size, new_batch_size, records_per_second
+            );
+
             // 更新当前批量大小
             state.current_batch_size = new_batch_size;
-            
+
             // 如果新批量大小小于当前批次大小，立即写入
             if batch.len() >= new_batch_size {
                 println!("⚡ 批量大小调整，立即写入当前批次");
             }
         }
-        
+
         // 重置计数器
         state.records_received = 0;
     }
 
     /// 根据记录速率计算目标批量大小
-    pub(crate) fn calculate_target_batch_size(records_per_second: f64, config: &BatchConfig) -> usize {
+    pub(crate) fn calculate_target_batch_size(
+        records_per_second: f64,
+        config: &BatchConfig,
+    ) -> usize {
         // 根据速率调整：
         // - 低速率（< 1/秒）：使用最小批量大小
         // - 中速率（1-10/秒）：线性增长
         // - 高速率（> 10/秒）：使用最大批量大小
-        
+
         if records_per_second < 1.0 {
             config.min_batch_size
         } else if records_per_second < 10.0 {
             let ratio = (records_per_second - 1.0) / 9.0; // 0.0 - 1.0
-            let size = config.min_batch_size as f64 + ratio * (config.max_batch_size as f64 - config.min_batch_size as f64);
+            let size = config.min_batch_size as f64
+                + ratio * (config.max_batch_size as f64 - config.min_batch_size as f64);
             size as usize
         } else {
             config.max_batch_size
@@ -255,10 +265,10 @@ impl ViewBatchProcessor {
         }
 
         let conn = pool.get()?;
-        
+
         // 开始事务
         let tx = conn.unchecked_transaction()?;
-        
+
         // 批量插入
         for record in batch.iter() {
             let view_date = record.view_time.format("%Y-%m-%d").to_string();
@@ -278,13 +288,13 @@ impl ViewBatchProcessor {
                 ],
             )?;
         }
-        
+
         // 提交事务
         tx.commit()?;
-        
+
         let count = batch.len();
         batch.clear();
-        
+
         println!("✅ 批量写入 {} 条阅读记录", count);
         Ok(())
     }
@@ -292,20 +302,30 @@ impl ViewBatchProcessor {
 
 /// 检查是否为本地IP
 pub fn is_local_ip(ip: &str) -> bool {
-    ip == "127.0.0.1" || 
-    ip == "::1" || 
-    ip == "localhost" || 
-    ip == "0.0.0.0" || 
-    ip.is_empty() ||
-    ip.starts_with("127.") ||
-    ip.starts_with("192.168.") ||
-    ip.starts_with("10.") ||
-    ip.starts_with("172.16.") || ip.starts_with("172.17.") || ip.starts_with("172.18.") ||
-    ip.starts_with("172.19.") || ip.starts_with("172.20.") || ip.starts_with("172.21.") ||
-    ip.starts_with("172.22.") || ip.starts_with("172.23.") || ip.starts_with("172.24.") ||
-    ip.starts_with("172.25.") || ip.starts_with("172.26.") || ip.starts_with("172.27.") ||
-    ip.starts_with("172.28.") || ip.starts_with("172.29.") || ip.starts_with("172.30.") ||
-    ip.starts_with("172.31.")
+    ip == "127.0.0.1"
+        || ip == "::1"
+        || ip == "localhost"
+        || ip == "0.0.0.0"
+        || ip.is_empty()
+        || ip.starts_with("127.")
+        || ip.starts_with("192.168.")
+        || ip.starts_with("10.")
+        || ip.starts_with("172.16.")
+        || ip.starts_with("172.17.")
+        || ip.starts_with("172.18.")
+        || ip.starts_with("172.19.")
+        || ip.starts_with("172.20.")
+        || ip.starts_with("172.21.")
+        || ip.starts_with("172.22.")
+        || ip.starts_with("172.23.")
+        || ip.starts_with("172.24.")
+        || ip.starts_with("172.25.")
+        || ip.starts_with("172.26.")
+        || ip.starts_with("172.27.")
+        || ip.starts_with("172.28.")
+        || ip.starts_with("172.29.")
+        || ip.starts_with("172.30.")
+        || ip.starts_with("172.31.")
 }
 
 #[cfg(test)]
@@ -336,11 +356,11 @@ mod tests {
     #[test]
     fn test_calculate_target_batch_size_low_rate() {
         let config = BatchConfig::default();
-        
+
         // 低速率 (< 1/秒)
         let size = ViewBatchProcessor::calculate_target_batch_size(0.5, &config);
         assert_eq!(size, config.min_batch_size);
-        
+
         let size = ViewBatchProcessor::calculate_target_batch_size(0.1, &config);
         assert_eq!(size, config.min_batch_size);
     }
@@ -348,15 +368,15 @@ mod tests {
     #[test]
     fn test_calculate_target_batch_size_medium_rate() {
         let config = BatchConfig::default();
-        
+
         // 中速率 (1-10/秒)
         let size = ViewBatchProcessor::calculate_target_batch_size(1.0, &config);
         assert_eq!(size, config.min_batch_size);
-        
+
         let size = ViewBatchProcessor::calculate_target_batch_size(5.5, &config);
         assert!(size > config.min_batch_size);
         assert!(size < config.max_batch_size);
-        
+
         let size = ViewBatchProcessor::calculate_target_batch_size(10.0, &config);
         assert_eq!(size, config.max_batch_size);
     }
@@ -364,11 +384,11 @@ mod tests {
     #[test]
     fn test_calculate_target_batch_size_high_rate() {
         let config = BatchConfig::default();
-        
+
         // 高速率 (> 10/秒)
         let size = ViewBatchProcessor::calculate_target_batch_size(15.0, &config);
         assert_eq!(size, config.max_batch_size);
-        
+
         let size = ViewBatchProcessor::calculate_target_batch_size(100.0, &config);
         assert_eq!(size, config.max_batch_size);
     }
@@ -383,16 +403,16 @@ mod tests {
             max_batch_size: 500,
             adaptive_interval: 30,
         };
-        
+
         let mut state = AdaptiveState {
             current_batch_size: 100,
             last_adjustment: chrono::Utc::now(),
             records_received: 0,
             records_last_interval: 0,
         };
-        
+
         let mut batch = Vec::new();
-        
+
         // 测试平滑调整：低速率下会减小
         state.records_received = 0; // 0 记录/30秒 = 0/秒
         let initial_size = state.current_batch_size;
@@ -400,7 +420,7 @@ mod tests {
         // 平滑调整会逐步减少，不会直接跳到最小值
         assert!(state.current_batch_size >= config.min_batch_size);
         assert!(state.current_batch_size < initial_size);
-        
+
         // 测试高负载下会增加
         state.current_batch_size = 100;
         state.records_received = 1000; // 1000 记录/30秒 ≈ 33/秒
@@ -409,13 +429,13 @@ mod tests {
         // 平滑调整会逐步增加
         assert!(state.current_batch_size > before_adjust);
         assert!(state.current_batch_size <= config.max_batch_size);
-        
+
         // 测试边界条件：不会超出范围
         state.current_batch_size = config.min_batch_size;
         state.records_received = 0;
         ViewBatchProcessor::adjust_batch_size(&config, &mut state, &mut batch);
         assert!(state.current_batch_size >= config.min_batch_size);
-        
+
         state.current_batch_size = config.max_batch_size;
         state.records_received = 10000;
         ViewBatchProcessor::adjust_batch_size(&config, &mut state, &mut batch);

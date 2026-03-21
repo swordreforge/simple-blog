@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::{Deserialize, Serialize};
 
 /// 主卡片响应
@@ -72,11 +72,12 @@ pub async fn update() -> HttpResponse {
 /// 获取主卡片列表（管理员）
 pub async fn get_main_cards(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
     let main_card_repo = state.about_main_card_repository();
-    
+
     match main_card_repo.get_all().await {
         Ok(cards) => {
             // 只返回启用的卡片
-            let data: Vec<MainCardResponse> = cards.into_iter()
+            let data: Vec<MainCardResponse> = cards
+                .into_iter()
                 .filter(|card| card.is_enabled)
                 .map(|card| MainCardResponse {
                     id: card.id.unwrap_or(0),
@@ -88,7 +89,7 @@ pub async fn get_main_cards(state: web::Data<crate::app_state::AppState>) -> Htt
                     is_enabled: card.is_enabled,
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(data)
         }
         Err(e) => {
@@ -114,10 +115,11 @@ pub async fn get_main_cards_admin(
         return crate::middleware::auth::forbidden_response();
     }
     let main_card_repo = state.about_main_card_repository();
-    
+
     match main_card_repo.get_all().await {
         Ok(cards) => {
-            let data: Vec<MainCardResponse> = cards.into_iter()
+            let data: Vec<MainCardResponse> = cards
+                .into_iter()
                 .map(|card| MainCardResponse {
                     id: card.id.unwrap_or(0),
                     title: card.title,
@@ -128,7 +130,7 @@ pub async fn get_main_cards_admin(
                     is_enabled: card.is_enabled,
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(data)
         }
         Err(e) => {
@@ -147,19 +149,21 @@ pub async fn get_sub_cards(
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
     let sub_card_repo = state.about_sub_card_repository();
-    
+
     match sub_card_repo.get_all().await {
         Ok(cards) => {
             // 获取查询参数中的 main_card_id
-            let filter_main_card_id = query.get("main_card_id").and_then(|id| id.parse::<i64>().ok());
-            
+            let filter_main_card_id = query
+                .get("main_card_id")
+                .and_then(|id| id.parse::<i64>().ok());
+
             // 只返回启用的卡片，并按 main_card_id 过滤
-            let data: Vec<SubCardResponse> = cards.into_iter()
+            let data: Vec<SubCardResponse> = cards
+                .into_iter()
                 .filter(|card| {
-                    card.is_enabled && (
-                        filter_main_card_id.is_none() || 
-                        filter_main_card_id == Some(card.main_card_id)
-                    )
+                    card.is_enabled
+                        && (filter_main_card_id.is_none()
+                            || filter_main_card_id == Some(card.main_card_id))
                 })
                 .map(|card| SubCardResponse {
                     id: card.id.unwrap_or(0),
@@ -174,7 +178,7 @@ pub async fn get_sub_cards(
                     is_enabled: card.is_enabled,
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(data)
         }
         Err(e) => {
@@ -200,10 +204,11 @@ pub async fn get_sub_cards_admin(
         return crate::middleware::auth::forbidden_response();
     }
     let sub_card_repo = state.about_sub_card_repository();
-    
+
     match sub_card_repo.get_all().await {
         Ok(cards) => {
-            let data: Vec<SubCardResponse> = cards.into_iter()
+            let data: Vec<SubCardResponse> = cards
+                .into_iter()
                 .map(|card| SubCardResponse {
                     id: card.id.unwrap_or(0),
                     main_card_id: card.main_card_id,
@@ -217,7 +222,7 @@ pub async fn get_sub_cards_admin(
                     is_enabled: card.is_enabled,
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(data)
         }
         Err(e) => {
@@ -247,7 +252,7 @@ pub async fn create_main_card(
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
-    
+
     match main_card_repo.create(&card).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -277,7 +282,8 @@ pub async fn update_main_card(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let id = query.get("id")
+    let id = query
+        .get("id")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(0);
     let main_card_repo = state.about_main_card_repository();
@@ -290,7 +296,7 @@ pub async fn update_main_card(
             }));
         }
     };
-    
+
     card.title = req.title.clone();
     card.icon = req.icon.clone();
     card.layout_type = req.layout_type.clone();
@@ -298,7 +304,7 @@ pub async fn update_main_card(
     card.sort_order = req.sort_order;
     card.is_enabled = req.is_enabled;
     card.updated_at = chrono::Utc::now();
-    
+
     match main_card_repo.update(&card).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -327,11 +333,12 @@ pub async fn delete_main_card(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let id = query.get("id")
+    let id = query
+        .get("id")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(0);
     let main_card_repo = state.about_main_card_repository();
-    
+
     match main_card_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -375,7 +382,7 @@ pub async fn create_sub_card(
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
-    
+
     match sub_card_repo.create(&card).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -405,7 +412,8 @@ pub async fn update_sub_card(
     if crate::middleware::auth::check_admin_auth(&http_req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let id = query.get("id")
+    let id = query
+        .get("id")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(0);
     let sub_card_repo = state.about_sub_card_repository();
@@ -460,9 +468,9 @@ pub async fn delete_sub_card(
             }));
         }
     };
-    
+
     let sub_card_repo = state.about_sub_card_repository();
-    
+
     match sub_card_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -493,7 +501,7 @@ pub async fn toggle_main_card_enabled(
             }));
         }
     };
-    
+
     let main_card_repo = state.about_main_card_repository();
     let mut card = match main_card_repo.get_by_id(id).await {
         Ok(c) => c,
@@ -504,11 +512,11 @@ pub async fn toggle_main_card_enabled(
             }));
         }
     };
-    
+
     // 切换启用状态
     card.is_enabled = !card.is_enabled;
     card.updated_at = chrono::Utc::now();
-    
+
     match main_card_repo.update(&card).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -545,11 +553,11 @@ pub async fn toggle_sub_card_enabled(
             }));
         }
     };
-    
+
     // 切换启用状态
     card.is_enabled = !card.is_enabled;
     card.updated_at = chrono::Utc::now();
-    
+
     match sub_card_repo.update(&card).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,

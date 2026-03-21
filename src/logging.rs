@@ -2,9 +2,9 @@
 //!
 //! 使用 tracing 进行结构化日志记录
 
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use std::path::Path;
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 /// 初始化日志系统
 ///
@@ -13,8 +13,8 @@ use std::path::Path;
 /// - `log_level`: 日志级别 (error, warn, info, debug, trace)
 pub fn init_logging(log_dir: Option<&Path>, log_level: &str) {
     // 解析日志级别
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(log_level));
+    let env_filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(log_level));
 
     // 构建订阅者
     let registry = tracing_subscriber::registry().with(env_filter);
@@ -34,7 +34,7 @@ pub fn init_logging(log_dir: Option<&Path>, log_level: &str) {
                     .with_target(true)
                     .with_thread_ids(true)
                     .with_level(true)
-                    .with_ansi(true)
+                    .with_ansi(true),
             )
             .with(
                 fmt::layer()
@@ -42,7 +42,7 @@ pub fn init_logging(log_dir: Option<&Path>, log_level: &str) {
                     .with_ansi(false)
                     .with_target(true)
                     .with_thread_ids(true)
-                    .with_level(true)
+                    .with_level(true),
             );
 
         // 初始化全局订阅者
@@ -56,7 +56,7 @@ pub fn init_logging(log_dir: Option<&Path>, log_level: &str) {
                 .with_target(true)
                 .with_thread_ids(true)
                 .with_level(true)
-                .with_ansi(true)
+                .with_ansi(true),
         );
 
         // 初始化全局订阅者

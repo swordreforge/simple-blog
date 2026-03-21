@@ -1,10 +1,10 @@
-use maxminddb::geoip2::City;
+use dashmap::DashMap;
 use maxminddb::Reader;
+use maxminddb::geoip2::City;
+use once_cell::sync::Lazy;
 use std::net::IpAddr;
 use std::path::Path;
 use std::sync::Arc;
-use once_cell::sync::Lazy;
-use dashmap::DashMap;
 
 /// GeoIP 缓存容量
 const GEOIP_CACHE_CAPACITY: usize = 10000;
@@ -37,7 +37,7 @@ static GEOIP_READER: Lazy<Option<Arc<Reader<memmap2::Mmap>>>> = Lazy::new(|| {
                     continue;
                 }
             };
-            
+
             let mmap = match unsafe { memmap2::Mmap::map(&file) } {
                 Ok(m) => m,
                 Err(e) => {
@@ -45,7 +45,7 @@ static GEOIP_READER: Lazy<Option<Arc<Reader<memmap2::Mmap>>>> = Lazy::new(|| {
                     continue;
                 }
             };
-            
+
             match Reader::from_source(mmap) {
                 Ok(reader) => {
                     println!("GeoIP 数据库加载成功（使用 Mmap）: {}", db_path);
@@ -63,9 +63,8 @@ static GEOIP_READER: Lazy<Option<Arc<Reader<memmap2::Mmap>>>> = Lazy::new(|| {
 });
 
 /// GeoIP 查询缓存（使用 DashMap 实现无锁并发缓存）
-static GEOIP_CACHE: Lazy<DashMap<String, GeoLocation>> = Lazy::new(|| {
-    DashMap::with_capacity(GEOIP_CACHE_CAPACITY)
-});
+static GEOIP_CACHE: Lazy<DashMap<String, GeoLocation>> =
+    Lazy::new(|| DashMap::with_capacity(GEOIP_CACHE_CAPACITY));
 
 /// 根据 IP 地址查询地理位置信息（带缓存）
 pub fn lookup_ip(ip: &str) -> GeoLocation {
@@ -86,7 +85,7 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
             // 缓存unknown结果
             GEOIP_CACHE.insert(ip.to_string(), result.clone());
             return result;
-        },
+        }
     };
 
     // 解析 IP 地址
@@ -101,7 +100,7 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
             // 缓存无效IP结果
             GEOIP_CACHE.insert(ip.to_string(), result.clone());
             return result;
-        },
+        }
     };
 
     // 查询 GeoIP 数据库
@@ -113,7 +112,9 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
                     // 获取国家名称
                     let country = if !city.country.is_empty() {
                         if !city.country.names.is_empty() {
-                            city.country.names.simplified_chinese
+                            city.country
+                                .names
+                                .simplified_chinese
                                 .or(city.country.names.english)
                                 .map(|s| s.to_string())
                                 .unwrap_or_else(|| "unknown".to_string())
@@ -127,7 +128,9 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
                     // 获取城市名称
                     let city_name = if !city.city.is_empty() {
                         if !city.city.names.is_empty() {
-                            city.city.names.simplified_chinese
+                            city.city
+                                .names
+                                .simplified_chinese
                                 .or(city.city.names.english)
                                 .map(|s| s.to_string())
                                 .unwrap_or_else(|| "unknown".to_string())
@@ -142,7 +145,8 @@ pub fn lookup_ip(ip: &str) -> GeoLocation {
                     let region = if !city.subdivisions.is_empty() {
                         if let Some(sub) = city.subdivisions.first() {
                             if !sub.names.is_empty() {
-                                sub.names.simplified_chinese
+                                sub.names
+                                    .simplified_chinese
                                     .or(sub.names.english)
                                     .map(|s| s.to_string())
                                     .unwrap_or_else(|| "unknown".to_string())
@@ -210,7 +214,10 @@ mod tests {
         let geo = lookup_ip("8.8.8.8");
         // Google DNS 应该能查询到美国的位置
         assert!(!geo.country.is_empty());
-        println!("8.8.8.8 -> Country: {}, City: {}, Region: {}", geo.country, geo.city, geo.region);
+        println!(
+            "8.8.8.8 -> Country: {}, City: {}, Region: {}",
+            geo.country, geo.city, geo.region
+        );
     }
 
     #[test]
@@ -225,20 +232,33 @@ mod tests {
     fn test_geoip_cache() {
         // 先清空缓存以确保测试环境干净
         clear_geoip_cache();
-        
+
+        // 检查是否有 GeoIP 数据库
+        let has_db = is_database_loaded();
+
         // 第一次查询
         let geo1 = lookup_ip("8.8.8.8");
-        
+
         // 检查缓存统计
         let len = get_geoip_cache_stats();
-        assert!(len > 0);
-        
+        assert!(
+            len > 0,
+            "缓存应该有数据，即使没有 GeoIP 数据库也应该缓存 'unknown' 结果"
+        );
+
         // 第二次查询应该从缓存中获取
         let geo2 = lookup_ip("8.8.8.8");
-        
+
         assert_eq!(geo1.country, geo2.country);
         assert_eq!(geo1.city, geo2.city);
         assert_eq!(geo1.region, geo2.region);
+
+        // 如果有数据库，验证返回的实际数据
+        if has_db {
+            assert_ne!(geo1.country, "unknown", "有数据库时应该返回实际的国家");
+        } else {
+            assert_eq!(geo1.country, "unknown", "没有数据库时应该返回 'unknown'");
+        }
     }
 
     #[test]
@@ -246,13 +266,13 @@ mod tests {
         // 查询一些IP
         lookup_ip("8.8.8.8");
         lookup_ip("1.1.1.1");
-        
+
         let len = get_geoip_cache_stats();
         assert!(len > 0);
-        
+
         // 清空缓存
         clear_geoip_cache();
-        
+
         let new_len = get_geoip_cache_stats();
         // 注意：由于DashMap的实现，clear可能不会立即反映在len中
         // 所以我们只检查它不会增长

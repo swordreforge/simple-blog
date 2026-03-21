@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse};
-use serde::Serialize;
 use crate::app_state::AppState;
+use actix_web::{HttpResponse, web};
+use serde::Serialize;
 
 /// 快捷菜单路由项
 #[derive(Debug, Serialize)]
@@ -19,9 +19,7 @@ pub struct QuickMenuRoute {
 /// 只返回应该在快捷菜单中显示的路由：
 /// - 如果路由有 group_id，只返回 is_primary_entry=true 的路由
 /// - 如果路由没有 group_id，返回 metadata.show_in_quick_menu=true 的路由
-pub async fn get_quick_menu_routes(
-    state: web::Data<AppState>,
-) -> HttpResponse {
+pub async fn get_quick_menu_routes(state: web::Data<AppState>) -> HttpResponse {
     let routes = if let Some(manager) = state.route_type_manager() {
         match manager.list_all_routes().await {
             Ok(routes) => routes,
@@ -54,7 +52,8 @@ pub async fn get_quick_menu_routes(
             route.is_primary_entry.unwrap_or(false)
         } else {
             // 如果没有路由组，使用原有的 metadata.show_in_quick_menu 字段
-            route.metadata
+            route
+                .metadata
                 .as_ref()
                 .and_then(|m| m.get("show_in_quick_menu"))
                 .and_then(|v| v.as_bool())

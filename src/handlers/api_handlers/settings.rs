@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, web};
 
 /// 获取所有设置
 pub async fn get() -> impl Responder {
@@ -51,9 +51,7 @@ pub async fn get_all() -> impl Responder {
 /// 获取外观设置
 pub async fn get_appearance() -> impl Responder {
     match crate::templates::load_appearance_settings() {
-        Ok(settings) => {
-            HttpResponse::Ok().json(settings)
-        }
+        Ok(settings) => HttpResponse::Ok().json(settings),
         Err(e) => {
             eprintln!("Failed to load appearance settings: {}", e);
             // 返回默认设置
@@ -65,7 +63,7 @@ pub async fn get_appearance() -> impl Responder {
 /// 更新外观设置
 pub async fn update_appearance(req: web::Json<serde_json::Value>) -> impl Responder {
     let updates = req.into_inner();
-    
+
     // 获取数据库连接池
     let pool = match crate::db::get_db_pool().await {
         Ok(p) => p,
@@ -77,7 +75,7 @@ pub async fn update_appearance(req: web::Json<serde_json::Value>) -> impl Respon
             }));
         }
     };
-    
+
     // 更新设置到数据库
     if let Ok(conn) = pool.get() {
         for (key, value) in updates.as_object().unwrap_or(&serde_json::Map::new()) {
@@ -100,7 +98,7 @@ pub async fn update_appearance(req: web::Json<serde_json::Value>) -> impl Respon
                 }
                 _ => continue,
             };
-            
+
             // 创建或更新设置
             let setting = crate::db::models::Setting {
                 id: None,
@@ -112,13 +110,13 @@ pub async fn update_appearance(req: web::Json<serde_json::Value>) -> impl Respon
                 created_at: chrono::Utc::now(),
                 updated_at: chrono::Utc::now(),
             };
-            
+
             if let Err(e) = crate::db::repositories::SettingRepository::set(&conn, &setting) {
                 eprintln!("Failed to update setting {}: {}", key_str, e);
             }
         }
     }
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "外观设置已更新"
@@ -146,16 +144,22 @@ pub async fn get_music() -> impl Responder {
             }));
         }
     };
-    
+
     // 从数据库加载设置
     if let Ok(conn) = pool.get() {
         let keys = vec![
-            "music_enabled", "music_auto_play", "music_volume", "music_loop",
-            "music_control_size", "music_player_color", "music_position", "music_custom_css"
+            "music_enabled",
+            "music_auto_play",
+            "music_volume",
+            "music_loop",
+            "music_control_size",
+            "music_player_color",
+            "music_position",
+            "music_custom_css",
         ];
-        
+
         let mut settings = serde_json::Map::new();
-        
+
         for key in keys {
             if let Ok(Some(setting)) = crate::db::repositories::SettingRepository::get(&conn, key) {
                 // 转换键名以匹配前端期望的格式
@@ -164,21 +168,19 @@ pub async fn get_music() -> impl Responder {
                     "music_enabled" | "music_auto_play" | "music_loop" => {
                         serde_json::Value::Bool(setting.value == "true")
                     }
-                    "music_volume" => {
-                        serde_json::Value::Number(
-                            serde_json::Number::from_f64(setting.value.parse().unwrap_or(0.7))
-                                .unwrap_or(serde_json::Number::from(0))
-                        )
-                    }
+                    "music_volume" => serde_json::Value::Number(
+                        serde_json::Number::from_f64(setting.value.parse().unwrap_or(0.7))
+                            .unwrap_or(serde_json::Number::from(0)),
+                    ),
                     _ => serde_json::Value::String(setting.value),
                 };
                 settings.insert(json_key.to_string(), json_value);
             }
         }
-        
+
         return HttpResponse::Ok().json(settings);
     }
-    
+
     // 返回默认设置
     HttpResponse::Ok().json(serde_json::json!({
         "enabled": false,
@@ -195,7 +197,7 @@ pub async fn get_music() -> impl Responder {
 /// 更新音乐设置
 pub async fn update_music(req: web::Json<serde_json::Value>) -> impl Responder {
     let updates = req.into_inner();
-    
+
     // 获取数据库连接池
     let pool = match crate::db::get_db_pool().await {
         Ok(p) => p,
@@ -207,7 +209,7 @@ pub async fn update_music(req: web::Json<serde_json::Value>) -> impl Responder {
             }));
         }
     };
-    
+
     // 键名映射：前端键名 -> 数据库键名
     let key_mapping: std::collections::HashMap<&str, &str> = [
         ("enabled", "music_enabled"),
@@ -218,14 +220,17 @@ pub async fn update_music(req: web::Json<serde_json::Value>) -> impl Responder {
         ("player_color", "music_player_color"),
         ("position", "music_position"),
         ("custom_css", "music_custom_css"),
-    ].iter().cloned().collect();
-    
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
     // 更新设置到数据库
     if let Ok(conn) = pool.get() {
         for (key, value) in updates.as_object().unwrap_or(&serde_json::Map::new()) {
             let frontend_key = key.as_str();
             let db_key = key_mapping.get(frontend_key).unwrap_or(&frontend_key);
-            
+
             let value_str = match value {
                 serde_json::Value::String(s) => s.clone(),
                 serde_json::Value::Bool(b) => b.to_string(),
@@ -244,7 +249,7 @@ pub async fn update_music(req: web::Json<serde_json::Value>) -> impl Responder {
                 }
                 _ => continue,
             };
-            
+
             // 创建或更新设置
             let setting = crate::db::models::Setting {
                 id: None,
@@ -256,13 +261,13 @@ pub async fn update_music(req: web::Json<serde_json::Value>) -> impl Responder {
                 created_at: chrono::Utc::now(),
                 updated_at: chrono::Utc::now(),
             };
-            
+
             if let Err(e) = crate::db::repositories::SettingRepository::set(&conn, &setting) {
                 eprintln!("Failed to update music setting {}: {}", db_key, e);
             }
         }
     }
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "音乐设置已更新"
@@ -272,7 +277,7 @@ pub async fn update_music(req: web::Json<serde_json::Value>) -> impl Responder {
 /// 部分更新音乐设置
 pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Responder {
     let updates = req.into_inner();
-    
+
     // 获取数据库连接池
     let pool = match crate::db::get_db_pool().await {
         Ok(p) => p,
@@ -284,7 +289,7 @@ pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Res
             }));
         }
     };
-    
+
     // 键名映射：前端键名 -> 数据库键名
     let key_mapping: std::collections::HashMap<&str, &str> = [
         ("enabled", "music_enabled"),
@@ -295,14 +300,17 @@ pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Res
         ("player_color", "music_player_color"),
         ("position", "music_position"),
         ("custom_css", "music_custom_css"),
-    ].iter().cloned().collect();
-    
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
     // 更新设置到数据库
     if let Ok(conn) = pool.get() {
         for (key, value) in updates.as_object().unwrap_or(&serde_json::Map::new()) {
             let frontend_key = key.as_str();
             let db_key = key_mapping.get(frontend_key).unwrap_or(&frontend_key);
-            
+
             let value_str = match value {
                 serde_json::Value::String(s) => s.clone(),
                 serde_json::Value::Bool(b) => b.to_string(),
@@ -321,7 +329,7 @@ pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Res
                 }
                 _ => continue,
             };
-            
+
             // 创建或更新设置
             let setting = crate::db::models::Setting {
                 id: None,
@@ -333,13 +341,13 @@ pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Res
                 created_at: chrono::Utc::now(),
                 updated_at: chrono::Utc::now(),
             };
-            
+
             if let Err(e) = crate::db::repositories::SettingRepository::set(&conn, &setting) {
                 eprintln!("Failed to update music setting {}: {}", db_key, e);
             }
         }
     }
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "音乐设置已更新"
@@ -349,9 +357,7 @@ pub async fn update_music_partial(req: web::Json<serde_json::Value>) -> impl Res
 /// 获取模板设置
 pub async fn get_template() -> HttpResponse {
     match crate::templates::load_template_settings() {
-        Ok(settings) => {
-            HttpResponse::Ok().json(settings)
-        }
+        Ok(settings) => HttpResponse::Ok().json(settings),
         Err(e) => {
             eprintln!("Failed to load template settings: {}", e);
             // 返回默认设置
@@ -363,7 +369,7 @@ pub async fn get_template() -> HttpResponse {
 /// 更新模板设置
 pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse {
     let updates = req.into_inner();
-    
+
     // 获取数据库连接池
     let pool = match crate::db::get_db_pool().await {
         Ok(p) => p,
@@ -375,7 +381,7 @@ pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse 
             }));
         }
     };
-    
+
     // 键名映射：前端键名 -> 数据库键名
     let key_mapping: std::collections::HashMap<&str, &str> = [
         ("name", "template_name"),
@@ -412,14 +418,17 @@ pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse 
         ("icp_number", "icp_number"),
         ("police_record_code", "police_record_code"),
         ("police_record_content", "police_record_content"),
-    ].iter().cloned().collect();
-    
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
     // 更新设置到数据库
     if let Ok(conn) = pool.get() {
         for (key, value) in updates.as_object().unwrap_or(&serde_json::Map::new()) {
             let frontend_key = key.as_str();
             let db_key = key_mapping.get(frontend_key).unwrap_or(&frontend_key);
-            
+
             let value_str = match value {
                 serde_json::Value::String(s) => s.clone(),
                 serde_json::Value::Bool(b) => b.to_string(),
@@ -438,7 +447,7 @@ pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse 
                 }
                 _ => continue,
             };
-            
+
             // 创建或更新设置
             let setting = crate::db::models::Setting {
                 id: None,
@@ -450,13 +459,13 @@ pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse 
                 created_at: chrono::Utc::now(),
                 updated_at: chrono::Utc::now(),
             };
-            
+
             if let Err(e) = crate::db::repositories::SettingRepository::set(&conn, &setting) {
                 eprintln!("Failed to update template setting {}: {}", db_key, e);
             }
         }
     }
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "模板设置已更新"
@@ -474,14 +483,14 @@ pub async fn update() -> impl Responder {
 /// 更新单个设置
 pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder {
     let updates = req.into_inner();
-    
+
     // 获取 key 和 value
-    let key = updates.get("key")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| HttpResponse::BadRequest().json(serde_json::json!({
+    let key = updates.get("key").and_then(|v| v.as_str()).ok_or_else(|| {
+        HttpResponse::BadRequest().json(serde_json::json!({
             "success": false,
             "message": "Key is required"
-        })));
+        }))
+    });
 
     // 使用 match 替代 unwrap()
     let key = match key {
@@ -489,19 +498,22 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
         Err(e) => return e,
     };
 
-    let value = updates.get("value")
+    let value = updates
+        .get("value")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| HttpResponse::BadRequest().json(serde_json::json!({
-            "success": false,
-            "message": "Value is required"
-        })));
+        .ok_or_else(|| {
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "success": false,
+                "message": "Value is required"
+            }))
+        });
 
     // 使用 match 替代 unwrap()
     let value = match value {
         Ok(v) => v,
         Err(e) => return e,
     };
-    
+
     // 获取数据库连接池
     let pool = match crate::db::get_db_pool().await {
         Ok(p) => p,
@@ -513,7 +525,7 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
             }));
         }
     };
-    
+
     // 更新设置到数据库
     if let Ok(conn) = pool.get() {
         let setting = crate::db::models::Setting {
@@ -526,7 +538,7 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
         };
-        
+
         if let Err(e) = crate::db::repositories::SettingRepository::set(&conn, &setting) {
             eprintln!("Failed to update setting {}: {}", key, e);
             return HttpResponse::InternalServerError().json(serde_json::json!({
@@ -535,7 +547,7 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
             }));
         }
     }
-    
+
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "设置已更新"

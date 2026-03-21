@@ -1,10 +1,10 @@
-use actix_web::{web, HttpResponse};
-use actix_multipart::Multipart;
-use serde::Serialize;
 use crate::db::models::Attachment;
+use actix_multipart::Multipart;
+use actix_web::{HttpResponse, web};
 use chrono::Utc;
-use tokio::fs;
 use futures_util::future;
+use serde::Serialize;
+use tokio::fs;
 
 /// 附件响应
 #[derive(Debug, Serialize)]
@@ -44,42 +44,47 @@ pub async fn list(
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
     let attachment_repo = state.attachment_repository();
-    
+
     // 解析并验证分页参数
-    let limit: i64 = query.get("limit")
+    let limit: i64 = query
+        .get("limit")
         .and_then(|l| l.parse::<i64>().ok())
         .filter(|&l| l > 0 && l <= 1000)
         .unwrap_or(20);
-    
-    let offset: i64 = query.get("offset")
+
+    let offset: i64 = query
+        .get("offset")
         .and_then(|o| o.parse::<i64>().ok())
         .filter(|&o| o >= 0)
         .unwrap_or(0);
-    
+
     // 检查是否有 passage_id 参数
     let passage_id = query.get("passage_id");
-    
+
     match attachment_repo.get_all(1000, 0).await {
         Ok(attachments) => {
             let filtered: Vec<Attachment> = if let Some(pid) = passage_id {
                 // 按 passage_id 过滤
-                attachments.into_iter()
+                attachments
+                    .into_iter()
                     .filter(|a| a.passage_uuid.as_ref() == Some(pid))
                     .collect()
             } else {
                 // 不分页，返回所有附件
                 attachments
             };
-            
+
             let total = filtered.len() as i64;
-            
+
             // 应用分页
-            let paginated: Vec<Attachment> = filtered.into_iter()
+            let paginated: Vec<Attachment> = filtered
+                .into_iter()
                 .skip(offset as usize)
                 .take(limit as usize)
                 .collect();
-            
-            let data: Vec<AttachmentResponse> = paginated.into_iter()
+
+            let data: Vec<AttachmentResponse> = paginated
+                .into_iter()
                 .map(|a| AttachmentResponse {
                     id: a.id.unwrap_or(0),
                     file_name: a.file_name,
@@ -93,7 +98,7 @@ pub async fn list(
                     uploaded_at: a.uploaded_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "data": data,
@@ -117,7 +122,7 @@ pub async fn get(
 ) -> HttpResponse {
     let id = path.into_inner();
     let attachment_repo = state.attachment_repository();
-    
+
     match attachment_repo.get_by_id(id).await {
         Ok(attachment) => {
             let data = AttachmentResponse {
@@ -130,9 +135,12 @@ pub async fn get(
                 passage_id: attachment.passage_uuid,
                 visibility: attachment.visibility,
                 show_in_passage: attachment.show_in_passage,
-                uploaded_at: attachment.uploaded_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                uploaded_at: attachment
+                    .uploaded_at
+                    .format("%Y-%m-%d %H:%M:%S")
+                    .to_string(),
             };
-            
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "data": data
@@ -156,7 +164,7 @@ pub async fn upload(
     use futures_util::stream::StreamExt;
 
     let attachment_repo = state.attachment_repository();
-    
+
     // 先收集所有字段，获取 passage_id
     let mut passage_uuid: Option<String> = None;
     let mut _file_field_name: Option<String> = None;
@@ -199,9 +207,12 @@ pub async fn upload(
         }
 
         // 处理文件字段
-        if let Some(filename) = field.content_disposition().and_then(|cd| cd.get_filename().map(|s| s.to_string())) {
+        if let Some(filename) = field
+            .content_disposition()
+            .and_then(|cd| cd.get_filename().map(|s| s.to_string()))
+        {
             _file_field_name = Some(filename.clone());
-            
+
             // 读取文件内容
             let mut file_bytes = Vec::new();
             while let Some(chunk) = field.next().await {
@@ -209,15 +220,17 @@ pub async fn upload(
                     file_bytes.extend_from_slice(&data);
                 }
             }
-            
+
             // 获取 content type
-            let content_type = field.content_type().map(|ct| ct.to_string())
+            let content_type = field
+                .content_type()
+                .map(|ct| ct.to_string())
                 .unwrap_or_else(|| "application/octet-stream".to_string());
-            
+
             file_data = Some((file_bytes, filename, content_type));
         }
     }
-    
+
     // 如果没有文件数据，返回错误
     let (file_bytes, filename, content_type) = match file_data {
         Some(data) => data,
@@ -228,14 +241,14 @@ pub async fn upload(
             }));
         }
     };
-    
+
     // 确定文件类型
     let file_type = determine_file_type(&filename, &content_type);
-    
+
     // 生成存储文件名
     let timestamp = Utc::now().timestamp();
     let stored_name = format!("{}_{}", timestamp, filename);
-    
+
     // 保存文件到磁盘
     let file_path = format!("attachments/{}", stored_name);
     if let Err(e) = fs::create_dir_all("attachments").await {
@@ -253,9 +266,9 @@ pub async fn upload(
             "message": "保存文件失败"
         }));
     }
-    
+
     let file_size = file_bytes.len() as i64;
-    
+
     // 创建附件记录
     let now = Utc::now();
     let attachment = Attachment {
@@ -271,21 +284,19 @@ pub async fn upload(
         show_in_passage: false,
         uploaded_at: now,
     };
-    
+
     match attachment_repo.create(&attachment).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(UploadResponse {
-                success: true,
-                message: "附件上传成功".to_string(),
-                data: Some(AttachmentData {
-                    id: 0,
-                    file_name: attachment.file_name,
-                    file_size: attachment.file_size,
-                    file_type: attachment.file_type,
-                    url: format!("/{}", attachment.file_path),
-                }),
-            })
-        }
+        Ok(_) => HttpResponse::Ok().json(UploadResponse {
+            success: true,
+            message: "附件上传成功".to_string(),
+            data: Some(AttachmentData {
+                id: 0,
+                file_name: attachment.file_name,
+                file_size: attachment.file_size,
+                file_type: attachment.file_type,
+                url: format!("/{}", attachment.file_path),
+            }),
+        }),
         Err(e) => {
             eprintln!("创建附件记录失败: {}", e);
             HttpResponse::InternalServerError().json(UploadResponse {
@@ -313,7 +324,7 @@ pub async fn delete(
 
     let id = path.into_inner();
     let attachment_repo = state.attachment_repository();
-    
+
     // 先获取附件信息
     let attachment = match attachment_repo.get_by_id(id).await {
         Ok(a) => a,
@@ -324,20 +335,18 @@ pub async fn delete(
             }));
         }
     };
-    
+
     // 删除文件
     if let Err(e) = fs::remove_file(&attachment.file_path).await {
         eprintln!("删除文件失败: {}", e);
     }
-    
+
     // 删除数据库记录
     match attachment_repo.delete(id).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "附件删除成功"
-            }))
-        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "附件删除成功"
+        })),
         Err(e) => {
             eprintln!("删除附件记录失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -403,7 +412,8 @@ pub async fn delete_batch(
     };
 
     // 删除文件（并行删除以优化性能）
-    let delete_tasks: Vec<_> = attachments.iter()
+    let delete_tasks: Vec<_> = attachments
+        .iter()
         .map(|attachment| {
             let path = attachment.file_path.clone();
             tokio::spawn(async move {
@@ -430,17 +440,15 @@ pub async fn delete_batch(
 
     // 删除数据库记录
     match attachment_repo.delete_batch(ids).await {
-        Ok(rows_affected) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": format!("成功删除 {} 个附件", rows_affected),
-                "data": {
-                    "deleted": rows_affected,
-                    "files_deleted": files_deleted,
-                    "files_failed": files_failed
-                }
-            }))
-        }
+        Ok(rows_affected) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": format!("成功删除 {} 个附件", rows_affected),
+            "data": {
+                "deleted": rows_affected,
+                "files_deleted": files_deleted,
+                "files_failed": files_failed
+            }
+        })),
         Err(e) => {
             eprintln!("批量删除附件记录失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -471,7 +479,7 @@ pub async fn update(
     let action = query.get("action").map(|s| s.as_str());
 
     let attachment_repo = state.attachment_repository();
-    
+
     // 先获取现有附件
     let mut attachment = match attachment_repo.get_by_id(id).await {
         Ok(a) => a,
@@ -482,7 +490,7 @@ pub async fn update(
             }));
         }
     };
-    
+
     // 根据操作类型更新
     match action {
         Some("title") => {
@@ -503,10 +511,13 @@ pub async fn update(
             // 如果没有 action 参数，尝试从 JSON 请求体获取
             if let Some(json_body) = body {
                 if let Some(visibility) = json_body.get("visibility").and_then(|v| v.as_str()) {
-                    attachment.visibility = crate::db::models::PassageVisibility::from_str(visibility)
-                        .unwrap_or(attachment.visibility);
+                    attachment.visibility =
+                        crate::db::models::PassageVisibility::from_str(visibility)
+                            .unwrap_or(attachment.visibility);
                 }
-                if let Some(show_in_passage) = json_body.get("show_in_passage").and_then(|v| v.as_bool()) {
+                if let Some(show_in_passage) =
+                    json_body.get("show_in_passage").and_then(|v| v.as_bool())
+                {
                     attachment.show_in_passage = show_in_passage;
                 }
             } else {
@@ -517,16 +528,14 @@ pub async fn update(
             }
         }
     }
-    
+
     attachment.uploaded_at = Utc::now();
-    
+
     match attachment_repo.update(&attachment).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "附件更新成功"
-            }))
-        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "附件更新成功"
+        })),
         Err(e) => {
             eprintln!("更新附件失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -543,7 +552,7 @@ fn determine_file_type(filename: &str, content_type: &str) -> String {
         .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("");
-    
+
     match ext.to_lowercase().as_str() {
         "jpg" | "jpeg" | "png" | "gif" | "webp" | "bmp" | "svg" => "image".to_string(),
         "mp4" | "avi" | "mov" | "wmv" | "flv" | "mkv" => "video".to_string(),
@@ -570,14 +579,15 @@ pub async fn list_by_date(
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> HttpResponse {
     let attachment_repo = state.attachment_repository();
-    
+
     let year = query.get("year");
     let month = query.get("month");
     let day = query.get("day");
-    
+
     match attachment_repo.get_all(1000, 0).await {
         Ok(attachments) => {
-            let filtered: Vec<Attachment> = attachments.into_iter()
+            let filtered: Vec<Attachment> = attachments
+                .into_iter()
                 .filter(|a| {
                     let uploaded_date = a.uploaded_at.format("%Y-%m-%d").to_string();
                     let date_str = if let (Some(y), Some(m), Some(d)) = (year, month, day) {
@@ -588,8 +598,9 @@ pub async fn list_by_date(
                     uploaded_date == date_str
                 })
                 .collect();
-            
-            let data: Vec<AttachmentResponse> = filtered.into_iter()
+
+            let data: Vec<AttachmentResponse> = filtered
+                .into_iter()
                 .map(|a| AttachmentResponse {
                     id: a.id.unwrap_or(0),
                     file_name: a.file_name,
@@ -603,7 +614,7 @@ pub async fn list_by_date(
                     uploaded_at: a.uploaded_at.format("%Y-%m-%d %H:%M:%S").to_string(),
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "data": data
@@ -626,17 +637,18 @@ pub async fn download(
 ) -> HttpResponse {
     let id = path.into_inner();
     let attachment_repo = state.attachment_repository();
-    
+
     match attachment_repo.get_by_id(id).await {
         Ok(attachment) => {
             // 读取文件内容
             match fs::read(&attachment.file_path).await {
-                Ok(content) => {
-                    HttpResponse::Ok()
-                        .insert_header(("Content-Type", attachment.content_type.clone()))
-                        .insert_header(("Content-Disposition", format!("attachment; filename=\"{}\"", attachment.file_name)))
-                        .body(content)
-                }
+                Ok(content) => HttpResponse::Ok()
+                    .insert_header(("Content-Type", attachment.content_type.clone()))
+                    .insert_header((
+                        "Content-Disposition",
+                        format!("attachment; filename=\"{}\"", attachment.file_name),
+                    ))
+                    .body(content),
                 Err(e) => {
                     eprintln!("读取文件失败: {}", e);
                     HttpResponse::NotFound().json(serde_json::json!({

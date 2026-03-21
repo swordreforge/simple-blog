@@ -32,10 +32,7 @@ impl AudioFormat {
 /// 提取音频元数据
 pub fn extract_metadata(file_path: &str) -> Result<AudioMetadata, String> {
     let path = Path::new(file_path);
-    let extension = path
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("");
+    let extension = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
     let format = AudioFormat::from_extension(extension);
 
@@ -62,8 +59,8 @@ pub fn extract_metadata(file_path: &str) -> Result<AudioMetadata, String> {
 
 /// 提取 MP3 元数据
 fn extract_mp3_metadata(file_path: &str) -> Result<AudioMetadata, String> {
-    let tag = id3::Tag::read_from_path(file_path)
-        .map_err(|e| format!("无法读取 MP3 文件: {}", e))?;
+    let tag =
+        id3::Tag::read_from_path(file_path).map_err(|e| format!("无法读取 MP3 文件: {}", e))?;
 
     Ok(AudioMetadata {
         title: tag.title().map(|s| s.to_string()),
@@ -87,10 +84,12 @@ fn extract_flac_metadata(file_path: &str) -> Result<AudioMetadata, String> {
     };
 
     Ok(AudioMetadata {
-        title: comments.get("TITLE")
+        title: comments
+            .get("TITLE")
             .and_then(|v: &Vec<String>| v.first())
             .map(|s: &String| s.to_string()),
-        artist: comments.get("ARTIST")
+        artist: comments
+            .get("ARTIST")
             .and_then(|v: &Vec<String>| v.first())
             .map(|s: &String| s.to_string()),
     })

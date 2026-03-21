@@ -57,20 +57,21 @@ impl CacheBackend for LocalCacheBackend {
     async fn delete_pattern(&self, pattern: &str) -> Result<(), CacheError> {
         use glob::Pattern;
 
-        let glob_pattern = Pattern::new(pattern).map_err(|e| {
-            CacheError::Unknown(format!("Invalid glob pattern: {}", e))
-        })?;
+        let glob_pattern = Pattern::new(pattern)
+            .map_err(|e| CacheError::Unknown(format!("Invalid glob pattern: {}", e)))?;
 
         // 使用 Moka 的 invalidate_entries_if 实现模式匹配删除
         // 这是两阶段模型：立即逻辑删除 + 异步物理清理
         // 性能比手动遍历 + invalidate 更高，且不会阻塞工作线程
-        let _predicate_id = self.cache.invalidate_entries_if(move |key: &String, _value: &String| {
-            glob_pattern.matches(key)
-        }).map_err(|e| {
-            CacheError::Unknown(format!("Failed to invalidate entries: {}", e))
-        })?;
+        let _predicate_id = self
+            .cache
+            .invalidate_entries_if(move |key: &String, _value: &String| glob_pattern.matches(key))
+            .map_err(|e| CacheError::Unknown(format!("Failed to invalidate entries: {}", e)))?;
 
-        tracing::debug!("模式匹配删除已触发: {} (使用 Moka 的 invalidate_entries_if)", pattern);
+        tracing::debug!(
+            "模式匹配删除已触发: {} (使用 Moka 的 invalidate_entries_if)",
+            pattern
+        );
 
         Ok(())
     }

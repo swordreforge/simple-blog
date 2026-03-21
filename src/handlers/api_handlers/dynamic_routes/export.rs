@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
+use actix_web::{HttpResponse, web};
 use tokio::fs;
 
 /// 导出路由配置
@@ -28,12 +28,19 @@ pub async fn export_routes(
                         // 尝试读取模板文件内容
                         match fs::read_to_string(template_path).await {
                             Ok(content) => {
-                                tracing::info!("导出 file 类型路由: 已读取模板文件 {}", template_path);
+                                tracing::info!(
+                                    "导出 file 类型路由: 已读取模板文件 {}",
+                                    template_path
+                                );
                                 // 将文件内容放到 inline_template 中
                                 route.inline_template = Some(content);
                             }
                             Err(e) => {
-                                tracing::warn!("导出 file 类型路由: 无法读取模板文件 {}: {}", template_path, e);
+                                tracing::warn!(
+                                    "导出 file 类型路由: 无法读取模板文件 {}: {}",
+                                    template_path,
+                                    e
+                                );
                                 // 如果读取失败，inline_template 保持为 None
                             }
                         }
@@ -50,18 +57,19 @@ pub async fn export_routes(
 
             HttpResponse::Ok()
                 .content_type("application/json")
-                .append_header(("Content-Disposition", "attachment; filename=\"routes-export.json\""))
+                .append_header((
+                    "Content-Disposition",
+                    "attachment; filename=\"routes-export.json\"",
+                ))
                 .json(serde_json::json!({
                     "success": true,
                     "data": export_data
                 }))
         }
-        Err(e) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": format!("导出失败: {}", e)
-            }))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "success": false,
+            "message": format!("导出失败: {}", e)
+        })),
     }
 }
 
@@ -74,10 +82,12 @@ pub async fn import_routes(
     // 权限检查
     let admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     let repo = state.dynamic_route_repository();
@@ -102,21 +112,29 @@ pub async fn import_routes(
 
     for (index, route_value) in routes.iter().enumerate() {
         // 解析路由配置
-        let route: crate::db::models::DynamicRoute = match serde_json::from_value(route_value.clone()) {
-            Ok(r) => r,
-            Err(e) => {
-                failed_count += 1;
-                errors.push(format!("第{}条路由: {}", index + 1, e));
-                continue;
-            }
-        };
+        let route: crate::db::models::DynamicRoute =
+            match serde_json::from_value(route_value.clone()) {
+                Ok(r) => r,
+                Err(e) => {
+                    failed_count += 1;
+                    errors.push(format!("第{}条路由: {}", index + 1, e));
+                    continue;
+                }
+            };
 
         // 检查路径冲突（在所有存储类型中检查）
         let has_conflict = if let Some(manager) = state.route_type_manager() {
             // 检查所有存储类型
             let mut conflict = false;
-            for route_type in [crate::db::models::RouteType::Database, crate::db::models::RouteType::Memory, crate::db::models::RouteType::File] {
-                if let Ok(Some(_)) = manager.load_route_by_path(&route.path, Some(route_type)).await {
+            for route_type in [
+                crate::db::models::RouteType::Database,
+                crate::db::models::RouteType::Memory,
+                crate::db::models::RouteType::File,
+            ] {
+                if let Ok(Some(_)) = manager
+                    .load_route_by_path(&route.path, Some(route_type))
+                    .await
+                {
                     conflict = true;
                     break;
                 }
@@ -174,9 +192,10 @@ pub async fn import_routes(
                 if import_route.route_type == crate::db::models::RouteType::File {
                     // 如果 inline_template 有内容，将其写入 template_path 指定的文件
                     if let Some(ref inline_template) = import_route.inline_template {
-                        let template_path = import_route.template_path.clone().unwrap_or_else(|| {
-                            format!("data/routes/routes/route_{}.html", db_id)
-                        });
+                        let template_path = import_route
+                            .template_path
+                            .clone()
+                            .unwrap_or_else(|| format!("data/routes/routes/route_{}.html", db_id));
 
                         // 确保目录存在
                         if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
@@ -205,18 +224,24 @@ pub async fn import_routes(
                         import_route.template_path = Some(template_path);
                     } else {
                         // 如果 inline_template 为空，检查 template_path 是否有值
-                        let template_path = import_route.template_path.clone().unwrap_or_else(|| {
-                            format!("data/routes/routes/route_{}.html", db_id)
-                        });
+                        let template_path = import_route
+                            .template_path
+                            .clone()
+                            .unwrap_or_else(|| format!("data/routes/routes/route_{}.html", db_id));
 
                         // 检查文件是否存在
                         if !std::path::Path::new(&template_path).exists() {
                             // 创建空文件
-                            if let Some(parent_dir) = std::path::Path::new(&template_path).parent() {
+                            if let Some(parent_dir) = std::path::Path::new(&template_path).parent()
+                            {
                                 if let Err(e) = fs::create_dir_all(parent_dir).await {
                                     tracing::error!("创建目录失败: {}", e);
                                     failed_count += 1;
-                                    errors.push(format!("第{}条路由（创建目录）: {}", index + 1, e));
+                                    errors.push(format!(
+                                        "第{}条路由（创建目录）: {}",
+                                        index + 1,
+                                        e
+                                    ));
                                     let _ = repo.delete(db_id).await;
                                     continue;
                                 }
@@ -225,12 +250,19 @@ pub async fn import_routes(
                             if let Err(e) = fs::write(&template_path, "").await {
                                 tracing::error!("创建空模板文件失败: {}", e);
                                 failed_count += 1;
-                                errors.push(format!("第{}条路由（创建空模板文件）: {}", index + 1, e));
+                                errors.push(format!(
+                                    "第{}条路由（创建空模板文件）: {}",
+                                    index + 1,
+                                    e
+                                ));
                                 let _ = repo.delete(db_id).await;
                                 continue;
                             }
 
-                            tracing::warn!("导入 file 类型路由: 模板文件 {} 不存在，已创建空文件", template_path);
+                            tracing::warn!(
+                                "导入 file 类型路由: 模板文件 {} 不存在，已创建空文件",
+                                template_path
+                            );
                         }
 
                         import_route.template_path = Some(template_path);
@@ -250,10 +282,20 @@ pub async fn import_routes(
                 let storage = manager.get_storage(&import_route.route_type);
                 match storage.save_route(&import_route).await {
                     Ok(_) => {
-                        tracing::info!("导入路由成功: id={}, type={}, path={}", db_id, import_route.route_type, import_route.path);
+                        tracing::info!(
+                            "导入路由成功: id={}, type={}, path={}",
+                            db_id,
+                            import_route.route_type,
+                            import_route.path
+                        );
                     }
                     Err(e) => {
-                        tracing::error!("导入路由失败（存储后端）: id={}, type={}, error={}", db_id, import_route.route_type, e);
+                        tracing::error!(
+                            "导入路由失败（存储后端）: id={}, type={}, error={}",
+                            db_id,
+                            import_route.route_type,
+                            e
+                        );
                         // 删除数据库记录
                         let _ = repo.delete(db_id).await;
                         failed_count += 1;
@@ -262,7 +304,11 @@ pub async fn import_routes(
                     }
                 }
             } else {
-                tracing::info!("导入路由成功（数据库）: id={}, path={}", db_id, import_route.path);
+                tracing::info!(
+                    "导入路由成功（数据库）: id={}, path={}",
+                    db_id,
+                    import_route.path
+                );
             }
 
             // 如果路由启用，热更新到路由表
@@ -288,9 +334,7 @@ pub async fn import_routes(
                     }
                     Ok(id)
                 }
-                Err(e) => {
-                    Err(e)
-                }
+                Err(e) => Err(e),
             }
         };
 

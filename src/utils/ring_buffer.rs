@@ -78,7 +78,10 @@ impl<T: Clone> RingBuffer<T> {
 
         let data_guard = self.data.lock();
         unsafe {
-            data_guard.get_unchecked(index).as_ref().map(|e| e.data.clone())
+            data_guard
+                .get_unchecked(index)
+                .as_ref()
+                .map(|e| e.data.clone())
         }
     }
 

@@ -2,15 +2,15 @@
 //!
 //! 负责动态路由的加载、管理和执行
 
-use std::sync::Arc;
+use crate::db::models::{DynamicRoute, HandlerType};
+use crate::db::repositories::DynamicRouteRepository;
+use crate::services::route_type_manager::RouteTypeManager;
+use actix_web::{HttpRequest, HttpResponse};
+use dynamic_route_actix::{RouteEntry, RouteTable, SimpleRoute};
+use serde::Serialize;
 use std::future::Future;
 use std::pin::Pin;
-use actix_web::{HttpRequest, HttpResponse};
-use serde::Serialize;
-use dynamic_route_actix::{RouteTable, SimpleRoute, RouteEntry};
-use crate::db::repositories::DynamicRouteRepository;
-use crate::db::models::{DynamicRoute, HandlerType};
-use crate::services::route_type_manager::RouteTypeManager;
+use std::sync::Arc;
 use tokio::fs;
 
 /// 路由加载统计
@@ -53,12 +53,19 @@ impl DynamicRouteService {
             use crate::db::models::RouteType;
 
             // 1. 从内存存储加载（最快）
-            match manager.load_all_routes_from_storage(RouteType::Memory).await {
+            match manager
+                .load_all_routes_from_storage(RouteType::Memory)
+                .await
+            {
                 Ok(routes) => {
                     for route in routes {
                         if route.enabled {
                             if let Err(e) = self.add_route_to_table(&route).await {
-                                tracing::warn!("从内存存储加载路由失败: path={}, error={}", route.path, e);
+                                tracing::warn!(
+                                    "从内存存储加载路由失败: path={}, error={}",
+                                    route.path,
+                                    e
+                                );
                                 stats.failed += 1;
                             } else {
                                 stats.memory_loaded += 1;
@@ -77,7 +84,11 @@ impl DynamicRouteService {
                     for route in routes {
                         if route.enabled {
                             if let Err(e) = self.add_route_to_table(&route).await {
-                                tracing::warn!("从文件存储加载路由失败: path={}, error={}", route.path, e);
+                                tracing::warn!(
+                                    "从文件存储加载路由失败: path={}, error={}",
+                                    route.path,
+                                    e
+                                );
                                 stats.failed += 1;
                             } else {
                                 stats.file_loaded += 1;
@@ -91,12 +102,19 @@ impl DynamicRouteService {
             }
 
             // 3. 从数据库存储加载
-            match manager.load_all_routes_from_storage(RouteType::Database).await {
+            match manager
+                .load_all_routes_from_storage(RouteType::Database)
+                .await
+            {
                 Ok(routes) => {
                     for route in routes {
                         if route.enabled {
                             if let Err(e) = self.add_route_to_table(&route).await {
-                                tracing::warn!("从数据库存储加载路由失败: path={}, error={}", route.path, e);
+                                tracing::warn!(
+                                    "从数据库存储加载路由失败: path={}, error={}",
+                                    route.path,
+                                    e
+                                );
                                 stats.failed += 1;
                             } else {
                                 stats.database_loaded += 1;
@@ -140,23 +158,28 @@ impl DynamicRouteService {
     }
 
     /// 添加路由到路由表
-    async fn add_route_to_table(&self, route: &DynamicRoute) -> Result<(), Box<dyn std::error::Error>> {
+    async fn add_route_to_table(
+        &self,
+        route: &DynamicRoute,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         // 规范化路径：确保以 / 开头，移除尾部斜杠（根路径除外），规范化多个连续斜杠
         let normalized_path = normalize_path(&route.path);
-        
+
         match route.handler_type {
             HandlerType::Redirect => {
                 // 处理重定向路由
                 if let Some(target) = route.handler_config.get("target") {
                     let target_str = target.as_str().ok_or("target 必须是字符串")?;
-                    let status_code = route.handler_config
+                    let status_code = route
+                        .handler_config
                         .get("status_code")
                         .and_then(|v| v.as_u64())
                         .unwrap_or(302) as u16;
-                    
+
                     // 创建重定向路由处理器
                     let redirect_route = RedirectHandler::new(target_str.to_string(), status_code);
-                    self.route_table.insert(normalized_path, Box::new(redirect_route));
+                    self.route_table
+                        .insert(normalized_path, Box::new(redirect_route));
                 }
             }
             HandlerType::Static => {
@@ -178,20 +201,25 @@ impl DynamicRouteService {
                         }
                     }
                     // database/memory 类型：优先使用 inline_template
-                    crate::db::models::RouteType::Database | crate::db::models::RouteType::Memory => {
+                    crate::db::models::RouteType::Database
+                    | crate::db::models::RouteType::Memory => {
                         if let Some(ref template) = route.inline_template {
                             if !template.is_empty() {
                                 template.clone()
                             } else {
                                 // 兼容性：如果 inline_template 为空，尝试从 handler_config.content 读取
-                                route.handler_config.get("content")
+                                route
+                                    .handler_config
+                                    .get("content")
                                     .and_then(|v| v.as_str())
                                     .ok_or("需要提供 inline_template 或 handler_config.content")?
                                     .to_string()
                             }
                         } else {
                             // 兼容性：如果 inline_template 不存在，尝试从 handler_config.content 读取
-                            route.handler_config.get("content")
+                            route
+                                .handler_config
+                                .get("content")
                                 .and_then(|v| v.as_str())
                                 .ok_or("需要提供 inline_template 或 handler_config.content")?
                                 .to_string()
@@ -199,29 +227,33 @@ impl DynamicRouteService {
                     }
                 };
 
-                let content_type = route.handler_config
+                let content_type = route
+                    .handler_config
                     .get("content_type")
                     .and_then(|v| v.as_str())
                     .unwrap_or("text/html; charset=utf-8");
 
                 let static_route = SimpleRoute::new(content_str, content_type.to_string());
-                self.route_table.insert(normalized_path, Box::new(static_route));
+                self.route_table
+                    .insert(normalized_path, Box::new(static_route));
             }
             HandlerType::Proxy => {
                 // 处理代理路由
                 if let Some(target) = route.handler_config.get("target") {
                     let target_str = target.as_str().ok_or("target 必须是字符串")?;
                     let proxy_route = ProxyHandler::new(target_str.to_string());
-                    self.route_table.insert(normalized_path, Box::new(proxy_route));
+                    self.route_table
+                        .insert(normalized_path, Box::new(proxy_route));
                 }
             }
             HandlerType::Custom => {
                 // 处理自定义处理器路由
                 let custom_route = CustomHandler::new(route.handler_config.clone());
-                self.route_table.insert(normalized_path, Box::new(custom_route));
+                self.route_table
+                    .insert(normalized_path, Box::new(custom_route));
             }
         }
-        
+
         Ok(())
     }
 
@@ -242,7 +274,11 @@ impl DynamicRouteService {
             // 如果路由是启用状态，重新加载
             if route.enabled {
                 self.add_route_to_table(&route).await?;
-                tracing::info!("路由热更新成功: path={}, type={}", route.path, route.handler_type);
+                tracing::info!(
+                    "路由热更新成功: path={}, type={}",
+                    route.path,
+                    route.handler_type
+                );
             }
         }
 
@@ -276,14 +312,18 @@ pub struct RedirectHandler {
 
 impl RedirectHandler {
     pub fn new(target: String, status_code: u16) -> Self {
-        Self { target, status_code }
+        Self {
+            target,
+            status_code,
+        }
     }
 }
 
 impl RouteEntry for RedirectHandler {
     fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
         let target = self.target.clone();
-        let status = actix_web::http::StatusCode::from_u16(self.status_code).unwrap_or(actix_web::http::StatusCode::FOUND);
+        let status = actix_web::http::StatusCode::from_u16(self.status_code)
+            .unwrap_or(actix_web::http::StatusCode::FOUND);
         Box::pin(async move {
             HttpResponse::build(status)
                 .insert_header(("Location", target))
@@ -344,10 +384,7 @@ impl ProxyHandler {
 impl RouteEntry for ProxyHandler {
     fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
         let target = self.target.clone();
-        Box::pin(async move {
-            HttpResponse::Ok()
-                .body(format!("Proxy to: {}", target))
-        })
+        Box::pin(async move { HttpResponse::Ok().body(format!("Proxy to: {}", target)) })
     }
 
     fn clone_box(&self) -> Box<dyn RouteEntry> {
@@ -396,10 +433,7 @@ impl CustomHandler {
 
 impl RouteEntry for CustomHandler {
     fn handle(&self, _req: &HttpRequest) -> Pin<Box<dyn Future<Output = HttpResponse> + Send>> {
-        Box::pin(async move {
-            HttpResponse::Ok()
-                .body("Custom handler executed")
-        })
+        Box::pin(async move { HttpResponse::Ok().body("Custom handler executed") })
     }
 
     fn clone_box(&self) -> Box<dyn RouteEntry> {
@@ -445,21 +479,21 @@ impl std::fmt::Debug for CustomHandler {
 /// 确保路径以 / 开头，移除尾部斜杠（根路径除外），规范化多个连续斜杠
 fn normalize_path(path: &str) -> String {
     let mut normalized = path.trim().to_string();
-    
+
     // 确保以 / 开头
     if !normalized.starts_with('/') {
         normalized = format!("/{}", normalized);
     }
-    
+
     // 移除尾部斜杠（根路径除外）
     if normalized.len() > 1 && normalized.ends_with('/') {
         normalized.pop();
     }
-    
+
     // 标准化多个连续斜杠为单个斜杠
     while normalized.contains("//") {
         normalized = normalized.replace("//", "/");
     }
-    
+
     normalized
 }

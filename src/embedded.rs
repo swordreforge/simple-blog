@@ -30,7 +30,10 @@ pub fn extract_embedded_resources(base_dir: &Path) -> Result<(), Box<dyn std::er
     {
         let temp_extract_dir = base_dir.join(".extracted_debug");
         fs::create_dir_all(&temp_extract_dir)?;
-        println!("🔍 调试：提取所有嵌入文件到临时目录: {}", temp_extract_dir.display());
+        println!(
+            "🔍 调试：提取所有嵌入文件到临时目录: {}",
+            temp_extract_dir.display()
+        );
 
         let mut extracted_count = 0;
         for path in EmbeddedAssets::iter() {
@@ -74,24 +77,26 @@ pub fn extract_embedded_resources(base_dir: &Path) -> Result<(), Box<dyn std::er
         // 尝试直接访问一个已知的文件
         println!("🔍 测试直接访问文件:");
         if let Some(content) = EmbeddedAssets::get("templates/index.html") {
-            println!("  ✓ 成功获取 templates/index.html ({} bytes)", content.data.len());
+            println!(
+                "  ✓ 成功获取 templates/index.html ({} bytes)",
+                content.data.len()
+            );
         } else {
             println!("  ✗ 无法获取 templates/index.html");
         }
 
         if let Some(content) = EmbeddedAssets::get("img/avatar.webp") {
-            println!("  ✓ 成功获取 img/avatar.webp ({} bytes)", content.data.len());
+            println!(
+                "  ✓ 成功获取 img/avatar.webp ({} bytes)",
+                content.data.len()
+            );
         } else {
             println!("  ✗ 无法获取 img/avatar.webp");
         }
     }
 
     // 需要创建的目录列表（仅创建，不释放文件）
-    let dirs = vec![
-        "attachments",
-        "data",
-        "markdown",
-    ];
+    let dirs = vec!["attachments", "data", "markdown"];
 
     // 创建必要的目录
     for dir in &dirs {
@@ -172,10 +177,16 @@ fn extract_dir(src_dir: &str, dst_dir: &Path) -> Result<(), Box<dyn std::error::
         }
     }
 
-    println!("    📊 统计: 匹配 {} 个文件，提取 {} 个，跳过 {} 个", matched_count, extracted_count, skipped_count);
+    println!(
+        "    📊 统计: 匹配 {} 个文件，提取 {} 个，跳过 {} 个",
+        matched_count, extracted_count, skipped_count
+    );
 
     if extracted_count > 0 {
-        println!("    - 提取了 {} 个文件，跳过 {} 个已存在的文件", extracted_count, skipped_count);
+        println!(
+            "    - 提取了 {} 个文件，跳过 {} 个已存在的文件",
+            extracted_count, skipped_count
+        );
     } else {
         println!("    - 所有 {} 个文件已存在，跳过提取", skipped_count);
     }

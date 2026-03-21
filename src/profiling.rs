@@ -1,7 +1,7 @@
 /// 性能分析模块
-/// 
+///
 /// 使用 pprof-rs 进行性能分析和火焰图生成
-/// 
+///
 /// 使用方式:
 /// 1. 启用 profiling feature: cargo build --release --features profiling
 /// 2. 运行程序: ./rustblog --enable-profiling
@@ -46,7 +46,7 @@ impl ProfilingManager {
             ProfilerGuardBuilder::default()
                 .frequency(1000) // 采样频率：1000 Hz
                 .blocklist(&["libc", "libgcc", "pthread"])
-                .build()?
+                .build()?,
         );
 
         self.enabled = true;

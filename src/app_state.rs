@@ -10,17 +10,17 @@
 //!
 //! 使用依赖注入模式，便于测试和维护
 
-use std::sync::Arc;
+use crate::cache::AppCache;
+use crate::db::models::RouteType;
+use crate::db::repositories;
+use crate::services::dynamic_route_service::DynamicRouteService;
+use crate::services::route_storage::{FileRouteStorage, MemoryRouteStorage};
+use crate::services::route_type_manager::RouteTypeManager;
+use crate::view_batch::ViewBatchProcessor;
+use dynamic_route_actix::RouteTable;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use crate::db::repositories;
-use crate::cache::AppCache;
-use crate::view_batch::ViewBatchProcessor;
-use crate::services::dynamic_route_service::DynamicRouteService;
-use crate::services::route_type_manager::RouteTypeManager;
-use crate::services::route_storage::{MemoryRouteStorage, FileRouteStorage};
-use crate::db::models::RouteType;
-use dynamic_route_actix::RouteTable;
+use std::sync::Arc;
 
 /// 应用状态 - 依赖注入容器
 #[derive(Clone)]
@@ -166,8 +166,8 @@ pub fn create_route_type_manager(
     let file_storage = Arc::new(FileRouteStorage::new(
         &routes_base_dir,
         1024 * 1024, // 1MB 最大文件大小
-        true,         // 启用备份
-        5,            // 保留 5 个备份
+        true,        // 启用备份
+        5,           // 保留 5 个备份
     )?);
 
     // 创建数据库存储

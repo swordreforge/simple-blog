@@ -1,8 +1,8 @@
 //! 文章缓存辅助函数
 //! 用于缓存击穿防护的数据库查询函数
 
-use crate::db::repositories::PassageRepository;
 use crate::cache::CacheError;
+use crate::db::repositories::PassageRepository;
 use crate::utils::format_datetime_optimized;
 
 /// 从数据库获取文章列表（用于缓存加载函数）
@@ -24,29 +24,35 @@ pub async fn fetch_passage_list_from_db(
         // 游标分页
         match passage_repo.get_published_cursor(cursor, limit).await {
             Ok((passages, next_cursor)) => {
-                let data: Vec<crate::handlers::api_handlers::passage::crud::PassageResponse> = passages
-                    .into_iter()
-                    .map(|p| crate::handlers::api_handlers::passage::crud::PassageResponse {
-                        id: p.id.unwrap_or(0),
-                        uuid: p.uuid.unwrap_or_default(),
-                        title: p.title,
-                        content: p.original_content.unwrap_or_default(),
-                        html_content: None,
-                        summary: p.summary,
-                        author: p.author,
-                        tags: p.tags,
-                        category: p.category,
-                        status: p.status,
-                        file_path: p.file_path,
-                        visibility: p.visibility,
-                        is_scheduled: p.is_scheduled,
-                        published_at: p.published_at
-                            .map(|d: chrono::DateTime<chrono::Utc>| format_datetime_optimized(&d)),
-                        cover_image: p.cover_image,
-                        created_at: format_datetime_optimized(&p.created_at),
-                        updated_at: format_datetime_optimized(&p.updated_at),
-                    })
-                    .collect();
+                let data: Vec<crate::handlers::api_handlers::passage::crud::PassageResponse> =
+                    passages
+                        .into_iter()
+                        .map(
+                            |p| crate::handlers::api_handlers::passage::crud::PassageResponse {
+                                id: p.id.unwrap_or(0),
+                                uuid: p.uuid.unwrap_or_default(),
+                                title: p.title,
+                                content: p.original_content.unwrap_or_default(),
+                                html_content: None,
+                                summary: p.summary,
+                                author: p.author,
+                                tags: p.tags,
+                                category: p.category,
+                                status: p.status,
+                                file_path: p.file_path,
+                                visibility: p.visibility,
+                                is_scheduled: p.is_scheduled,
+                                published_at: p.published_at.map(
+                                    |d: chrono::DateTime<chrono::Utc>| {
+                                        format_datetime_optimized(&d)
+                                    },
+                                ),
+                                cover_image: p.cover_image,
+                                created_at: format_datetime_optimized(&p.created_at),
+                                updated_at: format_datetime_optimized(&p.updated_at),
+                            },
+                        )
+                        .collect();
 
                 let response = json!({
                     "success": true,
@@ -58,14 +64,18 @@ pub async fn fetch_passage_list_from_db(
                     }
                 });
 
-                serde_json::to_string(&response).map(Some).map_err(|e| CacheError::Unknown(e.to_string()))
+                serde_json::to_string(&response)
+                    .map(Some)
+                    .map_err(|e| CacheError::Unknown(e.to_string()))
             }
             Err(e) => Err(CacheError::ConnectionError(e.to_string())),
         }
     } else {
         // 传统分页
         let result = if year.is_some() || month.is_some() || day.is_some() {
-            passage_repo.get_published_by_date(year, month, day, limit, offset).await
+            passage_repo
+                .get_published_by_date(year, month, day, limit, offset)
+                .await
         } else {
             passage_repo.get_published(limit, offset).await
         };
@@ -99,7 +109,9 @@ pub async fn fetch_passage_list_from_db(
                             "has_more": false
                         }
                     });
-                    return serde_json::to_string(&response).map(Some).map_err(|e| CacheError::Unknown(e.to_string()));
+                    return serde_json::to_string(&response)
+                        .map(Some)
+                        .map_err(|e| CacheError::Unknown(e.to_string()));
                 }
 
                 // 计算下一页游标
@@ -111,29 +123,31 @@ pub async fn fetch_passage_list_from_db(
                     )
                 });
 
-                let data: Vec<crate::handlers::api_handlers::passage::crud::PassageResponse> = passages
-                    .into_iter()
-                    .map(|p| crate::handlers::api_handlers::passage::crud::PassageResponse {
-                        id: p.id.unwrap_or(0),
-                        uuid: p.uuid.unwrap_or_default(),
-                        title: p.title,
-                        content: p.original_content.unwrap_or_default(),
-                        html_content: None,
-                        summary: p.summary,
-                        author: p.author,
-                        tags: p.tags,
-                        category: p.category,
-                        status: p.status,
-                        file_path: p.file_path,
-                        visibility: p.visibility,
-                        is_scheduled: p.is_scheduled,
-                        published_at: p.published_at
-                            .map(|d| format_datetime_optimized(&d)),
-                        cover_image: p.cover_image,
-                        created_at: format_datetime_optimized(&p.created_at),
-                        updated_at: format_datetime_optimized(&p.updated_at),
-                    })
-                    .collect();
+                let data: Vec<crate::handlers::api_handlers::passage::crud::PassageResponse> =
+                    passages
+                        .into_iter()
+                        .map(
+                            |p| crate::handlers::api_handlers::passage::crud::PassageResponse {
+                                id: p.id.unwrap_or(0),
+                                uuid: p.uuid.unwrap_or_default(),
+                                title: p.title,
+                                content: p.original_content.unwrap_or_default(),
+                                html_content: None,
+                                summary: p.summary,
+                                author: p.author,
+                                tags: p.tags,
+                                category: p.category,
+                                status: p.status,
+                                file_path: p.file_path,
+                                visibility: p.visibility,
+                                is_scheduled: p.is_scheduled,
+                                published_at: p.published_at.map(|d| format_datetime_optimized(&d)),
+                                cover_image: p.cover_image,
+                                created_at: format_datetime_optimized(&p.created_at),
+                                updated_at: format_datetime_optimized(&p.updated_at),
+                            },
+                        )
+                        .collect();
 
                 let response = json!({
                     "success": true,
@@ -148,7 +162,9 @@ pub async fn fetch_passage_list_from_db(
                     }
                 });
 
-                serde_json::to_string(&response).map(Some).map_err(|e| CacheError::Unknown(e.to_string()))
+                serde_json::to_string(&response)
+                    .map(Some)
+                    .map_err(|e| CacheError::Unknown(e.to_string()))
             }
             Err(e) => Err(CacheError::ConnectionError(e.to_string())),
         }

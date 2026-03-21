@@ -47,10 +47,7 @@ pub fn format_datetime_optimized(dt: &DateTime<Utc>) -> String {
 /// Cow<'_, str> - 如果有缓存则返回引用，否则返回拥有的字符串
 #[inline]
 #[allow(dead_code)]
-pub fn format_datetime_cow<'a>(
-    dt: &DateTime<Utc>,
-    cached: Option<&'a str>,
-) -> Cow<'a, str> {
+pub fn format_datetime_cow<'a>(dt: &DateTime<Utc>, cached: Option<&'a str>) -> Cow<'a, str> {
     if let Some(cached) = cached {
         Cow::Borrowed(cached)
     } else {
@@ -128,9 +125,9 @@ where
 #[allow(dead_code)]
 pub fn escape_json_string_fast(s: &str) -> String {
     // 首先检查是否需要转义
-    let needs_escape = s.bytes().any(|b| {
-        matches!(b, b'"' | b'\\' | b'/' | 0x08 | 0x0C | 0x0A | 0x0D | 0x09)
-    });
+    let needs_escape = s
+        .bytes()
+        .any(|b| matches!(b, b'"' | b'\\' | b'/' | 0x08 | 0x0C | 0x0A | 0x0D | 0x09));
 
     if !needs_escape {
         return s.to_string();
@@ -211,7 +208,9 @@ pub fn eq_simd(a: &str, b: &str) -> bool {
 
             // 处理剩余字节
             for i in 0..remainder {
-                if *a_bytes.get_unchecked(chunks * 32 + i) != *b_bytes.get_unchecked(chunks * 32 + i) {
+                if *a_bytes.get_unchecked(chunks * 32 + i)
+                    != *b_bytes.get_unchecked(chunks * 32 + i)
+                {
                     return false;
                 }
             }

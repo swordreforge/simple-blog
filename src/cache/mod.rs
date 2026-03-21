@@ -1,14 +1,14 @@
 mod backend;
 mod concurrent;
 mod keys;
-mod manager;
 mod local;
+mod manager;
 mod retry;
 mod utils;
 mod valkey;
 
 pub use backend::{CacheConfig, CacheError};
-pub use keys::{PassageCacheKeys};
+pub use keys::PassageCacheKeys;
 pub use manager::CacheManager;
 pub use utils::*;
 
@@ -23,7 +23,12 @@ impl AppCache {
     }
 
     /// 初始化缓存管理器
-    pub async fn init_manager(&mut self, backend_type: &str, valkey_url: Option<&str>, config: CacheConfig) -> Result<(), CacheError> {
+    pub async fn init_manager(
+        &mut self,
+        backend_type: &str,
+        valkey_url: Option<&str>,
+        config: CacheConfig,
+    ) -> Result<(), CacheError> {
         let manager = CacheManager::new(backend_type, valkey_url, config).await?;
         self.manager = Some(manager);
         Ok(())
@@ -84,7 +89,7 @@ impl AppCache {
     }
 
     /// 批量获取或加载缓存值（用于文章列表等场景）
-    /// 
+    ///
     /// # 参数
     /// - `keys`: 缓存键列表
     /// - `loader`: 加载函数，接收未命中的键列表
@@ -101,7 +106,9 @@ impl AppCache {
     ) -> Result<std::collections::HashMap<String, String>, CacheError>
     where
         F: FnOnce(Vec<String>) -> Fut,
-        Fut: std::future::Future<Output = Result<std::collections::HashMap<String, String>, CacheError>>,
+        Fut: std::future::Future<
+                Output = Result<std::collections::HashMap<String, String>, CacheError>,
+            >,
     {
         if let Some(manager) = &self.manager {
             let mut results = std::collections::HashMap::new();

@@ -1,9 +1,9 @@
-use actix_web::{web, HttpResponse};
 use actix_multipart::Multipart;
-use serde::Serialize;
-use std::path::Path;
+use actix_web::{HttpResponse, web};
 use chrono::Utc;
 use mime_guess::MimeGuess;
+use serde::Serialize;
+use std::path::Path;
 
 /// 上传响应
 #[derive(Debug, Serialize)]
@@ -26,26 +26,41 @@ pub struct UploadData {
 const UPLOAD_BUFFER_SIZE: usize = 65536;
 
 /// 文件上传处理器（流式写入）
-pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::HashMap<String, String>>) -> HttpResponse {
+pub async fn upload(
+    mut payload: Multipart,
+    query: web::Query<std::collections::HashMap<String, String>>,
+) -> HttpResponse {
     use futures_util::stream::StreamExt;
 
     // 获取日期参数（可选）
-    let year = query.get("year").cloned().unwrap_or_else(|| Utc::now().format("%Y").to_string());
-    let month = query.get("month").cloned().unwrap_or_else(|| Utc::now().format("%m").to_string());
-    let day = query.get("day").cloned().unwrap_or_else(|| Utc::now().format("%d").to_string());
-    
+    let year = query
+        .get("year")
+        .cloned()
+        .unwrap_or_else(|| Utc::now().format("%Y").to_string());
+    let month = query
+        .get("month")
+        .cloned()
+        .unwrap_or_else(|| Utc::now().format("%m").to_string());
+    let day = query
+        .get("day")
+        .cloned()
+        .unwrap_or_else(|| Utc::now().format("%d").to_string());
+
     // 支持的文件类型
     let supported_extensions: std::collections::HashSet<&str> = [
-        ".md", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"
-    ].iter().cloned().collect();
-    
+        ".md", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg",
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
     // 遍历 multipart 表单
     while let Some(field_result) = payload.next().await {
         let mut field = match field_result {
             Ok(f) => f,
             Err(_) => continue,
         };
-        
+
         // 只处理文件字段
         let content_disposition = field.content_disposition();
         let filename = match content_disposition {
@@ -55,7 +70,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
             },
             None => continue,
         };
-        
+
         // 检查文件大小限制（10MB）
         let file_size = match get_field_size(&mut field).await {
             Ok(size) => size,
@@ -68,23 +83,26 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 });
             }
         };
-        
+
         if file_size > 10 * 1024 * 1024 {
             return HttpResponse::BadRequest().json(UploadResponse {
                 success: false,
-                message: format!("文件大小 {:.2}MB 超过 10MB 限制", file_size as f64 / (1024.0 * 1024.0)),
+                message: format!(
+                    "文件大小 {:.2}MB 超过 10MB 限制",
+                    file_size as f64 / (1024.0 * 1024.0)
+                ),
                 data: None,
                 code: "FILE_TOO_LARGE".to_string(),
             });
         }
-        
+
         // 检查文件类型
         let ext = Path::new(&filename)
             .extension()
             .and_then(|e| e.to_str())
             .map(|e| format!(".{}", e.to_lowercase()))
             .unwrap_or_default();
-        
+
         if !supported_extensions.contains(&ext.as_str()) {
             return HttpResponse::BadRequest().json(UploadResponse {
                 success: false,
@@ -93,12 +111,12 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 code: "UNSUPPORTED_FILE_TYPE".to_string(),
             });
         }
-        
+
         // 获取内容类型
         let content_type = MimeGuess::from_path(&filename)
             .first_or_octet_stream()
             .to_string();
-        
+
         // 构建文件路径（按日期组织）
         let date_dir = format!("{}/{}/{}", year, month, day);
         let base_dir = if ext == ".md" {
@@ -106,10 +124,10 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
         } else {
             "attachments"
         };
-        
+
         let file_dir = format!("{}/{}", base_dir, date_dir);
         let file_path = format!("{}/{}", file_dir, filename);
-        
+
         // 创建目录（异步）
         if let Err(e) = tokio::fs::create_dir_all(&file_dir).await {
             return HttpResponse::InternalServerError().json(UploadResponse {
@@ -119,7 +137,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 code: "CREATE_DIR_FAILED".to_string(),
             });
         }
-        
+
         // 使用 tokio 异步文件写入（流式写入，降低内存使用）
         let file = match tokio::fs::File::create(&file_path).await {
             Ok(f) => f,
@@ -165,7 +183,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
                 code: "FLUSH_FILE_FAILED".to_string(),
             });
         }
-        
+
         return HttpResponse::Ok().json(UploadResponse {
             success: true,
             message: "上传成功".to_string(),
@@ -178,7 +196,7 @@ pub async fn upload(mut payload: Multipart, query: web::Query<std::collections::
             code: "UPLOAD_SUCCESS".to_string(),
         });
     }
-    
+
     HttpResponse::BadRequest().json(UploadResponse {
         success: false,
         message: "未找到文件".to_string(),

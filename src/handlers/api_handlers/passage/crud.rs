@@ -1,15 +1,15 @@
-use actix_web::{web, HttpResponse, HttpRequest, HttpMessage};
-use serde::{Deserialize, Serialize};
 use crate::db::models::Passage;
-use crate::view_batch::{ViewRecord, is_local_ip};
 use crate::utils::format_datetime_optimized;
+use crate::view_batch::{ViewRecord, is_local_ip};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
 use chrono::Utc;
 use chrono_tz::Tz;
-use tokio::fs;
 use futures_util::future;
+use serde::{Deserialize, Serialize};
+use tokio::fs;
 
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
-use super::validation::{ensure_tags_exist, ensure_category_exist};
+use super::validation::{ensure_category_exist, ensure_tags_exist};
 
 /// 文章响应
 #[derive(Debug, Serialize)]
@@ -77,12 +77,14 @@ pub async fn list(
     let passage_repo = state.passage_repository();
 
     // 解析并验证分页参数
-    let limit: i64 = query.get("limit")
+    let limit: i64 = query
+        .get("limit")
         .and_then(|l| l.parse::<i64>().ok())
         .filter(|&l| l > 0 && l <= 1000)
         .unwrap_or(10);
 
-    let page: i64 = query.get("page")
+    let page: i64 = query
+        .get("page")
         .and_then(|p| p.parse::<i64>().ok())
         .filter(|&p| p > 0)
         .unwrap_or(1);
@@ -90,14 +92,15 @@ pub async fn list(
     let offset = (page - 1) * limit;
 
     // 解析日期筛选参数
-    let year: Option<i32> = query.get("year")
-        .and_then(|y| y.parse::<i32>().ok());
+    let year: Option<i32> = query.get("year").and_then(|y| y.parse::<i32>().ok());
 
-    let month: Option<i32> = query.get("month")
+    let month: Option<i32> = query
+        .get("month")
         .and_then(|m| m.parse::<i32>().ok())
         .filter(|&m| (1..=12).contains(&m));
 
-    let day: Option<i32> = query.get("day")
+    let day: Option<i32> = query
+        .get("day")
         .and_then(|d| d.parse::<i32>().ok())
         .filter(|&d| (1..=31).contains(&d));
 
@@ -116,7 +119,10 @@ pub async fn list(
     // 生成缓存键（包含日期和游标参数）
     let cache_key = if use_cursor {
         if let Some(cursor) = cursor_param {
-            format!("passage:list:{}:cursor:{}:limit:{}", date_part, cursor, limit)
+            format!(
+                "passage:list:{}:cursor:{}:limit:{}",
+                date_part, cursor, limit
+            )
         } else {
             format!("passage:list:{}:cursor:first:limit:{}", date_part, limit)
         }
@@ -126,20 +132,23 @@ pub async fn list(
 
     // 使用 get_or_load 方法（带缓存击穿防护）
     let cache_result = if let Some(manager) = state.cache.manager() {
-        manager.get_or_load(&cache_key, || async {
-            // 加载函数：从数据库获取数据
-            super::crud_helper::fetch_passage_list_from_db(
-                std::sync::Arc::new(passage_repo.clone()),
-                use_cursor,
-                query.get("cursor").map(|s| s.to_string()),
-                year,
-                month,
-                day,
-                limit,
-                page,
-                offset,
-            ).await
-        }).await
+        manager
+            .get_or_load(&cache_key, || async {
+                // 加载函数：从数据库获取数据
+                super::crud_helper::fetch_passage_list_from_db(
+                    std::sync::Arc::new(passage_repo.clone()),
+                    use_cursor,
+                    query.get("cursor").map(|s| s.to_string()),
+                    year,
+                    month,
+                    day,
+                    limit,
+                    page,
+                    offset,
+                )
+                .await
+            })
+            .await
     } else {
         // 没有缓存，直接从数据库获取
         super::crud_helper::fetch_passage_list_from_db(
@@ -152,7 +161,8 @@ pub async fn list(
             limit,
             page,
             offset,
-        ).await
+        )
+        .await
     };
 
     match cache_result {
@@ -189,7 +199,8 @@ pub async fn list(
         let cursor = query.get("cursor").map(|s| s.to_string());
         match passage_repo.get_published_cursor(cursor, limit).await {
             Ok((passages, next_cursor)) => {
-                let data: Vec<PassageResponse> = passages.into_iter()
+                let data: Vec<PassageResponse> = passages
+                    .into_iter()
                     .map(|p| PassageResponse {
                         id: p.id.unwrap_or(0),
                         uuid: p.uuid.unwrap_or_default(),
@@ -204,7 +215,9 @@ pub async fn list(
                         file_path: p.file_path,
                         visibility: p.visibility,
                         is_scheduled: p.is_scheduled,
-                        published_at: p.published_at.map(|d: chrono::DateTime<chrono::Utc>| format_datetime_optimized(&d)),
+                        published_at: p
+                            .published_at
+                            .map(|d: chrono::DateTime<chrono::Utc>| format_datetime_optimized(&d)),
                         cover_image: p.cover_image,
                         created_at: format_datetime_optimized(&p.created_at),
                         updated_at: format_datetime_optimized(&p.updated_at),
@@ -221,8 +234,12 @@ pub async fn list(
                     }
                 });
 
-                tracing::debug!("游标分页响应: 数据数量={}, next_cursor={:?}, has_more={}",
-                    data.len(), next_cursor, next_cursor.is_some() && data.len() >= limit as usize);
+                tracing::debug!(
+                    "游标分页响应: 数据数量={}, next_cursor={:?}, has_more={}",
+                    data.len(),
+                    next_cursor,
+                    next_cursor.is_some() && data.len() >= limit as usize
+                );
 
                 // 存储到缓存（TTL 5 分钟）
                 if let Some(manager) = state.cache.manager() {
@@ -247,7 +264,9 @@ pub async fn list(
     } else {
         // 传统分页
         let result = if year.is_some() || month.is_some() || day.is_some() {
-            passage_repo.get_published_by_date(year, month, day, limit, offset).await
+            passage_repo
+                .get_published_by_date(year, month, day, limit, offset)
+                .await
         } else {
             passage_repo.get_published(limit, offset).await
         };
@@ -269,14 +288,25 @@ pub async fn list(
                     // 尝试从缓存获取
                     if let Some(cached) = manager.get(&cache_key).await {
                         if let Ok(cached_total) = cached.parse::<i64>() {
-                            tracing::debug!("从缓存获取文章总数: {} -> {}", cache_key, cached_total);
+                            tracing::debug!(
+                                "从缓存获取文章总数: {} -> {}",
+                                cache_key,
+                                cached_total
+                            );
                             cached_total
                         } else {
                             // 缓存解析失败，重新查询
-                            let fresh_total = if year.is_some() || month.is_some() || day.is_some() {
-                                passage_repo.count_published_by_date(year, month, day).await.unwrap_or(passages.len() as i64)
+                            let fresh_total = if year.is_some() || month.is_some() || day.is_some()
+                            {
+                                passage_repo
+                                    .count_published_by_date(year, month, day)
+                                    .await
+                                    .unwrap_or(passages.len() as i64)
                             } else {
-                                passage_repo.count_published().await.unwrap_or(passages.len() as i64)
+                                passage_repo
+                                    .count_published()
+                                    .await
+                                    .unwrap_or(passages.len() as i64)
                             };
                             // 更新缓存
                             let _ = manager.set(&cache_key, &fresh_total.to_string()).await;
@@ -285,9 +315,15 @@ pub async fn list(
                     } else {
                         // 缓存未命中，执行查询
                         let fresh_total = if year.is_some() || month.is_some() || day.is_some() {
-                            passage_repo.count_published_by_date(year, month, day).await.unwrap_or(passages.len() as i64)
+                            passage_repo
+                                .count_published_by_date(year, month, day)
+                                .await
+                                .unwrap_or(passages.len() as i64)
                         } else {
-                            passage_repo.count_published().await.unwrap_or(passages.len() as i64)
+                            passage_repo
+                                .count_published()
+                                .await
+                                .unwrap_or(passages.len() as i64)
                         };
                         // 写入缓存
                         let _ = manager.set(&cache_key, &fresh_total.to_string()).await;
@@ -297,9 +333,15 @@ pub async fn list(
                 } else {
                     // 缓存管理器不可用，直接查询
                     if year.is_some() || month.is_some() || day.is_some() {
-                        passage_repo.count_published_by_date(year, month, day).await.unwrap_or(passages.len() as i64)
+                        passage_repo
+                            .count_published_by_date(year, month, day)
+                            .await
+                            .unwrap_or(passages.len() as i64)
                     } else {
-                        passage_repo.count_published().await.unwrap_or(passages.len() as i64)
+                        passage_repo
+                            .count_published()
+                            .await
+                            .unwrap_or(passages.len() as i64)
                     }
                 };
 
@@ -321,10 +363,15 @@ pub async fn list(
 
                 // 计算下一页游标（使用最后一条记录）
                 let next_cursor = passages.last().map(|p| {
-                    format!("{}|{}", p.created_at.format("%Y-%m-%d %H:%M:%S%:z"), p.id.unwrap_or(0))
+                    format!(
+                        "{}|{}",
+                        p.created_at.format("%Y-%m-%d %H:%M:%S%:z"),
+                        p.id.unwrap_or(0)
+                    )
                 });
 
-                let data: Vec<PassageResponse> = passages.into_iter()
+                let data: Vec<PassageResponse> = passages
+                    .into_iter()
                     .map(|p| PassageResponse {
                         id: p.id.unwrap_or(0),
                         uuid: p.uuid.unwrap_or_default(),
@@ -392,7 +439,9 @@ pub async fn get(
     let passage_repo = state.passage_repository();
 
     // 获取用户角色
-    let role: String = req.extensions().get::<crate::middleware::auth::RoleKey>()
+    let role: String = req
+        .extensions()
+        .get::<crate::middleware::auth::RoleKey>()
         .map(|r| r.0.clone())
         .unwrap_or_default();
 
@@ -492,7 +541,9 @@ pub async fn get(
 
     // 使用批量处理器记录文章阅读（不阻塞响应）
     let passage_uuid = passage.uuid.clone().unwrap_or_default();
-    let user_agent = req.headers().get("user-agent")
+    let user_agent = req
+        .headers()
+        .get("user-agent")
         .and_then(|h| h.to_str().ok())
         .unwrap_or("unknown")
         .to_string();
@@ -545,7 +596,7 @@ pub async fn get(
     };
 
     // 生成 ETag
-    use md5::{Md5, Digest};
+    use md5::{Digest, Md5};
     let etag_data = format!("{}:{}", response.id, response.updated_at);
     let etag = format!("\"{:x}\"", Md5::digest(etag_data.as_bytes()));
 
@@ -590,13 +641,19 @@ pub async fn create(
     let passage_repo = state.passage_repository();
 
     // 获取用户信息用于审计日志
-    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
+    let user_id = req
+        .extensions()
+        .get::<crate::middleware::auth::UserIDKey>()
         .map(|u| u.0)
         .unwrap_or(0);
-    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>()
+    let username = req
+        .extensions()
+        .get::<crate::middleware::auth::UsernameKey>()
         .map(|u| u.0.clone())
         .unwrap_or_else(|| "unknown".to_string());
-    let client_ip = req.connection_info().realip_remote_addr()
+    let client_ip = req
+        .connection_info()
+        .realip_remote_addr()
         .map(|addr| addr.to_string());
 
     // 转换 Markdown 为 HTML
@@ -639,8 +696,16 @@ pub async fn create(
     } else {
         // 自动生成文件路径：markdown/YYYY/MM/DD/title.md
         let date = now.format("%Y/%m/%d").to_string();
-        let safe_title = req_json.title.chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '_' })
+        let safe_title = req_json
+            .title
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect::<String>()
             .replace(' ', "-");
         format!("markdown/{}/{}.md", date, safe_title)
@@ -658,11 +723,15 @@ pub async fn create(
     // 如果没有提供摘要，则自动生成
     let summary = req_json.summary.clone().or_else(|| {
         use crate::services::summarize_service::SummarizeService;
-        Some(SummarizeService::generate_summary_from_markdown(&req_json.content))
+        Some(SummarizeService::generate_summary_from_markdown(
+            &req_json.content,
+        ))
     });
 
     // 如果提供了创建时间，使用指定的；否则使用当前时间
-    let created_at = req_json.created_at.as_ref()
+    let created_at = req_json
+        .created_at
+        .as_ref()
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
         .map(|dt| dt.with_timezone(&Utc))
         .unwrap_or(now);
@@ -674,20 +743,37 @@ pub async fn create(
         content: html_content,
         original_content: Some(req_json.content.clone()),
         summary,
-        summarize: None,  // 将在创建时自动生成
-        author: req_json.author.clone().unwrap_or_else(|| "Anonymous".to_string()),
+        summarize: None, // 将在创建时自动生成
+        author: req_json
+            .author
+            .clone()
+            .unwrap_or_else(|| "Anonymous".to_string()),
         tags: tags_json,
-        category: req_json.category.clone().unwrap_or_else(|| "未分类".to_string()),
-        status: req_json.status.clone()
+        category: req_json
+            .category
+            .clone()
+            .unwrap_or_else(|| "未分类".to_string()),
+        status: req_json
+            .status
+            .clone()
             .and_then(|s| crate::db::models::PassageStatus::from_str(&s))
             .unwrap_or(crate::db::models::PassageStatus::Draft),
         file_path: Some(file_path),
-        visibility: req_json.visibility.clone()
+        visibility: req_json
+            .visibility
+            .clone()
             .and_then(|s| crate::db::models::PassageVisibility::from_str(&s))
             .unwrap_or(crate::db::models::PassageVisibility::Public),
         is_scheduled: req_json.is_scheduled.unwrap_or(false),
-        published_at: req_json.published_at.as_ref().and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok()).map(|dt| dt.with_timezone(&Utc)),
-        cover_image: req_json.cover_image.clone().or_else(|| Some("/img/passage-cover.webp".to_string())),
+        published_at: req_json
+            .published_at
+            .as_ref()
+            .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+            .map(|dt| dt.with_timezone(&Utc)),
+        cover_image: req_json
+            .cover_image
+            .clone()
+            .or_else(|| Some("/img/passage-cover.webp".to_string())),
         created_at,
         updated_at: now,
     };
@@ -718,14 +804,8 @@ pub async fn create(
                     }
 
                     // 记录审计日志
-                    crate::audit::AUDIT_LOGGER.log_passage_create(
-                        user_id,
-                        &username,
-                        id,
-                        &uuid,
-                        &title,
-                        client_ip,
-                    );
+                    crate::audit::AUDIT_LOGGER
+                        .log_passage_create(user_id, &username, id, &uuid, &title, client_ip);
 
                     HttpResponse::Ok().json(serde_json::json!({
                         "success": true,
@@ -767,13 +847,19 @@ pub async fn update(
     let passage_repo = state.passage_repository();
 
     // 获取用户信息用于审计日志
-    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
+    let user_id = req
+        .extensions()
+        .get::<crate::middleware::auth::UserIDKey>()
         .map(|u| u.0)
         .unwrap_or(0);
-    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>()
+    let username = req
+        .extensions()
+        .get::<crate::middleware::auth::UsernameKey>()
         .map(|u| u.0.clone())
         .unwrap_or_else(|| "unknown".to_string());
-    let client_ip = req.connection_info().realip_remote_addr()
+    let client_ip = req
+        .connection_info()
+        .realip_remote_addr()
         .map(|addr| addr.to_string());
 
     // 先获取现有文章
@@ -834,7 +920,9 @@ pub async fn update(
 
     // 自动生成摘要（总是重新生成，不使用前端提供的摘要）
     use crate::services::summarize_service::SummarizeService;
-    passage.summary = Some(SummarizeService::generate_summary_from_markdown(&passage.content));
+    passage.summary = Some(SummarizeService::generate_summary_from_markdown(
+        &passage.content,
+    ));
 
     // 异步清除缓存，不阻塞主响应
     let cache_manager = state.cache.manager().cloned();
@@ -874,8 +962,8 @@ pub async fn update(
         passage.tags = serde_json::to_string(&tag_list).unwrap_or_else(|_| "[]".to_string());
     }
     if let Some(ref status) = req_json.status {
-        passage.status = crate::db::models::PassageStatus::from_str(status)
-            .unwrap_or(passage.status);
+        passage.status =
+            crate::db::models::PassageStatus::from_str(status).unwrap_or(passage.status);
     }
     if let Some(ref file_path) = req_json.file_path {
         passage.file_path = Some(file_path.clone());
@@ -918,13 +1006,8 @@ pub async fn update(
 
             // 记录审计日志
             if let Some(uuid) = passage_uuid {
-                crate::audit::AUDIT_LOGGER.log_passage_update(
-                    user_id,
-                    &username,
-                    id,
-                    &uuid,
-                    client_ip,
-                );
+                crate::audit::AUDIT_LOGGER
+                    .log_passage_update(user_id, &username, id, &uuid, client_ip);
             }
 
             HttpResponse::Ok().json(serde_json::json!({
@@ -953,13 +1036,19 @@ pub async fn delete(
     let attachment_repo = state.attachment_repository();
 
     // 获取用户信息用于审计日志
-    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>()
+    let user_id = req
+        .extensions()
+        .get::<crate::middleware::auth::UserIDKey>()
         .map(|u| u.0)
         .unwrap_or(0);
-    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>()
+    let username = req
+        .extensions()
+        .get::<crate::middleware::auth::UsernameKey>()
         .map(|u| u.0.clone())
         .unwrap_or_else(|| "unknown".to_string());
-    let client_ip = req.connection_info().realip_remote_addr()
+    let client_ip = req
+        .connection_info()
+        .realip_remote_addr()
         .map(|addr| addr.to_string());
 
     // 1. 获取文章信息以获取文件路径
@@ -985,7 +1074,10 @@ pub async fn delete(
     }
 
     // 3. 查询关联的附件
-    let attachments = match attachment_repo.get_by_passage_uuids(vec![uuid.clone()]).await {
+    let attachments = match attachment_repo
+        .get_by_passage_uuids(vec![uuid.clone()])
+        .await
+    {
         Ok(attachments) => attachments,
         Err(e) => {
             eprintln!("查询附件失败: {}", e);
@@ -994,7 +1086,8 @@ pub async fn delete(
     };
 
     // 4. 删除附件物理文件（并行删除以优化性能）
-    let delete_tasks: Vec<_> = attachments.iter()
+    let delete_tasks: Vec<_> = attachments
+        .iter()
         .map(|attachment| {
             let path = attachment.file_path.clone();
             tokio::spawn(async move {
@@ -1013,7 +1106,11 @@ pub async fn delete(
             // 清除缓存
             let cache_keys = vec![
                 format!("passage:get:{}", uuid),
-                if let Some(id) = passage.id { format!("passage:get:{}", id) } else { String::new() },
+                if let Some(id) = passage.id {
+                    format!("passage:get:{}", id)
+                } else {
+                    String::new()
+                },
                 "passage:list:page:1:limit:10".to_string(),
                 "passage:list:page:1:limit:20".to_string(),
             ];
@@ -1106,10 +1203,9 @@ pub async fn delete_batch(
     };
 
     // 一次性收集所有 uuid 和 file_path
-    let uuids: Vec<String> = passages.iter()
-        .filter_map(|p| p.uuid.clone())
-        .collect();
-    let file_paths: Vec<String> = passages.iter()
+    let uuids: Vec<String> = passages.iter().filter_map(|p| p.uuid.clone()).collect();
+    let file_paths: Vec<String> = passages
+        .iter()
         .filter_map(|p| p.file_path.clone())
         .collect();
 
@@ -1134,7 +1230,8 @@ pub async fn delete_batch(
     };
 
     // 4. 删除附件物理文件（并行删除以优化性能）
-    let delete_tasks: Vec<_> = attachments.iter()
+    let delete_tasks: Vec<_> = attachments
+        .iter()
         .map(|attachment| {
             let path = attachment.file_path.clone();
             tokio::spawn(async move {
@@ -1193,9 +1290,7 @@ pub async fn delete_batch(
 }
 
 /// 获取最新一篇文章（用于收藏页面的最新文章提醒）
-pub async fn get_latest(
-    state: web::Data<crate::app_state::AppState>,
-) -> HttpResponse {
+pub async fn get_latest(state: web::Data<crate::app_state::AppState>) -> HttpResponse {
     let passage_repo = state.passage_repository();
 
     // 尝试从缓存获取
@@ -1243,12 +1338,10 @@ pub async fn get_latest(
                 .insert_header(("X-Cache", "MISS"))
                 .json(response)
         }
-        Ok(None) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "暂无文章"
-            }))
-        }
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "success": false,
+            "message": "暂无文章"
+        })),
         Err(e) => {
             eprintln!("获取最新文章失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({

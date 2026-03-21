@@ -69,7 +69,10 @@ impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
 
     /// 启动后台重试任务
     pub fn start(&self) {
-        if self.is_running.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        if self
+            .is_running
+            .swap(true, std::sync::atomic::Ordering::SeqCst)
+        {
             tracing::warn!("重试队列已经在运行中");
             return;
         }
@@ -101,11 +104,19 @@ impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
                                 backend.delete(key).await
                             }
                             RetryTask::DeleteMany(keys) => {
-                                tracing::debug!("重试批量删除缓存: {:?} (第{}次)", keys, retry_count);
+                                tracing::debug!(
+                                    "重试批量删除缓存: {:?} (第{}次)",
+                                    keys,
+                                    retry_count
+                                );
                                 backend.delete_many(keys).await
                             }
                             RetryTask::DeletePattern(pattern) => {
-                                tracing::debug!("重试模式删除缓存: {} (第{}次)", pattern, retry_count);
+                                tracing::debug!(
+                                    "重试模式删除缓存: {} (第{}次)",
+                                    pattern,
+                                    retry_count
+                                );
                                 backend.delete_pattern(pattern).await
                             }
                         };
@@ -121,7 +132,10 @@ impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
                                 if retry_count < config.max_retries {
                                     // 计算下次重试时间（指数退避）
                                     let backoff = Duration::from_secs_f64(
-                                        config.retry_interval as f64 * config.backoff_multiplier.powi(retry_count as i32 - 1)
+                                        config.retry_interval as f64
+                                            * config
+                                                .backoff_multiplier
+                                                .powi(retry_count as i32 - 1),
                                     );
 
                                     let next_retry_time = now + backoff;
@@ -129,7 +143,11 @@ impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
                                     // 重新加入队列
                                     let mut queue_guard = queue.lock().await;
                                     if queue_guard.len() < config.max_queue_size {
-                                        queue_guard.push_back((task, retry_count + 1, next_retry_time));
+                                        queue_guard.push_back((
+                                            task,
+                                            retry_count + 1,
+                                            next_retry_time,
+                                        ));
                                     } else {
                                         tracing::error!("重试队列已满，丢弃重试任务");
                                     }
@@ -155,7 +173,8 @@ impl<B: CacheBackend + Send + Sync + 'static> RetryQueue<B> {
 
     /// 停止后台重试任务
     pub fn stop(&self) {
-        self.is_running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.is_running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// 添加删除重试任务

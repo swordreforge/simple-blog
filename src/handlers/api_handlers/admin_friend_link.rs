@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::{Deserialize, Serialize};
 
 /// 友链列表请求参数
@@ -76,39 +76,42 @@ pub async fn list(
         return crate::middleware::auth::forbidden_response();
     }
     let friend_link_repo = state.friend_link_repository();
-    
+
     let page = query.page.unwrap_or(1);
     let page_size = query.page_size.unwrap_or(20);
-    
+
     let links = if query.include_disabled.unwrap_or(true) {
         friend_link_repo.get_all_including_disabled().await
     } else {
         friend_link_repo.get_all().await
     };
-    
+
     match links {
         Ok(all_links) => {
             let total = all_links.len() as i64;
-            
+
             // 简单分页
             let start = (page - 1) * page_size;
             let end = std::cmp::min(start + page_size, all_links.len());
             let page_data: Vec<FriendLinkResponse> = if start < all_links.len() {
-                all_links[start..end].iter().map(|l| FriendLinkResponse {
-                    id: l.id.unwrap_or(0),
-                    nickname: l.nickname.clone(),
-                    link_url: l.link_url.clone(),
-                    avatar_url: l.avatar_url.clone(),
-                    motto: l.motto.clone(),
-                    sort_order: l.sort_order,
-                    is_enabled: l.is_enabled,
-                    created_at: l.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                    updated_at: l.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
-                }).collect()
+                all_links[start..end]
+                    .iter()
+                    .map(|l| FriendLinkResponse {
+                        id: l.id.unwrap_or(0),
+                        nickname: l.nickname.clone(),
+                        link_url: l.link_url.clone(),
+                        avatar_url: l.avatar_url.clone(),
+                        motto: l.motto.clone(),
+                        sort_order: l.sort_order,
+                        is_enabled: l.is_enabled,
+                        created_at: l.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        updated_at: l.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    })
+                    .collect()
             } else {
                 vec![]
             };
-            
+
             HttpResponse::Ok().json(PaginatedResponse {
                 success: true,
                 data: page_data,
@@ -120,7 +123,7 @@ pub async fn list(
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "获取友链列表失败".to_string(),
-        })
+        }),
     }
 }
 
@@ -139,7 +142,7 @@ pub async fn get(
     }
     let id = path.into_inner();
     let friend_link_repo = state.friend_link_repository();
-    
+
     match friend_link_repo.get_by_id(id).await {
         Ok(Some(link)) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -162,7 +165,7 @@ pub async fn get(
         Err(_) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: "获取友链失败".to_string(),
-        })
+        }),
     }
 }
 
@@ -181,7 +184,7 @@ pub async fn create(
     }
 
     let req = req.into_inner();
-    
+
     // 验证必填字段
     if req.nickname.is_empty() || req.link_url.is_empty() {
         return HttpResponse::BadRequest().json(CommonResponse {
@@ -189,9 +192,9 @@ pub async fn create(
             message: "昵称和链接不能为空".to_string(),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     let link = crate::db::models::FriendLink {
         id: None,
         nickname: req.nickname.clone(),
@@ -203,7 +206,7 @@ pub async fn create(
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     };
-    
+
     match friend_link_repo.create(&link).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -212,7 +215,7 @@ pub async fn create(
         Err(e) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: format!("创建友链失败: {}", e),
-        })
+        }),
     }
 }
 
@@ -233,7 +236,7 @@ pub async fn update(
 
     let id = path.into_inner();
     let req = req_json.into_inner();
-    
+
     // 验证必填字段
     if req.nickname.is_empty() || req.link_url.is_empty() {
         return HttpResponse::BadRequest().json(CommonResponse {
@@ -241,22 +244,26 @@ pub async fn update(
             message: "昵称和链接不能为空".to_string(),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     // 获取现有友链
     let existing_link = match friend_link_repo.get_by_id(id).await {
         Ok(Some(link)) => link,
-        Ok(None) => return HttpResponse::NotFound().json(CommonResponse {
-            success: false,
-            message: "友链不存在".to_string(),
-        }),
-        Err(e) => return HttpResponse::InternalServerError().json(CommonResponse {
-            success: false,
-            message: format!("获取友链失败: {}", e),
-        })
+        Ok(None) => {
+            return HttpResponse::NotFound().json(CommonResponse {
+                success: false,
+                message: "友链不存在".to_string(),
+            });
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(CommonResponse {
+                success: false,
+                message: format!("获取友链失败: {}", e),
+            });
+        }
     };
-    
+
     let link = crate::db::models::FriendLink {
         id: Some(id),
         nickname: req.nickname.clone(),
@@ -268,7 +275,7 @@ pub async fn update(
         created_at: existing_link.created_at,
         updated_at: chrono::Utc::now(),
     };
-    
+
     match friend_link_repo.update(&link).await {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
             "success": true,
@@ -277,7 +284,7 @@ pub async fn update(
         Err(e) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: format!("更新友链失败: {}", e),
-        })
+        }),
     }
 }
 
@@ -296,16 +303,16 @@ pub async fn delete(
     }
 
     let id = path.into_inner();
-    
+
     if id <= 0 {
         return HttpResponse::BadRequest().json(CommonResponse {
             success: false,
             message: "无效的友链ID".to_string(),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     match friend_link_repo.delete(id).await {
         Ok(_) => HttpResponse::Ok().json(CommonResponse {
             success: true,
@@ -314,7 +321,7 @@ pub async fn delete(
         Err(e) => HttpResponse::InternalServerError().json(CommonResponse {
             success: false,
             message: format!("删除友链失败: {}", e),
-        })
+        }),
     }
 }
 
@@ -344,9 +351,9 @@ pub async fn delete_batch(
             message: "友链ID列表不能为空".to_string(),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     let mut deleted_count = 0;
     for id in &req_json.ids {
         if friend_link_repo.delete(*id).await.is_ok() {
@@ -388,9 +395,9 @@ pub async fn batch_update_status(
             message: "友链ID列表不能为空".to_string(),
         });
     }
-    
+
     let friend_link_repo = state.friend_link_repository();
-    
+
     let mut updated_count = 0;
     for id in &req_json.ids {
         if let Ok(Some(mut link)) = friend_link_repo.get_by_id(*id).await {

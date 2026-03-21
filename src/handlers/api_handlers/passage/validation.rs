@@ -1,5 +1,5 @@
 use crate::db::get_db_pool_sync;
-use crate::db::repositories::{TagRepository, CategoryRepository};
+use crate::db::repositories::{CategoryRepository, TagRepository};
 use std::sync::Arc;
 
 /// 确保标签存在于 tags 表中
@@ -23,7 +23,9 @@ pub async fn ensure_tags_exist(tag_names: &[String]) -> Result<(), String> {
                 updated_at: now,
             };
 
-            tag_repo.create(&new_tag).await
+            tag_repo
+                .create(&new_tag)
+                .await
                 .map_err(|e| format!("创建标签失败: {}", e))?;
         }
     }
@@ -55,7 +57,9 @@ pub async fn ensure_category_exist(category_name: &str) -> Result<(), String> {
             updated_at: now,
         };
 
-        category_repo.create(&new_category).await
+        category_repo
+            .create(&new_category)
+            .await
             .map_err(|e| format!("创建分类失败: {}", e))?;
     }
 

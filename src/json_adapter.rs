@@ -38,9 +38,7 @@ mod simd_impl {
     #[allow(dead_code)]
     pub fn from_str<T: for<'de> Deserialize<'de>>(s: &str) -> Result<T, simd_json::Error> {
         let mut buf = s.to_string();
-        unsafe {
-            simd_json::serde::from_str(&mut buf)
-        }
+        unsafe { simd_json::serde::from_str(&mut buf) }
     }
 
     /// 使用复用缓冲区的反序列化（适用于高频场景）
@@ -48,10 +46,10 @@ mod simd_impl {
     /// # Safety
     /// 参考 `from_str` 的安全性说明。
     #[allow(dead_code)]
-    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(buf: &mut str) -> Result<T, simd_json::Error> {
-        unsafe {
-            simd_json::serde::from_str(buf)
-        }
+    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(
+        buf: &mut str,
+    ) -> Result<T, simd_json::Error> {
+        unsafe { simd_json::serde::from_str(buf) }
     }
 
     /// 转换为紧凑 JSON 字符串（无空格）
@@ -67,9 +65,7 @@ mod simd_impl {
     #[allow(dead_code)]
     pub fn from_slice<T: for<'de> Deserialize<'de>>(s: &[u8]) -> Result<T, simd_json::Error> {
         let mut buf = String::from_utf8_lossy(s).to_string();
-        unsafe {
-            simd_json::serde::from_str(&mut buf)
-        }
+        unsafe { simd_json::serde::from_str(&mut buf) }
     }
 }
 
@@ -91,7 +87,9 @@ mod std_impl {
 
     /// 使用复用缓冲区的反序列化（与标准实现相同，但保持 API 一致）
     #[allow(dead_code)]
-    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(buf: &mut str) -> Result<T, serde_json::Error> {
+    pub fn from_str_with_buf<T: for<'de> Deserialize<'de>>(
+        buf: &mut str,
+    ) -> Result<T, serde_json::Error> {
         serde_json::from_str(buf)
     }
 
@@ -111,11 +109,11 @@ mod std_impl {
 // 统一导出
 #[cfg(feature = "simd")]
 #[allow(unused_imports)]
-pub use simd_impl::{to_string, from_str, from_str_with_buf, to_vec, from_slice};
+pub use simd_impl::{from_slice, from_str, from_str_with_buf, to_string, to_vec};
 
 #[cfg(not(feature = "simd"))]
 #[allow(unused_imports)]
-pub use std_impl::{to_string, from_str, from_str_with_buf, to_vec, from_slice};
+pub use std_impl::{from_slice, from_str, from_str_with_buf, to_string, to_vec};
 
 /// 获取当前使用的 JSON 后端
 #[allow(dead_code)]

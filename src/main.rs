@@ -1,66 +1,78 @@
 mod allocator;
-mod config;
-mod routes;
-mod handlers;
-mod templates;
-mod r#static;
-mod db;
-mod middleware;
-mod audio_metadata;
-mod music_sync;
-mod geoip;
-mod embedded;
-mod cache;
-mod view_batch;
-mod jwt;
-mod id_generator;
-mod profiling;
-mod json_adapter;
-mod lock_monitor;
-mod audit;
-mod error;
-mod logging;
-mod services;
 mod app_state;
+mod audio_metadata;
+mod audit;
+mod cache;
+mod config;
+mod db;
+mod embedded;
+mod error;
+mod geoip;
+mod handlers;
+mod id_generator;
+mod json_adapter;
+mod jwt;
+mod lock_monitor;
+mod logging;
+mod middleware;
+mod music_sync;
+mod profiling;
+mod routes;
+mod services;
+mod r#static;
+mod templates;
 mod utils;
+mod view_batch;
 
-use actix_web::{App, HttpServer, middleware as actix_middleware, web, http::KeepAlive};
+use actix_web::{App, HttpServer, http::KeepAlive, middleware as actix_middleware, web};
 use clap::Parser;
 use config::{AppConfig, CliArgs};
-use routes::configure_routes;
 use middleware::logging::LoggingMiddleware;
-use std::sync::Arc;
+use routes::configure_routes;
 use std::path::Path;
+use std::sync::Arc;
 
 /// 检查首次运行所需的文件和目录
 fn check_first_run(args: &CliArgs) {
     println!("🔍 检查运行环境...");
-    
+
     let mut issues = Vec::new();
     let mut warnings = Vec::new();
 
     // 检查数据库文件
     let db_path = Path::new(&args.db_path);
     if !db_path.exists() {
-        warnings.push(format!("数据库文件不存在: {} (将在首次运行时自动创建)", args.db_path));
+        warnings.push(format!(
+            "数据库文件不存在: {} (将在首次运行时自动创建)",
+            args.db_path
+        ));
     }
 
     // 检查 GeoIP 数据库
     let geoip_path = Path::new(&args.geoip_db_path);
     if !geoip_path.exists() {
-        warnings.push(format!("GeoIP 数据库不存在: {} (地理位置查询将返回 'unknown')", args.geoip_db_path));
+        warnings.push(format!(
+            "GeoIP 数据库不存在: {} (地理位置查询将返回 'unknown')",
+            args.geoip_db_path
+        ));
     }
 
     // 检查模板目录
     let templates_dir = Path::new(&args.templates_dir);
     if !templates_dir.exists() {
-        warnings.push(format!("模板目录不存在: {} (将使用嵌入的模板)", args.templates_dir));
+        warnings.push(format!(
+            "模板目录不存在: {} (将使用嵌入的模板)",
+            args.templates_dir
+        ));
     }
 
     // 检查静态文件目录
     let static_dir = Path::new(&args.static_dir);
     if !static_dir.exists() {
-        warnings.push(format!("静态文件目录不存在: {} (将使用嵌入的静态文件)", args.static_dir));
+        warnings.push(format!(
+            "静态文件目录不存在: {} (将使用嵌入的静态文件)",
+            args.static_dir
+        ));
     }
 
     // 检查 TLS 证书
@@ -72,7 +84,7 @@ fn check_first_run(args: &CliArgs) {
         } else {
             issues.push("启用了 TLS 但未指定证书文件".to_string());
         }
-        
+
         if let Some(ref key) = args.tls_key {
             if !Path::new(key).exists() {
                 issues.push(format!("TLS 私钥文件不存在: {}", key));
@@ -142,7 +154,7 @@ async fn main() -> std::io::Result<()> {
     // 验证配置
     println!("🔍 验证配置...");
     let validation_result = args.validate();
-    
+
     // 输出验证警告
     if !validation_result.warnings.is_empty() {
         println!("⚠️  配置警告:");
@@ -150,7 +162,7 @@ async fn main() -> std::io::Result<()> {
             println!("    - {}", warning);
         }
     }
-    
+
     // 检查验证错误
     if !validation_result.is_valid() {
         println!("❌ 配置验证失败:");
@@ -160,22 +172,39 @@ async fn main() -> std::io::Result<()> {
         println!("\n💡 请修复上述配置错误后重试");
         std::process::exit(1);
     }
-    
+
     println!("✅ 配置验证通过");
 
     // 从命令行参数创建配置
     let config = AppConfig::from_cli(args.clone());
 
     println!("🚀 启动 RustBlog 服务器...");
-    println!("📡 访问地址: http://{}:{}", config.server.host, config.server.port);
+    println!(
+        "📡 访问地址: http://{}:{}",
+        config.server.host, config.server.port
+    );
     println!("📁 模板目录: {}", config.templates.dir);
     println!("📁 静态文件目录: {}", config.static_files.dir);
     println!("📁 数据库路径: {}", args.db_path);
     println!("📁 GeoIP 数据库: {}", args.geoip_db_path);
-    println!("💾 模板缓存: {}", if config.templates.cache_enabled { "启用" } else { "禁用" });
+    println!(
+        "💾 模板缓存: {}",
+        if config.templates.cache_enabled {
+            "启用"
+        } else {
+            "禁用"
+        }
+    );
     println!("🔒 TLS: {}", if args.enable_tls { "启用" } else { "禁用" });
     println!("📊 日志级别: {}", args.log_level);
-    println!("💾 应用缓存: {}", if args.enable_cache { "启用" } else { "禁用" });
+    println!(
+        "💾 应用缓存: {}",
+        if args.enable_cache {
+            "启用"
+        } else {
+            "禁用"
+        }
+    );
 
     // 显示服务器性能配置
     let cpu_count = std::thread::available_parallelism()
@@ -193,7 +222,8 @@ async fn main() -> std::io::Result<()> {
 
     // 初始化性能分析
     #[cfg(feature = "profiling")]
-    let mut profiling_manager = profiling::ProfilingManager::new(std::path::PathBuf::from("./profiling"));
+    let mut profiling_manager =
+        profiling::ProfilingManager::new(std::path::PathBuf::from("./profiling"));
     if args.enable_profiling {
         #[cfg(feature = "profiling")]
         {
@@ -234,27 +264,30 @@ async fn main() -> std::io::Result<()> {
     if !geoip::is_database_loaded() {
         tracing::warn!("GeoIP 数据库未找到，地理位置查询将返回 'unknown'");
     }
-    
+
     // 获取数据库连接池
     let db_pool = db::get_db_pool().await.map_err(|e| {
         eprintln!("❌ 获取数据库连接池失败: {}", e);
         std::io::Error::other(e)
     })?;
-    
+
     // 创建 Repository 实例
     let repository = db::repositories::create_repository(db_pool.clone());
-    
+
     // 初始化应用缓存
     println!("💾 初始化应用缓存...");
     let cache_config = cache::CacheConfig::new(args.cache_ttl, args.cache_fallback);
     let mut app_cache = cache::AppCache::new(cache_config.clone());
-    
+
     // 如果启用了缓存，初始化缓存管理器
     if args.enable_cache {
         println!("🚀 缓存模式: {}", args.cache_backend);
         let valkey_url = args.valkey_url.as_deref();
-        
-        if let Err(e) = app_cache.init_manager(&args.cache_backend, valkey_url, cache_config.clone()).await {
+
+        if let Err(e) = app_cache
+            .init_manager(&args.cache_backend, valkey_url, cache_config.clone())
+            .await
+        {
             eprintln!("⚠️  缓存初始化失败: {}", e);
             println!("📊 缓存功能将不可用");
         } else {
@@ -265,7 +298,7 @@ async fn main() -> std::io::Result<()> {
                     println!("🔄 自动降级已启用");
                 }
             }
-            
+
             // 如果设置了清除缓存，清除所有缓存
             if args.clear_cache {
                 println!("🧹 正在清除旧缓存...");
@@ -275,9 +308,9 @@ async fn main() -> std::io::Result<()> {
     } else {
         println!("⚠️  缓存未启用");
     }
-    
+
     let app_cache = std::sync::Arc::new(app_cache);
-    
+
     // 初始化阅读记录批量处理器
     println!("📊 初始化阅读记录批量处理器...");
     let view_batch_config = view_batch::BatchConfig::default();
@@ -285,7 +318,7 @@ async fn main() -> std::io::Result<()> {
         repository.get_pool().clone(),
         view_batch_config,
     ));
-    
+
     // 同步音乐文件到数据库
     println!("🎵 同步音乐文件...");
     let music_sync_service = music_sync::MusicSyncService::new(repository.clone());
@@ -297,7 +330,7 @@ async fn main() -> std::io::Result<()> {
             eprintln!("⚠️  音乐同步失败: {}", e);
         }
     }
-    
+
     // 同步 markdown 文件到数据库
     println!("📝 同步 Markdown 文件...");
     let passage_repo = db::repositories::PassageRepository::new(repository.get_pool().clone());
@@ -313,7 +346,8 @@ async fn main() -> std::io::Result<()> {
     // 初始化动态路由表
     println!("🛣️  初始化动态路由表...");
     let route_table = Arc::new(dynamic_route_actix::RouteTable::new());
-    let dynamic_route_repo = db::repositories::DynamicRouteRepository::new(repository.get_pool().clone());
+    let dynamic_route_repo =
+        db::repositories::DynamicRouteRepository::new(repository.get_pool().clone());
 
     // 初始化路由类型管理器
     println!("🔧 初始化路由类型管理器...");
@@ -343,7 +377,7 @@ async fn main() -> std::io::Result<()> {
         Err(e) => {
             eprintln!("⚠️  路由类型管理器初始化失败: {}", e);
             eprintln!("💡 将继续使用数据库存储作为后备方案");
-            None  // 失败时为 None，回退到只从数据库加载
+            None // 失败时为 None，回退到只从数据库加载
         }
     };
 
@@ -404,7 +438,9 @@ async fn main() -> std::io::Result<()> {
 
     if let Some(keep_alive) = config.server.keep_alive {
         // 使用 KeepAlive::Timeout 设置具体的超时时间（秒）
-        server = server.keep_alive(KeepAlive::Timeout(std::time::Duration::from_secs(keep_alive)));
+        server = server.keep_alive(KeepAlive::Timeout(std::time::Duration::from_secs(
+            keep_alive,
+        )));
     }
 
     if let Some(max_connections) = config.server.max_connections {

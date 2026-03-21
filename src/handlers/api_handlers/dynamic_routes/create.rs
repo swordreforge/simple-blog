@@ -1,9 +1,9 @@
-use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
+use crate::db::models::{CreateRouteRequest, DynamicRoute, HandlerType, RouteType};
 use crate::middleware::auth::check_admin_auth;
-use crate::db::models::{DynamicRoute, CreateRouteRequest, HandlerType, RouteType};
 use crate::routes::conflicts_with_static_route;
 use actix_web::web::Bytes;
+use actix_web::{HttpResponse, web};
 
 /// 创建路由
 pub async fn create_route(
@@ -14,10 +14,12 @@ pub async fn create_route(
     // 权限检查
     let admin_info = match check_admin_auth(&req) {
         Some(info) => info,
-        None => return HttpResponse::Forbidden().json(serde_json::json!({
-            "success": false,
-            "message": "需要管理员权限"
-        })),
+        None => {
+            return HttpResponse::Forbidden().json(serde_json::json!({
+                "success": false,
+                "message": "需要管理员权限"
+            }));
+        }
     };
 
     // 使用允许控制字符的serde_json配置来解析JSON
@@ -104,7 +106,11 @@ pub async fn create_route(
                     }));
                 }
 
-                tracing::error!("创建路由失败（数据库）: path={}, error={}", dynamic_route.path, error_msg);
+                tracing::error!(
+                    "创建路由失败（数据库）: path={}, error={}",
+                    dynamic_route.path,
+                    error_msg
+                );
                 return HttpResponse::InternalServerError().json(serde_json::json!({
                     "success": false,
                     "message": format!("创建失败: {}", e)
@@ -117,10 +123,20 @@ pub async fn create_route(
             let storage = manager.get_storage(&route_type);
             match storage.save_route(&dynamic_route).await {
                 Ok(_) => {
-                    tracing::info!("路由创建成功: id={}, type={}, path={}", db_id, route_type, dynamic_route.path);
+                    tracing::info!(
+                        "路由创建成功: id={}, type={}, path={}",
+                        db_id,
+                        route_type,
+                        dynamic_route.path
+                    );
                 }
                 Err(e) => {
-                    tracing::error!("创建路由失败（存储后端）: path={}, type={}, error={}", dynamic_route.path, route_type, e);
+                    tracing::error!(
+                        "创建路由失败（存储后端）: path={}, type={}, error={}",
+                        dynamic_route.path,
+                        route_type,
+                        e
+                    );
                     // 删除数据库记录
                     let _ = repo.delete(db_id).await;
                     return HttpResponse::InternalServerError().json(serde_json::json!({
@@ -130,7 +146,11 @@ pub async fn create_route(
                 }
             }
         } else {
-            tracing::info!("路由创建成功（数据库）: id={}, path={}", db_id, dynamic_route.path);
+            tracing::info!(
+                "路由创建成功（数据库）: id={}, path={}",
+                db_id,
+                dynamic_route.path
+            );
         }
 
         db_id
@@ -138,7 +158,11 @@ pub async fn create_route(
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
         match repo.create(&dynamic_route).await {
             Ok(id) => {
-                tracing::info!("路由创建成功（数据库）: id={}, path={}", id, dynamic_route.path);
+                tracing::info!(
+                    "路由创建成功（数据库）: id={}, path={}",
+                    id,
+                    dynamic_route.path
+                );
                 id
             }
             Err(e) => {
@@ -162,7 +186,11 @@ pub async fn create_route(
                     }));
                 }
 
-                tracing::error!("创建路由失败: path={}, error={}", dynamic_route.path, error_msg);
+                tracing::error!(
+                    "创建路由失败: path={}, error={}",
+                    dynamic_route.path,
+                    error_msg
+                );
                 return HttpResponse::InternalServerError().json(serde_json::json!({
                     "success": false,
                     "message": format!("创建失败: {}", e)
@@ -271,9 +299,14 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             // 静态内容处理器需要 inline_template 或 handler_config.content
             // 对于 file 类型的路由，template_path 也可以替代 inline_template
             if route.handler_config.get("content").is_none() {
-                let has_inline = route.inline_template.is_some() && route.inline_template.as_ref().is_some_and(|s| !s.is_empty());
-                let has_template_path = route.template_path.is_some() && route.template_path.as_ref().is_some_and(|s| !s.is_empty());
-                
+                let has_inline = route.inline_template.is_some()
+                    && route
+                        .inline_template
+                        .as_ref()
+                        .is_some_and(|s| !s.is_empty());
+                let has_template_path = route.template_path.is_some()
+                    && route.template_path.as_ref().is_some_and(|s| !s.is_empty());
+
                 if !has_inline && !has_template_path {
                     return Err("静态内容处理器需要 inline_template 字段、template_path 字段或 handler_config.content 字段".to_string());
                 }
@@ -285,7 +318,9 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             }
         }
         HandlerType::Custom => {
-            if route.handler_config.get("script").is_none() && route.handler_config.get("source").is_none() {
+            if route.handler_config.get("script").is_none()
+                && route.handler_config.get("source").is_none()
+            {
                 return Err("自定义处理器需要script或source字段".to_string());
             }
         }

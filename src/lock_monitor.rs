@@ -1,8 +1,8 @@
 //! 锁监控模块
 //! 用于检测和监控锁的使用情况，帮助发现死锁和性能问题
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 
 /// 锁监控统计
@@ -61,7 +61,8 @@ impl LockMonitor {
         self.acquire_count.fetch_add(1, Ordering::Relaxed);
         if wait_time_us > 0 {
             self.wait_count.fetch_add(1, Ordering::Relaxed);
-            self.total_wait_time_us.fetch_add(wait_time_us as usize, Ordering::Relaxed);
+            self.total_wait_time_us
+                .fetch_add(wait_time_us as usize, Ordering::Relaxed);
 
             // 更新最大等待时间
             let mut current_max = self.max_wait_time_us.load(Ordering::Relaxed);
@@ -119,12 +120,18 @@ impl LockMonitor {
 
         // 警告：如果最大等待时间超过 1 秒
         if stats.max_wait_time_us > 1_000_000 {
-            eprintln!("⚠️  警告: 锁 '{}' 最大等待时间超过 1 秒，可能存在死锁或性能问题！", stats.name);
+            eprintln!(
+                "⚠️  警告: 锁 '{}' 最大等待时间超过 1 秒，可能存在死锁或性能问题！",
+                stats.name
+            );
         }
 
         // 警告：如果当前有大量线程等待
         if stats.current_waiters > 10 {
-            eprintln!("⚠️  警告: 锁 '{}' 当前有 {} 个线程在等待，可能存在严重竞争！", stats.name, stats.current_waiters);
+            eprintln!(
+                "⚠️  警告: 锁 '{}' 当前有 {} 个线程在等待，可能存在严重竞争！",
+                stats.name, stats.current_waiters
+            );
         }
     }
 }
@@ -214,15 +221,22 @@ impl GlobalLockMonitor {
             let stats = monitor.get_stats();
 
             // 检查是否有严重的等待
-            if stats.max_wait_time_us > 5_000_000 { // 5 秒
-                eprintln!("❌ 锁 '{}' 出现严重问题：最大等待时间 {} 秒",
-                          stats.name, stats.max_wait_time_us as f64 / 1_000_000.0);
+            if stats.max_wait_time_us > 5_000_000 {
+                // 5 秒
+                eprintln!(
+                    "❌ 锁 '{}' 出现严重问题：最大等待时间 {} 秒",
+                    stats.name,
+                    stats.max_wait_time_us as f64 / 1_000_000.0
+                );
                 healthy = false;
             }
 
-            if stats.current_waiters > 20 { // 20 个线程等待
-                eprintln!("❌ 锁 '{}' 出现严重竞争：{} 个线程在等待",
-                          stats.name, stats.current_waiters);
+            if stats.current_waiters > 20 {
+                // 20 个线程等待
+                eprintln!(
+                    "❌ 锁 '{}' 出现严重竞争：{} 个线程在等待",
+                    stats.name, stats.current_waiters
+                );
                 healthy = false;
             }
         }

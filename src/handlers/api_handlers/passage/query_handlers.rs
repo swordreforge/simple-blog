@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse, HttpRequest};
 use crate::utils::format_datetime_optimized;
-use tokio::fs;
+use actix_web::{HttpRequest, HttpResponse, web};
 use futures_util::future;
+use tokio::fs;
 
 use super::crud::{PassageResponse, UpdatePassageRequest};
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
-use super::validation::{ensure_tags_exist, ensure_category_exist};
+use super::validation::{ensure_category_exist, ensure_tags_exist};
 
 /// 通过查询参数更新文章（用于管理后台）
 pub async fn update_by_query(
@@ -126,8 +126,8 @@ pub async fn update_by_query(
         passage.category = category.clone();
     }
     if let Some(ref status) = req_json.status {
-        passage.status = crate::db::models::PassageStatus::from_str(status)
-            .unwrap_or(passage.status);
+        passage.status =
+            crate::db::models::PassageStatus::from_str(status).unwrap_or(passage.status);
     }
     if let Some(ref file_path) = req_json.file_path {
         passage.file_path = Some(file_path.clone());
@@ -197,10 +197,17 @@ pub async fn update_by_query(
                 } else {
                     Some(passage.category.as_str())
                 };
-                let (year_opt, month_opt, day_opt) = passage.published_at.map(|dt| {
-                    use chrono::Datelike;
-                    (Some(dt.year()), Some(dt.month() as i32), Some(dt.day() as i32))
-                }).unwrap_or((None, None, None));
+                let (year_opt, month_opt, day_opt) = passage
+                    .published_at
+                    .map(|dt| {
+                        use chrono::Datelike;
+                        (
+                            Some(dt.year()),
+                            Some(dt.month() as i32),
+                            Some(dt.day() as i32),
+                        )
+                    })
+                    .unwrap_or((None, None, None));
 
                 crate::cache::invalidate_passage_cache_granular(
                     state.cache.manager(),
@@ -210,7 +217,8 @@ pub async fn update_by_query(
                     year_opt,
                     month_opt,
                     day_opt,
-                ).await;
+                )
+                .await;
             }
 
             HttpResponse::Ok().json(serde_json::json!({
@@ -285,7 +293,10 @@ pub async fn delete_by_query(
     }
 
     // 查询关联的附件
-    let attachments = match attachment_repo.get_by_passage_uuids(vec![uuid.clone()]).await {
+    let attachments = match attachment_repo
+        .get_by_passage_uuids(vec![uuid.clone()])
+        .await
+    {
         Ok(attachments) => attachments,
         Err(e) => {
             eprintln!("查询附件失败: {}", e);
@@ -294,7 +305,8 @@ pub async fn delete_by_query(
     };
 
     // 删除附件物理文件（并行删除以优化性能）
-    let delete_tasks: Vec<_> = attachments.iter()
+    let delete_tasks: Vec<_> = attachments
+        .iter()
         .map(|attachment| {
             let path = attachment.file_path.clone();
             tokio::spawn(async move {
@@ -399,8 +411,14 @@ pub async fn get_by_query(
         }
     } else {
         // 如果没有 id 参数，返回文章列表
-        let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
-        let _offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+        let limit: i64 = query
+            .get("limit")
+            .and_then(|l| l.parse().ok())
+            .unwrap_or(20);
+        let _offset: i64 = query
+            .get("offset")
+            .and_then(|o| o.parse().ok())
+            .unwrap_or(0);
         let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
         let calculated_offset = (page - 1) * limit;
 
@@ -413,7 +431,8 @@ pub async fn get_by_query(
                 let total_pages = (total + limit - 1) / limit;
                 let has_more = page < total_pages;
 
-                let data: Vec<PassageResponse> = passages.into_iter()
+                let data: Vec<PassageResponse> = passages
+                    .into_iter()
                     .map(|p| PassageResponse {
                         id: p.id.unwrap_or(0),
                         uuid: p.uuid.unwrap_or_default(),

@@ -1,9 +1,9 @@
-use actix_web::{web, HttpResponse};
 use crate::app_state::AppState;
-use crate::middleware::auth::check_admin_auth;
 use crate::db::models::{CreateRouteRequest, HandlerType};
+use crate::middleware::auth::check_admin_auth;
 use crate::routes::conflicts_with_static_route;
 use actix_web::web::Bytes;
+use actix_web::{HttpResponse, web};
 
 /// 测试路由配置
 pub async fn test_route(
@@ -101,7 +101,9 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
     }
 
     // 根据 route_type 验证字段组合
-    let route_type = route.route_type.unwrap_or(crate::db::models::RouteType::Database);
+    let route_type = route
+        .route_type
+        .unwrap_or(crate::db::models::RouteType::Database);
     match route_type {
         crate::db::models::RouteType::Database | crate::db::models::RouteType::Memory => {
             // database/memory 类型禁止使用 template_path
@@ -132,9 +134,14 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             // 静态内容处理器需要 inline_template 或 handler_config.content
             // 对于 file 类型的路由，template_path 也可以替代 inline_template
             if route.handler_config.get("content").is_none() {
-                let has_inline = route.inline_template.is_some() && route.inline_template.as_ref().is_some_and(|s| !s.is_empty());
-                let has_template_path = route.template_path.is_some() && route.template_path.as_ref().is_some_and(|s| !s.is_empty());
-                
+                let has_inline = route.inline_template.is_some()
+                    && route
+                        .inline_template
+                        .as_ref()
+                        .is_some_and(|s| !s.is_empty());
+                let has_template_path = route.template_path.is_some()
+                    && route.template_path.as_ref().is_some_and(|s| !s.is_empty());
+
                 if !has_inline && !has_template_path {
                     return Err("静态内容处理器需要 inline_template 字段、template_path 字段或 handler_config.content 字段".to_string());
                 }
@@ -146,7 +153,9 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
             }
         }
         HandlerType::Custom => {
-            if route.handler_config.get("script").is_none() && route.handler_config.get("source").is_none() {
+            if route.handler_config.get("script").is_none()
+                && route.handler_config.get("source").is_none()
+            {
                 return Err("自定义处理器需要script或source字段".to_string());
             }
         }
@@ -159,10 +168,14 @@ fn validate_route_config(route: &CreateRouteRequest) -> Result<(), String> {
 fn preview_response(route: &CreateRouteRequest) -> serde_json::Value {
     match route.handler_type {
         HandlerType::Redirect => {
-            let target = route.handler_config.get("target")
+            let target = route
+                .handler_config
+                .get("target")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
-            let status_code = route.handler_config.get("status_code")
+            let status_code = route
+                .handler_config
+                .get("status_code")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(302);
 
@@ -175,20 +188,20 @@ fn preview_response(route: &CreateRouteRequest) -> serde_json::Value {
             })
         }
         HandlerType::Static => {
-            let content = route.handler_config.get("content")
+            let content = route
+                .handler_config
+                .get("content")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
-            let content_type = route.handler_config.get("content_type")
+            let content_type = route
+                .handler_config
+                .get("content_type")
                 .and_then(|v| v.as_str())
                 .unwrap_or("text/plain; charset=utf-8");
 
             // 检查是否有 inline_template，优先使用 inline_template
             let actual_content = if let Some(ref inline) = route.inline_template {
-                if !inline.is_empty() {
-                    inline
-                } else {
-                    content
-                }
+                if !inline.is_empty() { inline } else { content }
             } else {
                 content
             };
@@ -202,10 +215,14 @@ fn preview_response(route: &CreateRouteRequest) -> serde_json::Value {
             })
         }
         HandlerType::Proxy => {
-            let target = route.handler_config.get("target")
+            let target = route
+                .handler_config
+                .get("target")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
-            let timeout = route.handler_config.get("timeout")
+            let timeout = route
+                .handler_config
+                .get("timeout")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(5000);
 

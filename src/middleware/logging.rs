@@ -1,10 +1,10 @@
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
 use futures_util::future::LocalBoxFuture;
-use std::time::Instant;
 use std::sync::Arc;
+use std::time::Instant;
 
 /// 自定义日志中间件
 pub struct LoggingMiddleware;
@@ -56,7 +56,10 @@ where
             let res = service.call(req).await;
 
             let duration = start_time.elapsed();
-            let status = res.as_ref().map(|r| r.status()).unwrap_or(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR);
+            let status = res
+                .as_ref()
+                .map(|r| r.status())
+                .unwrap_or(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR);
             let status_code = status.as_u16();
 
             // 格式化延迟

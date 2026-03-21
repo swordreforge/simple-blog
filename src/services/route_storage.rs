@@ -5,14 +5,14 @@
 //! - MemoryRouteStorage: 内存存储（运行时）
 //! - FileRouteStorage: 文件系统存储（JSON格式）
 
-use std::sync::Arc;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-use std::fs;
-use std::sync::RwLock;
-use tokio::time::{interval, Duration};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::RwLock;
+use tokio::time::{Duration, interval};
 
 use crate::db::models::DynamicRoute;
 
@@ -154,16 +154,21 @@ impl MemoryRouteStorage {
                         // 检查路由数量限制
                         if routes.len() > max_routes {
                             // 按创建时间排序，删除最旧的
-                                                    let mut route_list: Vec<_> = routes.iter().collect();
-                                                    route_list.sort_by_key(|a| a.1.created_at);
-                            
-                                                    let to_remove = route_list.len() - max_routes;
-                                                    let ids_to_remove: Vec<i64> = route_list.iter().take(to_remove).map(|(id, _)| **id).collect();
-                                                    for id in ids_to_remove {
-                                                        if let Some(route) = routes.remove(&id) {
-                                                            path_index.remove(&route.path);
-                                                        }
-                                                    }                        }
+                            let mut route_list: Vec<_> = routes.iter().collect();
+                            route_list.sort_by_key(|a| a.1.created_at);
+
+                            let to_remove = route_list.len() - max_routes;
+                            let ids_to_remove: Vec<i64> = route_list
+                                .iter()
+                                .take(to_remove)
+                                .map(|(id, _)| **id)
+                                .collect();
+                            for id in ids_to_remove {
+                                if let Some(route) = routes.remove(&id) {
+                                    path_index.remove(&route.path);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -320,19 +325,19 @@ impl FileRouteStorage {
         let routes_dir = base_path.join("routes");
         let backups_dir = base_path.join("backups");
 
-        fs::create_dir_all(&routes_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to create routes directory: {}", e)))?;
-        fs::create_dir_all(&backups_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to create backups directory: {}", e)))?;
+        fs::create_dir_all(&routes_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to create routes directory: {}", e))
+        })?;
+        fs::create_dir_all(&backups_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to create backups directory: {}", e))
+        })?;
 
         // 创建 .gitignore 文件，避免提交路由配置到版本控制
         let gitignore_path = base_path.join(".gitignore");
         if !gitignore_path.exists() {
-            fs::write(
-                &gitignore_path,
-                "# 路由配置文件\n*.json\n!templates/\n",
-            )
-            .map_err(|e| StorageError::FileError(format!("Failed to create .gitignore: {}", e)))?;
+            fs::write(&gitignore_path, "# 路由配置文件\n*.json\n!templates/\n").map_err(|e| {
+                StorageError::FileError(format!("Failed to create .gitignore: {}", e))
+            })?;
         }
 
         Ok(Self {
@@ -406,11 +411,12 @@ impl FileRouteStorage {
         let mut backup_files = Vec::new();
 
         // 收集该路由的所有备份文件
-        for entry in fs::read_dir(&self.backups_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to read backups directory: {}", e)))?
-        {
-            let entry = entry
-                .map_err(|e| StorageError::FileError(format!("Failed to read directory entry: {}", e)))?;
+        for entry in fs::read_dir(&self.backups_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to read backups directory: {}", e))
+        })? {
+            let entry = entry.map_err(|e| {
+                StorageError::FileError(format!("Failed to read directory entry: {}", e))
+            })?;
             let path = entry.path();
 
             if let Some(file_name) = path.file_name().and_then(|s| s.to_str()) {
@@ -431,8 +437,9 @@ impl FileRouteStorage {
 
         // 删除多余的备份
         for (path, _) in backup_files.iter().skip(self.backup_count) {
-            fs::remove_file(path)
-                .map_err(|e| StorageError::FileError(format!("Failed to remove old backup: {}", e)))?;
+            fs::remove_file(path).map_err(|e| {
+                StorageError::FileError(format!("Failed to remove old backup: {}", e))
+            })?;
         }
 
         Ok(())
@@ -443,11 +450,12 @@ impl FileRouteStorage {
     fn next_id(&self) -> Result<i64, StorageError> {
         let mut max_id = 0i64;
 
-        for entry in fs::read_dir(&self.routes_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to read routes directory: {}", e)))?
-        {
-            let entry = entry
-                .map_err(|e| StorageError::FileError(format!("Failed to read directory entry: {}", e)))?;
+        for entry in fs::read_dir(&self.routes_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to read routes directory: {}", e))
+        })? {
+            let entry = entry.map_err(|e| {
+                StorageError::FileError(format!("Failed to read directory entry: {}", e))
+            })?;
             let path = entry.path();
 
             if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
@@ -470,11 +478,12 @@ impl FileRouteStorage {
         let mut disabled = 0;
         let mut total_size = 0;
 
-        for entry in fs::read_dir(&self.routes_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to read routes directory: {}", e)))?
-        {
-            let entry = entry
-                .map_err(|e| StorageError::FileError(format!("Failed to read directory entry: {}", e)))?;
+        for entry in fs::read_dir(&self.routes_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to read routes directory: {}", e))
+        })? {
+            let entry = entry.map_err(|e| {
+                StorageError::FileError(format!("Failed to read directory entry: {}", e))
+            })?;
             let path = entry.path();
 
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
@@ -562,11 +571,12 @@ impl RouteStorage for FileRouteStorage {
 
     async fn load_route_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, StorageError> {
         // 遍历所有路由文件，查找匹配路径的路由
-        for entry in fs::read_dir(&self.routes_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to read routes directory: {}", e)))?
-        {
-            let entry = entry
-                .map_err(|e| StorageError::FileError(format!("Failed to read directory entry: {}", e)))?;
+        for entry in fs::read_dir(&self.routes_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to read routes directory: {}", e))
+        })? {
+            let entry = entry.map_err(|e| {
+                StorageError::FileError(format!("Failed to read directory entry: {}", e))
+            })?;
             let file_path = entry.path();
 
             if file_path.extension().and_then(|s| s.to_str()) == Some("json") {
@@ -592,8 +602,9 @@ impl RouteStorage for FileRouteStorage {
                 self.backup_route_file(id)?;
             }
 
-            fs::remove_file(&file_path)
-                .map_err(|e| StorageError::FileError(format!("Failed to delete route file: {}", e)))?;
+            fs::remove_file(&file_path).map_err(|e| {
+                StorageError::FileError(format!("Failed to delete route file: {}", e))
+            })?;
         }
 
         Ok(())
@@ -602,16 +613,18 @@ impl RouteStorage for FileRouteStorage {
     async fn list_routes(&self) -> Result<Vec<DynamicRoute>, StorageError> {
         let mut routes = Vec::new();
 
-        for entry in fs::read_dir(&self.routes_dir)
-            .map_err(|e| StorageError::FileError(format!("Failed to read routes directory: {}", e)))?
-        {
-            let entry = entry
-                .map_err(|e| StorageError::FileError(format!("Failed to read directory entry: {}", e)))?;
+        for entry in fs::read_dir(&self.routes_dir).map_err(|e| {
+            StorageError::FileError(format!("Failed to read routes directory: {}", e))
+        })? {
+            let entry = entry.map_err(|e| {
+                StorageError::FileError(format!("Failed to read directory entry: {}", e))
+            })?;
             let path = entry.path();
 
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
-                let content = fs::read_to_string(&path)
-                    .map_err(|e| StorageError::FileError(format!("Failed to read route file: {}", e)))?;
+                let content = fs::read_to_string(&path).map_err(|e| {
+                    StorageError::FileError(format!("Failed to read route file: {}", e))
+                })?;
 
                 let route: DynamicRoute = serde_json::from_str(&content)?;
                 routes.push(route);
@@ -627,13 +640,7 @@ impl RouteStorage for FileRouteStorage {
     async fn count_routes(&self) -> Result<usize, StorageError> {
         let count = fs::read_dir(&self.routes_dir)?
             .filter_map(|entry| entry.ok())
-            .filter(|entry| {
-                entry
-                    .path()
-                    .extension()
-                    .and_then(|s| s.to_str())
-                    == Some("json")
-            })
+            .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("json"))
             .count();
 
         Ok(count)
@@ -645,9 +652,7 @@ impl RouteStorage for FileRouteStorage {
     }
 
     async fn clear_all(&self) -> Result<(), StorageError> {
-        for entry in fs::read_dir(&self.routes_dir)?
-            .filter_map(|entry| entry.ok())
-        {
+        for entry in fs::read_dir(&self.routes_dir)?.filter_map(|entry| entry.ok()) {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 fs::remove_file(&path)?;
@@ -675,9 +680,9 @@ pub struct RouteStorageStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::models::{DynamicRoute, RouteType, HandlerType};
-    use serde_json::json;
+    use crate::db::models::{DynamicRoute, HandlerType, RouteType};
     use chrono::Utc;
+    use serde_json::json;
 
     #[tokio::test]
     async fn test_memory_storage() {
@@ -699,6 +704,8 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: Some("test_user".to_string()),
+            group_id: None,
+            is_primary_entry: None,
             metadata: None,
         };
 
@@ -754,6 +761,8 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: Some("test_user".to_string()),
+            group_id: None,
+            is_primary_entry: None,
             metadata: None,
         };
 
@@ -805,6 +814,8 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: Some("test_user".to_string()),
+            group_id: None,
+            is_primary_entry: None,
             metadata: None,
         };
 
@@ -823,6 +834,8 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: Some("test_user".to_string()),
+            group_id: None,
+            is_primary_entry: None,
             metadata: None,
         };
 
@@ -859,6 +872,8 @@ mod tests {
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
                 created_by: Some("test_user".to_string()),
+                group_id: None,
+                is_primary_entry: None,
                 metadata: None,
             };
             storage.save_route(&route).await.unwrap();
@@ -880,6 +895,8 @@ mod tests {
             created_at: Utc::now(),
             updated_at: Utc::now(),
             created_by: Some("test_user".to_string()),
+            group_id: None,
+            is_primary_entry: None,
             metadata: None,
         };
 

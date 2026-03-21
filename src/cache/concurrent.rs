@@ -35,7 +35,8 @@ impl CacheLock {
     /// 获取缓存锁
     pub async fn acquire(&self, key: &str) -> Option<CacheLockGuard> {
         // 获取或创建本地锁（使用 DashMap 避免全局锁）
-        let semaphore = self.local_locks
+        let semaphore = self
+            .local_locks
             .entry(key.to_string())
             .or_insert_with(|| Arc::new(Semaphore::new(1)))
             .value()
@@ -43,13 +44,11 @@ impl CacheLock {
 
         // 尝试获取本地锁（非阻塞）
         match semaphore.try_acquire_owned() {
-            Ok(permit) => {
-                Some(CacheLockGuard {
-                    key: key.to_string(),
-                    permit: Some(permit),
-                    local_locks: Arc::clone(&self.local_locks),
-                })
-            }
+            Ok(permit) => Some(CacheLockGuard {
+                key: key.to_string(),
+                permit: Some(permit),
+                local_locks: Arc::clone(&self.local_locks),
+            }),
             Err(_) => {
                 // 本地锁已被占用，说明有其他线程正在加载
                 tracing::debug!("缓存锁已被占用: {}", key);
@@ -153,7 +152,12 @@ impl<B: CacheBackend> SafeCacheBackend<B> {
     }
 
     /// 安全的设置缓存，支持空值缓存和 TTL 抖动
-    pub async fn set_safe(&self, key: &str, value: Option<&str>, ttl: Duration) -> Result<(), CacheError> {
+    pub async fn set_safe(
+        &self,
+        key: &str,
+        value: Option<&str>,
+        ttl: Duration,
+    ) -> Result<(), CacheError> {
         let actual_value = match value {
             Some(v) => v.to_string(),
             None => {

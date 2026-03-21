@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
-use chrono::{Utc, Duration};
+use actix_web::{HttpResponse, web};
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use base64::{Engine as _, engine::general_purpose};
-use rand::RngCore;
+use chrono::{Duration, Utc};
 use p256::ecdsa::{SigningKey, VerifyingKey};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
-use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
+use rand::RngCore;
+use serde::{Deserialize, Serialize};
 
 /// 解析PEM格式的公钥
 fn parse_pem_public_key(pem_data: &str) -> Result<Vec<u8>, String> {
@@ -17,9 +17,10 @@ fn parse_pem_public_key(pem_data: &str) -> Result<Vec<u8>, String> {
         .replace("\r", "")
         .trim()
         .to_string();
-    
+
     // 解码base64
-    general_purpose::STANDARD.decode(clean_pem)
+    general_purpose::STANDARD
+        .decode(clean_pem)
         .map_err(|e| format!("Failed to decode PEM: {}", e))
 }
 
@@ -43,24 +44,24 @@ impl ECCSession {
             created_at: Utc::now(),
         }
     }
-    
+
     pub fn is_expired(&self) -> bool {
         Utc::now() - self.created_at > Duration::hours(1)
     }
-    
+
     pub fn get_public_key_jwk(&self) -> serde_json::Value {
         // 获取公钥的点坐标
         let encoded_point = self.verifying_key.to_encoded_point(false);
         let point = encoded_point.as_bytes();
-        
+
         // 未压缩格式: 0x04 + X (32 bytes) + Y (32 bytes)
         let x_bytes = &point[1..33];
         let y_bytes = &point[33..65];
-        
+
         // 使用 base64url 编码（不带填充）
         let x = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(x_bytes);
         let y = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(y_bytes);
-        
+
         serde_json::json!({
             "kty": "EC",
             "crv": "P-256",
@@ -70,29 +71,35 @@ impl ECCSession {
             "alg": "ECDH-ES+A256KW"
         })
     }
-    
+
     pub fn get_expiry(&self) -> chrono::DateTime<Utc> {
         self.created_at + Duration::hours(1)
     }
 
     /// 混合加密（ECDH + AES-GCM）
     #[allow(dead_code)]
-    pub fn hybrid_encrypt(&self, plaintext: &str, client_public_key_input: &str) -> Result<String, String> {
+    pub fn hybrid_encrypt(
+        &self,
+        plaintext: &str,
+        client_public_key_input: &str,
+    ) -> Result<String, String> {
         use aes_gcm::aead::Aead;
 
         // 解析客户端公钥（支持PEM格式）
-        let client_public_key_bytes = if client_public_key_input.contains("-----BEGIN PUBLIC KEY-----") {
+        let client_public_key_bytes = if client_public_key_input
+            .contains("-----BEGIN PUBLIC KEY-----")
+        {
             parse_pem_public_key(client_public_key_input)?
         } else if client_public_key_input.contains('-') {
             match base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(client_public_key_input) {
                 Ok(data) => data,
-                Err(_) => {
-                    general_purpose::STANDARD.decode(client_public_key_input)
-                        .map_err(|e| format!("Failed to decode client public key: {}", e))?
-                }
+                Err(_) => general_purpose::STANDARD
+                    .decode(client_public_key_input)
+                    .map_err(|e| format!("Failed to decode client public key: {}", e))?,
             }
         } else {
-            general_purpose::STANDARD.decode(client_public_key_input)
+            general_purpose::STANDARD
+                .decode(client_public_key_input)
                 .map_err(|e| format!("Failed to decode client public key: {}", e))?
         };
 
@@ -108,7 +115,8 @@ impl ECCSession {
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // 加密
-        let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes())
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext.as_bytes())
             .map_err(|e| format!("Encryption failed: {}", e))?;
 
         // 组合：Nonce + Ciphertext
@@ -122,8 +130,8 @@ impl ECCSession {
 
     /// 派生共享密钥（ECDH）
     pub fn derive_shared_secret(&self, client_public_key_bytes: &[u8]) -> Result<[u8; 32], String> {
-        use p256::PublicKey;
         use p256::NonZeroScalar;
+        use p256::PublicKey;
         use spki::DecodePublicKey;
 
         // 解析客户端公钥（支持PKIX/DER格式和SEC1格式）
@@ -164,24 +172,30 @@ impl ECCSession {
 
         Ok(key)
     }
-    
+
     /// 混合解密（ECDH + AES-GCM）
-    pub fn hybrid_decrypt(&self, encrypted_data_b64: &str, client_public_key_input: &str) -> Result<String, String> {
+    pub fn hybrid_decrypt(
+        &self,
+        encrypted_data_b64: &str,
+        client_public_key_input: &str,
+    ) -> Result<String, String> {
         use aes_gcm::aead::Aead;
 
         // 解析客户端公钥（支持PEM格式）
-        let client_public_key_bytes = if client_public_key_input.contains("-----BEGIN PUBLIC KEY-----") {
+        let client_public_key_bytes = if client_public_key_input
+            .contains("-----BEGIN PUBLIC KEY-----")
+        {
             parse_pem_public_key(client_public_key_input)?
         } else if client_public_key_input.contains('-') {
             match base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(client_public_key_input) {
                 Ok(data) => data,
-                Err(_) => {
-                    general_purpose::STANDARD.decode(client_public_key_input)
-                        .map_err(|e| format!("Failed to decode client public key: {}", e))?
-                }
+                Err(_) => general_purpose::STANDARD
+                    .decode(client_public_key_input)
+                    .map_err(|e| format!("Failed to decode client public key: {}", e))?,
             }
         } else {
-            general_purpose::STANDARD.decode(client_public_key_input)
+            general_purpose::STANDARD
+                .decode(client_public_key_input)
                 .map_err(|e| format!("Failed to decode client public key: {}", e))?
         };
 
@@ -191,10 +205,9 @@ impl ECCSession {
         // 解码加密数据（尝试base64和base64url）
         let encrypted_data = match general_purpose::STANDARD.decode(encrypted_data_b64) {
             Ok(data) => data,
-            Err(_) => {
-                base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(encrypted_data_b64)
-                    .map_err(|e| format!("Failed to decode encrypted data: {}", e))?
-            }
+            Err(_) => base64::engine::general_purpose::URL_SAFE_NO_PAD
+                .decode(encrypted_data_b64)
+                .map_err(|e| format!("Failed to decode encrypted data: {}", e))?,
         };
 
         // 创建AES-GCM解密器
@@ -209,11 +222,11 @@ impl ECCSession {
         let ciphertext = &encrypted_data[12..];
 
         // 解密
-        let plaintext = cipher.decrypt(nonce, ciphertext)
+        let plaintext = cipher
+            .decrypt(nonce, ciphertext)
             .map_err(|e| format!("Decryption failed: {}", e))?;
 
-        String::from_utf8(plaintext)
-            .map_err(|e| format!("Invalid UTF-8: {}", e))
+        String::from_utf8(plaintext).map_err(|e| format!("Invalid UTF-8: {}", e))
     }
 }
 
@@ -223,15 +236,15 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct SessionManager {
     pub sessions: DashMap<String, ECCSession>,
-    max_sessions: usize,  // 最大会话数限制
-    cleanup_counter: AtomicUsize,  // 清理计数器
+    max_sessions: usize,          // 最大会话数限制
+    cleanup_counter: AtomicUsize, // 清理计数器
 }
 
 impl SessionManager {
     pub fn new() -> Self {
         SessionManager {
             sessions: DashMap::new(),
-            max_sessions: 10000,  // 限制最多 10000 个会话
+            max_sessions: 10000, // 限制最多 10000 个会话
             cleanup_counter: AtomicUsize::new(0),
         }
     }
@@ -276,15 +289,21 @@ impl SessionManager {
 
         // 如果会话数仍然超过限制，随机删除部分会话
         if self.sessions.len() > self.max_sessions {
-            let remove_count = self.max_sessions / 10;  // 删除 10%
-            let keys_to_remove: Vec<String> = self.sessions.iter()
+            let remove_count = self.max_sessions / 10; // 删除 10%
+            let keys_to_remove: Vec<String> = self
+                .sessions
+                .iter()
                 .take(remove_count)
                 .map(|entry| entry.key().clone())
                 .collect();
             for key in &keys_to_remove {
                 self.sessions.remove(key);
             }
-            eprintln!("⚠️  会话数超过限制（{}），已清理 {} 条", self.sessions.len(), remove_count);
+            eprintln!(
+                "⚠️  会话数超过限制（{}），已清理 {} 条",
+                self.sessions.len(),
+                remove_count
+            );
         }
     }
 }
@@ -320,9 +339,7 @@ fn generate_session_id() -> String {
 }
 
 /// 获取 ECC 公钥
-pub async fn get_public_key(
-    query: web::Query<GetPublicKeyRequest>,
-) -> HttpResponse {
+pub async fn get_public_key(query: web::Query<GetPublicKeyRequest>) -> HttpResponse {
     let session_id = if let Some(sid) = &query.session_id {
         sid.clone()
     } else {

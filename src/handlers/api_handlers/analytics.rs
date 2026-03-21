@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 use serde::Serialize;
 
 /// 热门文章响应
@@ -91,7 +91,7 @@ pub async fn most_viewed(
             _ => {}
         }
     }
-    
+
     // 默认行为：获取热门文章
     most_viewed_impl(query, state, req).await
 }
@@ -102,21 +102,25 @@ async fn most_viewed_impl(
     state: web::Data<crate::app_state::AppState>,
     _req: actix_web::HttpRequest,
 ) -> HttpResponse {
-    let limit: i64 = query.get("limit")
+    let limit: i64 = query
+        .get("limit")
         .and_then(|l| l.parse().ok())
         .unwrap_or(10);
-    
+
     let view_repo = state.article_view_repository();
-    
+
     match view_repo.get_most_viewed_articles(limit).await {
         Ok(articles) => {
-            let data: Vec<PopularArticle> = articles.into_iter().map(|a| PopularArticle {
-                id: a.id.unwrap_or(0),
-                title: a.title,
-                author: a.author.unwrap_or_else(|| "未知".to_string()),
-                view_count: a.view_count,
-            }).collect();
-            
+            let data: Vec<PopularArticle> = articles
+                .into_iter()
+                .map(|a| PopularArticle {
+                    id: a.id.unwrap_or(0),
+                    title: a.title,
+                    author: a.author.unwrap_or_else(|| "未知".to_string()),
+                    view_count: a.view_count,
+                })
+                .collect();
+
             HttpResponse::Ok().json(AnalyticsResponse {
                 success: true,
                 data: Some(data),
@@ -127,7 +131,7 @@ async fn most_viewed_impl(
             success: false,
             data: None,
             message: Some("获取热门文章失败".to_string()),
-        })
+        }),
     }
 }
 
@@ -144,19 +148,20 @@ pub async fn view_sources(
     if crate::middleware::auth::check_admin_auth(&req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let days: i64 = query.get("days")
-        .and_then(|d| d.parse().ok())
-        .unwrap_or(30);
-    
+    let days: i64 = query.get("days").and_then(|d| d.parse().ok()).unwrap_or(30);
+
     let view_repo = state.article_view_repository();
-    
+
     match view_repo.get_view_sources(days).await {
         Ok(sources) => {
-            let data: Vec<ViewSource> = sources.into_iter().map(|s| ViewSource {
-                country: s.country,
-                count: s.count,
-            }).collect();
-            
+            let data: Vec<ViewSource> = sources
+                .into_iter()
+                .map(|s| ViewSource {
+                    country: s.country,
+                    count: s.count,
+                })
+                .collect();
+
             HttpResponse::Ok().json(AnalyticsResponse {
                 success: true,
                 data: Some(data),
@@ -167,7 +172,7 @@ pub async fn view_sources(
             success: false,
             data: None,
             message: Some("获取阅读来源失败".to_string()),
-        })
+        }),
     }
 }
 
@@ -184,19 +189,20 @@ pub async fn view_trend(
     if crate::middleware::auth::check_admin_auth(&req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let days: i64 = query.get("days")
-        .and_then(|d| d.parse().ok())
-        .unwrap_or(30);
-    
+    let days: i64 = query.get("days").and_then(|d| d.parse().ok()).unwrap_or(30);
+
     let view_repo = state.article_view_repository();
-    
+
     match view_repo.get_view_trend(days).await {
         Ok(trend) => {
-            let data: Vec<ViewTrend> = trend.into_iter().map(|t| ViewTrend {
-                date: t.date,
-                count: t.count,
-            }).collect();
-            
+            let data: Vec<ViewTrend> = trend
+                .into_iter()
+                .map(|t| ViewTrend {
+                    date: t.date,
+                    count: t.count,
+                })
+                .collect();
+
             HttpResponse::Ok().json(AnalyticsResponse {
                 success: true,
                 data: Some(data),
@@ -207,7 +213,7 @@ pub async fn view_trend(
             success: false,
             data: None,
             message: Some("获取阅读趋势失败".to_string()),
-        })
+        }),
     }
 }
 
@@ -235,7 +241,7 @@ pub async fn article_stats(
             });
         }
     };
-    
+
     if id <= 0 {
         return HttpResponse::BadRequest().json(AnalyticsResponse::<()> {
             success: false,
@@ -243,13 +249,11 @@ pub async fn article_stats(
             message: Some("缺少文章ID参数".to_string()),
         });
     }
-    
-    let days: i64 = query.get("days")
-        .and_then(|d| d.parse().ok())
-        .unwrap_or(30);
-    
+
+    let days: i64 = query.get("days").and_then(|d| d.parse().ok()).unwrap_or(30);
+
     let view_repo = state.article_view_repository();
-    
+
     // 先通过 ID 获取文章的 UUID
     let passage_repo = state.passage_repository();
     let passage = match passage_repo.get_by_id(id).await {
@@ -262,7 +266,7 @@ pub async fn article_stats(
             });
         }
     };
-    
+
     let uuid = match &passage.uuid {
         Some(u) => u.as_str(),
         None => {
@@ -273,7 +277,7 @@ pub async fn article_stats(
             });
         }
     };
-    
+
     match view_repo.get_article_stats(uuid, days).await {
         Ok(stats) => {
             let data = ArticleStats {
@@ -283,7 +287,7 @@ pub async fn article_stats(
                 unique_visitors: stats.unique_visitors,
                 avg_duration: stats.avg_duration,
             };
-            
+
             HttpResponse::Ok().json(AnalyticsResponse {
                 success: true,
                 data: Some(data),
@@ -294,7 +298,7 @@ pub async fn article_stats(
             success: false,
             data: None,
             message: Some("获取文章统计失败".to_string()),
-        })
+        }),
     }
 }
 
@@ -311,20 +315,21 @@ pub async fn view_by_city(
     if crate::middleware::auth::check_admin_auth(&req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let days: i64 = query.get("days")
-        .and_then(|d| d.parse().ok())
-        .unwrap_or(30);
-    
+    let days: i64 = query.get("days").and_then(|d| d.parse().ok()).unwrap_or(30);
+
     let view_repo = state.article_view_repository();
-    
+
     match view_repo.get_view_by_city(days).await {
         Ok(cities) => {
-            let data: Vec<CityStats> = cities.into_iter().map(|c| CityStats {
-                city: c.city,
-                country: c.country,
-                count: c.count,
-            }).collect();
-            
+            let data: Vec<CityStats> = cities
+                .into_iter()
+                .map(|c| CityStats {
+                    city: c.city,
+                    country: c.country,
+                    count: c.count,
+                })
+                .collect();
+
             HttpResponse::Ok().json(AnalyticsResponse {
                 success: true,
                 data: Some(data),
@@ -335,7 +340,7 @@ pub async fn view_by_city(
             success: false,
             data: None,
             message: Some("获取城市统计失败".to_string()),
-        })
+        }),
     }
 }
 
@@ -352,24 +357,25 @@ pub async fn view_by_ip(
     if crate::middleware::auth::check_admin_auth(&req).is_none() {
         return crate::middleware::auth::forbidden_response();
     }
-    let days: i64 = query.get("days")
-        .and_then(|d| d.parse().ok())
-        .unwrap_or(30);
-    
+    let days: i64 = query.get("days").and_then(|d| d.parse().ok()).unwrap_or(30);
+
     let view_repo = state.article_view_repository();
-    
+
     match view_repo.get_view_by_ip(days).await {
         Ok(ips) => {
-            let data: Vec<IPStats> = ips.into_iter().map(|i| IPStats {
-                ip: i.ip,
-                country: i.country,
-                city: i.city,
-                region: i.region,
-                count: i.count,
-                first_visit: i.first_visit,
-                last_visit: i.last_visit,
-            }).collect();
-            
+            let data: Vec<IPStats> = ips
+                .into_iter()
+                .map(|i| IPStats {
+                    ip: i.ip,
+                    country: i.country,
+                    city: i.city,
+                    region: i.region,
+                    count: i.count,
+                    first_visit: i.first_visit,
+                    last_visit: i.last_visit,
+                })
+                .collect();
+
             HttpResponse::Ok().json(AnalyticsResponse {
                 success: true,
                 data: Some(data),
@@ -380,6 +386,6 @@ pub async fn view_by_ip(
             success: false,
             data: None,
             message: Some("获取IP统计失败".to_string()),
-        })
+        }),
     }
 }

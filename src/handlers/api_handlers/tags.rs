@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
 use crate::db::models::Tag;
+use actix_web::{HttpResponse, web};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 /// 标签响应
 #[derive(Debug, Serialize)]
@@ -55,7 +55,8 @@ pub async fn list(state: web::Data<crate::app_state::AppState>) -> HttpResponse 
     match passage_repo.get_tag_stats().await {
         Ok(stats) => {
             // 转换为API响应格式
-            let data: Vec<TagCountResponse> = stats.into_iter()
+            let data: Vec<TagCountResponse> = stats
+                .into_iter()
                 .map(|stat| TagCountResponse {
                     id: stat.id as i32,
                     name: stat.name,
@@ -98,8 +99,14 @@ pub async fn admin_list(
     let tag_repo = state.tag_repository();
 
     // 解析分页参数
-    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(100);
-    let offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+    let limit: i64 = query
+        .get("limit")
+        .and_then(|l| l.parse().ok())
+        .unwrap_or(100);
+    let offset: i64 = query
+        .get("offset")
+        .and_then(|o| o.parse().ok())
+        .unwrap_or(0);
 
     // 获取所有标签
     let tags = match tag_repo.get_all(limit, offset).await {
@@ -120,7 +127,8 @@ pub async fn admin_list(
     };
 
     // 转换为响应格式
-    let data: Vec<TagResponse> = tags.into_iter()
+    let data: Vec<TagResponse> = tags
+        .into_iter()
         .map(|tag| TagResponse {
             id: tag.id.unwrap_or(0),
             name: tag.name,
@@ -175,12 +183,10 @@ pub async fn get(
                 "data": response
             }))
         }
-        Err(_) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "标签不存在"
-            }))
-        }
+        Err(_) => HttpResponse::NotFound().json(serde_json::json!({
+            "success": false,
+            "message": "标签不存在"
+        })),
     }
 }
 
@@ -213,13 +219,11 @@ pub async fn create(
     };
 
     match tag_repo.create(&tag).await {
-        Ok(id) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "标签创建成功",
-                "data": serde_json::json!({"id": id})
-            }))
-        }
+        Ok(id) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "标签创建成功",
+            "data": serde_json::json!({"id": id})
+        })),
         Err(e) => {
             eprintln!("创建标签失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -393,14 +397,15 @@ fn parse_tags(tags_str: &str) -> Vec<String> {
     if tags_str.is_empty() || tags_str == "[]" {
         return Vec::new();
     }
-    
+
     // 尝试解析 JSON
     if let Ok(tags) = serde_json::from_str::<Vec<String>>(tags_str) {
         return tags;
     }
-    
+
     // 如果解析失败，按逗号分割
-    tags_str.split(',')
+    tags_str
+        .split(',')
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect()

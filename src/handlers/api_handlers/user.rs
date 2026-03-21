@@ -1,8 +1,8 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use serde::{Deserialize, Serialize};
 use crate::db::models::User;
 use crate::utils::format_datetime_optimized;
+use actix_web::{HttpRequest, HttpResponse, web};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 /// 用户信息响应
 #[derive(Debug, Serialize)]
@@ -48,12 +48,21 @@ pub struct UpdateUserRequest {
 /// 获取当前用户信息
 pub async fn info(req: HttpRequest) -> HttpResponse {
     use actix_web::HttpMessage;
-    
+
     // 尝试从扩展中获取用户信息
-    let user_id = req.extensions().get::<crate::middleware::auth::UserIDKey>().map(|k| k.0);
-    let username = req.extensions().get::<crate::middleware::auth::UsernameKey>().map(|k| k.0.clone());
-    let role = req.extensions().get::<crate::middleware::auth::RoleKey>().map(|k| k.0.clone());
-    
+    let user_id = req
+        .extensions()
+        .get::<crate::middleware::auth::UserIDKey>()
+        .map(|k| k.0);
+    let username = req
+        .extensions()
+        .get::<crate::middleware::auth::UsernameKey>()
+        .map(|k| k.0.clone());
+    let role = req
+        .extensions()
+        .get::<crate::middleware::auth::RoleKey>()
+        .map(|k| k.0.clone());
+
     // 如果没有用户信息，返回未登录状态
     if user_id.is_none() || username.is_none() || role.is_none() {
         return HttpResponse::Ok().json(serde_json::json!({
@@ -67,7 +76,7 @@ pub async fn info(req: HttpRequest) -> HttpResponse {
             }
         }));
     }
-    
+
     // 返回用户信息
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
@@ -96,13 +105,19 @@ pub async fn admin_list(
     }
 
     let user_repo = state.user_repository();
-    
+
     // 解析分页参数
-    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(20);
-    let _offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+    let limit: i64 = query
+        .get("limit")
+        .and_then(|l| l.parse().ok())
+        .unwrap_or(20);
+    let _offset: i64 = query
+        .get("offset")
+        .and_then(|o| o.parse().ok())
+        .unwrap_or(0);
     let page: i64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
     let calculated_offset = (page - 1) * limit;
-    
+
     // 获取所有用户
     match user_repo.get_all(limit, calculated_offset).await {
         Ok(users) => {
@@ -110,8 +125,9 @@ pub async fn admin_list(
                 Ok(c) => c,
                 Err(_) => users.len() as i64,
             };
-            
-            let data: Vec<UserResponse> = users.into_iter()
+
+            let data: Vec<UserResponse> = users
+                .into_iter()
                 .map(|u| UserResponse {
                     id: u.id.unwrap_or(0),
                     username: u.username,
@@ -122,7 +138,7 @@ pub async fn admin_list(
                     updated_at: format_datetime_optimized(&u.updated_at),
                 })
                 .collect();
-            
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "data": data,
@@ -157,7 +173,7 @@ pub async fn get(
 
     let id = path.into_inner();
     let user_repo = state.user_repository(); // 使用依赖注入
-    
+
     match user_repo.get_by_id(id).await {
         Ok(user) => {
             let response = UserResponse {
@@ -208,10 +224,14 @@ pub async fn create(
         username: req.username.clone(),
         password: hashed_password,
         email: req.email.clone(),
-        role: req.role.clone()
+        role: req
+            .role
+            .clone()
             .and_then(|s| crate::db::models::UserRole::from_str(&s))
             .unwrap_or(crate::db::models::UserRole::Subscriber),
-        status: req.status.clone()
+        status: req
+            .status
+            .clone()
             .and_then(|s| crate::db::models::UserStatus::from_str(&s))
             .unwrap_or(crate::db::models::UserStatus::Active),
         created_at: now,
@@ -219,13 +239,11 @@ pub async fn create(
     };
 
     match user_repo.create(&user).await {
-        Ok(id) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "用户创建成功",
-                "data": serde_json::json!({"id": id})
-            }))
-        }
+        Ok(id) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "用户创建成功",
+            "data": serde_json::json!({"id": id})
+        })),
         Err(e) => {
             let error_msg = e.to_string();
             eprintln!("创建用户失败: {}", e);
@@ -261,7 +279,7 @@ pub async fn update(
 ) -> HttpResponse {
     let id = path.into_inner();
     let user_repo = state.user_repository();
-    
+
     // 先获取现有用户
     let mut user = match user_repo.get_by_id(id).await {
         Ok(u) => u,
@@ -273,7 +291,7 @@ pub async fn update(
             }));
         }
     };
-    
+
     // 更新字段
     if let Some(ref username) = req.username {
         user.username = username.clone();
@@ -295,26 +313,22 @@ pub async fn update(
         user.email = email.clone();
     }
     if let Some(ref role) = req.role {
-        user.role = crate::db::models::UserRole::from_str(role)
-            .unwrap_or(user.role);
+        user.role = crate::db::models::UserRole::from_str(role).unwrap_or(user.role);
     }
     if let Some(ref status) = req.status {
-        user.status = crate::db::models::UserStatus::from_str(status)
-            .unwrap_or(user.status);
+        user.status = crate::db::models::UserStatus::from_str(status).unwrap_or(user.status);
     }
     user.updated_at = Utc::now();
-    
+
     match user_repo.update(&user).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "用户更新成功"
-            }))
-        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "用户更新成功"
+        })),
         Err(e) => {
             let error_msg = e.to_string();
             eprintln!("更新用户失败: {}", e);
-            
+
             // 检查是否是 UNIQUE 约束错误
             if error_msg.contains("UNIQUE constraint failed") {
                 if error_msg.contains("email") {
@@ -329,7 +343,7 @@ pub async fn update(
                     }));
                 }
             }
-            
+
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "success": false,
                 "message": "更新用户失败"
@@ -345,14 +359,12 @@ pub async fn delete(
 ) -> HttpResponse {
     let id = path.into_inner();
     let user_repo = state.user_repository();
-    
+
     match user_repo.delete(id).await {
-        Ok(_) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "用户删除成功"
-            }))
-        }
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "用户删除成功"
+        })),
         Err(e) => {
             eprintln!("删除用户失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -384,13 +396,11 @@ pub async fn delete_batch(
     let user_repo = state.user_repository();
 
     match user_repo.delete_batch(req.ids.clone()).await {
-        Ok(count) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": format!("成功删除 {} 个用户", count),
-                "deleted_count": count
-            }))
-        }
+        Ok(count) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": format!("成功删除 {} 个用户", count),
+            "deleted_count": count
+        })),
         Err(e) => {
             eprintln!("批量删除用户失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -403,7 +413,10 @@ pub async fn delete_batch(
 
 /// 哈希密码（使用 Argon2id）
 pub fn hash_password(password: &str) -> Result<String, String> {
-    use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
+    use argon2::{
+        Argon2, PasswordHasher,
+        password_hash::{SaltString, rand_core::OsRng},
+    };
 
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();

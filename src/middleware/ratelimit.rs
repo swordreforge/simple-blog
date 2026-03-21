@@ -1,9 +1,9 @@
-use actix_web::{dev::Payload, Error, FromRequest, HttpRequest, HttpResponse};
+use actix_web::{Error, FromRequest, HttpRequest, HttpResponse, dev::Payload};
+use dashmap::DashMap;
 use std::{
     sync::Arc,
     time::{Duration, Instant},
 };
-use dashmap::DashMap;
 
 /// 滑动窗口计数器
 #[derive(Debug, Clone)]
@@ -11,7 +11,7 @@ struct SlidingWindow {
     timestamps: Vec<Instant>,
     window_size: Duration,
     max_requests: usize,
-    last_accessed: Instant,  // 添加最后访问时间，用于 LRU 清理
+    last_accessed: Instant, // 添加最后访问时间，用于 LRU 清理
 }
 
 impl SlidingWindow {
@@ -27,7 +27,7 @@ impl SlidingWindow {
 
     fn check_and_record(&mut self) -> bool {
         let now = Instant::now();
-        self.last_accessed = now;  // 更新访问时间
+        self.last_accessed = now; // 更新访问时间
         let cutoff = now - self.window_size;
         self.timestamps.retain(|&t| t > cutoff);
 
@@ -61,7 +61,7 @@ impl Default for RateLimitConfig {
 struct RateLimiter {
     second_windows: DashMap<String, SlidingWindow>,
     minute_windows: DashMap<String, SlidingWindow>,
-    max_entries: usize,  // 最大条目数限制，防止内存无限增长
+    max_entries: usize, // 最大条目数限制，防止内存无限增长
 }
 
 impl RateLimiter {
@@ -69,16 +69,20 @@ impl RateLimiter {
         Self {
             second_windows: DashMap::new(),
             minute_windows: DashMap::new(),
-            max_entries: 10000,  // 限制最多 10000 个不同的 IP 地址
+            max_entries: 10000, // 限制最多 10000 个不同的 IP 地址
         }
     }
 
     fn check(&self, key: &str, config: &RateLimitConfig) -> Result<(), RateLimitError> {
         // DashMap 的 entry API 内部使用细粒度锁，支持高并发
-        let mut second_window = self.second_windows.entry(key.to_string())
+        let mut second_window = self
+            .second_windows
+            .entry(key.to_string())
             .or_insert_with(|| SlidingWindow::new(Duration::from_secs(1), config.per_second));
 
-        let mut minute_window = self.minute_windows.entry(key.to_string())
+        let mut minute_window = self
+            .minute_windows
+            .entry(key.to_string())
             .or_insert_with(|| SlidingWindow::new(Duration::from_secs(60), config.per_minute));
 
         if !second_window.check_and_record() {
@@ -100,12 +104,10 @@ impl RateLimiter {
         let minute_cutoff = now - Duration::from_secs(120);
 
         // DashMap 支持并发迭代和删除
-        self.second_windows.retain(|_, window| {
-            window.timestamps.last().is_some_and(|&t| t > second_cutoff)
-        });
-        self.minute_windows.retain(|_, window| {
-            window.timestamps.last().is_some_and(|&t| t > minute_cutoff)
-        });
+        self.second_windows
+            .retain(|_, window| window.timestamps.last().is_some_and(|&t| t > second_cutoff));
+        self.minute_windows
+            .retain(|_, window| window.timestamps.last().is_some_and(|&t| t > minute_cutoff));
 
         // 检查条目数是否超过限制，如果超过则使用 LRU 策略删除最久未使用的条目
         if self.second_windows.len() > self.max_entries {
@@ -113,7 +115,9 @@ impl RateLimiter {
             let remove_count = self.max_entries / 5;
 
             // 收集所有键及其最后访问时间
-            let mut access_times: Vec<(String, Instant)> = self.second_windows.iter()
+            let mut access_times: Vec<(String, Instant)> = self
+                .second_windows
+                .iter()
                 .map(|entry| (entry.key().clone(), entry.value().last_accessed))
                 .collect();
 
@@ -131,8 +135,11 @@ impl RateLimiter {
                 self.second_windows.remove(&key);
                 self.minute_windows.remove(&key);
             }
-            eprintln!("⚠️  限流器条目数超过限制（{}），已使用 LRU 策略清理 {} 条",
-                      self.second_windows.len(), remove_count);
+            eprintln!(
+                "⚠️  限流器条目数超过限制（{}），已使用 LRU 策略清理 {} 条",
+                self.second_windows.len(),
+                remove_count
+            );
         }
     }
 }
@@ -180,9 +187,7 @@ impl actix_web::ResponseError for RateLimitError {
 /// 全局限流器实例（使用 DashMap，无需锁）
 use once_cell::sync::Lazy;
 
-static RATE_LIMITER: Lazy<Arc<RateLimiter>> = Lazy::new(|| {
-    Arc::new(RateLimiter::new())
-});
+static RATE_LIMITER: Lazy<Arc<RateLimiter>> = Lazy::new(|| Arc::new(RateLimiter::new()));
 
 static RATE_LIMIT_CONFIG: Lazy<RateLimitConfig> = Lazy::new(RateLimitConfig::default);
 
@@ -201,7 +206,8 @@ impl FromRequest for RateLimitCheck {
         let key = String::from(ip);
 
         // 定期清理过期窗口（每 100 次请求清理一次）
-        static CLEANUP_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        static CLEANUP_COUNTER: std::sync::atomic::AtomicUsize =
+            std::sync::atomic::AtomicUsize::new(0);
         let counter = CLEANUP_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         if counter.is_multiple_of(100) {
             RATE_LIMITER.cleanup();

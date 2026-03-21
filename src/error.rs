@@ -3,7 +3,7 @@
 //! 提供应用程序中使用的所有错误类型
 //! 避免使用 unwrap() 和 expect()，使用 ? 操作符进行错误传播
 
-use actix_web::{error::ResponseError, http::StatusCode, HttpResponse};
+use actix_web::{HttpResponse, error::ResponseError, http::StatusCode};
 use std::fmt;
 
 /// 应用程序统一错误类型

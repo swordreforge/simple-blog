@@ -1,7 +1,7 @@
-use actix_web::{web, HttpResponse};
-use serde::{Deserialize, Serialize};
 use crate::db::models::Category;
+use actix_web::{HttpResponse, web};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 /// 分类响应
 #[derive(Debug, Serialize)]
@@ -52,8 +52,14 @@ pub async fn admin_list(
     let category_repo = state.category_repository();
 
     // 解析分页参数
-    let limit: i64 = query.get("limit").and_then(|l| l.parse().ok()).unwrap_or(100);
-    let offset: i64 = query.get("offset").and_then(|o| o.parse().ok()).unwrap_or(0);
+    let limit: i64 = query
+        .get("limit")
+        .and_then(|l| l.parse().ok())
+        .unwrap_or(100);
+    let offset: i64 = query
+        .get("offset")
+        .and_then(|o| o.parse().ok())
+        .unwrap_or(0);
 
     // 获取所有分类
     let categories = match category_repo.get_all(limit, offset).await {
@@ -74,7 +80,8 @@ pub async fn admin_list(
     };
 
     // 转换为响应格式
-    let data: Vec<CategoryResponse> = categories.into_iter()
+    let data: Vec<CategoryResponse> = categories
+        .into_iter()
         .map(|cat| CategoryResponse {
             id: cat.id.unwrap_or(0),
             name: cat.name,
@@ -102,7 +109,8 @@ pub async fn list(state: web::Data<crate::app_state::AppState>) -> HttpResponse 
     match passage_repo.get_all_categories().await {
         Ok(categories) => {
             // 转换为API响应格式
-            let data: Vec<CategoryResponse> = categories.into_iter()
+            let data: Vec<CategoryResponse> = categories
+                .into_iter()
                 .enumerate()
                 .map(|(i, name)| CategoryResponse {
                     id: (i + 1) as i64,
@@ -168,12 +176,10 @@ pub async fn get(
                 "data": response
             }))
         }
-        Err(_) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "success": false,
-                "message": "分类不存在"
-            }))
-        }
+        Err(_) => HttpResponse::NotFound().json(serde_json::json!({
+            "success": false,
+            "message": "分类不存在"
+        })),
     }
 }
 
@@ -205,13 +211,11 @@ pub async fn create(
     };
 
     match category_repo.create(&category).await {
-        Ok(id) => {
-            HttpResponse::Ok().json(serde_json::json!({
-                "success": true,
-                "message": "分类创建成功",
-                "data": serde_json::json!({"id": id})
-            }))
-        }
+        Ok(id) => HttpResponse::Ok().json(serde_json::json!({
+            "success": true,
+            "message": "分类创建成功",
+            "data": serde_json::json!({"id": id})
+        })),
         Err(e) => {
             eprintln!("创建分类失败: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -272,10 +276,8 @@ pub async fn update(
         Ok(_) => {
             // 清除该分类相关的缓存（细粒度失效）
             let category_name = category.name.clone();
-            crate::cache::invalidate_specific_category_cache(
-                state.cache.manager(),
-                &category_name
-            ).await;
+            crate::cache::invalidate_specific_category_cache(state.cache.manager(), &category_name)
+                .await;
 
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
