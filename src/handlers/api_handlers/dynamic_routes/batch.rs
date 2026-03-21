@@ -50,7 +50,7 @@ pub async fn batch_operations(
 async fn batch_enable(
     repo: &crate::db::repositories::DynamicRouteRepository,
     ids: Vec<i64>,
-    username: &str,
+    _username: &str,
 ) -> HttpResponse {
     let mut success_count = 0;
     let mut failed_ids = Vec::new();
@@ -97,7 +97,7 @@ async fn batch_enable(
 async fn batch_disable(
     repo: &crate::db::repositories::DynamicRouteRepository,
     ids: Vec<i64>,
-    username: &str,
+    _username: &str,
 ) -> HttpResponse {
     let mut success_count = 0;
     let mut failed_ids = Vec::new();
@@ -144,14 +144,14 @@ async fn batch_disable(
 async fn batch_delete(
     repo: &crate::db::repositories::DynamicRouteRepository,
     ids: Vec<i64>,
-    username: &str,
+    _username: &str,
 ) -> HttpResponse {
     let mut success_count = 0;
     let mut failed_ids = Vec::new();
 
     for id in ids {
         match repo.get_by_id(id).await {
-            Ok(Some(route)) => {
+            Ok(Some(_route)) => {
                 match repo.delete(id).await {
                     Ok(_) => {
                         success_count += 1;

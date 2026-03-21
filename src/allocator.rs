@@ -37,6 +37,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 static GLOBAL: TCMalloc = TCMalloc;
 
 /// 内存管理器类型
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AllocatorType {
     /// 系统默认分配器
@@ -276,18 +277,21 @@ fn init_tcmalloc() -> Result<(), String> {
 
 /// 占位函数，用于非 jemalloc 构建时的空实现
 #[cfg(not(feature = "jemalloc"))]
+#[allow(dead_code)]
 fn init_jemalloc() -> Result<(), String> {
     Err("jemalloc feature not enabled".to_string())
 }
 
 /// 占位函数，用于非 mimalloc 构建时的空实现
 #[cfg(not(feature = "mimalloc-alloc"))]
+#[allow(dead_code)]
 fn init_mimalloc() -> Result<(), String> {
     Err("mimalloc feature not enabled".to_string())
 }
 
 /// 占位函数，用于非 tcmalloc 构建时的空实现
 #[cfg(not(feature = "tcmalloc-alloc"))]
+#[allow(dead_code)]
 fn init_tcmalloc() -> Result<(), String> {
     Err("tcmalloc feature not enabled".to_string())
 }
@@ -296,6 +300,7 @@ fn init_tcmalloc() -> Result<(), String> {
 ///
 /// 注意：由于 jemalloc-ctl 与 tikv-jemallocator 存在链接冲突，
 /// 这里只返回基本的分配器类型信息。
+#[allow(dead_code)]
 pub fn get_memory_stats() -> Option<AllocatorType> {
     Some(AllocatorType::current())
 }

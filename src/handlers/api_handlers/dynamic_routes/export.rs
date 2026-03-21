@@ -296,7 +296,7 @@ pub async fn import_routes(
         };
 
         match import_result {
-            Ok(id) => {
+            Ok(_id) => {
                 imported_count += 1;
             }
             Err(e) => {

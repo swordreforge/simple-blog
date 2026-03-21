@@ -3,7 +3,6 @@ use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{params, OptionalExtension};
 use std::sync::Arc;
 use smallvec::SmallVec;
-use chrono::Utc;
 
 use super::models::*;
 

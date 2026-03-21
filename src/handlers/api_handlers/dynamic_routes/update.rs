@@ -22,7 +22,7 @@ pub async fn update_route(
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
-    let admin_info = match check_admin_auth(&req) {
+    let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
         None => return HttpResponse::Forbidden().json(serde_json::json!({
             "success": false,
@@ -235,7 +235,7 @@ pub async fn patch_route(
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
-    let admin_info = match check_admin_auth(&req) {
+    let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
         None => return HttpResponse::Forbidden().json(serde_json::json!({
             "success": false,
@@ -418,7 +418,7 @@ pub async fn enable_route(
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
-    let admin_info = match check_admin_auth(&req) {
+    let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
         None => return HttpResponse::Forbidden().json(serde_json::json!({
             "success": false,
@@ -466,7 +466,7 @@ pub async fn enable_route(
     };
 
     // 克隆old_route以避免移动问题
-    let old_route_clone = old_route.clone();
+    let _old_route_clone = old_route.clone();
 
     // 更新路由状态
     let updated_route = DynamicRoute {
@@ -527,7 +527,7 @@ pub async fn disable_route(
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
-    let admin_info = match check_admin_auth(&req) {
+    let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
         None => return HttpResponse::Forbidden().json(serde_json::json!({
             "success": false,

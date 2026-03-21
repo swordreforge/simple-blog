@@ -9,7 +9,7 @@ pub async fn delete_route(
     state: web::Data<AppState>,
 ) -> HttpResponse {
     // 权限检查
-    let admin_info = match check_admin_auth(&req) {
+    let _admin_info = match check_admin_auth(&req) {
         Some(info) => info,
         None => return HttpResponse::Forbidden().json(serde_json::json!({
             "success": false,
