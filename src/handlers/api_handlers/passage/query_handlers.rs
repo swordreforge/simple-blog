@@ -189,7 +189,28 @@ pub async fn update_by_query(
 
             // 清除列表缓存（如果需要）
             if should_clear_list_cache {
-                crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
+                // 使用细粒度缓存失效，只清除相关缓存
+                let id = passage.id.unwrap_or(0);
+                let uuid_str = passage.uuid.clone().unwrap_or_default();
+                let category_opt: Option<&str> = if passage.category.is_empty() {
+                    None
+                } else {
+                    Some(passage.category.as_str())
+                };
+                let (year_opt, month_opt, day_opt) = passage.published_at.map(|dt| {
+                    use chrono::Datelike;
+                    (Some(dt.year()), Some(dt.month() as i32), Some(dt.day() as i32))
+                }).unwrap_or((None, None, None));
+
+                crate::cache::invalidate_passage_cache_granular(
+                    state.cache.manager(),
+                    id,
+                    &uuid_str,
+                    category_opt,
+                    year_opt,
+                    month_opt,
+                    day_opt,
+                ).await;
             }
 
             HttpResponse::Ok().json(serde_json::json!({

@@ -270,8 +270,13 @@ pub async fn update(
 
     match category_repo.update(&category).await {
         Ok(_) => {
-            // 清除所有文章列表和详情缓存
-            crate::cache::invalidate_all_passage_cache(state.cache.manager()).await;
+            // 清除该分类相关的缓存（细粒度失效）
+            let category_name = category.name.clone();
+            crate::cache::invalidate_specific_category_cache(
+                state.cache.manager(),
+                &category_name
+            ).await;
+
             HttpResponse::Ok().json(serde_json::json!({
                 "success": true,
                 "message": "分类更新成功"
