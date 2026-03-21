@@ -4,6 +4,7 @@ use serde::Serialize;
 use crate::db::models::Attachment;
 use chrono::Utc;
 use tokio::fs;
+use futures_util::future;
 
 /// 附件响应
 #[derive(Debug, Serialize)]
@@ -401,15 +402,29 @@ pub async fn delete_batch(
         }
     };
 
-    // 删除文件
+    // 删除文件（并行删除以优化性能）
+    let delete_tasks: Vec<_> = attachments.iter()
+        .map(|attachment| {
+            let path = attachment.file_path.clone();
+            tokio::spawn(async move {
+                let result = fs::remove_file(&path).await;
+                (path, result)
+            })
+        })
+        .collect();
+
+    // 等待所有删除任务完成
+    let results = future::join_all(delete_tasks).await;
     let mut files_deleted = 0;
     let mut files_failed = 0;
-    for attachment in &attachments {
-        if let Err(e) = fs::remove_file(&attachment.file_path).await {
-            eprintln!("删除文件失败 {}: {}", attachment.file_path, e);
-            files_failed += 1;
-        } else {
-            files_deleted += 1;
+    for result in results {
+        match result {
+            Ok((_path, Ok(()))) => files_deleted += 1,
+            Ok((path, Err(e))) => {
+                eprintln!("删除文件失败 {}: {}", path, e);
+                files_failed += 1;
+            }
+            Err(_) => files_failed += 1,
         }
     }
 

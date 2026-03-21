@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse, HttpRequest};
 use crate::utils::format_datetime_optimized;
 use tokio::fs;
+use futures_util::future;
 
 use super::crud::{PassageResponse, UpdatePassageRequest};
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
@@ -271,15 +272,19 @@ pub async fn delete_by_query(
         }
     };
 
-    // 删除附件物理文件
-    let mut deleted_files = 0;
-    for attachment in &attachments {
-        if let Err(e) = fs::remove_file(&attachment.file_path).await {
-            eprintln!("删除附件文件失败 {}: {}", attachment.file_path, e);
-        } else {
-            deleted_files += 1;
-        }
-    }
+    // 删除附件物理文件（并行删除以优化性能）
+    let delete_tasks: Vec<_> = attachments.iter()
+        .map(|attachment| {
+            let path = attachment.file_path.clone();
+            tokio::spawn(async move {
+                fs::remove_file(&path).await.ok();
+            })
+        })
+        .collect();
+
+    // 等待所有删除任务完成
+    let results = future::join_all(delete_tasks).await;
+    let deleted_files = results.len();
 
     // 删除文章记录
     match passage_repo.delete_by_uuid(&uuid).await {
