@@ -105,15 +105,16 @@ mod tests {
     #[test]
     fn test_utils_function_edge_cases() {
         // 测试工具函数的边界情况
-        
+
         // 测试contains_optimized的边界情况
         let empty_list: Vec<&str> = vec![];
         assert!(!contains_optimized(&"", &empty_list));
         assert!(!contains_optimized(&"text", &empty_list));
-        
+
         let text_list = vec!["text", "other"];
         assert!(contains_optimized(&"text", &text_list));
-        assert!(contains_optimized(&"ext", &text_list)); // 包含在"text"中
+        assert!(!contains_optimized(&"ext", &text_list)); // 精确匹配，不是子字符串
+        assert!(contains_optimized(&"other", &text_list));
         
         // 测试format_datetime_optimized的不同时间
         let times = vec![

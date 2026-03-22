@@ -485,14 +485,14 @@ fn normalize_path(path: &str) -> String {
         normalized = format!("/{}", normalized);
     }
 
-    // 移除尾部斜杠（根路径除外）
-    if normalized.len() > 1 && normalized.ends_with('/') {
-        normalized.pop();
-    }
-
     // 标准化多个连续斜杠为单个斜杠
     while normalized.contains("//") {
         normalized = normalized.replace("//", "/");
+    }
+
+    // 移除尾部斜杠（根路径除外）
+    if normalized.len() > 1 && normalized.ends_with('/') {
+        normalized.pop();
     }
 
     normalized
