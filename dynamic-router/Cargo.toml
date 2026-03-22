@@ -27,6 +27,9 @@ bytes = "1.5"
 base64 = "0.22"
 papaya = "0.2"
 seize = "0.5"
+phf = { version = "0.11", features = ["macros"] }
+hashbrown = "0.14"
+ahash = "0.8"
 
 [dev-dependencies]
 tempfile = "3"

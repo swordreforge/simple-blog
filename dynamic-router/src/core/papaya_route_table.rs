@@ -367,6 +367,111 @@ impl PapayaRouteTable {
     {
         self.routes.pin().compute(path, updater);
     }
+
+    /// 异步处理路由（Rust 2024优化预备）
+    ///
+    /// 提供异步路由处理能力，为未来的async closures特性做准备。
+    /// 当前使用兼容的async block实现。
+    ///
+    /// # 参数
+    ///
+    /// * `path` - 路由路径
+    /// * `handler` - 异步处理器函数，接收路由处理器，返回响应
+    ///
+    /// # 返回
+    ///
+    /// 如果找到路由，返回处理结果；否则返回None
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::core::{PapayaRouteTable, SimpleRoute};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let table = PapayaRouteTable::new();
+    ///     let route = SimpleRoute::new("Hello", "text/plain");
+    ///     table.insert("/hello".to_string(), Box::new(route)).await;
+    ///
+    ///     // 使用async block
+    ///     let result = table.handle_async("/hello", |route| async move {
+    ///         format!("Processed: {}", route.to_serializable().body)
+    ///     }).await;
+    ///
+    ///     assert!(result.is_some());
+    /// }
+    /// ```
+    pub async fn handle_async<F, Fut, R>(&self, path: &str, handler: F) -> Option<R>
+    where
+        F: FnOnce(Box<dyn RouteEntry>) -> Fut,
+        Fut: std::future::Future<Output = R>,
+    {
+        if let Some(route) = self.get(path).await {
+            // 使用async block，为未来的async closures做准备
+            Some(handler(route).await)
+        } else {
+            None
+        }
+    }
+
+    /// 批量异步处理路由
+    ///
+    /// 对多个路径进行异步处理，提升性能。
+    ///
+    /// # 参数
+    ///
+    /// * `paths` - 路径集合
+    /// * `handler` - 异步处理器函数
+    ///
+    /// # 返回
+    ///
+    /// 返回所有成功处理的结果向量
+    ///
+    /// # 示例
+    ///
+    /// ```
+    /// use dynamic_route_actix::core::{PapayaRouteTable, SimpleRoute};
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let table = PapayaRouteTable::new();
+    ///     table.insert("/hello".to_string(), Box::new(SimpleRoute::new("Hello", "text/plain"))).await;
+    ///     table.insert("/world".to_string(), Box::new(SimpleRoute::new("World", "text/plain"))).await;
+    ///
+    ///     let results = table.handle_batch_async(
+    ///         &["/hello", "/world", "/nonexistent"],
+    ///         |route| async move { route.to_serializable().body }
+    ///     ).await;
+    ///
+    ///     assert_eq!(results.len(), 2);
+    /// }
+    /// ```
+    pub async fn handle_batch_async<F, Fut, R>(&self, paths: &[&str], handler: F) -> Vec<R>
+    where
+        F: Fn(Box<dyn RouteEntry>) -> Fut + Clone,
+        Fut: std::future::Future<Output = R> + 'static,
+    {
+        use futures_util::future::join_all;
+
+        // 收集所有Future
+        let futures: Vec<_> = paths
+            .iter()
+            .filter_map(|&path| {
+                if let Some(route) = self.routes.pin().get(path) {
+                    let handler = handler.clone();
+                    let route = route.clone_box(); // 在async block之前克隆
+                    Some(async move {
+                        handler(route).await
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        // 并发执行所有异步处理器
+        join_all(futures).await
+    }
 }
 
 #[cfg(test)]
@@ -551,5 +656,71 @@ mod tests {
             let result = handle.await.unwrap();
             assert!(result.is_some());
         }
+    }
+
+    #[tokio::test]
+    async fn test_papaya_route_table_async_closure() {
+        // 测试异步路由处理
+        let table = PapayaRouteTable::new();
+        let route = SimpleRoute::new("Hello, World!", "text/plain");
+        table.insert("/hello".to_string(), Box::new(route)).await;
+
+        // 使用async block处理路由
+        let result = table.handle_async("/hello", |route| async move {
+            // 通过to_serializable获取路由内容
+            let serializable = route.to_serializable();
+            format!("Processed: {}", serializable.body)
+        }).await;
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), "Processed: Hello, World!");
+
+        // 测试不存在的路径
+        let result = table.handle_async("/nonexistent", |route| async move {
+            route.to_serializable().body
+        }).await;
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_papaya_route_table_batch_async() {
+        // 测试批量异步处理
+        let table = PapayaRouteTable::new();
+        table.insert("/hello".to_string(), Box::new(SimpleRoute::new("Hello", "text/plain"))).await;
+        table.insert("/world".to_string(), Box::new(SimpleRoute::new("World", "text/plain"))).await;
+        table.insert("/test".to_string(), Box::new(SimpleRoute::new("Test", "text/plain"))).await;
+
+        let results = table.handle_batch_async(
+            &["/hello", "/world", "/test", "/nonexistent"],
+            |route| async move {
+                route.to_serializable().body
+            }
+        ).await;
+
+        assert_eq!(results.len(), 3);
+        assert!(results.contains(&"Hello".to_string()));
+        assert!(results.contains(&"World".to_string()));
+        assert!(results.contains(&"Test".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_papaya_route_table_async_closure_with_state() {
+        // 测试async block可以借用外部状态
+        let table = PapayaRouteTable::new();
+        table.insert("/hello".to_string(), Box::new(SimpleRoute::new("Hello", "text/plain"))).await;
+
+        let counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+        let counter_clone = counter.clone();
+        let result = table.handle_async("/hello", move |route| async move {
+            // async block可以借用counter
+            let count = counter_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            format!("Call #{}: {}", count + 1, route.to_serializable().body)
+        }).await;
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), "Call #1: Hello");
+        assert_eq!(counter.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }

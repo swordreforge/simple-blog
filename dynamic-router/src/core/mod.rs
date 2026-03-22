@@ -5,6 +5,7 @@ pub mod cache_optimized;
 pub mod cow_optimized;
 pub mod dynamic_route_table;
 pub mod dynamic_sharding;
+pub mod fast_hashmap;
 pub mod lockfree_cache;
 pub mod lockfree_shard;
 pub mod object_pool;
@@ -19,6 +20,7 @@ pub mod route_validator;
 pub mod simple_route;
 pub mod simd_optimized;
 pub mod string_optimized;
+pub mod phf_static_routes;
 
 pub use arc_route_entry::ArcRouteEntry;
 pub use cache::{BatchOperations, PerformanceOptions, RouteCache};
@@ -55,3 +57,6 @@ pub use bytes_optimized::{
 };
 #[cfg(feature = "papaya")]
 pub use papaya_route_table::PapayaRouteTable;
+pub use phf_static_routes::{HybridRouteTable, StaticRouteRegistry};
+// static_routes宏被导出到crate根目录
+pub use fast_hashmap::{FastHashMap, FastHashSet};
