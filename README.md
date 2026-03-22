@@ -137,7 +137,7 @@ cargo build --release --features "jemalloc,valkey"
 
 ## 许可证
 
-[MIT License](./LICENSE)
+[MIT License](https://github.com/swordreforge/simple-blog/blob/main/LISENSE)
 
 ## 致谢
 
