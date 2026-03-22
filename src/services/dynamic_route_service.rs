@@ -497,3 +497,284 @@ fn normalize_path(path: &str) -> String {
 
     normalized
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{http::StatusCode, test};
+    use dynamic_route_actix::RouteTable;
+    use std::sync::Arc;
+
+    #[test]
+    fn test_normalize_path_basic() {
+        assert_eq!(normalize_path("/users"), "/users");
+        assert_eq!(normalize_path("/users/"), "/users");
+        assert_eq!(normalize_path("users"), "/users");
+    }
+
+    #[test]
+    fn test_normalize_path_multiple_slashes() {
+        assert_eq!(normalize_path("//users"), "/users");
+        assert_eq!(normalize_path("/users//123"), "/users/123");
+        assert_eq!(normalize_path("//users//123//"), "/users/123");
+    }
+
+    #[test]
+    fn test_normalize_path_root() {
+        assert_eq!(normalize_path("/"), "/");
+        assert_eq!(normalize_path("//"), "/");
+        assert_eq!(normalize_path(""), "/");
+    }
+
+    #[test]
+    fn test_normalize_path_whitespace() {
+        assert_eq!(normalize_path("  /users  "), "/users");
+        assert_eq!(normalize_path(" /users "), "/users");
+    }
+
+    #[test]
+    fn test_normalize_path_complex() {
+        assert_eq!(normalize_path("/api/v1/users/"), "/api/v1/users");
+        assert_eq!(normalize_path("api/v1/users"), "/api/v1/users");
+        assert_eq!(normalize_path("/api//v1//users/"), "/api/v1/users");
+    }
+
+    #[test]
+    fn test_load_stats_default() {
+        let stats = LoadStats::default();
+        assert_eq!(stats.database_loaded, 0);
+        assert_eq!(stats.memory_loaded, 0);
+        assert_eq!(stats.file_loaded, 0);
+        assert_eq!(stats.failed, 0);
+    }
+
+    #[test]
+    fn test_load_stats_serialization() {
+        let stats = LoadStats {
+            database_loaded: 10,
+            memory_loaded: 5,
+            file_loaded: 3,
+            failed: 1,
+        };
+
+        let json = serde_json::to_string(&stats).unwrap();
+        let deserialized: LoadStats = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.database_loaded, 10);
+        assert_eq!(deserialized.memory_loaded, 5);
+        assert_eq!(deserialized.file_loaded, 3);
+        assert_eq!(deserialized.failed, 1);
+    }
+
+    #[test]
+    fn test_redirect_handler_new() {
+        let handler = RedirectHandler::new("/target".to_string(), 302);
+        assert_eq!(handler.target, "/target");
+        assert_eq!(handler.status_code, 302);
+    }
+
+    #[actix_web::test]
+    async fn test_redirect_handler_handle() {
+        let handler = RedirectHandler::new("/target".to_string(), 302);
+        let req = test::TestRequest::default().to_http_request();
+        
+        let resp = handler.handle(&req).await;
+        assert_eq!(resp.status(), StatusCode::FOUND);
+        
+        let location = resp.headers().get("Location").unwrap();
+        assert_eq!(location, "/target");
+    }
+
+    #[test]
+    fn test_redirect_handler_clone_box() {
+        let handler = RedirectHandler::new("/target".to_string(), 301);
+        let cloned = handler.clone_box();
+        
+        assert_eq!(handler.target, "/target");
+        assert_eq!(handler.status_code, 301);
+    }
+
+    #[test]
+    fn test_redirect_handler_serializable() {
+        let handler = RedirectHandler::new("/target".to_string(), 302);
+        let serializable = handler.to_serializable();
+        
+        assert_eq!(serializable.route_type, "redirect");
+        assert_eq!(serializable.body, "/target");
+        
+        let deserialized = RedirectHandler::from_serializable(serializable);
+        assert_eq!(deserialized.target, "/target");
+    }
+
+    #[test]
+    fn test_redirect_handler_debug() {
+        let handler = RedirectHandler::new("/target".to_string(), 302);
+        let debug_str = format!("{:?}", handler);
+        assert!(debug_str.contains("RedirectHandler"));
+        assert!(debug_str.contains("/target"));
+    }
+
+    #[test]
+    fn test_proxy_handler_new() {
+        let handler = ProxyHandler::new("http://example.com".to_string());
+        assert_eq!(handler.target, "http://example.com");
+    }
+
+    #[actix_web::test]
+    async fn test_proxy_handler_handle() {
+        let handler = ProxyHandler::new("http://example.com".to_string());
+        let req = test::TestRequest::default().to_http_request();
+        
+        let resp = handler.handle(&req).await;
+        assert_eq!(resp.status(), StatusCode::OK);
+        
+        let body = test::read_body(resp).await;
+        assert_eq!(body, "Proxy to: http://example.com");
+    }
+
+    #[test]
+    fn test_proxy_handler_clone_box() {
+        let handler = ProxyHandler::new("http://example.com".to_string());
+        let cloned = handler.clone_box();
+        
+        assert_eq!(handler.target, "http://example.com");
+    }
+
+    #[test]
+    fn test_proxy_handler_serializable() {
+        let handler = ProxyHandler::new("http://example.com".to_string());
+        let serializable = handler.to_serializable();
+        
+        assert_eq!(serializable.route_type, "proxy");
+        assert_eq!(serializable.body, "http://example.com");
+        
+        let deserialized = ProxyHandler::from_serializable(serializable);
+        assert_eq!(deserialized.target, "http://example.com");
+    }
+
+    #[test]
+    fn test_proxy_handler_debug() {
+        let handler = ProxyHandler::new("http://example.com".to_string());
+        let debug_str = format!("{:?}", handler);
+        assert!(debug_str.contains("ProxyHandler"));
+        assert!(debug_str.contains("http://example.com"));
+    }
+
+    #[test]
+    fn test_custom_handler_new() {
+        let config = serde_json::json!({"key": "value"});
+        let handler = CustomHandler::new(config.clone());
+        assert_eq!(handler.config, config);
+    }
+
+    #[actix_web::test]
+    async fn test_custom_handler_handle() {
+        let config = serde_json::json!({"key": "value"});
+        let handler = CustomHandler::new(config);
+        let req = test::TestRequest::default().to_http_request();
+        
+        let resp = handler.handle(&req).await;
+        assert_eq!(resp.status(), StatusCode::OK);
+        
+        let body = test::read_body(resp).await;
+        assert_eq!(body, "Custom handler executed");
+    }
+
+    #[test]
+    fn test_custom_handler_clone_box() {
+        let config = serde_json::json!({"key": "value"});
+        let handler = CustomHandler::new(config.clone());
+        let cloned = handler.clone_box();
+        
+        assert_eq!(handler.config, config);
+    }
+
+    #[test]
+    fn test_custom_handler_serializable() {
+        let config = serde_json::json!({"key": "value", "number": 42});
+        let handler = CustomHandler::new(config.clone());
+        let serializable = handler.to_serializable();
+        
+        assert_eq!(serializable.route_type, "custom");
+        assert!(serializable.extra_data.is_some());
+        
+        let deserialized = CustomHandler::from_serializable(serializable);
+        assert_eq!(deserialized.config, config);
+    }
+
+    #[test]
+    fn test_custom_handler_debug() {
+        let config = serde_json::json!({"key": "value"});
+        let handler = CustomHandler::new(config);
+        let debug_str = format!("{:?}", handler);
+        assert!(debug_str.contains("CustomHandler"));
+    }
+
+    #[test]
+    fn test_custom_handler_with_null_config() {
+        let handler = CustomHandler::new(serde_json::Value::Null);
+        assert_eq!(handler.config, serde_json::Value::Null);
+    }
+
+    #[test]
+    fn test_redirect_handler_different_status_codes() {
+        let codes = [301, 302, 303, 307, 308];
+        
+        for code in codes {
+            let handler = RedirectHandler::new("/target".to_string(), code);
+            let req = test::TestRequest::default().to_http_request();
+            
+            let expected_status = StatusCode::from_u16(code).unwrap();
+            let resp = handler.handle(&req).await;
+            assert_eq!(resp.status(), expected_status);
+        }
+    }
+
+    #[test]
+    fn test_redirect_handler_with_special_chars() {
+        let handler = RedirectHandler::new("/target?param=value&other=test".to_string(), 302);
+        assert_eq!(handler.target, "/target?param=value&other=test");
+    }
+
+    #[test]
+    fn test_proxy_handler_with_url_components() {
+        let urls = [
+            "http://example.com",
+            "https://example.com:8080",
+            "http://example.com/path/to/resource",
+            "https://user:pass@example.com",
+        ];
+        
+        for url in urls {
+            let handler = ProxyHandler::new(url.to_string());
+            assert_eq!(handler.target, url);
+        }
+    }
+
+    #[test]
+    fn test_normalize_path_edge_cases() {
+        // 测试边界情况
+        assert_eq!(normalize_path(""), "/");
+        assert_eq!(normalize_path("   "), "/");
+        assert_eq!(normalize_path("/"), "/");
+        assert_eq!(normalize_path("//"), "/");
+        assert_eq!(normalize_path("///"), "/");
+        assert_eq!(normalize_path("users/"), "/users");
+        assert_eq!(normalize_path("/users"), "/users");
+    }
+
+    #[test]
+    fn test_load_stats_increment() {
+        let mut stats = LoadStats::default();
+        
+        stats.database_loaded += 1;
+        stats.memory_loaded += 2;
+        stats.file_loaded += 3;
+        stats.failed += 1;
+        
+        assert_eq!(stats.database_loaded, 1);
+        assert_eq!(stats.memory_loaded, 2);
+        assert_eq!(stats.file_loaded, 3);
+        assert_eq!(stats.failed, 1);
+    }
+}

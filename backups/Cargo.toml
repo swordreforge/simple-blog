@@ -1,0 +1,195 @@
+[package]
+name = "rustblog"
+version = "2.0.1"
+edition = "2021"
+
+[dependencies]
+actix-web = { version = "4.12.1", default-features = false, features = ["macros", "compress-brotli", "cookies"] }
+actix-files = "0.6.9"
+actix-multipart = { version = "0.7.2", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
+simd-json = { version = "0.17", default-features = false, features = ["serde_impl"], optional = true }
+lazy_static = "1.5"
+md-5 = { version = "0.10", default-features = false, features = ["std"] }
+tokio = { version = "1.49", default-features = false, features = ["rt-multi-thread", "net", "io-util", "fs", "sync", "macros"] }
+tera = { version = "1.20", default-features = false, features = ["builtins"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+chrono-tz = { version = "0.10", default-features = false, features = ["serde"] }
+futures-util = { version = "0.3", default-features = false, features = ["async-await-macro"] }
+
+# SQLite 数据库
+rusqlite = { version = "0.32", default-features = false, features = ["bundled", "chrono", "serde_json"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.25"
+
+# 密码哈希
+argon2 = { version = "0.5", default-features = false, features = ["password-hash", "alloc"] }
+rand = { version = "0.8", default-features = false, features = ["std_rng"] }
+
+# ECC 加密
+p256 = { version = "0.13", default-features = false, features = ["ecdh", "pkcs8", "ecdsa", "std"] }
+elliptic-curve = { version = "0.13", default-features = false, features = ["ecdh", "std"] }
+ecdsa = { version = "0.16", default-features = false, features = ["signing", "std", "digest"] }
+sha2 = { version = "0.10", default-features = false, features = ["std"] }
+base64 = { version = "0.22", default-features = false, features = ["std"] }
+hex = { version = "0.4", default-features = false, features = ["std"] }
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
+spki = "0.7"
+
+# Markdown 解析
+pulldown-cmark = { version = "0.12", default-features = false, features = ["html"] }
+
+# 文件上传
+mime_guess = "2.0"
+
+# URL 解码
+urlencoding = "2.1"
+
+# 正则表达式
+regex = { version = "1.11", default-features = false, features = ["std", "perf"] }
+
+# 异步 trait
+async-trait = "0.1"
+
+# 音频元数据提取
+id3 = { version = "0.6", default-features = false }
+metaflac = { version = "0.2", default-features = false }
+
+
+
+# 命令行参数解析
+clap = { version = "4.5", default-features = false, features = ["std", "derive", "help", "color"] }
+
+# 配置文件解析
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+
+# GeoIP 数据库查询
+maxminddb = "0.27.1"
+memmap2 = "0.9"
+
+# 静态变量
+once_cell = { version = "1.21", default-features = false, features = ["std", "alloc"] }
+
+# 文件嵌入
+rust-embed = { version = "8.11", default-features = false, features = ["include-exclude", "debug-embed"] }
+
+# 中文文本摘要库（本地路径）
+rustblog-wip-for-summarize-in-zh-cn = { path = "./summarize-in-zh-cn" }
+
+# JWT 认证
+jsonwebtoken = { version = "10.3", default-features = false, features = ["use_pem", "rust_crypto"] }
+
+# Valkey/Redis 缓存（可选）
+redis = { version = "0.28", default-features = false, features = ["tokio-comp", "connection-manager", "aio"], optional = true }
+
+# 动态路由管理
+dynamic-route-actix = { path = "./dynamic-router", default-features = false, features = [] }
+
+# 本地缓存（降级方案）
+dashmap = "6.1"
+moka = { version = "0.12", features = ["sync"] }
+thiserror = "2.0"
+glob = "0.3"
+
+# 小数组优化
+smallvec = "1.13"
+
+# 结构化日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+# 性能分析
+pprof = { version = "0.14", features = ["flamegraph", "criterion", "protobuf-codec"], optional = true }
+parking_lot = "0.12.5"
+
+# 内存管理器
+tikv-jemallocator = { version = "0.6", features = ["unprefixed_malloc_on_supported_platforms"], optional = true }
+mimalloc = { version = "0.1", features = ["override"], optional = true }
+tcmalloc = { version = "0.3", optional = true }
+
+[features]
+default = []
+valkey = ["redis"]
+profiling = ["pprof"]
+simd = ["simd-json"]
+jemalloc = ["tikv-jemallocator"]
+mimalloc-alloc = ["mimalloc"]
+tcmalloc-alloc = ["tcmalloc"]
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+overflow-checks = false
+debug = false
+strip = true
+debug-assertions = false
+incremental = false
+
+[profile.release.build-override]
+opt-level = "z"
+codegen-units = 1
+strip = true
+
+# 加密和数据库库保留 overflow-checks 以确保安全性
+[profile.release.package.p256]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+[profile.release.package.ecdsa]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+[profile.release.package.elliptic-curve]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.aes-gcm]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.argon2]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.sha2]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+
+[profile.release.package.rusqlite]
+opt-level = "z"
+codegen-units = 1
+overflow-checks = true
+debug = false
+strip = true
+# 其他第三方库使用极致压缩（禁用 overflow-checks）
+[profile.release.package."*"]
+opt-level = "z"
+codegen-units = 1
+strip = true
+debug = false
+debug-assertions = false
+overflow-checks = false
+
+[profile.dev]
+opt-level = 0
+
