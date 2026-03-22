@@ -2,6 +2,8 @@
 name = "rustblog"
 version = "3.0.1"
 edition = "2024"
+license = "MIT"
+authors = ["swordreforge <zhujian_20060818@qq.com>"]
 
 [dependencies]
 actix-web = { version = "4.12.1", default-features = false, features = ["macros", "compress-brotli", "cookies"] }
