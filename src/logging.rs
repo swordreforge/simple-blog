@@ -99,7 +99,7 @@ mod tests {
         init_logging(Some(log_dir), "info");
 
         // 验证日志文件被创建
-        let log_file = log_dir.join("rustblog.log");
+        let _log_file = log_dir.join("rustblog.log");
         // 注意：由于日志系统已经初始化，文件可能不会立即创建
         // 这里主要测试函数不会panic
         assert!(log_dir.exists());

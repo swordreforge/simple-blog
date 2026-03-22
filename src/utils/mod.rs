@@ -8,6 +8,7 @@ pub use unsafe_utils::*;
 mod tests {
     use super::*;
     use chrono::Utc;
+    use std::sync::Arc;
 
     #[test]
     fn test_module_exports() {
@@ -145,24 +146,24 @@ mod tests {
     fn test_utils_thread_safety() {
         // 测试工具模块的线程安全性
         use std::thread;
-        
+
         let buffer = Arc::new(RingBuffer::<i32>::new(100));
         let mut handles = vec![];
-        
+
         // 多线程并发使用
         for i in 0..10 {
             let buffer_clone = Arc::clone(&buffer);
             let handle = thread::spawn(move || {
                 buffer_clone.push(i);
-                let _ = buffer_clone.pop();
+                // RingBuffer没有pop方法，我们只测试push的线程安全性
             });
             handles.push(handle);
         }
-        
+
         for handle in handles {
             handle.join().unwrap();
         }
-        
+
         // 验证没有崩溃
         assert!(true);
     }
@@ -186,7 +187,7 @@ mod tests {
         // 测试escape_json_string_fast对各种输入的处理
         let test_inputs = ["", "normal", "with\"quote", "with\\backslash"];
         for input in test_inputs {
-            let escaped = escape_json_string_fast(input);
+            let _escaped = escape_json_string_fast(input);
             // 函数不应该panic
             assert!(true);
         }
@@ -200,7 +201,7 @@ mod tests {
         use std::time::Instant;
         
         // 测试contains_optimized的性能
-        let large_text = "x".repeat(10000);
+        let _large_text = "x".repeat(10000);
         let large_list: Vec<&str> = vec!["xxx", "yyy"];
         let start = Instant::now();
         let _result = contains_optimized(&"xxx", &large_list);

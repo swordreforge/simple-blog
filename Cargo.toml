@@ -190,6 +190,9 @@ debug = false
 debug-assertions = false
 overflow-checks = false
 
+[dev-dependencies]
+tempfile = "3.13"
+
 [profile.dev]
 opt-level = 0
 

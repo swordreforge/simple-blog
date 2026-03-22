@@ -198,7 +198,6 @@ pub fn validate_token(token: &str) -> crate::error::Result<Claims> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::models::UserRole;
 
     #[test]
     fn test_jwt_service_new() {
