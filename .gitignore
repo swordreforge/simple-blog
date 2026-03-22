@@ -50,6 +50,10 @@ embedded-release/
 # Backup directories
 backups/
 
+# Local data directories
+img/
+markdown/
+
 # Build scripts
 build-embedded.sh
 
