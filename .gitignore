@@ -47,6 +47,9 @@ embedded-release/
 # Backup files
 *.bak
 
+# Backup directories
+backups/
+
 # Build scripts
 build-embedded.sh
 
