@@ -795,8 +795,8 @@ impl PassageRepository {
         let mut stmt = conn.prepare(
             r#"
             SELECT
-                created_year as year,
-                created_month as month,
+                CAST(created_year AS TEXT) as year,
+                CAST(created_month AS TEXT) as month,
                 COUNT(*) as count
             FROM passages
             WHERE status = 'published'
