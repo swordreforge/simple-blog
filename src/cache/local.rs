@@ -76,3 +76,189 @@ impl CacheBackend for LocalCacheBackend {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn test_local_cache_backend_new() {
+        let backend = LocalCacheBackend::new(None);
+        assert_eq!(backend.cache.entry_count(), 0);
+    }
+
+    #[test]
+    fn test_local_cache_backend_new_with_max_size() {
+        let backend = LocalCacheBackend::new(Some(100));
+        assert_eq!(backend.cache.entry_count(), 0);
+    }
+
+    #[test]
+    fn test_local_cache_backend_clone() {
+        let backend = LocalCacheBackend::new(None);
+        let cloned = backend.clone();
+        assert_eq!(backend.cache.entry_count(), cloned.cache.entry_count());
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_get_set() {
+        let backend = LocalCacheBackend::new(None);
+        let key = "test_key";
+        let value = "test_value";
+
+        // 设置值
+        backend.set(key, value, Duration::from_secs(3600)).await.unwrap();
+
+        // 获取值
+        let retrieved = backend.get(key).await;
+        assert_eq!(retrieved, Some(value.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_get_nonexistent() {
+        let backend = LocalCacheBackend::new(None);
+        let retrieved = backend.get("nonexistent_key").await;
+        assert_eq!(retrieved, None);
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_delete() {
+        let backend = LocalCacheBackend::new(None);
+        let key = "test_key";
+        let value = "test_value";
+
+        // 设置值
+        backend.set(key, value, Duration::from_secs(3600)).await.unwrap();
+
+        // 删除值
+        backend.delete(key).await.unwrap();
+
+        // 验证删除
+        let retrieved = backend.get(key).await;
+        assert_eq!(retrieved, None);
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_delete_many() {
+        let backend = LocalCacheBackend::new(None);
+
+        // 设置多个值
+        for i in 0..5 {
+            backend.set(&format!("key_{}", i), &format!("value_{}", i), Duration::from_secs(3600)).await.unwrap();
+        }
+
+        // 删除多个值
+        let keys = vec!["key_0".to_string(), "key_2".to_string(), "key_4".to_string()];
+        backend.delete_many(&keys).await.unwrap();
+
+        // 验证删除
+        assert_eq!(backend.get("key_0").await, None);
+        assert_eq!(backend.get("key_1").await, Some("value_1".to_string()));
+        assert_eq!(backend.get("key_2").await, None);
+        assert_eq!(backend.get("key_3").await, Some("value_3".to_string()));
+        assert_eq!(backend.get("key_4").await, None);
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_delete_pattern() {
+        let backend = LocalCacheBackend::new(None);
+
+        // 设置多个值
+        backend.set("user:1", "data1", Duration::from_secs(3600)).await.unwrap();
+        backend.set("user:2", "data2", Duration::from_secs(3600)).await.unwrap();
+        backend.set("post:1", "data3", Duration::from_secs(3600)).await.unwrap();
+        backend.set("user:3", "data4", Duration::from_secs(3600)).await.unwrap();
+
+        // 删除匹配模式的所有值
+        backend.delete_pattern("user:*").await.unwrap();
+
+        // 验证删除
+        assert_eq!(backend.get("user:1").await, None);
+        assert_eq!(backend.get("user:2").await, None);
+        assert_eq!(backend.get("post:1").await, Some("data3".to_string()));
+        assert_eq!(backend.get("user:3").await, None);
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_delete_pattern_invalid() {
+        let backend = LocalCacheBackend::new(None);
+
+        // 尝试删除使用无效模式
+        let result = backend.delete_pattern("user:[").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_overwrite() {
+        let backend = LocalCacheBackend::new(None);
+        let key = "test_key";
+
+        // 设置初始值
+        backend.set(key, "value1", Duration::from_secs(3600)).await.unwrap();
+        assert_eq!(backend.get(key).await, Some("value1".to_string()));
+
+        // 覆盖值
+        backend.set(key, "value2", Duration::from_secs(3600)).await.unwrap();
+        assert_eq!(backend.get(key).await, Some("value2".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_with_empty_value() {
+        let backend = LocalCacheBackend::new(None);
+        let key = "test_key";
+        let value = "";
+
+        // 设置空值
+        backend.set(key, value, Duration::from_secs(3600)).await.unwrap();
+
+        // 获取空值
+        let retrieved = backend.get(key).await;
+        assert_eq!(retrieved, Some("".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_with_special_characters() {
+        let backend = LocalCacheBackend::new(None);
+        let key = "test:key:with:colons";
+        let value = "value with spaces and 特殊字符";
+
+        backend.set(key, value, Duration::from_secs(3600)).await.unwrap();
+        let retrieved = backend.get(key).await;
+        assert_eq!(retrieved, Some(value.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_large_value() {
+        let backend = LocalCacheBackend::new(None);
+        let key = "large_key";
+        let large_value = "x".repeat(10000);
+
+        backend.set(key, &large_value, Duration::from_secs(3600)).await.unwrap();
+        let retrieved = backend.get(key).await;
+        assert_eq!(retrieved, Some(large_value));
+    }
+
+    #[tokio::test]
+    async fn test_local_cache_send_sync() {
+        // 确保缓存可以在异步任务中使用
+        let backend = LocalCacheBackend::new(None);
+
+        let backend1 = backend.clone();
+        let backend2 = backend.clone();
+
+        let handle1 = tokio::spawn(async move {
+            backend1.set("key1", "value1", Duration::from_secs(3600)).await.unwrap();
+        });
+
+        let handle2 = tokio::spawn(async move {
+            backend2.set("key2", "value2", Duration::from_secs(3600)).await.unwrap();
+        });
+
+        handle1.await.unwrap();
+        handle2.await.unwrap();
+
+        assert_eq!(backend.get("key1").await, Some("value1".to_string()));
+        assert_eq!(backend.get("key2").await, Some("value2".to_string()));
+    }
+}

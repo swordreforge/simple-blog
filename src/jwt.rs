@@ -194,3 +194,160 @@ pub fn validate_token(token: &str) -> crate::error::Result<Claims> {
         .map_err(|e| AppError::Jwt(format!("Failed to get JWT service: {}", e)))?;
     service.validate_token(token)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::UserRole;
+
+    #[test]
+    fn test_jwt_service_new() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        assert_eq!(service.secret, secret);
+        assert_eq!(service.token_expiration, Duration::hours(24));
+    }
+
+    #[test]
+    fn test_generate_token() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        
+        let result = service.generate_token(1, "testuser", "admin");
+        assert!(result.is_ok(), "Failed to generate token: {:?}", result);
+        
+        let token = result.unwrap();
+        assert!(!token.is_empty(), "Generated token is empty");
+    }
+
+    #[test]
+    fn test_validate_token() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        
+        // 生成token
+        let token = service.generate_token(1, "testuser", "admin").unwrap();
+        
+        // 验证token
+        let claims = service.validate_token(&token).unwrap();
+        assert_eq!(claims.user_id, 1);
+        assert_eq!(claims.username, "testuser");
+        assert_eq!(claims.role, "admin");
+        assert_eq!(claims.iss, "rustblog");
+    }
+
+    #[test]
+    fn test_validate_invalid_token() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        
+        let invalid_token = "invalid.token.string";
+        let result = service.validate_token(invalid_token);
+        assert!(result.is_err(), "Expected error for invalid token");
+    }
+
+    #[test]
+    fn test_validate_token_with_different_secret() {
+        let service1 = JwtService::new("secret1");
+        let service2 = JwtService::new("secret2");
+        
+        let token = service1.generate_token(1, "testuser", "admin").unwrap();
+        let result = service2.validate_token(&token);
+        assert!(result.is_err(), "Expected error when validating with different secret");
+    }
+
+    #[test]
+    fn test_generate_random_secret() {
+        let secret1 = generate_random_secret();
+        let secret2 = generate_random_secret();
+        
+        assert_eq!(secret1.len(), 64); // 32 bytes = 64 hex chars
+        assert_eq!(secret2.len(), 64);
+        assert_ne!(secret1, secret2, "Secrets should be different");
+    }
+
+    #[test]
+    fn test_global_jwt_service() {
+        // 注意：由于JWT_SERVICE是静态变量，测试时需要谨慎处理
+        // 这里只测试基本的创建逻辑，不实际初始化全局服务
+        // 以避免测试之间的相互影响
+        let secret = "test_global_secret";
+        let service = JwtService::new(secret);
+        
+        // 验证服务创建成功
+        assert_eq!(service.secret, secret);
+        
+        // 注意：由于静态变量在测试之间共享，这里不实际调用init_jwt_service
+        // 如果需要测试init_jwt_service，应该使用集成测试或mock
+    }
+
+    #[test]
+    fn test_generate_token_global_mock() {
+        // 模拟全局token生成，但不实际使用全局服务
+        let service = JwtService::new("test_global_secret");
+        
+        let result = service.generate_token(1, "testuser", "admin");
+        assert!(result.is_ok(), "Failed to generate token");
+        
+        let token = result.unwrap();
+        assert!(!token.is_empty(), "Generated token is empty");
+    }
+
+    #[test]
+    fn test_validate_token_global_mock() {
+        // 模拟全局token验证，但不实际使用全局服务
+        let service = JwtService::new("test_global_secret");
+        
+        // 生成token
+        let token = service.generate_token(1, "testuser", "admin").unwrap();
+        
+        // 验证token
+        let claims = service.validate_token(&token).unwrap();
+        assert_eq!(claims.user_id, 1);
+        assert_eq!(claims.username, "testuser");
+        assert_eq!(claims.role, "admin");
+    }
+
+    #[test]
+    fn test_token_expiration() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        
+        let token = service.generate_token(1, "testuser", "admin").unwrap();
+        
+        // 验证token没有立即过期
+        let claims = service.validate_token(&token).unwrap();
+        assert!(claims.exp > Utc::now().timestamp(), "Token should not be expired");
+    }
+
+    #[test]
+    fn test_claims_fields() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        
+        let token = service.generate_token(42, "testuser", "editor").unwrap();
+        let claims = service.validate_token(&token).unwrap();
+        
+        assert_eq!(claims.user_id, 42);
+        assert_eq!(claims.username, "testuser");
+        assert_eq!(claims.role, "editor");
+        assert_eq!(claims.iss, "rustblog");
+        assert!(claims.iat > 0);
+        assert!(claims.nbf > 0);
+        assert!(claims.exp > claims.iat);
+    }
+
+    #[test]
+    fn test_token_with_special_characters() {
+        let secret = "test_secret_key_for_testing";
+        let service = JwtService::new(secret);
+        
+        let special_username = "用户@#$%^&*()";
+        let result = service.generate_token(1, special_username, "admin");
+        assert!(result.is_ok(), "Failed to generate token with special characters");
+        
+        let token = result.unwrap();
+        let claims = service.validate_token(&token).unwrap();
+        assert_eq!(claims.username, special_username);
+    }
+}

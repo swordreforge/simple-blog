@@ -256,3 +256,300 @@ impl Default for GlobalLockMonitor {
 pub static GLOBAL_LOCK_MONITOR: Lazy<GlobalLockMonitor> = Lazy::new(GlobalLockMonitor::new);
 
 use once_cell::sync::Lazy;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::thread;
+    use std::time::Duration;
+
+    #[test]
+    fn test_lock_stats_debug() {
+        let stats = LockStats {
+            name: "test_lock".to_string(),
+            acquire_count: 100,
+            wait_count: 50,
+            avg_wait_time_us: 1000,
+            max_wait_time_us: 5000,
+            current_waiters: 2,
+        };
+        let debug_str = format!("{:?}", stats);
+        assert!(debug_str.contains("test_lock"));
+        assert!(debug_str.contains("100"));
+    }
+
+    #[test]
+    fn test_lock_stats_clone() {
+        let stats = LockStats {
+            name: "test_lock".to_string(),
+            acquire_count: 100,
+            wait_count: 50,
+            avg_wait_time_us: 1000,
+            max_wait_time_us: 5000,
+            current_waiters: 2,
+        };
+        let cloned = stats.clone();
+        assert_eq!(stats.name, cloned.name);
+        assert_eq!(stats.acquire_count, cloned.acquire_count);
+    }
+
+    #[test]
+    fn test_lock_monitor_new() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        assert_eq!(monitor.name, "test_lock");
+    }
+
+    #[test]
+    fn test_lock_monitor_clone() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        let cloned = monitor.clone();
+        assert_eq!(monitor.name, cloned.name);
+    }
+
+    #[test]
+    fn test_lock_monitor_start_wait() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        let guard = monitor.start_wait();
+        let stats = monitor.get_stats();
+        assert_eq!(stats.current_waiters, 1);
+        drop(guard);
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.current_waiters, 0);
+    }
+
+    #[test]
+    fn test_lock_monitor_record_acquire_no_wait() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(0);
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 1);
+        assert_eq!(stats.wait_count, 0);
+        assert_eq!(stats.avg_wait_time_us, 0);
+    }
+
+    #[test]
+    fn test_lock_monitor_record_acquire_with_wait() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(1000); // 1000 微秒
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 1);
+        assert_eq!(stats.wait_count, 1);
+        assert_eq!(stats.avg_wait_time_us, 1000);
+        assert_eq!(stats.max_wait_time_us, 1000);
+    }
+
+    #[test]
+    fn test_lock_monitor_record_acquire_multiple() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(1000);
+        monitor.record_acquire(2000);
+        monitor.record_acquire(3000);
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 3);
+        assert_eq!(stats.wait_count, 3);
+        assert_eq!(stats.avg_wait_time_us, 2000); // (1000 + 2000 + 3000) / 3
+        assert_eq!(stats.max_wait_time_us, 3000);
+    }
+
+    #[test]
+    fn test_lock_monitor_get_stats() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(1000);
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.name, "test_lock");
+        assert_eq!(stats.acquire_count, 1);
+        assert_eq!(stats.wait_count, 1);
+    }
+
+    #[test]
+    fn test_lock_monitor_reset() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(1000);
+        monitor.record_acquire(2000);
+        
+        monitor.reset();
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 0);
+        assert_eq!(stats.wait_count, 0);
+        assert_eq!(stats.avg_wait_time_us, 0);
+        assert_eq!(stats.max_wait_time_us, 0);
+    }
+
+    #[test]
+    fn test_lock_monitor_max_wait_time_update() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(1000);
+        monitor.record_acquire(500);
+        monitor.record_acquire(2000);
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.max_wait_time_us, 2000);
+    }
+
+    #[test]
+    fn test_lock_wait_guard_done() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        let guard = monitor.start_wait();
+        thread::sleep(Duration::from_millis(10));
+        guard.done();
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 1);
+        assert_eq!(stats.wait_count, 1);
+        assert!(stats.avg_wait_time_us > 0);
+    }
+
+    #[test]
+    fn test_lock_wait_guard_drop_without_done() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        {
+            let _guard = monitor.start_wait();
+            thread::sleep(Duration::from_millis(10));
+            // 守卫在这里被drop，但没有调用done()
+        }
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.current_waiters, 0);
+        // acquire_count不应该增加，因为没有调用done()
+        assert_eq!(stats.acquire_count, 0);
+    }
+
+    #[test]
+    fn test_global_lock_monitor_new() {
+        let global_monitor = GlobalLockMonitor::new();
+        let stats = global_monitor.check_health();
+        assert!(stats); // 没有监控器时应该是健康的
+    }
+
+    #[test]
+    fn test_global_lock_monitor_register() {
+        let global_monitor = GlobalLockMonitor::new();
+        let monitor = global_monitor.register("test_lock".to_string());
+        
+        assert_eq!(monitor.name, "test_lock");
+    }
+
+    #[test]
+    fn test_global_lock_monitor_check_health() {
+        let global_monitor = GlobalLockMonitor::new();
+        global_monitor.register("test_lock".to_string());
+        
+        // 没有严重问题时应该是健康的
+        let healthy = global_monitor.check_health();
+        assert!(healthy);
+    }
+
+    #[test]
+    fn test_global_lock_monitor_default() {
+        let global_monitor = GlobalLockMonitor::default();
+        let healthy = global_monitor.check_health();
+        assert!(healthy);
+    }
+
+    #[test]
+    fn test_lock_monitor_concurrent_updates() {
+        let monitor = Arc::new(LockMonitor::new("concurrent_lock".to_string()));
+        let mut handles = vec![];
+
+        for _i in 0..10 {
+            let monitor_clone = Arc::clone(&monitor);
+            let handle = thread::spawn(move || {
+                let guard = monitor_clone.start_wait();
+                thread::sleep(Duration::from_millis(1));
+                guard.done();
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 10);
+        assert_eq!(stats.wait_count, 10);
+    }
+
+    #[test]
+    fn test_lock_monitor_average_wait_time_zero_division() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(0); // 没有等待时间
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.avg_wait_time_us, 0);
+    }
+
+    #[test]
+    fn test_lock_monitor_send_sync() {
+        fn assert_send<T: Send>() {}
+        fn assert_sync<T: Sync>() {}
+        
+        assert_send::<LockMonitor>();
+        assert_sync::<LockMonitor>();
+        
+        assert_send::<LockStats>();
+        assert_sync::<LockStats>();
+        
+        assert_send::<LockWaitGuard>();
+        // LockWaitGuard 不需要 Sync
+        
+        assert_send::<GlobalLockMonitor>();
+        assert_sync::<GlobalLockMonitor>();
+    }
+
+    #[test]
+    fn test_lock_monitor_with_zero_wait_time() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(0);
+        monitor.record_acquire(0);
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 2);
+        assert_eq!(stats.wait_count, 0);
+        assert_eq!(stats.avg_wait_time_us, 0);
+    }
+
+    #[test]
+    fn test_lock_monitor_large_wait_times() {
+        let monitor = LockMonitor::new("test_lock".to_string());
+        monitor.record_acquire(1_000_000); // 1 秒
+        monitor.record_acquire(2_000_000); // 2 秒
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.max_wait_time_us, 2_000_000);
+        assert_eq!(stats.avg_wait_time_us, 1_500_000);
+    }
+
+    #[test]
+    fn test_lock_monitor_concurrent_acquires() {
+        let monitor = Arc::new(LockMonitor::new("concurrent_acquires".to_string()));
+        let mut handles = vec![];
+
+        for _ in 0..5 {
+            let monitor_clone = Arc::clone(&monitor);
+            let handle = thread::spawn(move || {
+                let guard = monitor_clone.start_wait();
+                thread::sleep(Duration::from_millis(1));
+                guard.done();
+            });
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        // 等待一小段时间确保所有操作完成
+        thread::sleep(Duration::from_millis(10));
+        
+        let stats = monitor.get_stats();
+        assert_eq!(stats.acquire_count, 5);
+        assert_eq!(stats.wait_count, 5);
+    }
+}
