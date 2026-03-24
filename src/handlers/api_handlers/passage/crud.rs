@@ -541,8 +541,12 @@ pub async fn get(
         .unwrap_or("unknown")
         .to_string();
 
-    // 获取客户端IP（简化版）
-    let ip = "127.0.0.1".to_string(); // TODO: 从请求中获取真实IP
+    // 获取客户端真实IP（支持网关代理）
+    let ip = req
+        .connection_info()
+        .realip_remote_addr()
+        .map(|addr| addr.to_string())
+        .unwrap_or_else(|| "127.0.0.1".to_string());
 
     // 过滤本地IP，不记录
     if !is_local_ip(&ip) {
