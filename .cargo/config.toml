@@ -17,6 +17,9 @@ rustflags = [
     "-Z", "mir-opt-level=3",
 ]
 
+[profile.release]
+lto = "fat"
+
 [target.x86_64-unknown-linux-musl]
 rustflags = [
     "-C", "link-arg=-s",
@@ -33,4 +36,16 @@ rustflags = [
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
     "-Z", "mir-opt-level=3",
+]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-C", "target-cpu=x86-64",
+    "-C", "codegen-units=16",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
+    "-Z", "share-generics=y",
+    "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=2",
 ]

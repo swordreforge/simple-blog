@@ -98,6 +98,37 @@ pub async fn admin_list(
     }
     let tag_repo = state.tag_repository();
 
+    // 检查是否提供了 id 参数（用于获取单个标签）
+    if let Some(id_str) = query.get("id") {
+        if let Ok(id) = id_str.parse::<i64>() {
+            match tag_repo.get_by_id(id).await {
+                Ok(tag) => {
+                    let response = TagResponse {
+                        id: tag.id.unwrap_or(0),
+                        name: tag.name,
+                        description: tag.description,
+                        color: tag.color,
+                        category_id: tag.category_id,
+                        sort_order: tag.sort_order,
+                        is_enabled: tag.is_enabled,
+                        created_at: tag.created_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        updated_at: tag.updated_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                    };
+                    return HttpResponse::Ok().json(serde_json::json!({
+                        "success": true,
+                        "data": response
+                    }));
+                }
+                Err(_) => {
+                    return HttpResponse::NotFound().json(serde_json::json!({
+                        "success": false,
+                        "message": "标签不存在"
+                    }));
+                }
+            }
+        }
+    }
+
     // 解析分页参数
     let limit: i64 = query
         .get("limit")

@@ -212,7 +212,7 @@ async fn main() -> std::io::Result<()> {
         .map(|n| n.get())
         .unwrap_or(1);
     let workers = config.server.workers.unwrap_or(cpu_count);
-    let keep_alive = config.server.keep_alive.unwrap_or(75);
+    let keep_alive = config.server.keep_alive.unwrap_or(180);
     let max_connections = config.server.max_connections.unwrap_or(10000);
     println!("⚡ Worker 线程数: {} (CPU 核心: {})", workers, cpu_count);
     println!("🔄 Keep-alive 超时: {} 秒", keep_alive);

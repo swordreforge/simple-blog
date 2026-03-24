@@ -700,6 +700,14 @@ pub async fn create(
         format!("markdown/{}/{}.md", date, safe_title)
     };
 
+    // 检查 file_path 是否已存在
+    if let Ok(_) = passage_repo.get_by_file_path(&file_path).await {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "success": false,
+            "message": format!("文件路径 '{}' 已存在，请使用不同的文件路径或修改标题", file_path)
+        }));
+    }
+
     // 创建 Markdown 文件
     if let Err(e) = update_markdown_file(&file_path, &req_json.content) {
         eprintln!("创建 Markdown 文件失败: {}", e);
@@ -816,11 +824,28 @@ pub async fn create(
             }
         }
         Err(e) => {
-            eprintln!("创建文章失败: {}", e);
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "success": false,
-                "message": "创建文章失败"
-            }))
+            let error_msg = e.to_string();
+            eprintln!("创建文章失败: {}", error_msg);
+
+            // 检查是否是 UNIQUE 约束冲突
+            if error_msg.contains("UNIQUE constraint failed") {
+                let field = if error_msg.contains("file_path") {
+                    "文件路径"
+                } else if error_msg.contains("uuid") {
+                    "UUID"
+                } else {
+                    "字段"
+                };
+                HttpResponse::BadRequest().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("{} 已存在，请使用不同的值", field)
+                }))
+            } else {
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "success": false,
+                    "message": format!("创建文章失败: {}", error_msg)
+                }))
+            }
         }
     }
 }

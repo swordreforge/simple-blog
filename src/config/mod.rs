@@ -121,7 +121,7 @@ pub struct CliArgs {
     #[arg(long)]
     pub workers: Option<usize>,
 
-    /// Keep-alive timeout in seconds (default: 75)
+    /// Keep-alive timeout in seconds (default: 180)
     #[arg(long)]
     pub keep_alive: Option<u64>,
 
