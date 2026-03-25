@@ -333,6 +333,34 @@ pub fn configure_api_routes(cfg: &mut web::ServiceConfig) {
             .route(web::delete().to(api_handlers::passage::delete)),
     );
 
+    // 管理员 API - 文章版本历史管理
+    // .service(
+    //     web::resource("/api/admin/passages/{uuid}/versions")
+    //         .route(web::get().to(api_handlers::passage::list_versions))
+    //         .route(web::post().to(api_handlers::passage::create_version)),
+    // )
+    // .service(
+    //     web::resource("/api/admin/passages/{uuid}/versions/{version_number}")
+    //         .route(web::get().to(api_handlers::passage::get_version))
+    //         .route(web::delete().to(api_handlers::passage::delete_version)),
+    // )
+    // .service(
+    //     web::resource("/api/admin/passages/{uuid}/versions/diff")
+    //         .route(web::get().to(api_handlers::passage::diff_versions)),
+    // )
+    // .service(
+    //     web::resource("/api/admin/passages/{uuid}/versions/{version_number}/restore")
+    //         .route(web::post().to(api_handlers::passage::restore_version)),
+    // )
+    // .service(
+    //     web::resource("/api/admin/passages/{uuid}/versions/undo")
+    //         .route(web::post().to(api_handlers::passage::undo)),
+    // )
+    // .service(
+    //     web::resource("/api/admin/passages/{uuid}/versions/redo")
+    //         .route(web::post().to(api_handlers::passage::redo)),
+    // );
+
     // 兼容 Go 版本的路由
     cfg.service(
         web::resource("/api/passages")
