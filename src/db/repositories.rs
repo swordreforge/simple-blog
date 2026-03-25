@@ -2980,11 +2980,13 @@ mod tests {
 // ==================== 文章版本历史 Repository ====================
 
 /// 文章版本历史仓库
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct PassageVersionRepository {
     pool: Arc<Pool<SqliteConnectionManager>>,
 }
 
+#[allow(dead_code)]
 impl PassageVersionRepository {
     pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
         Self { pool }

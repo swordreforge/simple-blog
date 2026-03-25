@@ -756,6 +756,7 @@ pub struct ListRoutesQuery {
 // ==================== 文章版本历史相关模型 ====================
 
 /// 文章版本历史模型
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PassageVersion {
     pub id: Option<i64>,
@@ -789,6 +790,7 @@ pub struct PassageVersion {
 }
 
 /// 版本差异模型
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 pub struct VersionDiff {
     pub from_version: i32,
@@ -797,6 +799,7 @@ pub struct VersionDiff {
 }
 
 /// 字段差异详情
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 pub struct FieldDiff {
     pub title: DiffField<String>,
@@ -807,6 +810,7 @@ pub struct FieldDiff {
 }
 
 /// 单个字段的差异
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 pub struct DiffField<T> {
     pub old: T,
@@ -817,6 +821,7 @@ pub struct DiffField<T> {
 }
 
 /// 文章历史版本配置
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PassageHistorySettings {
     pub enabled: bool,
@@ -853,6 +858,7 @@ impl Default for PassageHistorySettings {
 }
 
 /// 恢复模式
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RestoreMode {
@@ -886,6 +892,7 @@ impl AsRef<str> for RestoreMode {
 
 impl RestoreMode {
     /// 从字符串解析恢复模式
+    #[allow(dead_code)]
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "soft" => Some(RestoreMode::Soft),

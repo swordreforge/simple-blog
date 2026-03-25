@@ -62,6 +62,7 @@ fn to_send_sync_error(e: Box<dyn std::error::Error>) -> Box<dyn std::error::Erro
 
 // ==================== 第四阶段：版本查询相关结构 ====================
 
+#[allow(dead_code)]
 /// 版本列表排序字段
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -72,6 +73,7 @@ pub enum VersionSortField {
     Title,
 }
 
+#[allow(dead_code)]
 /// 版本列表排序方向
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -82,6 +84,7 @@ pub enum SortOrder {
 }
 
 /// 版本列表查询参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionListQuery {
@@ -138,6 +141,7 @@ impl VersionListQuery {
 }
 
 /// 版本列表响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionListResponse {
@@ -156,6 +160,7 @@ pub struct VersionListResponse {
 // ==================== 第九阶段：缓存优化 ====================
 
 /// 版本历史缓存键生成器
+#[allow(dead_code)]
 pub mod cache_keys {
     use super::VersionListQuery;
 
@@ -212,6 +217,7 @@ pub mod cache_keys {
 }
 
 /// 缓存 TTL 配置（秒）
+#[allow(dead_code)]
 pub mod cache_ttl {
     /// 版本列表缓存 TTL（5分钟）
     pub const VERSION_LIST: u64 = 300;
@@ -233,15 +239,18 @@ pub mod cache_ttl {
 }
 
 /// 缓存键生成（兼容旧接口）
+#[allow(dead_code)]
 fn get_version_list_cache_key(passage_id: i64, query: &VersionListQuery) -> String {
     cache_keys::version_list(passage_id, query)
 }
 
+#[allow(dead_code)]
 fn get_version_count_cache_key(passage_id: i64) -> String {
     cache_keys::version_count(passage_id)
 }
 
 /// 文章版本历史服务
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct PassageVersionService {
     version_repo: crate::db::repositories::PassageVersionRepository,
@@ -249,6 +258,7 @@ pub struct PassageVersionService {
     cache: Arc<AppCache>,
 }
 
+#[allow(dead_code)]
 impl PassageVersionService {
     /// 创建新的文章版本历史服务
     pub fn new(
@@ -1065,6 +1075,7 @@ impl PassageVersionService {
 }
 
 /// 版本简要信息（不包含内容）
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionSummary {
@@ -1082,6 +1093,7 @@ pub struct VersionSummary {
 // ==================== 第五阶段：版本差异对比 ====================
 
 /// 差异类型
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DiffType {
@@ -1098,6 +1110,7 @@ impl Default for DiffType {
 }
 
 /// 差异输出格式
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DiffFormat {
@@ -1116,6 +1129,7 @@ impl Default for DiffFormat {
 }
 
 /// 单行差异
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DiffLine {
@@ -1130,6 +1144,7 @@ pub struct DiffLine {
 }
 
 /// 单行差异类型
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DiffLineType {
@@ -1144,6 +1159,7 @@ pub enum DiffLineType {
 }
 
 /// 字段差异详情
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FieldDiffDetail {
@@ -1160,6 +1176,7 @@ pub struct FieldDiffDetail {
 }
 
 /// 版本差异响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionDiffResponse {
@@ -1176,6 +1193,7 @@ pub struct VersionDiffResponse {
 }
 
 /// 差异统计
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DiffStats {
@@ -1191,6 +1209,7 @@ pub struct DiffStats {
 
 impl DiffStats {
     /// 从差异行计算统计信息
+    #[allow(dead_code)]
     fn from_lines(old_text: &str, new_text: &str) -> Self {
         let diff = TextDiff::from_lines(old_text, new_text);
         let mut added = 0;
@@ -1215,6 +1234,7 @@ impl DiffStats {
 }
 
 /// 版本对比查询参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionDiffQuery {
@@ -1233,6 +1253,7 @@ pub struct VersionDiffQuery {
 }
 
 /// 版本恢复查询参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionRestoreQuery {
@@ -1247,6 +1268,7 @@ pub struct VersionRestoreQuery {
 }
 
 /// 版本恢复响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionRestoreResponse {
@@ -1263,6 +1285,7 @@ pub struct VersionRestoreResponse {
 }
 
 /// 撤销/重做操作类型
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum UndoRedoOperation {
@@ -1273,6 +1296,7 @@ pub enum UndoRedoOperation {
 }
 
 /// 撤销/重做查询参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UndoRedoQuery {
@@ -1285,6 +1309,7 @@ pub struct UndoRedoQuery {
 }
 
 /// 撤销/重做响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UndoRedoResponse {
@@ -1305,6 +1330,7 @@ pub struct UndoRedoResponse {
 }
 
 /// 撤销/重做状态
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UndoRedoStatus {
@@ -1315,6 +1341,7 @@ pub struct UndoRedoStatus {
 }
 
 /// 版本删除查询参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionDeleteQuery {
@@ -1325,6 +1352,7 @@ pub struct VersionDeleteQuery {
 }
 
 /// 版本批量删除查询参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionBatchDeleteQuery {
@@ -1335,6 +1363,7 @@ pub struct VersionBatchDeleteQuery {
 }
 
 /// 版本删除响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionDeleteResponse {
@@ -1347,6 +1376,7 @@ pub struct VersionDeleteResponse {
 }
 
 /// 版本批量删除响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionBatchDeleteResponse {
@@ -1358,6 +1388,7 @@ pub struct VersionBatchDeleteResponse {
     pub message: String,
 }
 
+#[allow(dead_code)]
 impl PassageVersionService {
     /// 计算两个文本之间的行级差异
     ///
@@ -2348,6 +2379,7 @@ impl PassageVersionService {
 }
 
 /// 版本缓存统计
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionCacheStats {
