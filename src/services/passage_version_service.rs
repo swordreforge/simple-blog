@@ -26,6 +26,14 @@
 //! - 软恢复实现
 //! - 硬恢复实现
 //! - 恢复 API
+//!
+//! 第七阶段：撤销/重做功能
+//! - 撤销功能
+//! - 重做功能
+//!
+//! 第八阶段：版本管理功能
+//! - 删除单个版本
+//! - 批量删除版本
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -1229,6 +1237,50 @@ pub struct UndoRedoStatus {
     pub can_redo: bool,
 }
 
+/// 版本删除查询参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionDeleteQuery {
+    /// 文章 ID
+    pub passage_id: i64,
+    /// 要删除的版本 ID
+    pub version_id: i64,
+}
+
+/// 版本批量删除查询参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionBatchDeleteQuery {
+    /// 文章 ID
+    pub passage_id: i64,
+    /// 要删除的版本 ID 列表
+    pub version_ids: Vec<i64>,
+}
+
+/// 版本删除响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionDeleteResponse {
+    /// 是否成功
+    pub success: bool,
+    /// 删除的版本 ID
+    pub deleted_version_id: i64,
+    /// 消息
+    pub message: String,
+}
+
+/// 版本批量删除响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionBatchDeleteResponse {
+    /// 是否成功
+    pub success: bool,
+    /// 删除的数量
+    pub deleted_count: u32,
+    /// 消息
+    pub message: String,
+}
+
 impl PassageVersionService {
     /// 计算两个文本之间的行级差异
     ///
@@ -1940,6 +1992,148 @@ impl PassageVersionService {
             can_undo: self.can_undo(passage_id).await?,
             can_redo: self.can_redo(passage_id).await?,
         })
+    }
+
+    // ==================== 第八阶段：版本管理功能 ====================
+
+    /// 删除单个版本
+    ///
+    /// # 参数
+    /// - query: 删除查询参数
+    ///
+    /// # 返回
+    /// 返回删除响应
+    pub async fn delete_version(&self, query: VersionDeleteQuery) -> Result<VersionDeleteResponse> {
+        // 1. 验证版本存在
+        let version = self.version_repo
+            .get_by_id(query.version_id)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", query.version_id))?;
+        
+        // 2. 验证版本属于正确的文章
+        if version.passage_id != query.passage_id {
+            return Ok(VersionDeleteResponse {
+                success: false,
+                deleted_version_id: query.version_id,
+                message: "版本不属于该文章".to_string(),
+            });
+        }
+        
+        // 3. 检查是否是最后一个版本
+        let latest = self.version_repo
+            .get_latest_version(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        if let Some(latest_version) = latest {
+            if latest_version.id == Some(query.version_id) && latest_version.version_number == version.version_number {
+                return Ok(VersionDeleteResponse {
+                    success: false,
+                    deleted_version_id: query.version_id,
+                    message: "不能删除最新版本".to_string(),
+                });
+            }
+        }
+        
+        // 4. 删除版本
+        self.version_repo
+            .delete(query.version_id)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        // 5. 清除缓存
+        self.clear_version_cache_internal(query.passage_id).await;
+        
+        Ok(VersionDeleteResponse {
+            success: true,
+            deleted_version_id: query.version_id,
+            message: format!("版本 {} 已删除", version.version_number),
+        })
+    }
+
+    /// 批量删除版本
+    ///
+    /// # 参数
+    /// - query: 批量删除查询参数
+    ///
+    /// # 返回
+    /// 返回批量删除响应
+    pub async fn delete_versions_batch(&self, query: VersionBatchDeleteQuery) -> Result<VersionBatchDeleteResponse> {
+        if query.version_ids.is_empty() {
+            return Ok(VersionBatchDeleteResponse {
+                success: false,
+                deleted_count: 0,
+                message: "没有要删除的版本".to_string(),
+            });
+        }
+        
+        // 1. 获取最新版本信息
+        let latest = self.version_repo
+            .get_latest_version(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        let latest_version_id = latest.and_then(|v| v.id);
+        
+        // 2. 过滤掉最新版本
+        let ids_to_delete: Vec<i64> = query.version_ids
+            .into_iter()
+            .filter(|id| Some(*id) != latest_version_id)
+            .collect();
+        
+        if ids_to_delete.is_empty() {
+            return Ok(VersionBatchDeleteResponse {
+                success: false,
+                deleted_count: 0,
+                message: "没有可删除的版本（最新版本不能删除）".to_string(),
+            });
+        }
+        
+        // 3. 批量删除
+        let deleted_count = self.version_repo
+            .delete_batch(ids_to_delete)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        // 4. 清除缓存
+        self.clear_version_cache_internal(query.passage_id).await;
+        
+        Ok(VersionBatchDeleteResponse {
+            success: true,
+            deleted_count,
+            message: format!("已删除 {} 个版本", deleted_count),
+        })
+    }
+
+    /// 删除文章的所有历史版本
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 返回删除的版本数量
+    pub async fn delete_all_versions(&self, passage_id: i64) -> Result<u64> {
+        // 获取版本数量
+        let count = self.version_repo
+            .get_version_count(passage_id)
+            .await
+            .map_err(to_send_sync_error)? as u64;
+        
+        if count == 0 {
+            return Ok(0);
+        }
+        
+        // 删除所有版本
+        self.version_repo
+            .delete_by_passage_id(passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        // 清除缓存
+        self.clear_version_cache_internal(passage_id).await;
+        
+        Ok(count)
     }
 }
 
@@ -2653,5 +2847,88 @@ mod tests {
         let deserialized: UndoRedoStatus = serde_json::from_str(&json).unwrap();
         assert!(deserialized.can_undo);
         assert!(deserialized.can_redo);
+    }
+
+    // ==================== 第八阶段：版本管理功能测试 ====================
+
+    #[test]
+    fn test_version_delete_query() {
+        let query = VersionDeleteQuery {
+            passage_id: 1,
+            version_id: 5,
+        };
+        
+        assert_eq!(query.passage_id, 1);
+        assert_eq!(query.version_id, 5);
+    }
+
+    #[test]
+    fn test_version_batch_delete_query() {
+        let query = VersionBatchDeleteQuery {
+            passage_id: 1,
+            version_ids: vec![1, 2, 3, 4, 5],
+        };
+        
+        assert_eq!(query.passage_id, 1);
+        assert_eq!(query.version_ids.len(), 5);
+    }
+
+    #[test]
+    fn test_version_delete_query_empty_ids() {
+        let query = VersionBatchDeleteQuery {
+            passage_id: 1,
+            version_ids: vec![],
+        };
+        
+        assert!(query.version_ids.is_empty());
+    }
+
+    #[test]
+    fn test_version_delete_response() {
+        let response = VersionDeleteResponse {
+            success: true,
+            deleted_version_id: 5,
+            message: "版本 5 已删除".to_string(),
+        };
+        
+        assert!(response.success);
+        assert_eq!(response.deleted_version_id, 5);
+        assert_eq!(response.message, "版本 5 已删除");
+    }
+
+    #[test]
+    fn test_version_delete_response_failure() {
+        let response = VersionDeleteResponse {
+            success: false,
+            deleted_version_id: 0,
+            message: "不能删除最新版本".to_string(),
+        };
+        
+        assert!(!response.success);
+        assert_eq!(response.message, "不能删除最新版本");
+    }
+
+    #[test]
+    fn test_version_batch_delete_response() {
+        let response = VersionBatchDeleteResponse {
+            success: true,
+            deleted_count: 3,
+            message: "已删除 3 个版本".to_string(),
+        };
+        
+        assert!(response.success);
+        assert_eq!(response.deleted_count, 3);
+    }
+
+    #[test]
+    fn test_version_batch_delete_response_failure() {
+        let response = VersionBatchDeleteResponse {
+            success: false,
+            deleted_count: 0,
+            message: "没有可删除的版本".to_string(),
+        };
+        
+        assert!(!response.success);
+        assert_eq!(response.deleted_count, 0);
     }
 }

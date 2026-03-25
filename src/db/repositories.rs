@@ -3253,6 +3253,83 @@ impl PassageVersionRepository {
         Ok(())
     }
 
+    /// 删除单个版本
+    pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        
+        // 获取文件路径
+        let file_path: Option<String> = conn.query_row(
+            "SELECT file_path FROM passage_versions WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        ).optional()?;
+        
+        // 删除数据库记录
+        conn.execute(
+            "DELETE FROM passage_versions WHERE id = ?1",
+            params![id],
+        )?;
+        
+        // 删除历史文件
+        if let Some(path) = file_path {
+            let file_path = std::path::PathBuf::from(&path);
+            if file_path.exists() {
+                std::fs::remove_file(&file_path).ok();
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// 批量删除版本
+    pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<u32, Box<dyn std::error::Error>> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        
+        let conn = self.pool.get()?;
+        
+        // 获取要删除的文件路径
+        let placeholders: Vec<String> = ids.iter().map(|_| "?".to_string()).collect();
+        let sql = format!(
+            "SELECT file_path FROM passage_versions WHERE id IN ({})",
+            placeholders.join(",")
+        );
+        
+        let mut stmt = conn.prepare(&sql)?;
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter()
+            .map(|id| id as &dyn rusqlite::ToSql)
+            .collect();
+        
+        let file_paths: Vec<String> = stmt
+            .query_map(params.as_slice(), |row| row.get(0))?
+            .filter_map(|r| r.ok())
+            .collect();
+        
+        // 批量删除数据库记录
+        let placeholders: Vec<String> = ids.iter().map(|_| "?".to_string()).collect();
+        let sql = format!(
+            "DELETE FROM passage_versions WHERE id IN ({})",
+            placeholders.join(",")
+        );
+        
+        let params: Vec<&dyn rusqlite::ToSql> = ids.iter()
+            .map(|id| id as &dyn rusqlite::ToSql)
+            .collect();
+        
+        let deleted_count = conn.execute(&sql, params.as_slice())? as u32;
+        
+        // 批量删除历史文件
+        for path in file_paths {
+            let file_path = std::path::PathBuf::from(&path);
+            if file_path.exists() {
+                std::fs::remove_file(&file_path).ok();
+            }
+        }
+        
+        Ok(deleted_count)
+    }
+
     /// 检查重复内容
     pub async fn check_duplicate_content(
         &self,
