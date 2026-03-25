@@ -3259,4 +3259,278 @@ mod tests {
         let deserialized: VersionCacheStats = serde_json::from_str(&json).unwrap();
         assert!(!deserialized.cache_enabled);
     }
+
+    // ==================== 错误处理和边界情况测试 ====================
+
+    #[test]
+    fn test_detect_changes_tags() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_passage = create_test_passage("标题", "内容");
+        let mut new_passage = create_test_passage("标题", "内容");
+        new_passage.tags = "[\"新标签\"]".to_string();
+        
+        let mut config = PassageHistorySettings::default();
+        config.save_on_tags_change = true;
+        
+        let changes = service.detect_changes(&old_passage, &new_passage, &config);
+        
+        assert!(changes.contains(&"标签"));
+    }
+
+    #[test]
+    fn test_detect_changes_category() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_passage = create_test_passage("标题", "内容");
+        let mut new_passage = create_test_passage("标题", "内容");
+        new_passage.category = "新分类".to_string();
+        
+        let mut config = PassageHistorySettings::default();
+        config.save_on_category_change = true;
+        
+        let changes = service.detect_changes(&old_passage, &new_passage, &config);
+        
+        assert!(changes.contains(&"分类"));
+    }
+
+    #[test]
+    fn test_detect_changes_cover_image() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_passage = create_test_passage("标题", "内容");
+        let mut new_passage = create_test_passage("标题", "内容");
+        new_passage.cover_image = Some("new-cover.jpg".to_string());
+        
+        let mut config = PassageHistorySettings::default();
+        config.save_on_cover_change = true;
+        
+        let changes = service.detect_changes(&old_passage, &new_passage, &config);
+        
+        assert!(changes.contains(&"封面图片"));
+    }
+
+    #[test]
+    fn test_detect_changes_all_disabled() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_passage = create_test_passage("旧标题", "旧内容");
+        let new_passage = create_test_passage("新标题", "新内容");
+        
+        // 禁用所有变更检测
+        let mut config = PassageHistorySettings::default();
+        config.save_on_title_change = false;
+        config.save_on_content_change = false;
+        config.save_on_tags_change = false;
+        config.save_on_category_change = false;
+        config.save_on_cover_change = false;
+        
+        let changes = service.detect_changes(&old_passage, &new_passage, &config);
+        
+        assert!(changes.is_empty());
+    }
+
+    #[test]
+    fn test_history_settings_default_values() {
+        let config = PassageHistorySettings::default();
+        
+        assert!(config.enabled);
+        assert_eq!(config.storage_mode, "filesystem");
+        assert_eq!(config.history_dir, "markdown/.history");
+        assert_eq!(config.max_versions, 50);
+        assert!(config.enable_deduplication);
+        assert!(config.save_on_title_change);
+        assert!(config.save_on_content_change);
+        assert!(config.save_on_tags_change);
+        assert!(config.enable_undo_redo);
+    }
+
+    #[test]
+    fn test_history_settings_serialization() {
+        let config = PassageHistorySettings {
+            enabled: false,
+            storage_mode: "database".to_string(),
+            history_dir: "custom/history".to_string(),
+            max_versions: 100,
+            enable_deduplication: false,
+            save_on_title_change: false,
+            save_on_content_change: true,
+            save_on_tags_change: true,
+            save_on_summary_change: true,
+            save_on_category_change: true,
+            save_on_cover_change: true,
+            enable_undo_redo: false,
+        };
+        
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(json.contains("\"enabled\":false"));
+        assert!(json.contains("\"storage_mode\":\"database\""));
+        
+        let deserialized: PassageHistorySettings = serde_json::from_str(&json).unwrap();
+        assert!(!deserialized.enabled);
+        assert_eq!(deserialized.max_versions, 100);
+    }
+
+    #[test]
+    fn test_diff_stats_values() {
+        let stats = DiffStats {
+            added: 10,
+            deleted: 5,
+            modified: 3,
+            unchanged: 100,
+        };
+        
+        assert_eq!(stats.added, 10);
+        assert_eq!(stats.deleted, 5);
+        assert_eq!(stats.modified, 3);
+        assert_eq!(stats.unchanged, 100);
+    }
+
+    #[test]
+    fn test_version_restore_query_default_mode() {
+        let query = VersionRestoreQuery {
+            passage_id: 1,
+            version_number: 5,
+            mode: RestoreMode::Soft,
+            create_backup: None,
+        };
+        
+        assert_eq!(query.mode, RestoreMode::Soft);
+    }
+
+    #[test]
+    fn test_undo_redo_query_default_mode() {
+        let query = UndoRedoQuery {
+            passage_id: 1,
+            operation: UndoRedoOperation::Undo,
+            mode: None,
+        };
+        
+        assert_eq!(query.mode, None);
+    }
+
+    #[test]
+    fn test_cache_keys_all_patterns() {
+        let pattern = cache_keys::version_all_pattern(1);
+        assert!(pattern.contains("version:*") || pattern.contains("*"));
+    }
+
+    #[test]
+    fn test_version_list_query_with_all_filters() {
+        let query = VersionListQuery {
+            passage_id: 1,
+            page: Some(5),
+            page_size: Some(50),
+            sort_by: Some(VersionSortField::Title),
+            sort_order: Some(SortOrder::Asc),
+            change_type: Some("manual".to_string()),
+            search_title: Some("test".to_string()),
+        };
+        
+        assert_eq!(query.get_page(), 5);
+        assert_eq!(query.get_page_size(), 50);
+        assert_eq!(query.get_sort_by(), VersionSortField::Title);
+        assert_eq!(query.get_sort_order(), SortOrder::Asc);
+    }
+
+    #[test]
+    fn test_version_list_query_page_boundary() {
+        let query = VersionListQuery {
+            passage_id: 1,
+            page: Some(-1),
+            page_size: Some(0),
+            ..Default::default()
+        };
+        
+        assert_eq!(query.get_page(), 1);
+        assert_eq!(query.get_page_size(), 1);
+    }
+
+    #[test]
+    fn test_diff_line_creation() {
+        let line = DiffLine {
+            old_line_number: Some(1),
+            new_line_number: Some(1),
+            content: "测试内容".to_string(),
+            line_type: DiffLineType::Context,
+        };
+        
+        assert_eq!(line.content, "测试内容");
+        assert_eq!(line.line_type, DiffLineType::Context);
+    }
+
+    #[test]
+    fn test_field_diff_detail_creation() {
+        let detail = FieldDiffDetail {
+            field_name: "title".to_string(),
+            old_value: "旧标题".to_string(),
+            new_value: "新标题".to_string(),
+            changed: true,
+            line_diffs: vec![],
+        };
+        
+        assert_eq!(detail.field_name, "title");
+        assert_eq!(detail.old_value, "旧标题");
+        assert_eq!(detail.new_value, "新标题");
+        assert!(detail.changed);
+    }
+
+    #[test]
+    fn test_version_diff_response_with_fields() {
+        let response = VersionDiffResponse {
+            from_version: 1,
+            to_version: 3,
+            field_diffs: vec![
+                FieldDiffDetail {
+                    field_name: "title".to_string(),
+                    old_value: "旧".to_string(),
+                    new_value: "新".to_string(),
+                    changed: true,
+                    line_diffs: vec![],
+                },
+            ],
+            total_changes: 5,
+            stats: DiffStats {
+                added: 2,
+                deleted: 1,
+                modified: 2,
+                unchanged: 10,
+            },
+        };
+        
+        assert_eq!(response.field_diffs.len(), 1);
+        assert_eq!(response.stats.added, 2);
+    }
 }
