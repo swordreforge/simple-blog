@@ -10,8 +10,15 @@
 //! - 变更检测逻辑
 //! - 版本号生成
 //! - 内容去重
+//!
+//! 第四阶段：版本查询 API
+//! - 分页查询支持
+//! - 排序支持
+//! - 缓存支持
+//! - 公共 API
 
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -27,6 +34,115 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 fn to_send_sync_error(e: Box<dyn std::error::Error>) -> Box<dyn std::error::Error + Send + Sync> {
     #[allow(unsafe_code)]
     unsafe { std::mem::transmute(e) }
+}
+
+// ==================== 第四阶段：版本查询相关结构 ====================
+
+/// 版本列表排序字段
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum VersionSortField {
+    #[default]
+    VersionNumber,
+    CreatedAt,
+    Title,
+}
+
+/// 版本列表排序方向
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum SortOrder {
+    #[default]
+    Desc,
+    Asc,
+}
+
+/// 版本列表查询参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionListQuery {
+    /// 文章 ID
+    pub passage_id: i64,
+    /// 页码（从 1 开始）
+    pub page: Option<i32>,
+    /// 每页数量
+    pub page_size: Option<i32>,
+    /// 排序字段
+    pub sort_by: Option<VersionSortField>,
+    /// 排序方向
+    pub sort_order: Option<SortOrder>,
+    /// 变更类型过滤
+    pub change_type: Option<String>,
+    /// 标题搜索
+    pub search_title: Option<String>,
+}
+
+impl Default for VersionListQuery {
+    fn default() -> Self {
+        Self {
+            passage_id: 0,
+            page: Some(1),
+            page_size: Some(20),
+            sort_by: Some(VersionSortField::VersionNumber),
+            sort_order: Some(SortOrder::Desc),
+            change_type: None,
+            search_title: None,
+        }
+    }
+}
+
+impl VersionListQuery {
+    /// 获取页码（默认为 1）
+    pub fn get_page(&self) -> i32 {
+        self.page.unwrap_or(1).max(1)
+    }
+
+    /// 获取每页数量（默认 20，最大 100）
+    pub fn get_page_size(&self) -> i32 {
+        self.page_size.unwrap_or(20).max(1).min(100)
+    }
+
+    /// 获取排序字段（默认为版本号）
+    pub fn get_sort_by(&self) -> VersionSortField {
+        self.sort_by.unwrap_or(VersionSortField::VersionNumber)
+    }
+
+    /// 获取排序方向（默认为降序）
+    pub fn get_sort_order(&self) -> SortOrder {
+        self.sort_order.unwrap_or(SortOrder::Desc)
+    }
+}
+
+/// 版本列表响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionListResponse {
+    /// 版本列表
+    pub versions: Vec<PassageVersion>,
+    /// 总数
+    pub total: i64,
+    /// 当前页码
+    pub page: i32,
+    /// 每页数量
+    pub page_size: i32,
+    /// 总页数
+    pub total_pages: i32,
+}
+
+/// 缓存键生成
+fn get_version_list_cache_key(passage_id: i64, query: &VersionListQuery) -> String {
+    format!(
+        "version_list:{}:p{}_s{}_{}_{}",
+        passage_id,
+        query.get_page(),
+        query.get_page_size(),
+        query.get_sort_by() as i32,
+        query.get_sort_order() as i32
+    )
+}
+
+fn get_version_count_cache_key(passage_id: i64) -> String {
+    format!("version_count:{}", passage_id)
 }
 
 /// 文章版本历史服务
@@ -524,7 +640,7 @@ impl PassageVersionService {
         }
         
         // 11. 清除缓存
-        self.clear_version_cache(passage_id).await;
+        self.clear_version_cache_internal(passage_id).await;
         
         Ok(version_id)
     }
@@ -652,10 +768,9 @@ impl PassageVersionService {
         Ok(latest + 1)
     }
 
-    /// 清除版本缓存
-    async fn clear_version_cache(&self, passage_id: i64) {
-        // 简化实现：实际应该清除缓存
-        let _ = passage_id;
+    /// 清除版本缓存（内部使用）
+    async fn clear_version_cache_internal(&self, passage_id: i64) {
+        self.clear_version_cache(passage_id).await;
     }
 
     // ==================== 版本查询功能 ====================
@@ -691,6 +806,181 @@ impl PassageVersionService {
             .await
             .map_err(to_send_sync_error)
     }
+
+    // ==================== 第四阶段：版本查询 API ====================
+
+    /// 列出版本（分页、排序、过滤）
+    ///
+    /// # 参数
+    /// - query: 查询参数
+    ///
+    /// # 返回
+    /// 返回分页的版本列表
+    pub async fn list_versions(&self, query: VersionListQuery) -> Result<VersionListResponse> {
+        // 1. 构建排序字段
+        let sort_by = match query.get_sort_by() {
+            VersionSortField::VersionNumber => "version_number",
+            VersionSortField::CreatedAt => "created_at",
+            VersionSortField::Title => "title",
+        };
+        
+        let sort_order = match query.get_sort_order() {
+            SortOrder::Asc => "asc",
+            SortOrder::Desc => "desc",
+        };
+
+        // 2. 计算分页偏移量
+        let page = query.get_page();
+        let page_size = query.get_page_size();
+        let offset = (page - 1) as i64 * page_size as i64;
+        let limit = page_size as i64;
+
+        // 3. 尝试从缓存获取
+        let cache_key = get_version_list_cache_key(query.passage_id, &query);
+        if let Some(manager) = self.cache.manager() {
+            if let Some(cached_str) = manager.get(&cache_key).await {
+                if let Ok(cached) = serde_json::from_str::<VersionListResponse>(&cached_str) {
+                    return Ok(cached);
+                }
+            }
+        }
+
+        // 4. 从数据库查询
+        let versions = self.version_repo
+            .list_versions(
+                query.passage_id,
+                offset,
+                limit,
+                sort_by,
+                sort_order,
+                query.change_type.as_deref(),
+                query.search_title.as_deref(),
+            )
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 5. 获取总数
+        let total = self.version_repo
+            .get_version_count(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 6. 计算总页数
+        let total_pages = ((total as f64) / (page_size as f64)).ceil() as i32;
+
+        // 7. 构建响应
+        let response = VersionListResponse {
+            versions,
+            total,
+            page,
+            page_size,
+            total_pages,
+        };
+
+        // 8. 缓存结果（5分钟 TTL）
+        if let Some(manager) = self.cache.manager() {
+            if let Ok(json_str) = serde_json::to_string(&response) {
+                let _ = manager.set(&cache_key, &json_str).await;
+            }
+        }
+
+        Ok(response)
+    }
+
+    /// 获取版本数量（带缓存）
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 返回版本总数
+    pub async fn get_version_count_cached(&self, passage_id: i64) -> Result<i64> {
+        // 1. 尝试从缓存获取
+        let cache_key = get_version_count_cache_key(passage_id);
+        if let Some(manager) = self.cache.manager() {
+            if let Some(cached_str) = manager.get(&cache_key).await {
+                if let Ok(count) = cached_str.parse::<i64>() {
+                    return Ok(count);
+                }
+            }
+        }
+
+        // 2. 从数据库查询
+        let count = self.version_repo
+            .get_version_count(passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 3. 缓存结果（5分钟 TTL）
+        if let Some(manager) = self.cache.manager() {
+            let _ = manager.set(&cache_key, &count.to_string()).await;
+        }
+
+        Ok(count)
+    }
+
+    /// 获取版本简要信息列表（不包含内容，用于列表展示）
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 返回版本简要信息列表
+    pub async fn get_version_summaries(&self, passage_id: i64) -> Result<Vec<VersionSummary>> {
+        let versions = self.get_versions(passage_id).await?;
+        
+        Ok(versions.into_iter().map(|v| VersionSummary {
+            id: v.id,
+            passage_id: v.passage_id,
+            version_number: v.version_number,
+            title: v.title,
+            change_type: v.change_type,
+            change_reason: v.change_reason,
+            created_at: v.created_at,
+            created_by: v.created_by,
+            file_size: v.file_size,
+        }).collect())
+    }
+
+    /// 检查文章是否有历史版本
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 如果有历史版本返回 true，否则返回 false
+    pub async fn has_versions(&self, passage_id: i64) -> Result<bool> {
+        let count = self.get_version_count_cached(passage_id).await?;
+        Ok(count > 0)
+    }
+
+    /// 清除版本缓存
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    pub async fn clear_version_cache(&self, passage_id: i64) {
+        // 清除版本列表缓存（使用通配符模式）
+        if let Some(manager) = self.cache.manager() {
+            let _ = manager.delete_pattern(&format!("version_list:{}:*", passage_id)).await;
+            // 清除版本数量缓存
+            let _ = manager.delete(&get_version_count_cache_key(passage_id)).await;
+        }
+    }
+}
+
+/// 版本简要信息（不包含内容）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionSummary {
+    pub id: Option<i64>,
+    pub passage_id: i64,
+    pub version_number: i32,
+    pub title: String,
+    pub change_type: String,
+    pub change_reason: Option<String>,
+    pub created_at: chrono::DateTime<Utc>,
+    pub created_by: String,
+    pub file_size: i64,
 }
 
 #[cfg(test)]
@@ -932,5 +1222,134 @@ mod tests {
         assert_eq!(config.history_dir, "markdown/.history");
         assert_eq!(config.max_versions, 50);
         assert!(config.enable_deduplication);
+    }
+
+    // ==================== 第四阶段：版本查询 API 测试 ====================
+
+    #[test]
+    fn test_version_list_query_defaults() {
+        let query = VersionListQuery {
+            passage_id: 1,
+            ..Default::default()
+        };
+        
+        assert_eq!(query.get_page(), 1);
+        assert_eq!(query.get_page_size(), 20);
+        assert_eq!(query.get_sort_by(), VersionSortField::VersionNumber);
+        assert_eq!(query.get_sort_order(), SortOrder::Desc);
+    }
+
+    #[test]
+    fn test_version_list_query_custom() {
+        let query = VersionListQuery {
+            passage_id: 1,
+            page: Some(3),
+            page_size: Some(50),
+            sort_by: Some(VersionSortField::CreatedAt),
+            sort_order: Some(SortOrder::Asc),
+            change_type: Some("auto".to_string()),
+            search_title: Some("测试".to_string()),
+        };
+        
+        assert_eq!(query.get_page(), 3);
+        assert_eq!(query.get_page_size(), 50);
+        assert_eq!(query.get_sort_by(), VersionSortField::CreatedAt);
+        assert_eq!(query.get_sort_order(), SortOrder::Asc);
+        assert_eq!(query.change_type, Some("auto".to_string()));
+        assert_eq!(query.search_title, Some("测试".to_string()));
+    }
+
+    #[test]
+    fn test_version_list_query_page_validation() {
+        let query = VersionListQuery {
+            passage_id: 1,
+            page: Some(0), // 无效页码
+            page_size: Some(200), // 超过最大值
+            ..Default::default()
+        };
+        
+        assert_eq!(query.get_page(), 1); // 最小值为 1
+        assert_eq!(query.get_page_size(), 100); // 最大值为 100
+    }
+
+    #[test]
+    fn test_cache_key_generation() {
+        let query = VersionListQuery {
+            passage_id: 123,
+            page: Some(2),
+            page_size: Some(10),
+            sort_by: Some(VersionSortField::CreatedAt),
+            sort_order: Some(SortOrder::Asc),
+            ..Default::default()
+        };
+        
+        let key = get_version_list_cache_key(123, &query);
+        assert!(key.contains("version_list:123:"));
+        assert!(key.contains("p2"));
+        assert!(key.contains("s10"));
+    }
+
+    #[test]
+    fn test_version_count_cache_key() {
+        let key = get_version_count_cache_key(456);
+        assert_eq!(key, "version_count:456");
+    }
+
+    #[test]
+    fn test_version_sort_field_serialization() {
+        let json = serde_json::to_string(&VersionSortField::CreatedAt).unwrap();
+        assert!(json.contains("created_at"));
+        
+        let deserialized: VersionSortField = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, VersionSortField::CreatedAt);
+    }
+
+    #[test]
+    fn test_sort_order_serialization() {
+        let json = serde_json::to_string(&SortOrder::Asc).unwrap();
+        assert!(json.contains("asc"));
+        
+        let deserialized: SortOrder = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, SortOrder::Asc);
+    }
+
+    #[test]
+    fn test_version_summary_creation() {
+        let version = PassageVersion {
+            id: Some(1),
+            passage_id: 100,
+            passage_uuid: "uuid-123".to_string(),
+            version_number: 5,
+            file_path: "/path/to/file.md".to_string(),
+            file_size: 1024,
+            file_hash: Some("abc123".to_string()),
+            title: "测试标题".to_string(),
+            content: "# 内容".to_string(),
+            tags: "[]".to_string(),
+            category: "测试分类".to_string(),
+            cover_image: None,
+            change_type: "auto".to_string(),
+            change_reason: Some("自动保存".to_string()),
+            created_at: Utc::now(),
+            created_by: "system".to_string(),
+            parent_version_id: Some(4),
+            branch_name: None,
+        };
+        
+        let summary = VersionSummary {
+            id: version.id,
+            passage_id: version.passage_id,
+            version_number: version.version_number,
+            title: version.title.clone(),
+            change_type: version.change_type.clone(),
+            change_reason: version.change_reason.clone(),
+            created_at: version.created_at,
+            created_by: version.created_by.clone(),
+            file_size: version.file_size,
+        };
+        
+        assert_eq!(summary.id, Some(1));
+        assert_eq!(summary.version_number, 5);
+        assert_eq!(summary.title, "测试标题");
     }
 }

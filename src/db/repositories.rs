@@ -3297,4 +3297,168 @@ impl PassageVersionRepository {
         
         Ok(version)
     }
+
+    /// 获取版本总数
+    pub async fn get_version_count(&self, passage_id: i64) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM passage_versions WHERE passage_id = ?1",
+            params![passage_id],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    }
+
+    /// 获取版本列表（分页）
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    /// - offset: 偏移量
+    /// - limit: 限制数量
+    /// - sort_by: 排序字段 (version_number, created_at, title)
+    /// - sort_order: 排序方向 (asc, desc)
+    /// - change_type: 变更类型过滤
+    /// - search_title: 标题搜索
+    pub async fn list_versions(
+        &self,
+        passage_id: i64,
+        offset: i64,
+        limit: i64,
+        sort_by: &str,
+        sort_order: &str,
+        change_type: Option<&str>,
+        search_title: Option<&str>,
+    ) -> Result<Vec<PassageVersion>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+
+        // 验证排序字段和方向
+        let valid_sort_fields = ["version_number", "created_at", "title"];
+        let sort_field = if valid_sort_fields.contains(&sort_by) {
+            sort_by.to_string()
+        } else {
+            "version_number".to_string()
+        };
+        let sort_direction = if sort_order.to_lowercase() == "asc" {
+            "ASC".to_string()
+        } else {
+            "DESC".to_string()
+        };
+
+        // 根据参数组合构建 SQL
+        let (sql, params_vec): (String, Vec<Box<dyn rusqlite::ToSql>>) = 
+            match (change_type, search_title) {
+                (Some(ct), Some(st)) => {
+                    let where_clause = format!(
+                        "passage_id = ?1 AND change_type = ?2 AND title LIKE ?3"
+                    );
+                    let sql = format!(
+                        "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                                title, content, tags, category, cover_image, 
+                                change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+                         FROM passage_versions
+                         WHERE {}
+                         ORDER BY {} {}
+                         LIMIT ?4 OFFSET ?5",
+                        where_clause, sort_field, sort_direction
+                    );
+                    let search_pattern = format!("%{}%", st);
+                    (sql, vec![
+                        Box::new(passage_id),
+                        Box::new(ct.to_string()),
+                        Box::new(search_pattern),
+                        Box::new(limit),
+                        Box::new(offset),
+                    ])
+                }
+                (Some(ct), None) => {
+                    let where_clause = "passage_id = ?1 AND change_type = ?2".to_string();
+                    let sql = format!(
+                        "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                                title, content, tags, category, cover_image, 
+                                change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+                         FROM passage_versions
+                         WHERE {}
+                         ORDER BY {} {}
+                         LIMIT ?3 OFFSET ?4",
+                        where_clause, sort_field, sort_direction
+                    );
+                    (sql, vec![
+                        Box::new(passage_id),
+                        Box::new(ct.to_string()),
+                        Box::new(limit),
+                        Box::new(offset),
+                    ])
+                }
+                (None, Some(st)) => {
+                    let where_clause = "passage_id = ?1 AND title LIKE ?2".to_string();
+                    let sql = format!(
+                        "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                                title, content, tags, category, cover_image, 
+                                change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+                         FROM passage_versions
+                         WHERE {}
+                         ORDER BY {} {}
+                         LIMIT ?3 OFFSET ?4",
+                        where_clause, sort_field, sort_direction
+                    );
+                    let search_pattern = format!("%{}%", st);
+                    (sql, vec![
+                        Box::new(passage_id),
+                        Box::new(search_pattern),
+                        Box::new(limit),
+                        Box::new(offset),
+                    ])
+                }
+                (None, None) => {
+                    let where_clause = "passage_id = ?1".to_string();
+                    let sql = format!(
+                        "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                                title, content, tags, category, cover_image, 
+                                change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+                         FROM passage_versions
+                         WHERE {}
+                         ORDER BY {} {}
+                         LIMIT ?2 OFFSET ?3",
+                        where_clause, sort_field, sort_direction
+                    );
+                    (sql, vec![
+                        Box::new(passage_id),
+                        Box::new(limit),
+                        Box::new(offset),
+                    ])
+                }
+            };
+
+        let mut stmt = conn.prepare(&sql)?;
+
+        let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter()
+            .map(|b| b.as_ref())
+            .collect();
+
+        let versions = stmt.query_map(params_refs.as_slice(), |row| {
+            Ok(PassageVersion {
+                id: Some(row.get(0)?),
+                passage_id: row.get(1)?,
+                passage_uuid: row.get(2)?,
+                version_number: row.get(3)?,
+                file_path: row.get(4)?,
+                file_size: row.get(5)?,
+                file_hash: row.get(6)?,
+                title: row.get(7)?,
+                content: row.get(8)?,
+                tags: row.get(9)?,
+                category: row.get(10)?,
+                cover_image: row.get(11)?,
+                change_type: row.get(12)?,
+                change_reason: row.get(13)?,
+                created_at: row.get(14)?,
+                created_by: row.get(15)?,
+                parent_version_id: row.get(16)?,
+                branch_name: row.get(17)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(versions)
+    }
 }
