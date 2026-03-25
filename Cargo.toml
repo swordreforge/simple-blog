@@ -58,6 +58,9 @@ async-trait = "0.1"
 id3 = { version = "0.6", default-features = false }
 metaflac = { version = "0.2", default-features = false }
 
+# Diff 算法（用于版本差异对比）
+similar = { version = "2.6", default-features = false, features = ["text", "inline"] }
+
 
 
 # 命令行参数解析

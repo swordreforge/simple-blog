@@ -16,10 +16,16 @@
 //! - 排序支持
 //! - 缓存支持
 //! - 公共 API
+//!
+//! 第五阶段：版本差异对比
+//! - Diff 算法实现
+//! - 版本对比 API
+//! - 差异可视化支持
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use similar::{ChangeTag, TextDiff};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -983,6 +989,424 @@ pub struct VersionSummary {
     pub file_size: i64,
 }
 
+// ==================== 第五阶段：版本差异对比 ====================
+
+/// 差异类型
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffType {
+    /// 行级差异
+    Line,
+    /// 字符级差异
+    Char,
+}
+
+impl Default for DiffType {
+    fn default() -> Self {
+        DiffType::Line
+    }
+}
+
+/// 差异输出格式
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffFormat {
+    /// 统一格式
+    Unified,
+    /// 上下文格式
+    Context,
+    /// 侧边格式
+    SideBySide,
+}
+
+impl Default for DiffFormat {
+    fn default() -> Self {
+        DiffFormat::Unified
+    }
+}
+
+/// 单行差异
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffLine {
+    /// 行号（旧版本）
+    pub old_line_number: Option<i32>,
+    /// 行号（新版本）
+    pub new_line_number: Option<i32>,
+    /// 行内容
+    pub content: String,
+    /// 行类型
+    pub line_type: DiffLineType,
+}
+
+/// 单行差异类型
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DiffLineType {
+    /// 上下文（未变化）
+    Context,
+    /// 添加
+    Added,
+    /// 删除
+    Deleted,
+    /// 修改
+    Modified,
+}
+
+/// 字段差异详情
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FieldDiffDetail {
+    /// 字段名
+    pub field_name: String,
+    /// 旧值
+    pub old_value: String,
+    /// 新值
+    pub new_value: String,
+    /// 是否变化
+    pub changed: bool,
+    /// 行级差异列表
+    pub line_diffs: Vec<DiffLine>,
+}
+
+/// 版本差异响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionDiffResponse {
+    /// 旧版本号
+    pub from_version: i32,
+    /// 新版本号
+    pub to_version: i32,
+    /// 字段差异列表
+    pub field_diffs: Vec<FieldDiffDetail>,
+    /// 总变更行数
+    pub total_changes: i32,
+    /// 变更统计
+    pub stats: DiffStats,
+}
+
+/// 差异统计
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffStats {
+    /// 添加的行数
+    pub added: i32,
+    /// 删除的行数
+    pub deleted: i32,
+    /// 修改的行数
+    pub modified: i32,
+    /// 未变化的行数
+    pub unchanged: i32,
+}
+
+impl DiffStats {
+    /// 从差异行计算统计信息
+    fn from_lines(old_text: &str, new_text: &str) -> Self {
+        let diff = TextDiff::from_lines(old_text, new_text);
+        let mut added = 0;
+        let mut deleted = 0;
+        let mut unchanged = 0;
+
+        for change in diff.iter_all_changes() {
+            match change.tag() {
+                ChangeTag::Delete => deleted += 1,
+                ChangeTag::Insert => added += 1,
+                ChangeTag::Equal => unchanged += 1,
+            }
+        }
+
+        Self {
+            added,
+            deleted,
+            modified: 0,
+            unchanged,
+        }
+    }
+}
+
+/// 版本对比查询参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionDiffQuery {
+    /// 文章 ID
+    pub passage_id: i64,
+    /// 旧版本号
+    pub from_version: i32,
+    /// 新版本号
+    pub to_version: i32,
+    /// 差异类型
+    pub diff_type: Option<DiffType>,
+    /// 输出格式
+    pub format: Option<DiffFormat>,
+    /// 是否包含所有字段（否则只包含内容）
+    pub include_all_fields: Option<bool>,
+}
+
+impl PassageVersionService {
+    /// 计算两个文本之间的行级差异
+    ///
+    /// # 参数
+    /// - old_text: 旧文本
+    /// - new_text: 新文本
+    ///
+    /// # 返回
+    /// 返回差异行列表
+    pub fn compute_line_diff(&self, old_text: &str, new_text: &str) -> Vec<DiffLine> {
+        let diff = TextDiff::from_lines(old_text, new_text);
+        let mut lines = Vec::new();
+        let mut old_line_num = 1;
+        let mut new_line_num = 1;
+
+        for change in diff.iter_all_changes() {
+            let line_type = match change.tag() {
+                ChangeTag::Delete => {
+                    old_line_num += 1;
+                    DiffLineType::Deleted
+                }
+                ChangeTag::Insert => {
+                    new_line_num += 1;
+                    DiffLineType::Added
+                }
+                ChangeTag::Equal => {
+                    old_line_num += 1;
+                    new_line_num += 1;
+                    DiffLineType::Context
+                }
+            };
+
+            lines.push(DiffLine {
+                old_line_number: if line_type == DiffLineType::Deleted || line_type == DiffLineType::Context {
+                    Some(old_line_num - 1)
+                } else {
+                    None
+                },
+                new_line_number: if line_type == DiffLineType::Added || line_type == DiffLineType::Context {
+                    Some(new_line_num - 1)
+                } else {
+                    None
+                },
+                content: change.value().to_string(),
+                line_type,
+            });
+        }
+
+        lines
+    }
+
+    /// 计算两个文本之间的字符级差异（单词级别，更适合代码）
+    ///
+    /// # 参数
+    /// - old_text: 旧文本
+    /// - new_text: 新文本
+    ///
+    /// # 返回
+    /// 返回统一格式的差异字符串
+    pub fn compute_word_diff(&self, old_text: &str, new_text: &str) -> String {
+        let diff = TextDiff::from_words(old_text, new_text);
+        diff.unified_diff()
+            .context_radius(3)
+            .header("old", "new")
+            .to_string()
+    }
+
+    /// 计算统一格式的差异
+    ///
+    /// # 参数
+    /// - old_text: 旧文本
+    /// - new_text: 新文本
+    /// - context_lines: 上下文行数
+    ///
+    /// # 返回
+    /// 返回统一格式的差异字符串
+    pub fn compute_unified_diff(&self, old_text: &str, new_text: &str, context_lines: usize) -> String {
+        let diff = TextDiff::from_lines(old_text, new_text);
+        diff.unified_diff()
+            .context_radius(context_lines)
+            .header("old", "new")
+            .to_string()
+    }
+
+    /// 对比两个版本
+    ///
+    /// # 参数
+    /// - query: 版本对比查询参数
+    ///
+    /// # 返回
+    /// 返回版本差异响应
+    pub async fn diff_versions(&self, query: VersionDiffQuery) -> Result<VersionDiffResponse> {
+        // 1. 获取两个版本
+        let from_version = self.version_repo
+            .get_by_version_number(query.passage_id, query.from_version)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", query.from_version))?;
+
+        let to_version = self.version_repo
+            .get_by_version_number(query.passage_id, query.to_version)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", query.to_version))?;
+
+        // 2. 确定是否包含所有字段
+        let include_all = query.include_all_fields.unwrap_or(false);
+
+        // 3. 构建字段差异列表
+        let mut field_diffs = Vec::new();
+        let mut total_changes = 0;
+
+        // 内容差异（始终包含）
+        let content_diffs = self.compute_line_diff(&from_version.content, &to_version.content);
+        let added_lines = content_diffs.iter().filter(|l| l.line_type == DiffLineType::Added).count() as i32;
+        let deleted_lines = content_diffs.iter().filter(|l| l.line_type == DiffLineType::Deleted).count() as i32;
+        
+        field_diffs.push(FieldDiffDetail {
+            field_name: "content".to_string(),
+            old_value: from_version.content.clone(),
+            new_value: to_version.content.clone(),
+            changed: from_version.content != to_version.content,
+            line_diffs: content_diffs,
+        });
+        total_changes += added_lines + deleted_lines;
+
+        // 其他字段差异（可选）
+        if include_all {
+            // 标题差异
+            if from_version.title != to_version.title {
+                field_diffs.push(FieldDiffDetail {
+                    field_name: "title".to_string(),
+                    old_value: from_version.title.clone(),
+                    new_value: to_version.title.clone(),
+                    changed: true,
+                    line_diffs: vec![],
+                });
+                total_changes += 1;
+            }
+
+            // 标签差异
+            if from_version.tags != to_version.tags {
+                field_diffs.push(FieldDiffDetail {
+                    field_name: "tags".to_string(),
+                    old_value: from_version.tags.clone(),
+                    new_value: to_version.tags.clone(),
+                    changed: true,
+                    line_diffs: vec![],
+                });
+                total_changes += 1;
+            }
+
+            // 分类差异
+            if from_version.category != to_version.category {
+                field_diffs.push(FieldDiffDetail {
+                    field_name: "category".to_string(),
+                    old_value: from_version.category.clone(),
+                    new_value: to_version.category.clone(),
+                    changed: true,
+                    line_diffs: vec![],
+                });
+                total_changes += 1;
+            }
+
+            // 封面图片差异
+            if from_version.cover_image != to_version.cover_image {
+                let old_cover = from_version.cover_image.clone().unwrap_or_default();
+                let new_cover = to_version.cover_image.clone().unwrap_or_default();
+                field_diffs.push(FieldDiffDetail {
+                    field_name: "cover_image".to_string(),
+                    old_value: old_cover,
+                    new_value: new_cover,
+                    changed: true,
+                    line_diffs: vec![],
+                });
+                total_changes += 1;
+            }
+        }
+
+        // 4. 计算统计信息
+        let stats = DiffStats {
+            added: added_lines,
+            deleted: deleted_lines,
+            modified: 0,
+            unchanged: 0,
+        };
+
+        Ok(VersionDiffResponse {
+            from_version: query.from_version,
+            to_version: query.to_version,
+            field_diffs,
+            total_changes,
+            stats,
+        })
+    }
+
+    /// 获取版本的快速差异摘要（不包含完整内容）
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    /// - from_version: 旧版本号
+    /// - to_version: 新版本号
+    ///
+    /// # 返回
+    /// 返回差异摘要信息
+    pub async fn get_diff_summary(
+        &self,
+        passage_id: i64,
+        from_version: i32,
+        to_version: i32,
+    ) -> Result<DiffStats> {
+        // 获取两个版本
+        let from_version = self.version_repo
+            .get_by_version_number(passage_id, from_version)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", from_version))?;
+
+        let to_version = self.version_repo
+            .get_by_version_number(passage_id, to_version)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", to_version))?;
+
+        // 计算内容差异统计
+        let stats = DiffStats::from_lines(&from_version.content, &to_version.content);
+
+        Ok(stats)
+    }
+
+    /// 检查两个版本是否有差异
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    /// - version_a: 版本 A
+    /// - version_b: 版本 B
+    ///
+    /// # 返回
+    /// 如果有差异返回 true，否则返回 false
+    pub async fn versions_have_diff(
+        &self,
+        passage_id: i64,
+        version_a: i32,
+        version_b: i32,
+    ) -> Result<bool> {
+        let version_a = self.version_repo
+            .get_by_version_number(passage_id, version_a)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", version_a))?;
+
+        let version_b = self.version_repo
+            .get_by_version_number(passage_id, version_b)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", version_b))?;
+
+        Ok(version_a.content != version_b.content
+            || version_a.title != version_b.title
+            || version_a.tags != version_b.tags
+            || version_a.category != version_b.category
+            || version_a.cover_image != version_b.cover_image)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1351,5 +1775,159 @@ mod tests {
         assert_eq!(summary.id, Some(1));
         assert_eq!(summary.version_number, 5);
         assert_eq!(summary.title, "测试标题");
+    }
+
+    // ==================== 第五阶段：版本差异对比测试 ====================
+
+    #[test]
+    fn test_compute_line_diff() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_text = "第一行\n第二行\n第三行\n";
+        let new_text = "第一行\n修改的行\n第三行\n第四行\n";
+        
+        let diff = service.compute_line_diff(old_text, new_text);
+        
+        assert!(!diff.is_empty());
+        // 应该包含修改和新增的行
+        assert!(diff.iter().any(|l| l.line_type == DiffLineType::Modified || l.line_type == DiffLineType::Deleted));
+    }
+
+    #[test]
+    fn test_compute_line_diff_no_change() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let text = "第一行\n第二行\n第三行\n";
+        
+        let diff = service.compute_line_diff(text, text);
+        
+        // 所有行应该是上下文（未变化）
+        assert!(diff.iter().all(|l| l.line_type == DiffLineType::Context));
+    }
+
+    #[test]
+    fn test_compute_word_diff() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_text = "Hello World";
+        let new_text = "Hello Rust";
+        
+        let diff = service.compute_word_diff(old_text, new_text);
+        
+        assert!(diff.contains("-World"));
+        assert!(diff.contains("+Rust"));
+    }
+
+    #[test]
+    fn test_compute_unified_diff() {
+        let service = PassageVersionService::new(
+            crate::db::repositories::PassageVersionRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            ),
+            Arc::new(crate::db::repositories::PassageRepository::new(
+                Arc::new(r2d2::Pool::new(r2d2_sqlite::SqliteConnectionManager::memory()).unwrap())
+            )),
+            Arc::new(crate::cache::AppCache::new(crate::cache::CacheConfig::default())),
+        );
+        
+        let old_text = "line1\nline2\nline3\n";
+        let new_text = "line1\nmodified\nline3\nline4\n";
+        
+        let diff = service.compute_unified_diff(old_text, new_text, 3);
+        
+        assert!(diff.contains("---"));
+        assert!(diff.contains("+++"));
+    }
+
+    #[test]
+    fn test_diff_stats_from_lines() {
+        let old_text = "a\nb\nc\n";
+        let new_text = "a\nb\nd\n";
+        
+        let stats = DiffStats::from_lines(old_text, new_text);
+        
+        assert!(stats.added > 0 || stats.deleted > 0);
+    }
+
+    #[test]
+    fn test_diff_type_default() {
+        assert_eq!(DiffType::default(), DiffType::Line);
+    }
+
+    #[test]
+    fn test_diff_format_default() {
+        assert_eq!(DiffFormat::default(), DiffFormat::Unified);
+    }
+
+    #[test]
+    fn test_diff_line_type_serialization() {
+        let json = serde_json::to_string(&DiffLineType::Added).unwrap();
+        assert!(json.contains("added"));
+        
+        let deserialized: DiffLineType = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, DiffLineType::Added);
+    }
+
+    #[test]
+    fn test_version_diff_query() {
+        let query = VersionDiffQuery {
+            passage_id: 1,
+            from_version: 1,
+            to_version: 2,
+            diff_type: Some(DiffType::Char),
+            format: Some(DiffFormat::SideBySide),
+            include_all_fields: Some(true),
+        };
+        
+        assert_eq!(query.from_version, 1);
+        assert_eq!(query.to_version, 2);
+        assert_eq!(query.diff_type, Some(DiffType::Char));
+        assert_eq!(query.format, Some(DiffFormat::SideBySide));
+        assert_eq!(query.include_all_fields, Some(true));
+    }
+
+    #[test]
+    fn test_version_diff_response() {
+        let response = VersionDiffResponse {
+            from_version: 1,
+            to_version: 2,
+            field_diffs: vec![],
+            total_changes: 10,
+            stats: DiffStats {
+                added: 5,
+                deleted: 3,
+                modified: 2,
+                unchanged: 100,
+            },
+        };
+        
+        assert_eq!(response.from_version, 1);
+        assert_eq!(response.to_version, 2);
+        assert_eq!(response.total_changes, 10);
+        assert_eq!(response.stats.added, 5);
     }
 }
