@@ -2976,3 +2976,325 @@ mod tests {
         assert!(day >= 1 && day <= 31);
     }
 }
+
+// ==================== 文章版本历史 Repository ====================
+
+/// 文章版本历史仓库
+#[derive(Clone)]
+pub struct PassageVersionRepository {
+    pool: Arc<Pool<SqliteConnectionManager>>,
+}
+
+impl PassageVersionRepository {
+    pub fn new(pool: Arc<Pool<SqliteConnectionManager>>) -> Self {
+        Self { pool }
+    }
+
+    /// 创建版本
+    pub async fn create(&self, version: &PassageVersion) -> Result<i64, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        
+        conn.execute(
+            "INSERT INTO passage_versions 
+             (passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+              title, content, tags, category, cover_image, 
+              change_type, change_reason, created_by, parent_version_id, branch_name)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+            params![
+                version.passage_id,
+                version.passage_uuid,
+                version.version_number,
+                version.file_path,
+                version.file_size,
+                version.file_hash,
+                version.title,
+                version.content,
+                version.tags,
+                version.category,
+                version.cover_image,
+                version.change_type,
+                version.change_reason,
+                version.created_by,
+                version.parent_version_id,
+                version.branch_name,
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    /// 获取文章的所有版本
+    pub async fn get_by_passage_id(&self, passage_id: i64) -> Result<Vec<PassageVersion>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                    title, content, tags, category, cover_image, 
+                    change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+             FROM passage_versions
+             WHERE passage_id = ?1
+             ORDER BY version_number DESC"
+        )?;
+        
+        let versions = stmt
+            .query_map(params![passage_id], |row| {
+                Ok(PassageVersion {
+                    id: Some(row.get(0)?),
+                    passage_id: row.get(1)?,
+                    passage_uuid: row.get(2)?,
+                    version_number: row.get(3)?,
+                    file_path: row.get(4)?,
+                    file_size: row.get(5)?,
+                    file_hash: row.get(6)?,
+                    title: row.get(7)?,
+                    content: row.get(8)?,
+                    tags: row.get(9)?,
+                    category: row.get(10)?,
+                    cover_image: row.get(11)?,
+                    change_type: row.get(12)?,
+                    change_reason: row.get(13)?,
+                    created_at: row.get(14)?,
+                    created_by: row.get(15)?,
+                    parent_version_id: row.get(16)?,
+                    branch_name: row.get(17)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        
+        Ok(versions)
+    }
+
+    /// 获取特定版本
+    pub async fn get_by_version_number(
+        &self,
+        passage_id: i64,
+        version_number: i32,
+    ) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                    title, content, tags, category, cover_image, 
+                    change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+             FROM passage_versions
+             WHERE passage_id = ?1 AND version_number = ?2"
+        )?;
+        
+        let version = stmt
+            .query_row(params![passage_id, version_number], |row| {
+                Ok(PassageVersion {
+                    id: Some(row.get(0)?),
+                    passage_id: row.get(1)?,
+                    passage_uuid: row.get(2)?,
+                    version_number: row.get(3)?,
+                    file_path: row.get(4)?,
+                    file_size: row.get(5)?,
+                    file_hash: row.get(6)?,
+                    title: row.get(7)?,
+                    content: row.get(8)?,
+                    tags: row.get(9)?,
+                    category: row.get(10)?,
+                    cover_image: row.get(11)?,
+                    change_type: row.get(12)?,
+                    change_reason: row.get(13)?,
+                    created_at: row.get(14)?,
+                    created_by: row.get(15)?,
+                    parent_version_id: row.get(16)?,
+                    branch_name: row.get(17)?,
+                })
+            })
+            .optional()?;
+        
+        Ok(version)
+    }
+
+    /// 通过 ID 获取版本
+    pub async fn get_by_id(&self, id: i64) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                    title, content, tags, category, cover_image, 
+                    change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+             FROM passage_versions
+             WHERE id = ?1"
+        )?;
+        
+        let version = stmt
+            .query_row(params![id], |row| {
+                Ok(PassageVersion {
+                    id: Some(row.get(0)?),
+                    passage_id: row.get(1)?,
+                    passage_uuid: row.get(2)?,
+                    version_number: row.get(3)?,
+                    file_path: row.get(4)?,
+                    file_size: row.get(5)?,
+                    file_hash: row.get(6)?,
+                    title: row.get(7)?,
+                    content: row.get(8)?,
+                    tags: row.get(9)?,
+                    category: row.get(10)?,
+                    cover_image: row.get(11)?,
+                    change_type: row.get(12)?,
+                    change_reason: row.get(13)?,
+                    created_at: row.get(14)?,
+                    created_by: row.get(15)?,
+                    parent_version_id: row.get(16)?,
+                    branch_name: row.get(17)?,
+                })
+            })
+            .optional()?;
+        
+        Ok(version)
+    }
+
+    /// 获取最新版本号
+    pub async fn get_latest_version_number(&self, passage_id: i64) -> Result<i32, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let version_number: i32 = conn.query_row(
+            "SELECT COALESCE(MAX(version_number), 0) FROM passage_versions WHERE passage_id = ?1",
+            params![passage_id],
+            |row| row.get(0),
+        )?;
+        Ok(version_number)
+    }
+
+    /// 获取最新版本
+    pub async fn get_latest_version(&self, passage_id: i64) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
+        let latest_version_number = self.get_latest_version_number(passage_id).await?;
+        if latest_version_number == 0 {
+            return Ok(None);
+        }
+        self.get_by_version_number(passage_id, latest_version_number).await
+    }
+
+    /// 限制版本数量（删除旧版本）
+    pub async fn trim_old_versions(&self, passage_id: i64, max_versions: usize) -> Result<(), Box<dyn std::error::Error>> {
+        if max_versions == 0 {
+            return Ok(()); // 0 表示不限制
+        }
+        
+        let conn = self.pool.get()?;
+        
+        // 获取当前版本总数
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM passage_versions WHERE passage_id = ?1",
+            params![passage_id],
+            |row| row.get(0),
+        )?;
+        
+        if count as usize > max_versions {
+            let to_delete = count as usize - max_versions;
+            
+            // 获取要删除的版本 ID 和文件路径
+            let mut stmt = conn.prepare(
+                "SELECT id, file_path FROM passage_versions 
+                 WHERE passage_id = ?1 
+                 ORDER BY created_at ASC 
+                 LIMIT ?2"
+            )?;
+            
+            let versions_to_delete = stmt
+                .query_map(params![passage_id, to_delete as i64], |row| {
+                    Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            
+            // 删除数据库记录
+            conn.execute(
+                "DELETE FROM passage_versions 
+                 WHERE passage_id = ?1 
+                 AND id IN (
+                     SELECT id FROM passage_versions 
+                     WHERE passage_id = ?1 
+                     ORDER BY created_at ASC 
+                     LIMIT ?2
+                 )",
+                params![passage_id, to_delete as i64],
+            )?;
+            
+            // 删除历史文件
+            for (_, file_path) in versions_to_delete {
+                let path = std::path::PathBuf::from(&file_path);
+                if path.exists() {
+                    std::fs::remove_file(&path)?;
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// 删除文章的所有版本
+    pub async fn delete_by_passage_id(&self, passage_id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        
+        // 获取所有版本文件路径
+        let mut stmt = conn.prepare(
+            "SELECT file_path FROM passage_versions WHERE passage_id = ?1"
+        )?;
+        
+        let file_paths = stmt
+            .query_map(params![passage_id], |row| {
+                Ok(row.get::<_, String>(0)?)
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        
+        // 删除数据库记录
+        conn.execute(
+            "DELETE FROM passage_versions WHERE passage_id = ?1",
+            params![passage_id],
+        )?;
+        
+        // 删除历史文件
+        for file_path in file_paths {
+            let path = std::path::PathBuf::from(&file_path);
+            if path.exists() {
+                std::fs::remove_file(&path)?;
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// 检查重复内容
+    pub async fn check_duplicate_content(
+        &self,
+        passage_id: i64,
+        file_hash: &str,
+    ) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
+        let conn = self.pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
+                    title, content, tags, category, cover_image, 
+                    change_type, change_reason, created_at, created_by, parent_version_id, branch_name
+             FROM passage_versions
+             WHERE passage_id = ?1 AND file_hash = ?2
+             ORDER BY created_at DESC
+             LIMIT 1"
+        )?;
+        
+        let version = stmt
+            .query_row(params![passage_id, file_hash], |row| {
+                Ok(PassageVersion {
+                    id: Some(row.get(0)?),
+                    passage_id: row.get(1)?,
+                    passage_uuid: row.get(2)?,
+                    version_number: row.get(3)?,
+                    file_path: row.get(4)?,
+                    file_size: row.get(5)?,
+                    file_hash: row.get(6)?,
+                    title: row.get(7)?,
+                    content: row.get(8)?,
+                    tags: row.get(9)?,
+                    category: row.get(10)?,
+                    cover_image: row.get(11)?,
+                    change_type: row.get(12)?,
+                    change_reason: row.get(13)?,
+                    created_at: row.get(14)?,
+                    created_by: row.get(15)?,
+                    parent_version_id: row.get(16)?,
+                    branch_name: row.get(17)?,
+                })
+            })
+            .optional()?;
+        
+        Ok(version)
+    }
+}

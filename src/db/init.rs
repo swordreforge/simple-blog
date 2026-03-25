@@ -548,6 +548,70 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
         [],
     )?;
 
+    // 创建文章版本历史表
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS passage_versions (
+            id INTEGER PRIMARY KEY,
+            passage_id INTEGER NOT NULL,
+            passage_uuid TEXT NOT NULL,
+            version_number INTEGER NOT NULL,
+            
+            -- 文件信息
+            file_path TEXT NOT NULL,
+            file_size INTEGER,
+            file_hash TEXT,
+            
+            -- 只存储原始内容和元数据，不存储派生数据
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            tags TEXT,
+            category TEXT,
+            cover_image TEXT,
+            
+            -- 变更信息
+            change_type TEXT NOT NULL,
+            change_reason TEXT,
+            
+            -- 操作信息
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_by TEXT DEFAULT 'system',
+            
+            -- Git 风格的树形结构
+            parent_version_id INTEGER,
+            branch_name TEXT,
+            
+            FOREIGN KEY (passage_id) REFERENCES passages(id) ON DELETE CASCADE,
+            FOREIGN KEY (parent_version_id) REFERENCES passage_versions(id) ON DELETE SET NULL,
+            UNIQUE(passage_id, version_number)
+        )",
+        [],
+    )?;
+    // passage_versions 表索引
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_passage_versions_passage_id ON passage_versions(passage_id)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_passage_versions_uuid ON passage_versions(passage_uuid)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_passage_versions_file_hash ON passage_versions(file_hash)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_passage_versions_created ON passage_versions(created_at DESC)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_passage_versions_parent ON passage_versions(parent_version_id)",
+        [],
+    )?;
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_passage_versions_type ON passage_versions(change_type)",
+        [],
+    )?;
+
     // 创建设置表
     conn.execute(
         "CREATE TABLE IF NOT EXISTS settings (
@@ -1383,6 +1447,91 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                 "公安备案内容（显示文字）",
                 "template",
             ),
+            // 文章历史版本管理设置
+            (
+                "passage_history.enabled",
+                "true",
+                "boolean",
+                "是否启用文章历史版本管理",
+                "passage",
+            ),
+            (
+                "passage_history.storage_mode",
+                "filesystem",
+                "string",
+                "存储模式：filesystem（文件系统）或 database（仅数据库）",
+                "passage",
+            ),
+            (
+                "passage_history.history_dir",
+                "markdown/.history",
+                "string",
+                "历史版本存储目录",
+                "passage",
+            ),
+            (
+                "passage_history.max_versions",
+                "50",
+                "number",
+                "保留历史版本的最大数量（0 表示不限制）",
+                "passage",
+            ),
+            (
+                "passage_history.enable_deduplication",
+                "true",
+                "boolean",
+                "是否启用内容去重（相同内容不重复存储）",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_title_change",
+                "true",
+                "boolean",
+                "标题变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_content_change",
+                "true",
+                "boolean",
+                "内容变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_tags_change",
+                "true",
+                "boolean",
+                "标签变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_summary_change",
+                "true",
+                "boolean",
+                "摘要变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_category_change",
+                "false",
+                "boolean",
+                "分类变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_cover_change",
+                "false",
+                "boolean",
+                "封面图片变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.enable_undo_redo",
+                "true",
+                "boolean",
+                "是否启用撤销/重做功能",
+                "passage",
+            ),
         ];
 
         for (key, value, setting_type, description, category) in default_settings {
@@ -1797,6 +1946,91 @@ fn seed_default_data(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::err
                 "string",
                 "公安备案内容（显示文字）",
                 "template",
+            ),
+            // 文章历史版本管理设置
+            (
+                "passage_history.enabled",
+                "true",
+                "boolean",
+                "是否启用文章历史版本管理",
+                "passage",
+            ),
+            (
+                "passage_history.storage_mode",
+                "filesystem",
+                "string",
+                "存储模式：filesystem（文件系统）或 database（仅数据库）",
+                "passage",
+            ),
+            (
+                "passage_history.history_dir",
+                "markdown/.history",
+                "string",
+                "历史版本存储目录",
+                "passage",
+            ),
+            (
+                "passage_history.max_versions",
+                "50",
+                "number",
+                "保留历史版本的最大数量（0 表示不限制）",
+                "passage",
+            ),
+            (
+                "passage_history.enable_deduplication",
+                "true",
+                "boolean",
+                "是否启用内容去重（相同内容不重复存储）",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_title_change",
+                "true",
+                "boolean",
+                "标题变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_content_change",
+                "true",
+                "boolean",
+                "内容变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_tags_change",
+                "true",
+                "boolean",
+                "标签变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_summary_change",
+                "true",
+                "boolean",
+                "摘要变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_category_change",
+                "false",
+                "boolean",
+                "分类变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.save_on_cover_change",
+                "false",
+                "boolean",
+                "封面图片变化时自动保存版本",
+                "passage",
+            ),
+            (
+                "passage_history.enable_undo_redo",
+                "true",
+                "boolean",
+                "是否启用撤销/重做功能",
+                "passage",
             ),
         ];
 
