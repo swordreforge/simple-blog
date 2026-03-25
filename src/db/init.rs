@@ -340,7 +340,10 @@ fn create_tables(conn: &rusqlite::Connection) -> Result<(), Box<dyn std::error::
             published_at DATETIME,
             cover_image TEXT DEFAULT '/img/passage-cover.webp',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_year INTEGER,
+            created_month INTEGER,
+            created_day INTEGER
         )",
         [],
     )?;
