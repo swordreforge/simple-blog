@@ -34,6 +34,11 @@
 //! 第八阶段：版本管理功能
 //! - 删除单个版本
 //! - 批量删除版本
+//!
+//! 第九阶段：缓存优化
+//! - 缓存键定义
+//! - 缓存读写
+//! - 缓存策略 (TTL, 预热, 降级)
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -148,20 +153,92 @@ pub struct VersionListResponse {
     pub total_pages: i32,
 }
 
-/// 缓存键生成
+// ==================== 第九阶段：缓存优化 ====================
+
+/// 版本历史缓存键生成器
+pub mod cache_keys {
+    use super::VersionListQuery;
+
+    /// 缓存键前缀
+    pub const VERSION_PREFIX: &str = "version";
+
+    /// 版本列表缓存键
+    pub fn version_list(passage_id: i64, query: &VersionListQuery) -> String {
+        format!(
+            "{}:list:{}:p{}_s{}_{}_{}",
+            VERSION_PREFIX,
+            passage_id,
+            query.get_page(),
+            query.get_page_size(),
+            query.get_sort_by() as i32,
+            query.get_sort_order() as i32
+        )
+    }
+
+    /// 版本数量缓存键
+    pub fn version_count(passage_id: i64) -> String {
+        format!("{}:count:{}", VERSION_PREFIX, passage_id)
+    }
+
+    /// 版本详情缓存键
+    pub fn version_detail(passage_id: i64, version_number: i32) -> String {
+        format!("{}:detail:{}:v{}", VERSION_PREFIX, passage_id, version_number)
+    }
+
+    /// 最新版本缓存键
+    pub fn version_latest(passage_id: i64) -> String {
+        format!("{}:latest:{}", VERSION_PREFIX, passage_id)
+    }
+
+    /// 版本差异缓存键
+    pub fn version_diff(passage_id: i64, from: i32, to: i32) -> String {
+        format!("{}:diff:{}:{}->{}", VERSION_PREFIX, passage_id, from, to)
+    }
+
+    /// 撤销/重做状态缓存键
+    pub fn undo_redo_status(passage_id: i64) -> String {
+        format!("{}:undo_redo:{}", VERSION_PREFIX, passage_id)
+    }
+
+    /// 版本列表模式（用于批量删除）
+    pub fn version_list_pattern(passage_id: i64) -> String {
+        format!("{}:list:{}:*", VERSION_PREFIX, passage_id)
+    }
+
+    /// 所有版本相关缓存模式
+    pub fn version_all_pattern(passage_id: i64) -> String {
+        format!("{}:*:{}*", VERSION_PREFIX, passage_id)
+    }
+}
+
+/// 缓存 TTL 配置（秒）
+pub mod cache_ttl {
+    /// 版本列表缓存 TTL（5分钟）
+    pub const VERSION_LIST: u64 = 300;
+    
+    /// 版本数量缓存 TTL（5分钟）
+    pub const VERSION_COUNT: u64 = 300;
+    
+    /// 版本详情缓存 TTL（10分钟）
+    pub const VERSION_DETAIL: u64 = 600;
+    
+    /// 最新版本缓存 TTL（1分钟，较短因为变化频繁）
+    pub const VERSION_LATEST: u64 = 60;
+    
+    /// 版本差异缓存 TTL（15分钟，差异计算较耗时）
+    pub const VERSION_DIFF: u64 = 900;
+    
+    /// 撤销/重做状态缓存 TTL（30秒，较短因为状态变化频繁）
+    pub const UNDO_REDO_STATUS: u64 = 30;
+}
+
+/// 缓存键生成（兼容旧接口）
 fn get_version_list_cache_key(passage_id: i64, query: &VersionListQuery) -> String {
-    format!(
-        "version_list:{}:p{}_s{}_{}_{}",
-        passage_id,
-        query.get_page(),
-        query.get_page_size(),
-        query.get_sort_by() as i32,
-        query.get_sort_order() as i32
-    )
+    cache_keys::version_list(passage_id, query)
 }
 
 fn get_version_count_cache_key(passage_id: i64) -> String {
-    format!("version_count:{}", passage_id)
+    cache_keys::version_count(passage_id)
 }
 
 /// 文章版本历史服务
@@ -2135,6 +2212,155 @@ impl PassageVersionService {
         
         Ok(count)
     }
+
+    // ==================== 第九阶段：缓存优化 ====================
+
+    /// 预热版本列表缓存
+    ///
+    /// 在文章访问高峰前预先加载常用数据到缓存
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    /// - page: 页码
+    /// - page_size: 每页数量
+    pub async fn warm_version_list_cache(
+        &self,
+        passage_id: i64,
+        page: i32,
+        page_size: i32,
+    ) -> Result<()> {
+        let query = VersionListQuery {
+            passage_id,
+            page: Some(page),
+            page_size: Some(page_size),
+            sort_by: Some(VersionSortField::VersionNumber),
+            sort_order: Some(SortOrder::Desc),
+            change_type: None,
+            search_title: None,
+        };
+        
+        let _response = self.list_versions(query).await?;
+        
+        Ok(())
+    }
+
+    /// 预热最新版本缓存
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    pub async fn warm_version_latest_cache(&self, passage_id: i64) -> Result<()> {
+        let _ = self.get_latest_version(passage_id).await?;
+        Ok(())
+    }
+
+    /// 批量预热文章版本缓存
+    ///
+    /// # 参数
+    /// - passage_ids: 文章 ID 列表
+    pub async fn warm_batch_cache(&self, passage_ids: Vec<i64>) -> Result<()> {
+        for passage_id in passage_ids {
+            // 预热版本列表
+            let _ = self.warm_version_list_cache(passage_id, 1, 20).await;
+            // 预热最新版本
+            let _ = self.warm_version_latest_cache(passage_id).await;
+        }
+        Ok(())
+    }
+
+    /// 获取缓存命中率统计
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 返回缓存统计信息
+    pub async fn get_cache_stats(&self, passage_id: i64) -> Result<VersionCacheStats> {
+        let manager = match self.cache.manager() {
+            Some(m) => m,
+            None => {
+                return Ok(VersionCacheStats {
+                    cache_enabled: false,
+                    version_list_cached: false,
+                    version_count_cached: false,
+                    latest_version_cached: false,
+                    cache_keys: vec![],
+                });
+            }
+        };
+
+        let mut cache_keys = Vec::new();
+        let version_list_key = cache_keys::version_list(passage_id, &VersionListQuery {
+            passage_id,
+            page: Some(1),
+            page_size: Some(20),
+            ..Default::default()
+        });
+        let version_count_key = cache_keys::version_count(passage_id);
+        let version_latest_key = cache_keys::version_latest(passage_id);
+
+        let version_list_cached = manager.get(&version_list_key).await.is_some();
+        let version_count_cached = manager.get(&version_count_key).await.is_some();
+        let latest_version_cached = manager.get(&version_latest_key).await.is_some();
+
+        cache_keys.push(version_list_key);
+        cache_keys.push(version_count_key);
+        cache_keys.push(version_latest_key);
+
+        Ok(VersionCacheStats {
+            cache_enabled: true,
+            version_list_cached,
+            version_count_cached,
+            latest_version_cached,
+            cache_keys,
+        })
+    }
+
+    /// 主动失效版本缓存（当发生版本变更时调用）
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    pub async fn invalidate_version_cache(&self, passage_id: i64) -> Result<()> {
+        self.clear_version_cache(passage_id).await;
+        
+        // 清除版本详情缓存
+        if let Some(manager) = self.cache.manager() {
+            let versions = self.version_repo
+                .get_by_passage_id(passage_id)
+                .await
+                .map_err(to_send_sync_error)?;
+            
+            for version in versions {
+                let key = cache_keys::version_detail(passage_id, version.version_number);
+                let _ = manager.delete(&key).await;
+            }
+            
+            // 清除差异缓存
+            let diff_pattern = format!("{}:diff:{}*", cache_keys::VERSION_PREFIX, passage_id);
+            let _ = manager.delete_pattern(&diff_pattern).await;
+            
+            // 清除撤销/重做状态缓存
+            let undo_redo_key = cache_keys::undo_redo_status(passage_id);
+            let _ = manager.delete(&undo_redo_key).await;
+        }
+        
+        Ok(())
+    }
+}
+
+/// 版本缓存统计
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionCacheStats {
+    /// 是否启用缓存
+    pub cache_enabled: bool,
+    /// 版本列表是否已缓存
+    pub version_list_cached: bool,
+    /// 版本数量是否已缓存
+    pub version_count_cached: bool,
+    /// 最新版本是否已缓存
+    pub latest_version_cached: bool,
+    /// 缓存键列表
+    pub cache_keys: Vec<String>,
 }
 
 #[cfg(test)]
@@ -2438,7 +2664,7 @@ mod tests {
         };
         
         let key = get_version_list_cache_key(123, &query);
-        assert!(key.contains("version_list:123:"));
+        assert!(key.contains("version:list:123:"));
         assert!(key.contains("p2"));
         assert!(key.contains("s10"));
     }
@@ -2446,7 +2672,7 @@ mod tests {
     #[test]
     fn test_version_count_cache_key() {
         let key = get_version_count_cache_key(456);
-        assert_eq!(key, "version_count:456");
+        assert_eq!(key, "version:count:456");
     }
 
     #[test]
@@ -2930,5 +3156,107 @@ mod tests {
         
         assert!(!response.success);
         assert_eq!(response.deleted_count, 0);
+    }
+
+    // ==================== 第九阶段：缓存优化测试 ====================
+
+    #[test]
+    fn test_cache_keys_version_list() {
+        let query = VersionListQuery {
+            passage_id: 1,
+            page: Some(2),
+            page_size: Some(10),
+            ..Default::default()
+        };
+        
+        let key = cache_keys::version_list(1, &query);
+        assert!(key.contains("version:list:1:"));
+        assert!(key.contains("p2"));
+        assert!(key.contains("s10"));
+    }
+
+    #[test]
+    fn test_cache_keys_version_count() {
+        let key = cache_keys::version_count(123);
+        assert_eq!(key, "version:count:123");
+    }
+
+    #[test]
+    fn test_cache_keys_version_detail() {
+        let key = cache_keys::version_detail(1, 5);
+        assert_eq!(key, "version:detail:1:v5");
+    }
+
+    #[test]
+    fn test_cache_keys_version_latest() {
+        let key = cache_keys::version_latest(100);
+        assert_eq!(key, "version:latest:100");
+    }
+
+    #[test]
+    fn test_cache_keys_version_diff() {
+        let key = cache_keys::version_diff(1, 3, 5);
+        assert_eq!(key, "version:diff:1:3->5");
+    }
+
+    #[test]
+    fn test_cache_keys_undo_redo_status() {
+        let key = cache_keys::undo_redo_status(50);
+        assert_eq!(key, "version:undo_redo:50");
+    }
+
+    #[test]
+    fn test_cache_keys_version_list_pattern() {
+        let pattern = cache_keys::version_list_pattern(1);
+        assert!(pattern.contains("version:list:1:*"));
+    }
+
+    #[test]
+    fn test_cache_ttl_constants() {
+        assert_eq!(cache_ttl::VERSION_LIST, 300);
+        assert_eq!(cache_ttl::VERSION_COUNT, 300);
+        assert_eq!(cache_ttl::VERSION_DETAIL, 600);
+        assert_eq!(cache_ttl::VERSION_LATEST, 60);
+        assert_eq!(cache_ttl::VERSION_DIFF, 900);
+        assert_eq!(cache_ttl::UNDO_REDO_STATUS, 30);
+    }
+
+    #[test]
+    fn test_version_cache_stats() {
+        let stats = VersionCacheStats {
+            cache_enabled: true,
+            version_list_cached: true,
+            version_count_cached: false,
+            latest_version_cached: true,
+            cache_keys: vec![
+                "version:list:1:p1_s20".to_string(),
+                "version:count:1".to_string(),
+                "version:latest:1".to_string(),
+            ],
+        };
+        
+        assert!(stats.cache_enabled);
+        assert!(stats.version_list_cached);
+        assert!(!stats.version_count_cached);
+        assert!(stats.latest_version_cached);
+        assert_eq!(stats.cache_keys.len(), 3);
+    }
+
+    #[test]
+    fn test_version_cache_stats_serialization() {
+        let stats = VersionCacheStats {
+            cache_enabled: false,
+            version_list_cached: false,
+            version_count_cached: false,
+            latest_version_cached: false,
+            cache_keys: vec![],
+        };
+        
+        let json = serde_json::to_string(&stats).unwrap();
+        assert!(json.contains("cacheEnabled"));
+        assert!(json.contains("versionListCached"));
+        
+        let deserialized: VersionCacheStats = serde_json::from_str(&json).unwrap();
+        assert!(!deserialized.cache_enabled);
     }
 }
