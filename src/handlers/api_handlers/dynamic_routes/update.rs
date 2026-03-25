@@ -10,7 +10,8 @@ fn contains_control_chars(s: &str) -> bool {
     s.chars().any(|c| {
         let code = c as u32;
         // 控制字符范围：0-31, 127（DEL）
-        code < 32 || code == 127
+        // 排除常见的空白字符：\t (9), \n (10), \r (13)
+        (code < 32 && code != 9 && code != 10 && code != 13) || code == 127
     })
 }
 
@@ -384,14 +385,24 @@ pub async fn patch_route(
         metadata: update_data.metadata.or_else(|| old_route.metadata.clone()),
     };
 
-    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    // 更新路由 - 始终先更新数据库，非数据库类型再同步到对应存储后端
     let update_result = if let Some(manager) = state.route_type_manager() {
-        let storage = manager.get_storage(&updated_route.route_type);
-        storage
-            .save_route(&updated_route)
-            .await
-            .map(|_| ())
-            .map_err(|e| format!("更新失败: {}", e))
+        match repo.update(id, &updated_route).await {
+            Ok(_) => {
+                // 如果不是数据库类型，还需要更新对应的存储后端
+                if updated_route.route_type != crate::db::models::RouteType::Database {
+                    let storage = manager.get_storage(&updated_route.route_type);
+                    storage
+                        .save_route(&updated_route)
+                        .await
+                        .map(|_| ())
+                        .map_err(|e| format!("更新失败: {}", e))
+                } else {
+                    Ok(())
+                }
+            }
+            Err(e) => Err(e.to_string()),
+        }
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
         repo.update(id, &updated_route)
@@ -400,11 +411,18 @@ pub async fn patch_route(
     };
 
     match update_result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-            "success": true,
-            "message": "路由更新成功",
-            "data": updated_route
-        })),
+        Ok(_) => {
+            // 热更新路由表
+            if let Err(e) = state.dynamic_route_service().reload_route(id).await {
+                tracing::warn!("路由热更新失败: id={}, error={}", id, e);
+            }
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": "路由更新成功",
+                "data": updated_route
+            }))
+        }
         Err(e) => {
             let error_msg = e.to_string();
 
@@ -506,14 +524,23 @@ pub async fn enable_route(
         ..old_route
     };
 
-    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    // 更新路由 - 始终先更新数据库，非数据库类型再同步到对应存储后端
     let update_result = if let Some(manager) = state.route_type_manager() {
-        let storage = manager.get_storage(&updated_route.route_type);
-        storage
-            .save_route(&updated_route)
-            .await
-            .map(|_| ())
-            .map_err(|e| format!("操作失败: {}", e))
+        match repo.update(id, &updated_route).await {
+            Ok(_) => {
+                if updated_route.route_type != crate::db::models::RouteType::Database {
+                    let storage = manager.get_storage(&updated_route.route_type);
+                    storage
+                        .save_route(&updated_route)
+                        .await
+                        .map(|_| ())
+                        .map_err(|e| format!("操作失败: {}", e))
+                } else {
+                    Ok(())
+                }
+            }
+            Err(e) => Err(e.to_string()),
+        }
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
         repo.update(id, &updated_route)
@@ -620,14 +647,23 @@ pub async fn disable_route(
         ..old_route
     };
 
-    // 更新路由 - 使用 RouteTypeManager 保存到正确的存储后端
+    // 更新路由 - 始终先更新数据库，非数据库类型再同步到对应存储后端
     let update_result = if let Some(manager) = state.route_type_manager() {
-        let storage = manager.get_storage(&updated_route.route_type);
-        storage
-            .save_route(&updated_route)
-            .await
-            .map(|_| ())
-            .map_err(|e| format!("操作失败: {}", e))
+        match repo.update(id, &updated_route).await {
+            Ok(_) => {
+                if updated_route.route_type != crate::db::models::RouteType::Database {
+                    let storage = manager.get_storage(&updated_route.route_type);
+                    storage
+                        .save_route(&updated_route)
+                        .await
+                        .map(|_| ())
+                        .map_err(|e| format!("操作失败: {}", e))
+                } else {
+                    Ok(())
+                }
+            }
+            Err(e) => Err(e.to_string()),
+        }
     } else {
         // 兼容性：如果没有 RouteTypeManager，只使用数据库
         repo.update(id, &updated_route)

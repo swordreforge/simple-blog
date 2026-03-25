@@ -267,9 +267,11 @@ impl DynamicRouteService {
     pub async fn reload_route(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
         // 查询数据库获取路由信息
         if let Some(route) = self.repository.get_by_id(id).await? {
+            // 规范化路径，确保与插入时的键一致
+            let normalized_path = normalize_path(&route.path);
             // 先从路由表中删除旧路由
-            self.route_table.remove(&route.path);
-            tracing::debug!("已从路由表移除路由: path={}", route.path);
+            self.route_table.remove(&normalized_path);
+            tracing::debug!("已从路由表移除路由: path={}", normalized_path);
 
             // 如果路由是启用状态，重新加载
             if route.enabled {
@@ -287,8 +289,9 @@ impl DynamicRouteService {
 
     /// 热更新：移除路由
     pub fn remove_route(&self, path: &str) {
-        self.route_table.remove(path);
-        tracing::info!("已从路由表移除路由: path={}", path);
+        let normalized_path = normalize_path(path);
+        self.route_table.remove(&normalized_path);
+        tracing::info!("已从路由表移除路由: path={}", normalized_path);
     }
 
     /// 检查路由是否在路由表中
