@@ -296,30 +296,39 @@ impl ViewBatchProcessor {
 
 /// 检查是否为本地IP
 pub fn is_local_ip(ip: &str) -> bool {
-    ip == "127.0.0.1"
-        || ip == "::1"
-        || ip == "localhost"
-        || ip == "0.0.0.0"
-        || ip.is_empty()
-        || ip.starts_with("127.")
-        || ip.starts_with("192.168.")
-        || ip.starts_with("10.")
-        || ip.starts_with("172.16.")
-        || ip.starts_with("172.17.")
-        || ip.starts_with("172.18.")
-        || ip.starts_with("172.19.")
-        || ip.starts_with("172.20.")
-        || ip.starts_with("172.21.")
-        || ip.starts_with("172.22.")
-        || ip.starts_with("172.23.")
-        || ip.starts_with("172.24.")
-        || ip.starts_with("172.25.")
-        || ip.starts_with("172.26.")
-        || ip.starts_with("172.27.")
-        || ip.starts_with("172.28.")
-        || ip.starts_with("172.29.")
-        || ip.starts_with("172.30.")
-        || ip.starts_with("172.31.")
+    if ip.is_empty() || ip == "::1" || ip == "localhost" {
+        return true;
+    }
+
+    // 解析 IPv4 地址的各段，避免 16 次逐一的 starts_with 字符串比较
+    let parts: Vec<&str> = ip.splitn(4, '.').collect();
+    if parts.len() == 4 {
+        if let Ok(a) = parts[0].parse::<u8>() {
+            match a {
+                // 127.0.0.0/8 loopback
+                127 => return true,
+                // 10.0.0.0/8 private
+                10 => return true,
+                // 0.0.0.0
+                0 => return ip == "0.0.0.0",
+                // 192.168.0.0/16 private
+                192 => {
+                    if let Ok(b) = parts[1].parse::<u8>() {
+                        return b == 168;
+                    }
+                }
+                // 172.16.0.0/12 private (172.16.x.x – 172.31.x.x)
+                172 => {
+                    if let Ok(b) = parts[1].parse::<u8>() {
+                        return (16..=31).contains(&b);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    false
 }
 
 #[cfg(test)]

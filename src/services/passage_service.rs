@@ -1,12 +1,16 @@
 //! 文章服务 - 处理文章相关的业务逻辑
 
 use chrono::Utc;
+use once_cell::sync::Lazy;
 use pulldown_cmark::{Parser, html};
+use regex::Regex;
 use std::sync::Arc;
 
 use crate::db::models::Passage;
 use crate::db::repositories::PassageRepository;
 use crate::error::Result;
+
+static HTML_TAG_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"<[^>]*>").unwrap());
 
 /// 文章服务
 #[derive(Clone)]
@@ -125,14 +129,8 @@ impl PassageService {
 
     /// 从 HTML 内容中提取摘要
     fn extract_summary(html_content: &str) -> String {
-        // 移除 HTML 标签
-        let re = match regex::Regex::new(r"<[^>]*>") {
-            Ok(r) => r,
-            Err(_) => {
-                return html_content.chars().take(200).collect();
-            }
-        };
-        let text = re.replace_all(html_content, "");
+        // 移除 HTML 标签（使用静态编译的正则，避免每次调用重新编译）
+        let text = HTML_TAG_REGEX.replace_all(html_content, "");
 
         // 移除多余的空白字符
         let text: String = text.split_whitespace().collect::<Vec<&str>>().join(" ");
