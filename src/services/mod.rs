@@ -2,6 +2,7 @@
 
 pub mod dynamic_route_service;
 pub mod passage_service;
+pub mod passage_version_service;
 pub mod route_storage;
 pub mod route_type_manager;
 pub mod summarize_service;
