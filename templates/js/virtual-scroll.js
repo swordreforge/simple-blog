@@ -1,1 +1,46 @@
-function e(t){var i=Math.max(0,Math.floor(t.scrollTop/t.g)-t.bufferSize),e=Math.min(t.items.length,Math.ceil((t.scrollTop+t.h.clientHeight)/t.g)+t.bufferSize);if(i!==t.l||e!==t.j){t.l=i,t.j=e,t.i.innerHTML="";for(let n=i;n<e;n++)(i=document.createElement("div")).style.cssText=`\n        position: absolute;\n        top: ${n*t.g}px;\n        left: 0;\n        right: 0;\n        height: ${t.g}px;\n        will-change: transform;\n      `,t.i.appendChild(i)}}class f{constructor(t={}){this.container=t.container,this.g=t.g||40,this.bufferSize=t.bufferSize||5,this.items=[],this.scrollTop=this.j=this.l=0,this.init()}init(){this.h=document.createElement("div"),this.h.style.cssText="\n      position: relative;\n      height: 100%;\n      overflow: auto;\n    ",this.i=document.createElement("div"),this.i.style.cssText="\n      position: absolute;\n      top: 0;\n      left: 0;\n      right: 0;\n      will-change: transform;\n    ",this.h.appendChild(this.i),this.container.innerHTML="",this.container.appendChild(this.h),this.h.addEventListener("scroll",this.o.bind(this)),window.addEventListener("resize",this.m.bind(this))}o(){this.scrollTop=this.h.scrollTop,e(this)}m(){e(this)}}class g extends f{constructor(t={}){super(Object.assign({},t,{g:t.g||42}))}}"undefined"!=typeof module&&module.exports&&(module.exports={v:f,u:g});
+function e(t) {
+  var i = Math.max(0, Math.floor(t.scrollTop / t.g) - t.bufferSize),
+    e = Math.min(t.items.length, Math.ceil((t.scrollTop + t.h.clientHeight) / t.g) + t.bufferSize);
+  if (i !== t.l || e !== t.j) {
+    ((t.l = i), (t.j = e), (t.i.innerHTML = ''));
+    for (let n = i; n < e; n++)
+      (((i = document.createElement('div')).style.cssText =
+        `\n        position: absolute;\n        top: ${n * t.g}px;\n        left: 0;\n        right: 0;\n        height: ${t.g}px;\n        will-change: transform;\n      `),
+        t.i.appendChild(i));
+  }
+}
+class f {
+  constructor(t = {}) {
+    ((this.container = t.container),
+      (this.g = t.g || 40),
+      (this.bufferSize = t.bufferSize || 5),
+      (this.items = []),
+      (this.scrollTop = this.j = this.l = 0),
+      this.init());
+  }
+  init() {
+    ((this.h = document.createElement('div')),
+      (this.h.style.cssText =
+        '\n      position: relative;\n      height: 100%;\n      overflow: auto;\n    '),
+      (this.i = document.createElement('div')),
+      (this.i.style.cssText =
+        '\n      position: absolute;\n      top: 0;\n      left: 0;\n      right: 0;\n      will-change: transform;\n    '),
+      this.h.appendChild(this.i),
+      (this.container.innerHTML = ''),
+      this.container.appendChild(this.h),
+      this.h.addEventListener('scroll', this.o.bind(this)),
+      window.addEventListener('resize', this.m.bind(this)));
+  }
+  o() {
+    ((this.scrollTop = this.h.scrollTop), e(this));
+  }
+  m() {
+    e(this);
+  }
+}
+class g extends f {
+  constructor(t = {}) {
+    super(Object.assign({}, t, { g: t.g || 42 }));
+  }
+}
+'undefined' != typeof module && module.exports && (module.exports = { v: f, u: g });

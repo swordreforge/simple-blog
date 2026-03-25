@@ -1,1 +1,150 @@
-class ECCEncryptor{constructor(){this.sessionId=null,this.serverPublicKey=null,this.clientKeyPair=null,this.isInitialized=!1}async init(){try{this.sessionId=this.generateSessionId();var e,r=await fetch("/api/crypto/public-key?session_id="+this.sessionId);if(!r.ok)throw e=await r.json(),new Error(e.error||"Failed to get server public key");var t=await r.json();if(t.success)return this.serverPublicKey=await this.importServerPublicKey(t),this.clientKeyPair=await this.generateClientKeyPair(),this.isInitialized=!0,{sessionId:this.sessionId,algorithm:t.algorithm,expiresAt:t.expires_at};throw new Error(t.error||"Failed to get server public key")}catch(e){throw console.error("Failed to initialize ECC encryptor:",e),e}}async importServerPublicKey(e){if("jwk"===e.key_format)return window.crypto.subtle.importKey("jwk",e.public_key,{name:"ECDH",namedCurve:"P-256"},!0,[]);if("raw"===e.key_format)return e=this.base64ToArrayBuffer(e.keyData),window.crypto.subtle.importKey("raw",e,{name:"ECDH",namedCurve:"P-256"},!0,["deriveKey","deriveBits"]);throw new Error("Unsupported key format")}async generateClientKeyPair(){return window.crypto.subtle.generateKey({name:"ECDH",namedCurve:"P-256"},!0,["deriveKey","deriveBits"])}async exportClientPublicKey(){return window.crypto.subtle.exportKey("jwk",this.clientKeyPair.publicKey)}async exportClientPublicKeyPEM(){var e=await this.exportClientPublicKey();return e=await window.crypto.subtle.importKey("jwk",e,{name:"ECDH",namedCurve:"P-256"},!0,[]),e=await window.crypto.subtle.exportKey("spki",e),e=String.fromCharCode.apply(null,new Uint8Array(e)),`-----BEGIN PUBLIC KEY-----\n${btoa(e).match(/.{1,64}/g).join("\n")}\n-----END PUBLIC KEY-----`}async deriveSharedKey(){var e=await window.crypto.subtle.deriveBits({name:"ECDH",public:this.serverPublicKey},this.clientKeyPair.privateKey,256);return e=new Uint8Array(e),window.crypto.subtle.importKey("raw",e,{name:"AES-GCM",length:256},!0,["encrypt","decrypt"])}async encrypt(e){if(!this.isInitialized)throw new Error("ECC encryptor not initialized. Call init() first.");try{var r=await this.deriveSharedKey(),t=window.crypto.getRandomValues(new Uint8Array(12)),i=(new TextEncoder).encode(e),n=await window.crypto.subtle.encrypt({name:"AES-GCM",iv:t},r,i),o=new Uint8Array(t.length+n.byteLength),s=(o.set(t,0),o.set(new Uint8Array(n),t.length),await this.exportClientPublicKeyPEM());return{encrypted:this.arrayBufferToBase64(o),clientPublicKey:s,sessionId:this.sessionId,algorithm:"ECDH-ES+A256KW"}}catch(e){throw console.error("Encryption failed:",e),e}}isReady(){return this.isInitialized}getSessionId(){return this.sessionId}reset(){this.sessionId=null,this.serverPublicKey=null,this.clientKeyPair=null,this.isInitialized=!1}arrayBufferToBase64(e){return btoa(String.fromCharCode(...new Uint8Array(e)))}base64ToArrayBuffer(e){var r=atob(e),t=new Uint8Array(r.length);for(let e=0;e<r.length;e++)t[e]=r.charCodeAt(e);return t.buffer}generateSessionId(){return"session_"+Math.random().toString(36).substr(2,9)+Date.now()}}function checkCryptoSupport(){return window.crypto?window.crypto.subtle?{supported:!0,ecdh:!0,curves:["P-256","P-384","P-521"],message:"Web Crypto API is fully supported"}:{supported:!1,message:"Web Crypto API is not available (requires HTTPS or localhost)",reason:"insecure_context",protocol:window.location.protocol,hostname:window.location.hostname}:{supported:!1,message:"window.crypto is not available",reason:"browser_not_supported"}}window.ECCEncryptor=ECCEncryptor,window.checkCryptoSupport=checkCryptoSupport;
+class ECCEncryptor {
+  constructor() {
+    ((this.sessionId = null),
+      (this.serverPublicKey = null),
+      (this.clientKeyPair = null),
+      (this.isInitialized = !1));
+  }
+  async init() {
+    try {
+      this.sessionId = this.generateSessionId();
+      var e,
+        r = await fetch('/api/crypto/public-key?session_id=' + this.sessionId);
+      if (!r.ok)
+        throw ((e = await r.json()), new Error(e.error || 'Failed to get server public key'));
+      var t = await r.json();
+      if (t.success)
+        return (
+          (this.serverPublicKey = await this.importServerPublicKey(t)),
+          (this.clientKeyPair = await this.generateClientKeyPair()),
+          (this.isInitialized = !0),
+          { sessionId: this.sessionId, algorithm: t.algorithm, expiresAt: t.expires_at }
+        );
+      throw new Error(t.error || 'Failed to get server public key');
+    } catch (e) {
+      throw (console.error('Failed to initialize ECC encryptor:', e), e);
+    }
+  }
+  async importServerPublicKey(e) {
+    if ('jwk' === e.key_format)
+      return window.crypto.subtle.importKey(
+        'jwk',
+        e.public_key,
+        { name: 'ECDH', namedCurve: 'P-256' },
+        !0,
+        []
+      );
+    if ('raw' === e.key_format)
+      return (
+        (e = this.base64ToArrayBuffer(e.keyData)),
+        window.crypto.subtle.importKey('raw', e, { name: 'ECDH', namedCurve: 'P-256' }, !0, [
+          'deriveKey',
+          'deriveBits',
+        ])
+      );
+    throw new Error('Unsupported key format');
+  }
+  async generateClientKeyPair() {
+    return window.crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, !0, [
+      'deriveKey',
+      'deriveBits',
+    ]);
+  }
+  async exportClientPublicKey() {
+    return window.crypto.subtle.exportKey('jwk', this.clientKeyPair.publicKey);
+  }
+  async exportClientPublicKeyPEM() {
+    var e = await this.exportClientPublicKey();
+    return (
+      (e = await window.crypto.subtle.importKey(
+        'jwk',
+        e,
+        { name: 'ECDH', namedCurve: 'P-256' },
+        !0,
+        []
+      )),
+      (e = await window.crypto.subtle.exportKey('spki', e)),
+      (e = String.fromCharCode.apply(null, new Uint8Array(e))),
+      `-----BEGIN PUBLIC KEY-----\n${btoa(e)
+        .match(/.{1,64}/g)
+        .join('\n')}\n-----END PUBLIC KEY-----`
+    );
+  }
+  async deriveSharedKey() {
+    var e = await window.crypto.subtle.deriveBits(
+      { name: 'ECDH', public: this.serverPublicKey },
+      this.clientKeyPair.privateKey,
+      256
+    );
+    return (
+      (e = new Uint8Array(e)),
+      window.crypto.subtle.importKey('raw', e, { name: 'AES-GCM', length: 256 }, !0, [
+        'encrypt',
+        'decrypt',
+      ])
+    );
+  }
+  async encrypt(e) {
+    if (!this.isInitialized) throw new Error('ECC encryptor not initialized. Call init() first.');
+    try {
+      var r = await this.deriveSharedKey(),
+        t = window.crypto.getRandomValues(new Uint8Array(12)),
+        i = new TextEncoder().encode(e),
+        n = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv: t }, r, i),
+        o = new Uint8Array(t.length + n.byteLength),
+        s =
+          (o.set(t, 0), o.set(new Uint8Array(n), t.length), await this.exportClientPublicKeyPEM());
+      return {
+        encrypted: this.arrayBufferToBase64(o),
+        clientPublicKey: s,
+        sessionId: this.sessionId,
+        algorithm: 'ECDH-ES+A256KW',
+      };
+    } catch (e) {
+      throw (console.error('Encryption failed:', e), e);
+    }
+  }
+  isReady() {
+    return this.isInitialized;
+  }
+  getSessionId() {
+    return this.sessionId;
+  }
+  reset() {
+    ((this.sessionId = null),
+      (this.serverPublicKey = null),
+      (this.clientKeyPair = null),
+      (this.isInitialized = !1));
+  }
+  arrayBufferToBase64(e) {
+    return btoa(String.fromCharCode(...new Uint8Array(e)));
+  }
+  base64ToArrayBuffer(e) {
+    var r = atob(e),
+      t = new Uint8Array(r.length);
+    for (let e = 0; e < r.length; e++) t[e] = r.charCodeAt(e);
+    return t.buffer;
+  }
+  generateSessionId() {
+    return 'session_' + Math.random().toString(36).substr(2, 9) + Date.now();
+  }
+}
+function checkCryptoSupport() {
+  return window.crypto
+    ? window.crypto.subtle
+      ? {
+          supported: !0,
+          ecdh: !0,
+          curves: ['P-256', 'P-384', 'P-521'],
+          message: 'Web Crypto API is fully supported',
+        }
+      : {
+          supported: !1,
+          message: 'Web Crypto API is not available (requires HTTPS or localhost)',
+          reason: 'insecure_context',
+          protocol: window.location.protocol,
+          hostname: window.location.hostname,
+        }
+    : { supported: !1, message: 'window.crypto is not available', reason: 'browser_not_supported' };
+}
+((window.ECCEncryptor = ECCEncryptor), (window.checkCryptoSupport = checkCryptoSupport));
