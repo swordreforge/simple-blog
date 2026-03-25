@@ -165,11 +165,29 @@ pub async fn clear_storage(
         .as_ref()
         .ok_or_else(|| actix_web::error::ErrorInternalServerError("路由类型管理器未初始化"))?;
 
+    // 在清空存储前，先收集需要从路由表移除的路径
+    let repo = state.dynamic_route_repository();
+    let paths_to_remove: Vec<String> = match repo.list(0, 10000, Some(*route_type), None).await {
+        Ok((routes, _)) => routes.into_iter().map(|r| r.path).collect(),
+        Err(e) => {
+            tracing::warn!("清空存储前获取路由列表失败，路由表可能残留旧条目: {}", e);
+            vec![]
+        }
+    };
+
     match route_type_manager.clear_storage(*route_type).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(serde_json::json!({
-            "success": true,
-            "message": format!("清空 {:?} 存储成功", route_type)
-        }))),
+        Ok(_) => {
+            // 从路由表中移除已被清空的路由
+            let svc = state.dynamic_route_service();
+            for path in &paths_to_remove {
+                svc.remove_route(path);
+            }
+            tracing::info!("清空 {:?} 存储成功，已从路由表移除 {} 条路由", route_type, paths_to_remove.len());
+            Ok(HttpResponse::Ok().json(serde_json::json!({
+                "success": true,
+                "message": format!("清空 {:?} 存储成功", route_type)
+            })))
+        }
         Err(e) => {
             tracing::error!("清空存储失败: {}", e);
             Ok(HttpResponse::InternalServerError().json(serde_json::json!({

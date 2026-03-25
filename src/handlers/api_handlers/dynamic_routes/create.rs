@@ -222,7 +222,7 @@ fn contains_control_chars(s: &str) -> bool {
         let code = c as u32;
         // 控制字符范围：0-31, 127（DEL）
         // 排除常见的空白字符：\t (9), \n (10), \r (13)
-        code < 32 || code == 127
+        (code < 32 && code != 9 && code != 10 && code != 13) || code == 127
     })
 }
 

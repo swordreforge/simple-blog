@@ -1,7 +1,9 @@
 use crate::app_state::AppState;
 use crate::middleware::auth::check_admin_auth;
+use crate::services::dynamic_route_service::DynamicRouteService;
 use actix_web::{HttpResponse, web};
 use serde::Deserialize;
+use std::sync::Arc;
 
 /// 批量操作请求
 #[derive(Debug, Deserialize)]
@@ -33,18 +35,20 @@ pub async fn batch_operations(
     };
 
     let repo = state.dynamic_route_repository();
+    let svc = state.dynamic_route_service();
     let username = &admin_info.1;
 
     match batch_req.into_inner() {
-        BatchRequest::Enable { ids } => batch_enable(&repo, ids, username).await,
-        BatchRequest::Disable { ids } => batch_disable(&repo, ids, username).await,
-        BatchRequest::Delete { ids } => batch_delete(&repo, ids, username).await,
+        BatchRequest::Enable { ids } => batch_enable(&repo, &svc, ids, username).await,
+        BatchRequest::Disable { ids } => batch_disable(&repo, &svc, ids, username).await,
+        BatchRequest::Delete { ids } => batch_delete(&repo, &svc, ids, username).await,
     }
 }
 
 /// 批量启用
 async fn batch_enable(
     repo: &crate::db::repositories::DynamicRouteRepository,
+    svc: &Arc<DynamicRouteService>,
     ids: Vec<i64>,
     _username: &str,
 ) -> HttpResponse {
@@ -59,6 +63,10 @@ async fn batch_enable(
                     route.updated_at = chrono::Utc::now();
                     match repo.update(id, &route).await {
                         Ok(_) => {
+                            // 热更新路由表
+                            if let Err(e) = svc.reload_route(id).await {
+                                tracing::warn!("批量启用路由热更新失败: id={}, error={}", id, e);
+                            }
                             success_count += 1;
                         }
                         Err(_) => {
@@ -92,6 +100,7 @@ async fn batch_enable(
 /// 批量禁用
 async fn batch_disable(
     repo: &crate::db::repositories::DynamicRouteRepository,
+    svc: &Arc<DynamicRouteService>,
     ids: Vec<i64>,
     _username: &str,
 ) -> HttpResponse {
@@ -102,10 +111,13 @@ async fn batch_disable(
         match repo.get_by_id(id).await {
             Ok(Some(mut route)) => {
                 if route.enabled {
+                    let path = route.path.clone();
                     route.enabled = false;
                     route.updated_at = chrono::Utc::now();
                     match repo.update(id, &route).await {
                         Ok(_) => {
+                            // 从路由表移除
+                            svc.remove_route(&path);
                             success_count += 1;
                         }
                         Err(_) => {
@@ -139,6 +151,7 @@ async fn batch_disable(
 /// 批量删除
 async fn batch_delete(
     repo: &crate::db::repositories::DynamicRouteRepository,
+    svc: &Arc<DynamicRouteService>,
     ids: Vec<i64>,
     _username: &str,
 ) -> HttpResponse {
@@ -147,14 +160,19 @@ async fn batch_delete(
 
     for id in ids {
         match repo.get_by_id(id).await {
-            Ok(Some(_route)) => match repo.delete(id).await {
-                Ok(_) => {
-                    success_count += 1;
+            Ok(Some(route)) => {
+                let path = route.path.clone();
+                match repo.delete(id).await {
+                    Ok(_) => {
+                        // 从路由表移除
+                        svc.remove_route(&path);
+                        success_count += 1;
+                    }
+                    Err(_) => {
+                        failed_ids.push(id);
+                    }
                 }
-                Err(_) => {
-                    failed_ids.push(id);
-                }
-            },
+            }
             Ok(None) => {
                 failed_ids.push(id);
             }
