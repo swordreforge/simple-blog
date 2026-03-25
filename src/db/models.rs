@@ -762,27 +762,27 @@ pub struct PassageVersion {
     pub passage_id: i64,
     pub passage_uuid: String,
     pub version_number: i32,
-    
+
     // 文件信息
     pub file_path: String,
     pub file_size: i64,
     pub file_hash: Option<String>,
-    
+
     // 只存储原始内容和元数据，不存储派生数据
     pub title: String,
-    pub content: String,                // 原始 Markdown 内容
-    pub tags: String,                    // JSON 数组字符串
+    pub content: String, // 原始 Markdown 内容
+    pub tags: String,    // JSON 数组字符串
     pub category: String,
     pub cover_image: Option<String>,
-    
+
     // 变更信息
-    pub change_type: String,  // "auto", "manual", "restore", "pre_restore"
+    pub change_type: String, // "auto", "manual", "restore", "pre_restore"
     pub change_reason: Option<String>,
-    
+
     // 操作信息
     pub created_at: DateTime<Utc>,
     pub created_by: String,
-    
+
     // Git 风格的树形结构
     pub parent_version_id: Option<i64>,
     pub branch_name: Option<String>,
@@ -820,7 +820,7 @@ pub struct DiffField<T> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PassageHistorySettings {
     pub enabled: bool,
-    pub storage_mode: String,  // "filesystem" or "database"
+    pub storage_mode: String, // "filesystem" or "database"
     pub history_dir: String,
     pub max_versions: i32,
     pub enable_deduplication: bool,
@@ -853,7 +853,7 @@ impl Default for PassageHistorySettings {
 }
 
 /// 恢复模式
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RestoreMode {
     /// 软恢复：只覆盖文件，不创建版本记录

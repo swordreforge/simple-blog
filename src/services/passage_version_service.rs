@@ -21,6 +21,11 @@
 //! - Diff 算法实现
 //! - 版本对比 API
 //! - 差异可视化支持
+//!
+//! 第六阶段：版本恢复功能
+//! - 软恢复实现
+//! - 硬恢复实现
+//! - 恢复 API
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -30,7 +35,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::cache::AppCache;
-use crate::db::models::{Passage, PassageHistorySettings, PassageVersion};
+use crate::db::models::{Passage, PassageHistorySettings, PassageVersion, RestoreMode};
 use crate::db::repositories::PassageRepository;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -1142,6 +1147,36 @@ pub struct VersionDiffQuery {
     pub include_all_fields: Option<bool>,
 }
 
+/// 版本恢复查询参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionRestoreQuery {
+    /// 文章 ID
+    pub passage_id: i64,
+    /// 要恢复到的版本号
+    pub version_number: i32,
+    /// 恢复模式
+    pub mode: RestoreMode,
+    /// 是否创建备份版本
+    pub create_backup: Option<bool>,
+}
+
+/// 版本恢复响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionRestoreResponse {
+    /// 是否成功
+    pub success: bool,
+    /// 恢复后的版本号
+    pub restored_version: i32,
+    /// 新创建的备份版本号（如果有）
+    pub backup_version: Option<i32>,
+    /// 恢复模式
+    pub mode: RestoreMode,
+    /// 消息
+    pub message: String,
+}
+
 impl PassageVersionService {
     /// 计算两个文本之间的行级差异
     ///
@@ -1404,6 +1439,221 @@ impl PassageVersionService {
             || version_a.tags != version_b.tags
             || version_a.category != version_b.category
             || version_a.cover_image != version_b.cover_image)
+    }
+
+    // ==================== 第六阶段：版本恢复功能 ====================
+
+    /// 恢复版本到指定版本
+    ///
+    /// # 参数
+    /// - query: 恢复查询参数
+    ///
+    /// # 返回
+    /// 返回版本恢复响应
+    pub async fn restore_version(&self, query: VersionRestoreQuery) -> Result<VersionRestoreResponse> {
+        // 1. 获取要恢复的版本
+        let target_version = self.version_repo
+            .get_by_version_number(query.passage_id, query.version_number)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or_else(|| format!("版本 {} 不存在", query.version_number))?;
+
+        // 2. 获取当前文章
+        let current_passage = self.passage_repo
+            .get_by_id(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 3. 根据恢复模式执行恢复
+        match query.mode {
+            RestoreMode::Soft => {
+                self.soft_restore(query.passage_id, &target_version, &current_passage).await
+            }
+            RestoreMode::Hard => {
+                let create_backup = query.create_backup.unwrap_or(true);
+                self.hard_restore(query.passage_id, &target_version, &current_passage, create_backup).await
+            }
+            RestoreMode::HardWithBackup => {
+                self.hard_restore_with_backup(query.passage_id, &target_version, &current_passage).await
+            }
+        }
+    }
+
+    /// 软恢复
+    ///
+    /// 只覆盖文件内容，不创建版本记录，不更新数据库
+    async fn soft_restore(
+        &self,
+        passage_id: i64,
+        target_version: &PassageVersion,
+        _current_passage: &Passage,
+    ) -> Result<VersionRestoreResponse> {
+        // 1. 检查配置
+        let config = self.load_history_config().await?;
+        
+        // 2. 如果使用文件系统模式，尝试从文件恢复
+        if config.storage_mode == "filesystem" && !target_version.file_path.is_empty() {
+            // 读取历史文件内容
+            let history_path = Path::new(&target_version.file_path);
+            
+            if history_path.exists() {
+                // 读取文件内容
+                let content = self.read_history_file(history_path).await?;
+                
+                // 写入当前文章文件
+                let current_file_path = PathBuf::from("markdown")
+                    .join(format!("{}.md", passage_id));
+                
+                self.write_history_file(&current_file_path, &content).await?;
+            }
+        }
+
+        Ok(VersionRestoreResponse {
+            success: true,
+            restored_version: target_version.version_number,
+            backup_version: None,
+            mode: RestoreMode::Soft,
+            message: "软恢复成功（仅文件恢复）".to_string(),
+        })
+    }
+
+    /// 硬恢复
+    ///
+    /// 保存当前版本到历史，更新数据库，创建恢复操作版本记录
+    async fn hard_restore(
+        &self,
+        passage_id: i64,
+        target_version: &PassageVersion,
+        current_passage: &Passage,
+        create_backup: bool,
+    ) -> Result<VersionRestoreResponse> {
+        let config = self.load_history_config().await?;
+
+        // 1. 如果需要创建备份，保存当前版本
+        let mut backup_version_number = None;
+        
+        if create_backup {
+            let backup_id = self.save_version(
+                passage_id,
+                current_passage.uuid.as_deref().unwrap_or(""),
+                current_passage,
+                "pre_restore",
+                Some("恢复前备份".to_string()),
+            ).await?;
+            
+            if backup_id > 0 {
+                backup_version_number = Some(target_version.version_number + 1);
+            }
+        }
+
+        // 2. 构建更新后的文章
+        let mut updated_passage = current_passage.clone();
+        updated_passage.title = target_version.title.clone();
+        updated_passage.content = target_version.content.clone();
+        updated_passage.original_content = Some(target_version.content.clone());
+        updated_passage.tags = target_version.tags.clone();
+        updated_passage.category = target_version.category.clone();
+        updated_passage.cover_image = target_version.cover_image.clone();
+        updated_passage.updated_at = Utc::now();
+
+        // 3. 更新数据库
+        self.passage_repo
+            .update(&updated_passage)
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 4. 如果使用文件系统模式，更新文件
+        if config.storage_mode == "filesystem" {
+            let file_path = current_passage.file_path.as_ref()
+                .ok_or("文章文件路径不存在")?;
+            
+            let full_path = PathBuf::from(file_path);
+            
+            if let Some(parent) = full_path.parent() {
+                tokio::fs::create_dir_all(parent).await
+                    .map_err(|e| format!("创建目录失败: {}", e))?;
+            }
+            
+            tokio::fs::write(&full_path, &target_version.content).await
+                .map_err(|e| format!("写入文件失败: {}", e))?;
+        }
+
+        // 5. 创建恢复操作版本记录
+        self.save_version(
+            passage_id,
+            current_passage.uuid.as_deref().unwrap_or(""),
+            &updated_passage,
+            "restore",
+            Some(format!("从版本 {} 恢复", target_version.version_number)),
+        ).await?;
+
+        // 6. 清除缓存
+        self.clear_version_cache_internal(passage_id).await;
+
+        Ok(VersionRestoreResponse {
+            success: true,
+            restored_version: target_version.version_number,
+            backup_version: backup_version_number,
+            mode: RestoreMode::Hard,
+            message: "硬恢复成功".to_string(),
+        })
+    }
+
+    /// 硬恢复 + 备份
+    ///
+    /// 保留更多元数据，包括恢复操作的详细信息
+    async fn hard_restore_with_backup(
+        &self,
+        passage_id: i64,
+        target_version: &PassageVersion,
+        current_passage: &Passage,
+    ) -> Result<VersionRestoreResponse> {
+        // 1. 创建完整备份（包括所有字段）
+        let backup_id = self.save_version(
+            passage_id,
+            current_passage.uuid.as_deref().unwrap_or(""),
+            current_passage,
+            "pre_restore_full_backup",
+            Some(format!("完整备份 - 恢复到版本 {}", target_version.version_number)),
+        ).await?;
+
+        // 2. 执行硬恢复
+        let mut response = self.hard_restore(passage_id, target_version, current_passage, false).await?;
+
+        // 3. 更新备份版本号
+        if backup_id > 0 {
+            // 获取最新版本号作为备份版本号
+            let latest_version = self.version_repo
+                .get_latest_version(passage_id)
+                .await
+                .map_err(to_send_sync_error)?;
+            
+            if let Some(v) = latest_version {
+                response.backup_version = Some(v.version_number);
+            }
+        }
+
+        response.mode = RestoreMode::HardWithBackup;
+        response.message = "硬恢复 + 备份成功".to_string();
+
+        Ok(response)
+    }
+
+    /// 检查版本是否可以恢复
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    /// - version_number: 版本号
+    ///
+    /// # 返回
+    /// 如果可以恢复返回 true，否则返回 false
+    pub async fn can_restore_version(&self, passage_id: i64, version_number: i32) -> Result<bool> {
+        let version = self.version_repo
+            .get_by_version_number(passage_id, version_number)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        Ok(version.is_some())
     }
 }
 
@@ -1929,5 +2179,94 @@ mod tests {
         assert_eq!(response.to_version, 2);
         assert_eq!(response.total_changes, 10);
         assert_eq!(response.stats.added, 5);
+    }
+
+    // ==================== 第六阶段：版本恢复功能测试 ====================
+
+    #[test]
+    fn test_version_restore_query() {
+        let query = VersionRestoreQuery {
+            passage_id: 1,
+            version_number: 5,
+            mode: RestoreMode::Hard,
+            create_backup: Some(true),
+        };
+        
+        assert_eq!(query.passage_id, 1);
+        assert_eq!(query.version_number, 5);
+        assert_eq!(query.mode, RestoreMode::Hard);
+        assert_eq!(query.create_backup, Some(true));
+    }
+
+    #[test]
+    fn test_version_restore_query_soft_mode() {
+        let query = VersionRestoreQuery {
+            passage_id: 1,
+            version_number: 3,
+            mode: RestoreMode::Soft,
+            create_backup: None,
+        };
+        
+        assert_eq!(query.mode, RestoreMode::Soft);
+    }
+
+    #[test]
+    fn test_version_restore_query_hard_with_backup_mode() {
+        let query = VersionRestoreQuery {
+            passage_id: 1,
+            version_number: 10,
+            mode: RestoreMode::HardWithBackup,
+            create_backup: Some(false),
+        };
+        
+        assert_eq!(query.mode, RestoreMode::HardWithBackup);
+    }
+
+    #[test]
+    fn test_version_restore_response() {
+        let response = VersionRestoreResponse {
+            success: true,
+            restored_version: 5,
+            backup_version: Some(6),
+            mode: RestoreMode::Hard,
+            message: "恢复成功".to_string(),
+        };
+        
+        assert!(response.success);
+        assert_eq!(response.restored_version, 5);
+        assert_eq!(response.backup_version, Some(6));
+        assert_eq!(response.mode, RestoreMode::Hard);
+        assert_eq!(response.message, "恢复成功");
+    }
+
+    #[test]
+    fn test_version_restore_response_no_backup() {
+        let response = VersionRestoreResponse {
+            success: true,
+            restored_version: 3,
+            backup_version: None,
+            mode: RestoreMode::Soft,
+            message: "软恢复成功".to_string(),
+        };
+        
+        assert!(response.success);
+        assert!(response.backup_version.is_none());
+    }
+
+    #[test]
+    fn test_restore_mode_serialization() {
+        let json = serde_json::to_string(&RestoreMode::Hard).unwrap();
+        assert!(json.contains("hard"));
+        
+        let deserialized: RestoreMode = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, RestoreMode::Hard);
+    }
+
+    #[test]
+    fn test_restore_mode_from_str() {
+        assert_eq!(RestoreMode::from_str("soft"), Some(RestoreMode::Soft));
+        assert_eq!(RestoreMode::from_str("hard"), Some(RestoreMode::Hard));
+        assert_eq!(RestoreMode::from_str("hard_with_backup"), Some(RestoreMode::HardWithBackup));
+        assert_eq!(RestoreMode::from_str("invalid"), None);
     }
 }
