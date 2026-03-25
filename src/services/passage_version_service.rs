@@ -1177,6 +1177,58 @@ pub struct VersionRestoreResponse {
     pub message: String,
 }
 
+/// 撤销/重做操作类型
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UndoRedoOperation {
+    /// 撤销
+    Undo,
+    /// 重做
+    Redo,
+}
+
+/// 撤销/重做查询参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UndoRedoQuery {
+    /// 文章 ID
+    pub passage_id: i64,
+    /// 操作类型
+    pub operation: UndoRedoOperation,
+    /// 恢复模式
+    pub mode: Option<RestoreMode>,
+}
+
+/// 撤销/重做响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UndoRedoResponse {
+    /// 是否成功
+    pub success: bool,
+    /// 操作类型
+    pub operation: UndoRedoOperation,
+    /// 恢复到的版本号
+    pub restored_version: i32,
+    /// 之前的版本号
+    pub from_version: i32,
+    /// 消息
+    pub message: String,
+    /// 是否还有可撤销的内容
+    pub can_undo: bool,
+    /// 是否还有可重做的内容
+    pub can_redo: bool,
+}
+
+/// 撤销/重做状态
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UndoRedoStatus {
+    /// 是否可以撤销
+    pub can_undo: bool,
+    /// 是否可以重做
+    pub can_redo: bool,
+}
+
 impl PassageVersionService {
     /// 计算两个文本之间的行级差异
     ///
@@ -1654,6 +1706,240 @@ impl PassageVersionService {
             .map_err(to_send_sync_error)?;
         
         Ok(version.is_some())
+    }
+
+    // ==================== 第七阶段：撤销/重做功能 ====================
+
+    /// 检查是否可以撤销
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 如果可以撤销返回 true，否则返回 false
+    pub async fn can_undo(&self, passage_id: i64) -> Result<bool> {
+        let config = self.load_history_config().await?;
+        
+        if !config.enable_undo_redo {
+            return Ok(false);
+        }
+
+        let latest = self.version_repo
+            .get_latest_version(passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        if let Some(version) = latest {
+            if version.change_type == "restore" || version.change_type == "undo" {
+                return Ok(version.parent_version_id.is_some());
+            }
+            return Ok(version.parent_version_id.is_some());
+        }
+        
+        Ok(false)
+    }
+
+    /// 检查是否可以重做
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 如果可以重做返回 true，否则返回 false
+    pub async fn can_redo(&self, passage_id: i64) -> Result<bool> {
+        let config = self.load_history_config().await?;
+        
+        if !config.enable_undo_redo {
+            return Ok(false);
+        }
+
+        let versions = self.version_repo
+            .get_by_passage_id(passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+        
+        let has_redo = versions.iter().any(|v| v.change_type == "redo");
+        
+        Ok(has_redo)
+    }
+
+    /// 撤销上一次操作
+    ///
+    /// # 参数
+    /// - query: 撤销/重做查询参数
+    ///
+    /// # 返回
+    /// 返回撤销/重做响应
+    pub async fn undo_last_change(&self, query: UndoRedoQuery) -> Result<UndoRedoResponse> {
+        let config = self.load_history_config().await?;
+        
+        if !config.enable_undo_redo {
+            return Ok(UndoRedoResponse {
+                success: false,
+                operation: UndoRedoOperation::Undo,
+                restored_version: 0,
+                from_version: 0,
+                message: "撤销/重做功能已禁用".to_string(),
+                can_undo: false,
+                can_redo: false,
+            });
+        }
+
+        // 获取当前文章
+        let _current_passage = self.passage_repo
+            .get_by_id(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 获取最新版本
+        let latest_version = self.version_repo
+            .get_latest_version(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or("没有可撤销的版本")?;
+
+        let from_version = latest_version.version_number;
+
+        // 获取父版本
+        let parent_version_id = latest_version.parent_version_id
+            .ok_or("没有可撤销的版本")?;
+
+        let parent_version = self.version_repo
+            .get_by_id(parent_version_id)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or("父版本不存在")?;
+
+        let restored_version_number = parent_version.version_number;
+
+        // 执行恢复
+        let mode = query.mode.unwrap_or(RestoreMode::Hard);
+        
+        let restore_query = VersionRestoreQuery {
+            passage_id: query.passage_id,
+            version_number: restored_version_number,
+            mode,
+            create_backup: Some(false), // 撤销操作不创建额外备份
+        };
+
+        let _restore_result = self.restore_version(restore_query).await?;
+
+        // 获取更新后的状态
+        let can_undo = self.can_undo(query.passage_id).await?;
+        let can_redo = self.can_redo(query.passage_id).await?;
+
+        Ok(UndoRedoResponse {
+            success: true,
+            operation: UndoRedoOperation::Undo,
+            restored_version: restored_version_number,
+            from_version,
+            message: format!("已撤销到版本 {}", restored_version_number),
+            can_undo,
+            can_redo,
+        })
+    }
+
+    /// 重做上一次撤销的操作
+    ///
+    /// # 参数
+    /// - query: 撤销/重做查询参数
+    ///
+    /// # 返回
+    /// 返回撤销/重做响应
+    pub async fn redo_last_change(&self, query: UndoRedoQuery) -> Result<UndoRedoResponse> {
+        let config = self.load_history_config().await?;
+        
+        if !config.enable_undo_redo {
+            return Ok(UndoRedoResponse {
+                success: false,
+                operation: UndoRedoOperation::Redo,
+                restored_version: 0,
+                from_version: 0,
+                message: "撤销/重做功能已禁用".to_string(),
+                can_undo: false,
+                can_redo: false,
+            });
+        }
+
+        // 获取当前文章
+        let _current_passage = self.passage_repo
+            .get_by_id(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?;
+
+        // 获取当前版本
+        let current_version = self.version_repo
+            .get_latest_version(query.passage_id)
+            .await
+            .map_err(to_send_sync_error)?
+            .ok_or("没有可重做的版本")?;
+
+        let from_version = current_version.version_number;
+
+        // 查找需要重做到的版本
+        // 在当前实现中，我们通过查找父版本来确定重做目标
+        // 如果当前版本是 undo 产生的，我们可以恢复到 undo 之前的版本
+        if current_version.change_type == "undo" || current_version.change_type == "restore" {
+            // 查找父版本
+            if let Some(parent_id) = current_version.parent_version_id {
+                let parent_version = self.version_repo
+                    .get_by_id(parent_id)
+                    .await
+                    .map_err(to_send_sync_error)?
+                    .ok_or("父版本不存在")?;
+
+                let restored_version_number = parent_version.version_number;
+
+                // 执行恢复
+                let mode = query.mode.unwrap_or(RestoreMode::Hard);
+                
+                let restore_query = VersionRestoreQuery {
+                    passage_id: query.passage_id,
+                    version_number: restored_version_number,
+                    mode,
+                    create_backup: Some(false),
+                };
+
+                let _restore_result = self.restore_version(restore_query).await?;
+
+                let can_undo = self.can_undo(query.passage_id).await?;
+                let can_redo = self.can_redo(query.passage_id).await?;
+
+                return Ok(UndoRedoResponse {
+                    success: true,
+                    operation: UndoRedoOperation::Redo,
+                    restored_version: restored_version_number,
+                    from_version,
+                    message: format!("已重做到版本 {}", restored_version_number),
+                    can_undo,
+                    can_redo,
+                });
+            }
+        }
+
+        Ok(UndoRedoResponse {
+            success: false,
+            operation: UndoRedoOperation::Redo,
+            restored_version: from_version,
+            from_version,
+            message: "没有可重做的操作".to_string(),
+            can_undo: self.can_undo(query.passage_id).await?,
+            can_redo: false,
+        })
+    }
+
+    /// 获取撤销/重做状态
+    ///
+    /// # 参数
+    /// - passage_id: 文章 ID
+    ///
+    /// # 返回
+    /// 返回当前是否可以撤销/重做
+    pub async fn get_undo_redo_status(&self, passage_id: i64) -> Result<UndoRedoStatus> {
+        Ok(UndoRedoStatus {
+            can_undo: self.can_undo(passage_id).await?,
+            can_redo: self.can_redo(passage_id).await?,
+        })
     }
 }
 
@@ -2268,5 +2554,104 @@ mod tests {
         assert_eq!(RestoreMode::from_str("hard"), Some(RestoreMode::Hard));
         assert_eq!(RestoreMode::from_str("hard_with_backup"), Some(RestoreMode::HardWithBackup));
         assert_eq!(RestoreMode::from_str("invalid"), None);
+    }
+
+    // ==================== 第七阶段：撤销/重做功能测试 ====================
+
+    #[test]
+    fn test_undo_redo_operation_serialization() {
+        let json = serde_json::to_string(&UndoRedoOperation::Undo).unwrap();
+        assert!(json.contains("undo"));
+        
+        let deserialized: UndoRedoOperation = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, UndoRedoOperation::Undo);
+    }
+
+    #[test]
+    fn test_undo_redo_query() {
+        let query = UndoRedoQuery {
+            passage_id: 1,
+            operation: UndoRedoOperation::Undo,
+            mode: Some(RestoreMode::Hard),
+        };
+        
+        assert_eq!(query.passage_id, 1);
+        assert_eq!(query.operation, UndoRedoOperation::Undo);
+        assert_eq!(query.mode, Some(RestoreMode::Hard));
+    }
+
+    #[test]
+    fn test_undo_redo_query_redo_operation() {
+        let query = UndoRedoQuery {
+            passage_id: 1,
+            operation: UndoRedoOperation::Redo,
+            mode: None,
+        };
+        
+        assert_eq!(query.operation, UndoRedoOperation::Redo);
+    }
+
+    #[test]
+    fn test_undo_redo_response() {
+        let response = UndoRedoResponse {
+            success: true,
+            operation: UndoRedoOperation::Undo,
+            restored_version: 5,
+            from_version: 6,
+            message: "已撤销到版本 5".to_string(),
+            can_undo: false,
+            can_redo: true,
+        };
+        
+        assert!(response.success);
+        assert_eq!(response.operation, UndoRedoOperation::Undo);
+        assert_eq!(response.restored_version, 5);
+        assert_eq!(response.from_version, 6);
+        assert!(!response.can_undo);
+        assert!(response.can_redo);
+    }
+
+    #[test]
+    fn test_undo_redo_response_failure() {
+        let response = UndoRedoResponse {
+            success: false,
+            operation: UndoRedoOperation::Redo,
+            restored_version: 0,
+            from_version: 0,
+            message: "没有可重做的操作".to_string(),
+            can_undo: true,
+            can_redo: false,
+        };
+        
+        assert!(!response.success);
+        assert_eq!(response.message, "没有可重做的操作");
+        assert!(!response.can_redo);
+    }
+
+    #[test]
+    fn test_undo_redo_status() {
+        let status = UndoRedoStatus {
+            can_undo: true,
+            can_redo: false,
+        };
+        
+        assert!(status.can_undo);
+        assert!(!status.can_redo);
+    }
+
+    #[test]
+    fn test_undo_redo_status_serialization() {
+        let status = UndoRedoStatus {
+            can_undo: true,
+            can_redo: true,
+        };
+        
+        let json = serde_json::to_string(&status).unwrap();
+        assert!(json.contains("canUndo"));
+        assert!(json.contains("canRedo"));
+        
+        let deserialized: UndoRedoStatus = serde_json::from_str(&json).unwrap();
+        assert!(deserialized.can_undo);
+        assert!(deserialized.can_redo);
     }
 }
