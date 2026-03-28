@@ -6,6 +6,7 @@
 use chrono::{DateTime, Utc};
 use std::borrow::Cow;
 use std::fmt::Write;
+use no_panic::no_panic;
 
 /// 预分配的日期时间格式化缓冲区大小
 /// 格式: "YYYY-MM-DD HH:MM:SS" = 19 字节
@@ -237,6 +238,7 @@ pub fn eq_simd(a: &str, b: &str) -> bool {
 /// 是否找到
 #[inline]
 #[allow(dead_code)]
+#[no_panic]
 pub fn contains_optimized<T: PartialEq>(item: &T, list: &[T]) -> bool {
     // 对于小列表，线性搜索可能更快
     if list.len() <= 8 {

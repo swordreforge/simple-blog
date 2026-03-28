@@ -202,5 +202,6 @@ overflow-checks = false
 tempfile = "3.13"
 
 [profile.dev]
-opt-level = 0
+opt-level = 1      # 启用优化以支持 no-panic 检测
+panic = "unwind"   # 启用 no-panic 检测（dev 模式）
 

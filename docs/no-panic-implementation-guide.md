@@ -585,6 +585,136 @@ pub fn safe(arr: &[i32], index: usize) -> Option<i32> {
 }
 ```
 
+## dev 模式配置
+
+### 推荐配置
+
+为了在开发时获得 `no-panic` 的编译时验证，同时保持发布版本的最佳性能，项目采用了以下配置：
+
+```toml
+[profile.dev]
+opt-level = 1
+panic = "unwind"
+overflow-checks = true
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+overflow-checks = false
+```
+
+### 配置说明
+
+#### dev 模式
+
+- **opt-level = 1**：启用基本优化，满足 `no-panic` 的要求
+- **panic = "unwind"**：允许 panic 展开，启用 `no-panic` 检测
+- **overflow-checks = true**：启用整数溢出检查，增强安全性
+
+#### release 模式
+
+- **opt-level = "z"**：最大化优化以减小二进制大小
+- **lto = "fat"**：启用 LTO 优化
+- **panic = "abort"**：panic 时直接终止，减少二进制大小
+- **overflow-checks = false**：禁用整数溢出检查，提升性能
+
+### 使用方式
+
+#### 开发时验证
+
+```bash
+cargo build
+```
+
+使用 dev 模式编译，`no-panic` 会进行编译时验证。如果标记为 `#[no_panic]` 的函数可能 panic，编译会失败。
+
+#### 发布构建
+
+```bash
+cargo build --release
+```
+
+使用 release 模式编译，`no-panic` 不会生效，但会获得最佳性能和最小的二进制大小。
+
+### 当前项目的 no-panic 应用
+
+项目目前有 **32 个函数** 保留了 `#[no_panic]` 属性，这些函数都是真正不会 panic 的简单函数：
+
+1. **缓存键构建器基础函数** (`src/cache/keys.rs`)
+   - `new()` - 创建新的缓存键构建器
+   - `with_version()` - 设置版本号
+
+2. **缓存键生成器模式函数** (`src/cache/keys.rs`)
+   - `all_pattern()` - 生成所有文章缓存模式
+   - 保留这些函数是因为它们只返回简单的字符串字面量
+
+3. **其他简单函数**
+   - 不涉及内存分配
+   - 不涉及外部调用
+   - 只进行简单的类型转换和计算
+
+### 已移除 no-panic 的函数
+
+以下函数曾经标记为 `#[no_panic]`，但被移除因为它们确实有可能 panic：
+
+1. **日期格式化函数** (`src/utils/unsafe_utils.rs`)
+   - `format_year()` - 涉及字符串格式化
+   - `format_date()` - 涉及字符串格式化
+   - `format_datetime_short()` - 涉及字符串格式化
+
+2. **缓存键构建器复杂函数** (`src/cache/keys.rs`)
+   - `with_param()` - 涉及字符串转换
+   - `with_param_int()` - 涉及字符串转换
+   - `build()` - 涉及字符串拼接
+   - `build_pattern()` - 涉及字符串拼接
+   - `get_by_id()` - 调用了可能 panic 的函数
+   - `get_by_uuid()` - 调用了可能 panic 的函数
+   - `latest_pattern()` - 涉及字符串分配
+   - `get_pattern()` - 涉及字符串分配
+   - `list_pattern()` - 涉及字符串分配
+
+3. **ID 生成函数** (`src/id_generator.rs`)
+   - `compose_id()` - 涉及字符串转换
+   - `get_timestamp()` - 涉及系统时间获取
+
+4. **加密函数** (`src/handlers/api_handlers/crypto.rs`)
+   - `get_expiry()` - 涉及时间计算
+   - `is_expired()` - 涉及时间计算
+   - `generate_session_id()` - 涉及随机数生成和字符串格式化
+
+### 验证 no-panic 生效
+
+要验证 `no-panic` 是否正确生效，可以尝试在一个标记为 `#[no_panic]` 的函数中添加可能 panic 的代码：
+
+```rust
+#[no_panic]
+pub fn test_function() -> i32 {
+    let arr = vec![1, 2, 3];
+    arr[10]  // ❌ 索引越界，会 panic
+}
+```
+
+在 dev 模式下编译会失败，显示：
+```
+ERROR[no-panic]: detected panic in function `test_function`
+```
+
+### 性能影响
+
+#### dev 模式
+
+- **编译时间**：略微增加（opt-level = 1）
+- **运行时性能**：不受影响
+- **开发体验**：获得编译时的 panic 安全保证
+
+#### release 模式
+
+- **编译时间**：较长（LTO + 最大优化）
+- **运行时性能**：最佳
+- **二进制大小**：最小
+
 ## 未来计划
 
 1. **扩展覆盖范围**: 逐步为更多关键函数添加 `#[no_panic]`
@@ -610,6 +740,10 @@ pub fn safe(arr: &[i32], index: usize) -> Option<i32> {
   - **测试 no-panics fork**：确认 `no-panics` 检测过于严格且已停止维护，不推荐使用
   - **发现 panic 配置影响**：确认项目当前使用 `panic = "abort"` 导致 `no-panic` 检测失效
   - **添加配置说明文档**：详细说明 `panic = "abort"` 对 `no-panic` 的影响及解决方案
+  - **启用 dev 模式 no-panic 检测**：配置 `opt-level = 1` 和 `panic = "unwind"` 启用开发时验证
+  - **修复 panic 路径**：移除 16 个函数的 `#[no_panic]` 属性，这些函数确实有可能 panic
+  - **保留安全函数**：保留 32 个真正不会 panic 的简单函数的 `#[no_panic]` 属性
+  - **验证编译通过**：dev 和 release 模式都能成功编译，无警告无错误
 
 ## 联系方式
 

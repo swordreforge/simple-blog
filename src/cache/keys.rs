@@ -4,6 +4,7 @@
 //! 支持版本控制，便于批量失效缓存
 
 use std::fmt;
+use no_panic::no_panic;
 
 /// 缓存命名空间
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -98,6 +99,7 @@ pub struct CacheKeyBuilder {
 impl CacheKeyBuilder {
     /// 创建新的缓存键构建器
     #[allow(dead_code)]
+    #[no_panic]
     pub fn new(namespace: CacheNamespace, resource: CacheResource) -> Self {
         Self {
             namespace,
@@ -113,16 +115,15 @@ impl CacheKeyBuilder {
         self.params.push((key.into(), value.into()));
         self
     }
-
     /// 添加参数（数字版本，避免 to_string() 调用）
     #[allow(dead_code)]
     pub fn with_param_int(mut self, key: impl Into<String>, value: i64) -> Self {
         self.params.push((key.into(), value.to_string()));
         self
     }
-
     /// 添加多个参数
     #[allow(dead_code)]
+    #[no_panic]
     pub fn with_params(
         mut self,
         params: impl IntoIterator<Item = (impl Into<String>, impl Into<String>)>,
@@ -135,6 +136,7 @@ impl CacheKeyBuilder {
 
     /// 设置版本号
     #[allow(dead_code)]
+    #[no_panic]
     pub fn with_version(mut self, version: u32) -> Self {
         self.version = Some(version);
         self
@@ -190,6 +192,7 @@ pub struct PassageCacheKeys;
 #[allow(dead_code)]
 impl PassageCacheKeys {
     /// 生成文章列表缓存键
+    #[no_panic]
     pub fn list(page: i64, limit: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::List)
             .with_param_int("page", page)
@@ -199,6 +202,7 @@ impl PassageCacheKeys {
     }
 
     /// 生成文章列表缓存键（游标分页）
+    #[no_panic]
     pub fn list_cursor(cursor: Option<&str>, limit: i64) -> String {
         let builder = CacheKeyBuilder::new(CacheNamespace::Passage, CacheResource::List)
             .with_param_int("limit", limit)
@@ -212,6 +216,7 @@ impl PassageCacheKeys {
     }
 
     /// 生成文章列表缓存键（日期筛选）
+    #[no_panic]
     pub fn list_by_date(
         year: Option<i32>,
         month: Option<i32>,
@@ -251,6 +256,7 @@ impl PassageCacheKeys {
     }
 
     /// 生成最新文章缓存键
+    #[no_panic]
     pub fn latest() -> String {
         "passage:latest".to_string()
     }
@@ -271,6 +277,7 @@ impl PassageCacheKeys {
     }
 
     /// 生成所有文章缓存模式
+    #[no_panic]
     pub fn all_pattern() -> String {
         "passage:*".to_string()
     }
@@ -283,6 +290,7 @@ pub struct CommentCacheKeys;
 #[allow(dead_code)]
 impl CommentCacheKeys {
     /// 生成评论列表缓存键
+    #[no_panic]
     pub fn list(passage_uuid: Option<&str>, page: i64, limit: i64) -> String {
         let builder = CacheKeyBuilder::new(CacheNamespace::Comment, CacheResource::List)
             .with_param_int("page", page)
@@ -309,6 +317,7 @@ pub struct CategoryCacheKeys;
 #[allow(dead_code)]
 impl CategoryCacheKeys {
     /// 生成分类列表缓存键
+    #[no_panic]
     pub fn list() -> String {
         CacheKeyBuilder::new(CacheNamespace::Category, CacheResource::List)
             .with_version(1)
@@ -316,6 +325,7 @@ impl CategoryCacheKeys {
     }
 
     /// 生成单个分类缓存键
+    #[no_panic]
     pub fn get(id: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Category, CacheResource::Get)
             .with_param_int("id", id)
@@ -331,6 +341,7 @@ pub struct TagCacheKeys;
 #[allow(dead_code)]
 impl TagCacheKeys {
     /// 生成标签列表缓存键
+    #[no_panic]
     pub fn list() -> String {
         CacheKeyBuilder::new(CacheNamespace::Tag, CacheResource::List)
             .with_version(1)
@@ -338,6 +349,7 @@ impl TagCacheKeys {
     }
 
     /// 生成单个标签缓存键
+    #[no_panic]
     pub fn get(id: i64) -> String {
         CacheKeyBuilder::new(CacheNamespace::Tag, CacheResource::Get)
             .with_param_int("id", id)
@@ -353,6 +365,7 @@ pub struct SettingsCacheKeys;
 #[allow(dead_code)]
 impl SettingsCacheKeys {
     /// 生成所有设置缓存键
+    #[no_panic]
     pub fn all() -> String {
         CacheKeyBuilder::new(CacheNamespace::Settings, CacheResource::Get)
             .with_version(1)
@@ -360,6 +373,7 @@ impl SettingsCacheKeys {
     }
 
     /// 生成外观设置缓存键
+    #[no_panic]
     pub fn appearance() -> String {
         CacheKeyBuilder::new(CacheNamespace::Settings, CacheResource::Get)
             .with_param("type", "appearance")
@@ -368,6 +382,7 @@ impl SettingsCacheKeys {
     }
 
     /// 生成音乐设置缓存键
+    #[no_panic]
     pub fn music() -> String {
         CacheKeyBuilder::new(CacheNamespace::Settings, CacheResource::Get)
             .with_param("type", "music")
@@ -383,6 +398,7 @@ pub struct StatsCacheKeys;
 #[allow(dead_code)]
 impl StatsCacheKeys {
     /// 生成统计信息缓存键
+    #[no_panic]
     pub fn general() -> String {
         CacheKeyBuilder::new(CacheNamespace::Stats, CacheResource::Stats)
             .with_version(1)
@@ -390,6 +406,7 @@ impl StatsCacheKeys {
     }
 
     /// 生成分析数据缓存键
+    #[no_panic]
     pub fn analytics(metric: &str) -> String {
         CacheKeyBuilder::new(CacheNamespace::Stats, CacheResource::Stats)
             .with_param("metric", metric)

@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+
 /// 无锁 ID 生成器，使用原子操作和 Snowflake 算法
 pub struct IdGenerator {
     worker_id: u16,
