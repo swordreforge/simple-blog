@@ -10,8 +10,6 @@ use tokio::sync::Semaphore;
 
 /// 空值标记，用于缓存穿透防护
 const NULL_VALUE: &str = "__NULL__";
-#[allow(dead_code)]
-const NULL_VALUE_TTL: u64 = 60; // 空值缓存1分钟
 
 /// 缓存击穿防护锁
 /// 使用本地信号量 + Valkey 分布式锁的双重保护
@@ -89,14 +87,18 @@ impl Drop for CacheLockGuard {
 /// 缓存雪崩防护 - TTL 随机化
 pub fn jitter_ttl(base_ttl: u64, jitter_percent: u8) -> u64 {
     let jitter = (base_ttl as f64 * jitter_percent as f64 / 100.0) as u64;
-    let random_jitter = if jitter > 0 {
-        (rand::random::<u64>() % jitter) - (jitter / 2)
+    if jitter == 0 {
+        return base_ttl.max(60);
+    }
+    // random_offset ∈ [0, jitter), centre it around 0 by subtracting half
+    let half = jitter / 2;
+    let random_offset = rand::random::<u64>() % jitter;
+    let jittered_ttl = if random_offset >= half {
+        base_ttl.saturating_add(random_offset - half)
     } else {
-        0
+        base_ttl.saturating_sub(half - random_offset)
     };
-
-    let jittered_ttl = base_ttl as i64 + random_jitter as i64;
-    jittered_ttl.max(60) as u64 // 最小60秒
+    jittered_ttl.max(60) // 最小60秒
 }
 
 /// 缓存穿透防护 - 缓存空值

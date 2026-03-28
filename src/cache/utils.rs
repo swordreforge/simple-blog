@@ -85,7 +85,7 @@ pub async fn set_passage_cache(
     manager: Option<&crate::cache::manager::CacheManager>,
     key: &str,
     value: Option<&str>,
-    ttl: u64,
+    _ttl: u64,
 ) -> Result<(), CacheError> {
     if let Some(mgr) = manager {
         // 确定实际要缓存的值
@@ -97,8 +97,6 @@ pub async fn set_passage_cache(
             }
         };
 
-        // 使用 TTL 抖动（10% 抖动）防止缓存雪崩
-        let _jittered_ttl = super::concurrent::jitter_ttl(ttl, 10);
         let _ = mgr.set(key, &actual_value).await;
     }
     Ok(())
