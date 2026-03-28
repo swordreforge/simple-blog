@@ -1,0 +1,15 @@
+[package]
+name = "rustblog-wip-for-summarize-in-zh-cn"
+version = "0.1.0"
+edition = "2024"
+authors = ["Swordreforge <zhujian_20060818@qq.com>"]
+description = "A Chinese text summarization library using TextRank algorithm"
+license = "MIT"
+
+[dependencies]
+jieba-rs = { version = "0.6", default-features = false }
+regex = { version = "1.10", default-features = false }
+
+[[bin]]
+name = "summarizer"
+path = "src/main.rs"
