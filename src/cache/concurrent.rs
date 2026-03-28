@@ -4,6 +4,7 @@
 use super::backend::{CacheBackend, CacheError};
 use async_trait::async_trait;
 use dashmap::DashMap;
+use no_panic::no_panic;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Semaphore;
@@ -114,6 +115,7 @@ pub fn get_null_value() -> String {
 }
 
 /// 检查是否为空值标记
+#[no_panic]
 pub fn is_null_value(value: &str) -> bool {
     value == NULL_VALUE
 }

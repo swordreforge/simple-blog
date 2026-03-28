@@ -10,7 +10,6 @@ use no_panic::no_panic;
 
 /// 预分配的日期时间格式化缓冲区大小
 /// 格式: "YYYY-MM-DD HH:MM:SS" = 19 字节
-#[allow(dead_code)]
 const DATETIME_BUFFER_SIZE: usize = 19;
 
 /// 优化的日期时间格式化函数
@@ -27,7 +26,6 @@ const DATETIME_BUFFER_SIZE: usize = 19;
 /// # 安全性
 /// 此函数不使用unsafe，但提供高性能的字符串格式化
 #[inline]
-#[allow(dead_code)]
 pub fn format_datetime_optimized(dt: &DateTime<Utc>) -> String {
     let mut buffer = String::with_capacity(DATETIME_BUFFER_SIZE);
     // 直接写入，避免创建临时 String
@@ -75,7 +73,6 @@ pub fn format_datetime_batch(dates: &[DateTime<Utc>]) -> Vec<String> {
 /// 避免临时 String 创建
 /// 支持任何 TimeZone 的 DateTime
 #[inline]
-#[allow(dead_code)]
 pub fn format_year<Tz: chrono::TimeZone>(dt: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
@@ -88,7 +85,6 @@ where
 /// 避免临时 String 创建
 /// 支持任何 TimeZone 的 DateTime
 #[inline]
-#[allow(dead_code)]
 pub fn format_date<Tz: chrono::TimeZone>(dt: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
@@ -101,7 +97,6 @@ where
 /// 避免临时 String 创建
 /// 支持任何 TimeZone 的 DateTime
 #[inline]
-#[allow(dead_code)]
 pub fn format_datetime_short<Tz: chrono::TimeZone>(dt: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
