@@ -114,6 +114,9 @@ tikv-jemallocator = { version = "0.6", features = ["unprefixed_malloc_on_support
 mimalloc = { version = "0.1", features = ["override"], optional = true }
 tcmalloc = { version = "0.3", optional = true }
 
+# Panic 检测：编译时验证函数不会 panic
+no-panic = "0.1"
+
 [features]
 default = []
 valkey = ["redis"]

@@ -38,9 +38,8 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
             && let Some(content) = EmbeddedAssets::get(&path) {
                 // 移除 "templates/" 前缀，保留子目录结构
                 // 例如: "templates/admin/admin.html" -> "admin/admin.html"
-                // 安全：前面已检查 starts_with("templates/")，所以 strip_prefix 不会失败
                 let name = path_str.strip_prefix("templates/")
-                    .expect("path should start with 'templates/' after check");
+                    .ok_or("Path should start with 'templates/' after check")?;
                 let content_str = std::str::from_utf8(&content.data)?;
 
                 println!("  ✓ 加载模板: {} ({} bytes)", name, content.data.len());

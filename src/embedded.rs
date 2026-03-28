@@ -144,7 +144,8 @@ fn extract_dir(src_dir: &str, dst_dir: &Path) -> Result<(), Box<dyn std::error::
         // 只处理目标目录下的文件
         if path_str.starts_with(src_dir) {
             matched_count += 1;
-            let relative_path = path_str.strip_prefix(src_dir).unwrap();
+            let relative_path = path_str.strip_prefix(src_dir)
+                .ok_or_else(|| format!("Path '{}' should start with '{}'", path_str, src_dir))?;
             // 移除可能的前导斜杠
             let relative_path = relative_path.strip_prefix('/').unwrap_or(relative_path);
             let dst_path = dst_dir.join(relative_path);
