@@ -6,7 +6,7 @@ use crate::utils::OperationHistoryBuffer;
 use dashmap::DashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// 降级配置
 #[derive(Debug, Clone)]
@@ -546,14 +546,14 @@ impl CacheManager {
         }
 
         const CHECK_INTERVAL_SECONDS: u64 = 5; // 每 5 秒最多检查一次
-        let now = Instant::now();
-        let last_check_secs = self.last_sliding_window_check.load(Ordering::Relaxed);
-
-        // 将当前时间转换为秒数
-        let now_secs = now.elapsed().as_secs();
+        let now_secs = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(d) => d.as_secs(),
+            Err(_) => return false, // clock error: skip check safely
+        };
+        let last_check_secs = self.last_sliding_window_check.load(Ordering::Relaxed) as u64;
 
         // 如果距离上次检查不足 5 秒，跳过检查
-        if now_secs.saturating_sub(last_check_secs as u64) < CHECK_INTERVAL_SECONDS {
+        if now_secs.saturating_sub(last_check_secs) < CHECK_INTERVAL_SECONDS {
             return false;
         }
 
@@ -743,7 +743,6 @@ impl CacheManager {
         let value = loader().await?;
 
         // 6. 写入缓存（包括空值，防止缓存穿透）
-        let _ttl = Duration::from_secs(self.config.default_ttl);
         if let Some(ref v) = value {
             let _ = self.set(key, v).await;
         } else if self.enable_null_cache {
