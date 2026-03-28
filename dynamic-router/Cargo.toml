@@ -9,27 +9,27 @@ keywords = ["actix", "routing", "dynamic", "web", "database"]
 categories = ["web-programming", "asynchronous", "database"]
 
 [dependencies]
-actix-web = "4.12.1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "fs", "io-util"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-async-trait = "0.1"
-thiserror = "1"
-sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite", "postgres", "chrono"], optional = true }
-chrono = { version = "0.4", features = ["serde"], optional = true }
-notify = "7"
-futures-util = "0.3"
-regex = "1.10"
-lru = "0.12"
-object-pool = "0.5"
-once_cell = "1.19"
-bytes = "1.5"
-base64 = "0.22"
-papaya = "0.2"
-seize = "0.5"
-phf = { version = "0.11", features = ["macros"] }
-hashbrown = "0.14"
-ahash = "0.8"
+actix-web = { version = "4.12.1", default-features = false, features = ["macros"] }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "fs", "io-util"] }
+serde = { version = "1", default-features = false, features = ["derive", "std"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+async-trait = { version = "0.1", default-features = false }
+thiserror = { version = "1", default-features = false }
+sqlx = { version = "0.7", default-features = false, features = ["runtime-tokio", "sqlite", "postgres", "chrono"], optional = true }
+chrono = { version = "0.4", default-features = false, features = ["serde", "std"], optional = true }
+notify = { version = "7", default-features = false }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+regex = { version = "1.10", default-features = false, features = ["std", "perf"] }
+lru = { version = "0.12", default-features = false, features = ["hashbrown"] }
+object-pool = { version = "0.5", default-features = false }
+once_cell = { version = "1.19", default-features = false, features = ["std"] }
+bytes = { version = "1.5", default-features = false, features = ["std"] }
+base64 = { version = "0.22", default-features = false, features = ["std"] }
+papaya = { version = "0.2", default-features = false }
+seize = { version = "0.5", default-features = false, features = ["fast-barrier"] }
+phf = { version = "0.11", default-features = false, features = ["std", "macros"] }
+hashbrown = { version = "0.14", default-features = false }
+ahash = { version = "0.8", default-features = false, features = ["std", "runtime-rng"] }
 
 [dev-dependencies]
 tempfile = "3"
