@@ -95,11 +95,19 @@ pub async fn import_routes(
     // 解析导入数据
     let import_obj = import_data.into_inner();
     let routes = match import_obj.get("routes") {
-        Some(r) if r.is_array() => r.as_array().unwrap(),
-        _ => {
+        Some(r) => match r.as_array() {
+            Some(arr) => arr,
+            None => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "success": false,
+                    "message": "无效的导入数据格式: routes 不是数组类型"
+                }));
+            }
+        },
+        None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "success": false,
-                "message": "无效的导入数据格式: 缺少routes数组"
+                "message": "无效的导入数据格式: 缺少routes字段"
             }));
         }
     };

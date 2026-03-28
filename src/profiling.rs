@@ -69,7 +69,8 @@ impl ProfilingManager {
             // 生成火焰图
             let report_path = self.output_dir.join("flamegraph.svg");
             let mut file = std::fs::File::create(&report_path)?;
-            guard.report().build().unwrap().flamegraph(&mut file)?;
+            let report = guard.report().build()?;
+            report.flamegraph(&mut file)?;
             println!("🔥 火焰图已生成: {}", report_path.display());
         }
 

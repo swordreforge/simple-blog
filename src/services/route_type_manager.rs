@@ -288,14 +288,14 @@ impl RouteTypeManager {
                         })?;
 
                     // 设置 template_path
-                    route.template_path = Some(template_path);
+                    route.template_path = Some(template_path.clone());
                     // 清除 inline_template（file 类型不需要）
                     route.inline_template = None;
 
                     tracing::info!(
                         "迁移路由 {}: 将 inline_template 写入文件 {}",
                         id,
-                        route.template_path.as_ref().unwrap()
+                        template_path
                     );
                 } else {
                     // 没有 inline_template 的路由（如重定向路由），不需要创建模板文件

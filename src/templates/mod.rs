@@ -6,7 +6,13 @@ use tera::{Context as TeraContext, Tera};
 lazy_static::lazy_static! {
     static ref TERA: Arc<Tera> = {
         // 强制使用嵌入的文件系统，不回退到文件系统
-        let tera = create_embedded_tera().expect("Failed to create embedded Tera - 请确保从项目根目录编译：cargo build --release");
+        let tera = create_embedded_tera().expect(
+            "Failed to create embedded Tera. 请确保从项目根目录编译：cargo build --release\n\
+             如果仍然失败，请检查：\n\
+             1. build.rs 是否正确配置了嵌入式资源\n\
+             2. templates/ 目录下是否有 .html 文件\n\
+             3. 编译时是否包含了所有必要的模板文件"
+        );
         // 不启用自动转义，避免 CSS URL 中的字符被转义
         // 如需转义，在模板中使用 | escape 过滤器
         Arc::new(tera)
@@ -32,7 +38,9 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
             && let Some(content) = EmbeddedAssets::get(&path) {
                 // 移除 "templates/" 前缀，保留子目录结构
                 // 例如: "templates/admin/admin.html" -> "admin/admin.html"
-                let name = path_str.strip_prefix("templates/").unwrap();
+                // 安全：前面已检查 starts_with("templates/")，所以 strip_prefix 不会失败
+                let name = path_str.strip_prefix("templates/")
+                    .expect("path should start with 'templates/' after check");
                 let content_str = std::str::from_utf8(&content.data)?;
 
                 println!("  ✓ 加载模板: {} ({} bytes)", name, content.data.len());

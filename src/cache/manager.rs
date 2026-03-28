@@ -218,23 +218,26 @@ impl CacheManager {
         };
 
         // 启动重连任务（如果 Valkey URL 存在但连接失败）
-        let reconnect_task = if valkey_url_owned.is_some() && valkey_backend.is_none() {
-            let url = valkey_url_owned.clone().unwrap();
-            let primary_healthy_clone = Arc::clone(&primary_healthy);
-            let consecutive_failures_clone = Arc::clone(&consecutive_failures);
-            let fallback_enabled_clone = Arc::clone(&fallback_enabled);
-            let degradation_config_clone = degradation_config.clone();
+        let reconnect_task = if valkey_backend.is_none() {
+            if let Some(url) = valkey_url_owned.clone() {
+                let primary_healthy_clone = Arc::clone(&primary_healthy);
+                let consecutive_failures_clone = Arc::clone(&consecutive_failures);
+                let fallback_enabled_clone = Arc::clone(&fallback_enabled);
+                let degradation_config_clone = degradation_config.clone();
 
-            Some(Arc::new(tokio::spawn(async move {
-                Self::reconnect_loop(
-                    &url,
-                    primary_healthy_clone,
-                    consecutive_failures_clone,
-                    fallback_enabled_clone,
-                    degradation_config_clone,
-                )
-                .await;
-            })))
+                Some(Arc::new(tokio::spawn(async move {
+                    Self::reconnect_loop(
+                        &url,
+                        primary_healthy_clone,
+                        consecutive_failures_clone,
+                        fallback_enabled_clone,
+                        degradation_config_clone,
+                    )
+                    .await;
+                })))
+            } else {
+                None
+            }
         } else {
             None
         };
