@@ -191,6 +191,151 @@ pub fn panic_function(x: i32) {
 }
 ```
 
+## 异步函数与 no-panic
+
+### 重要限制
+
+`no-panic` crate **不支持直接在异步函数上应用** `#[no_panic]` 属性。以下代码会编译失败：
+
+```rust
+// ❌ 编译错误：no_panic attribute on async fn is not supported
+#[no_panic]
+pub async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().json(serde_json::json!({
+        "status": "ok"
+    }))
+}
+```
+
+### 正确的使用方式
+
+虽然不能直接在异步函数上使用 `#[no_panic]`，但可以在**异步上下文中调用的同步函数**上应用：
+
+```rust
+// ✅ 正确：在同步辅助函数上使用 #[no_panic]
+#[no_panic]
+pub fn build_cache_key(namespace: &str, id: i64) -> String {
+    format!("{}:{}", namespace, id)
+}
+
+// ✅ 正确：异步函数可以调用安全的同步函数
+pub async fn get_cached_data(id: i64) -> Result<String, Error> {
+    let key = build_cache_key("user", id);  // 调用 no-panic 函数
+    cache.get(&key).await
+}
+```
+
+### 异步上下文中的 no-panic 应用策略
+
+#### 1. 识别纯计算函数
+
+将异步函数中的纯计算逻辑提取为独立的同步函数：
+
+```rust
+// ❌ 不推荐：在异步函数中进行复杂计算
+pub async fn process_data_async(input: &str) -> Result<String, Error> {
+    let processed = input.to_uppercase() + "PROCESSED";
+    Ok(processed)
+}
+
+// ✅ 推荐：提取为安全的同步函数
+#[no_panic]
+pub fn process_data_sync(input: &str) -> String {
+    input.to_uppercase() + "PROCESSED"
+}
+
+pub async fn process_data_async(input: &str) -> Result<String, Error> {
+    Ok(process_data_sync(input))
+}
+```
+
+#### 2. 缓存键生成
+
+缓存键生成函数非常适合使用 `#[no_panic]`：
+
+```rust
+// ✅ 当前项目中的应用
+#[no_panic]
+pub fn build_cache_key(namespace: CacheNamespace, resource: CacheResource) -> CacheKey {
+    CacheKey::new(namespace, resource)
+}
+```
+
+#### 3. 数据验证和转换
+
+数据验证和转换逻辑可以标记为 `#[no_panic]`：
+
+```rust
+#[no_panic]
+pub fn validate_user_id(id: i64) -> Option<i64> {
+    if id > 0 { Some(id) } else { None }
+}
+
+pub async fn get_user(id: i64) -> Result<User, Error> {
+    let validated_id = validate_user_id(id)
+        .ok_or(Error::InvalidUserId)?;
+    db.find_user(validated_id).await
+}
+```
+
+### 项目中的异步上下文 no-panic 应用
+
+当前项目已经在以下同步函数上应用了 `#[no_panic]`，这些函数被异步代码频繁调用：
+
+1. **缓存键生成** (`src/cache/keys.rs` - 32 个函数)
+   - `build_cache_key()`
+   - `with_param()`
+   - `with_param_int()`
+   - 等等
+
+2. **ID 生成** (`src/id_generator.rs` - 2 个函数)
+   - `compose_id()`
+   - `get_timestamp()`
+
+3. **加密工具** (`src/handlers/api_handlers/crypto.rs` - 3 个函数)
+   - `encrypt_data()`
+   - `decrypt_data()`
+   - `generate_key()`
+
+4. **不安全工具** (`src/utils/unsafe_utils.rs` - 4 个函数)
+   - 各种指针操作的安全包装
+
+这些同步函数在异步代码中被调用时，提供了编译时的 panic 安全性保证。
+
+### 异步函数的安全性保障
+
+对于异步函数，可以通过以下方式提高安全性：
+
+```rust
+// 1. 使用安全的同步辅助函数
+pub async fn safe_async_handler() -> Result<HttpResponse, Error> {
+    let key = build_cache_key("api", 123);  // no-panic 保证
+    let data = cache.get(&key).await?;
+    Ok(HttpResponse::Ok().json(data))
+}
+
+// 2. 避免 unwrap/expect
+pub async fn safe_async_query(id: i64) -> Result<User, Error> {
+    let user = db.find_user(id).await?;  // 使用 ? 而不是 unwrap
+    Ok(user)
+}
+
+// 3. 使用安全的索引访问
+pub async fn safe_async_process(items: &[i32]) -> Result<i32, Error> {
+    let first = items.get(0).copied().ok_or(Error::EmptyList)?;
+    Ok(first)
+}
+```
+
+### 总结
+
+- **不能直接在异步函数上应用 `#[no_panic]`**
+- **可以在异步上下文中调用的同步函数上应用 `#[no_panic]`**
+- **提取纯计算逻辑为同步函数**，应用 `#[no_panic]`
+- **异步函数仍然需要使用安全的错误处理模式**（避免 unwrap/expect）
+
+通过这种方式，即使在异步上下文中，`no-panic` 也能显著提高代码的安全性。
+
 ## 编译时验证
 
 在 release 模式下，`no-panic` 会进行编译时验证：
@@ -313,6 +458,9 @@ pub fn safe(arr: &[i32], index: usize) -> Option<i32> {
   - 添加 `no-panic` 依赖
   - 重构 6 处生产代码中的 unwrap/expect
   - 编写实施指南
+  - **验证异步函数支持**：确认 `no-panic` 不支持直接在异步函数上应用
+  - **添加异步上下文使用指南**：说明如何在异步代码中正确使用 `#[no_panic]`
+  - **记录项目应用**：项目中已有 48 个同步函数使用 `#[no_panic]`，这些函数被异步代码频繁调用
 
 ## 联系方式
 
