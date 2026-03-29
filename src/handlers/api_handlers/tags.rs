@@ -99,8 +99,8 @@ pub async fn admin_list(
     let tag_repo = state.tag_repository();
 
     // 检查是否提供了 id 参数（用于获取单个标签）
-    if let Some(id_str) = query.get("id") {
-        if let Ok(id) = id_str.parse::<i64>() {
+    if let Some(id_str) = query.get("id")
+        && let Ok(id) = id_str.parse::<i64>() {
             match tag_repo.get_by_id(id).await {
                 Ok(tag) => {
                     let response = TagResponse {
@@ -127,7 +127,6 @@ pub async fn admin_list(
                 }
             }
         }
-    }
 
     // 解析分页参数
     let limit: i64 = query

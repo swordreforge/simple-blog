@@ -302,8 +302,8 @@ pub fn is_local_ip(ip: &str) -> bool {
 
     // 解析 IPv4 地址的各段，避免 16 次逐一的 starts_with 字符串比较
     let parts: Vec<&str> = ip.splitn(4, '.').collect();
-    if parts.len() == 4 {
-        if let Ok(a) = parts[0].parse::<u8>() {
+    if parts.len() == 4
+        && let Ok(a) = parts[0].parse::<u8>() {
             match a {
                 // 127.0.0.0/8 loopback
                 127 => return true,
@@ -326,7 +326,6 @@ pub fn is_local_ip(ip: &str) -> bool {
                 _ => {}
             }
         }
-    }
 
     false
 }

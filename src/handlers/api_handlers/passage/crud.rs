@@ -705,7 +705,7 @@ pub async fn create(
     };
 
     // 检查 file_path 是否已存在
-    if let Ok(_) = passage_repo.get_by_file_path(&file_path).await {
+    if passage_repo.get_by_file_path(&file_path).await.is_ok() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "success": false,
             "message": format!("文件路径 '{}' 已存在，请使用不同的文件路径或修改标题", file_path)
