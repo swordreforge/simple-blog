@@ -5,6 +5,36 @@
 //! - mimalloc: 低碎片化，内存使用更高效
 //! - 系统默认: 无需额外依赖
 
+// ── 编译期冲突检测 ───────────────────────────────────────────────────────────
+// 同时启用多个分配器特征会导致每个分配器库都被链接进二进制文件，产生双倍的初始
+// 内存开销（initial-mem ×2），并可能引发未定义行为。
+// 特别是 mimalloc 的 `override` 特征会在链接层全局替换 malloc/free，若同时存在
+// jemalloc 的 #[global_allocator] 设置，两者会互相干扰。
+#[cfg(all(feature = "jemalloc", feature = "mimalloc-alloc"))]
+compile_error!(
+    "特征 `jemalloc` 和 `mimalloc-alloc` 不能同时启用。\
+     同时启用多个分配器会导致两个分配器库均被链接，\
+     造成初始内存开销翻倍（initial-mem ×2）以及未定义行为。\
+     请只选择其中一个分配器特征。"
+);
+
+#[cfg(all(feature = "jemalloc", feature = "tcmalloc-alloc"))]
+compile_error!(
+    "特征 `jemalloc` 和 `tcmalloc-alloc` 不能同时启用。\
+     同时启用多个分配器会导致两个分配器库均被链接，\
+     造成初始内存开销翻倍（initial-mem ×2）以及未定义行为。\
+     请只选择其中一个分配器特征。"
+);
+
+#[cfg(all(feature = "mimalloc-alloc", feature = "tcmalloc-alloc"))]
+compile_error!(
+    "特征 `mimalloc-alloc` 和 `tcmalloc-alloc` 不能同时启用。\
+     同时启用多个分配器会导致两个分配器库均被链接，\
+     造成初始内存开销翻倍（initial-mem ×2）以及未定义行为。\
+     请只选择其中一个分配器特征。"
+);
+// ────────────────────────────────────────────────────────────────────────────
+
 #[cfg(all(
     not(feature = "jemalloc"),
     not(feature = "mimalloc-alloc"),
@@ -355,5 +385,54 @@ mod tests {
     fn test_allocator_init() {
         let result = init_allocator();
         assert!(result.is_ok(), "分配器初始化应该成功");
+    }
+
+    /// 验证在运行时只有一个分配器处于活动状态。
+    ///
+    /// 注意：同时启用多个分配器特征会在编译期通过 `compile_error!` 直接报错，
+    /// 因此能到达运行时的二进制文件必然只链接了一个分配器。
+    /// 此测试作为文档化断言，确保 `AllocatorType::current()` 返回确定的单一值，
+    /// 而不是 System（即当且仅当没有任何分配器特征启用时才是 System）。
+    #[test]
+    fn test_exactly_one_allocator_active() {
+        // 统计编译时启用的分配器特征数量
+        let enabled_count = [
+            cfg!(feature = "jemalloc"),
+            cfg!(feature = "mimalloc-alloc"),
+            cfg!(feature = "tcmalloc-alloc"),
+        ]
+        .iter()
+        .filter(|&&x| x)
+        .count();
+
+        // 最多只能启用一个（多个同时启用会在编译期报错）
+        assert!(
+            enabled_count <= 1,
+            "同时启用了 {} 个分配器特征，这会导致初始内存开销翻倍（initial-mem ×2）。\
+             编译期 compile_error! 应已阻止此情形——请检查 Cargo 特征配置。",
+            enabled_count
+        );
+
+        // 当前分配器类型必须与启用的特征一致
+        let allocator = AllocatorType::current();
+        match allocator {
+            AllocatorType::Jemalloc => {
+                assert!(cfg!(feature = "jemalloc"), "AllocatorType::Jemalloc 要求 jemalloc 特征已启用");
+            }
+            AllocatorType::MiMalloc => {
+                assert!(cfg!(feature = "mimalloc-alloc"), "AllocatorType::MiMalloc 要求 mimalloc-alloc 特征已启用");
+            }
+            AllocatorType::TCMalloc => {
+                assert!(cfg!(feature = "tcmalloc-alloc"), "AllocatorType::TCMalloc 要求 tcmalloc-alloc 特征已启用");
+            }
+            AllocatorType::System => {
+                assert!(
+                    !cfg!(feature = "jemalloc")
+                        && !cfg!(feature = "mimalloc-alloc")
+                        && !cfg!(feature = "tcmalloc-alloc"),
+                    "AllocatorType::System 要求所有分配器特征均未启用"
+                );
+            }
+        }
     }
 }
