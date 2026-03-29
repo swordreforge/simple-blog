@@ -2,12 +2,20 @@ use rust_embed::RustEmbed;
 use std::fs;
 use std::path::Path;
 
-/// 嵌入的文件系统
+#[cfg(feature = "compressed-embed")]
+use std::sync::Arc;
+#[cfg(feature = "compressed-embed")]
+use once_cell::sync::OnceCell;
+#[cfg(feature = "compressed-embed")]
+use zstd::decode_all;
+
+/// 嵌入的文件系统（未压缩版本）
 /// 包含 templates、img、music 目录
 /// 排除 GeoLite2-City.mmdb 文件（可选文件，用户需自行下载）
 ///
 /// 重要：必须在项目根目录（包含 Cargo.toml 的目录）运行 cargo build
 /// rust-embed 会在编译时从当前工作目录嵌入文件
+#[cfg(not(feature = "compressed-embed"))]
 #[derive(RustEmbed)]
 #[folder = "."]
 #[include = "templates/**"]
@@ -15,6 +23,39 @@ use std::path::Path;
 #[include = "music/**"]
 #[exclude = "data/GeoLite2-City.mmdb"]
 pub struct EmbeddedAssets;
+
+/// 嵌入的文件系统（压缩模式的基础资产）
+/// 仅包含 img 和 music 目录，templates 目录使用压缩版本
+/// 排除 GeoLite2-City.mmdb 文件（可选文件，用户需自行下载）
+#[cfg(feature = "compressed-embed")]
+#[derive(RustEmbed)]
+#[folder = "."]
+#[include = "img/**"]
+#[include = "music/**"]
+#[exclude = "data/GeoLite2-City.mmdb"]
+pub struct EmbeddedAssets;
+
+/// 嵌入的文件系统（压缩版本）
+/// 仅包含压缩后的 templates 目录
+/// img 和 music 目录仍然使用未压缩版本
+#[cfg(feature = "compressed-embed")]
+#[derive(RustEmbed)]
+#[folder = "embedded-compressed"]
+pub struct EmbeddedAssetsCompressed;
+
+/// 解压缓存
+/// 使用 OnceCell 确保线程安全的单例初始化
+#[cfg(feature = "compressed-embed")]
+static DECOMPRESSION_CACHE: OnceCell<dashmap::DashMap<String, Arc<Vec<u8>>>> = OnceCell::new();
+
+/// 获取解压缓存实例
+#[cfg(feature = "compressed-embed")]
+fn get_decompression_cache() -> &'static dashmap::DashMap<String, Arc<Vec<u8>>> {
+    DECOMPRESSION_CACHE.get_or_init(|| {
+        println!("📦 初始化解压缓存");
+        dashmap::DashMap::new()
+    })
+}
 
 /// 释放嵌入的资源
 /// 按照 Go 版本的逻辑：
@@ -196,6 +237,75 @@ fn extract_dir(src_dir: &str, dst_dir: &Path) -> Result<(), Box<dyn std::error::
 }
 
 /// 获取嵌入的文件内容
+/// 如果启用 compressed-embed feature 且文件在 templates 目录，则从压缩版本获取并解压
+/// 否则从未压缩版本获取
 pub fn get_embedded_file(path: &str) -> Option<Vec<u8>> {
+    #[cfg(feature = "compressed-embed")]
+    {
+        // 检查是否为 templates 目录下的文件
+        if path.starts_with("templates/") {
+            // 去掉 "templates/" 前缀，因为 EmbeddedAssetsCompressed 中的文件路径没有这个前缀
+            let compressed_path = path.strip_prefix("templates/").unwrap_or(path);
+
+            // 从压缩版本获取并解压
+            if let Some(compressed) = EmbeddedAssetsCompressed::get(compressed_path) {
+                return match decompress_zstd(&compressed.data) {
+                    Ok(decompressed) => Some(decompressed),
+                    Err(e) => {
+                        eprintln!("解压失败 {}: {}", path, e);
+                        None
+                    }
+                };
+            }
+        }
+    }
+
+    // 未压缩版本或非 templates 目录
     EmbeddedAssets::get(path).map(|f| f.data.to_vec())
+}
+
+/// 获取嵌入的压缩文件内容（不解压）
+/// 仅在压缩模式下对 templates 目录的文件可用
+/// 用于支持 Accept-Encoding: zstd 的浏览器
+#[cfg(feature = "compressed-embed")]
+pub fn get_embedded_file_compressed(path: &str) -> Option<Vec<u8>> {
+    // 检查是否为 templates 目录下的文件
+    if path.starts_with("templates/") {
+        // 去掉 "templates/" 前缀
+        let compressed_path = path.strip_prefix("templates/").unwrap_or(path);
+
+        // 直接返回压缩数据
+        EmbeddedAssetsCompressed::get(compressed_path).map(|f| f.data.to_vec())
+    } else {
+        None
+    }
+}
+
+/// 非压缩模式的空实现
+#[allow(dead_code)]
+#[cfg(not(feature = "compressed-embed"))]
+pub fn get_embedded_file_compressed(_path: &str) -> Option<Vec<u8>> {
+    None
+}
+
+/// 使用 zstd 解压数据
+#[cfg(feature = "compressed-embed")]
+fn decompress_zstd(compressed: &[u8]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    // 先检查缓存
+    use md5::{Digest, Md5};
+    let mut hasher = Md5::new();
+    md5::Digest::update(&mut hasher, compressed);
+    let cache_key = format!("{:x}", md5::Digest::finalize(hasher));
+
+    if let Some(cached) = get_decompression_cache().get(&cache_key) {
+        return Ok(cached.value().as_ref().clone());
+    }
+
+    // 解压数据
+    let decompressed = decode_all(compressed)?;
+
+    // 存入缓存
+    get_decompression_cache().insert(cache_key, Arc::new(decompressed.clone()));
+
+    Ok(decompressed)
 }

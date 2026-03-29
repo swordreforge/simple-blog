@@ -1,0 +1,830 @@
+{
+  "timestamp": "2026-03-28T07:44:29.280Z",
+  "summary": {
+    "totalPages": 9,
+    "totalUniqueScripts": 28,
+    "sharedScriptsCount": 12,
+    "pageSpecificScriptsCount": 16
+  },
+  "sharedScripts": {
+    "/js/npm/katex-0.16.27/dist/katex.min.js": {
+      "usedBy": [
+        "passage.html",
+        "markdown-editor.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js": {
+      "usedBy": [
+        "passage.html",
+        "markdown-editor.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/npm/mermaid@11.12.2/dist/mermaid.min.js": {
+      "usedBy": [
+        "passage.html",
+        "markdown-editor.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/modal-animations.js": {
+      "usedBy": [
+        "passage.html",
+        "index.html",
+        "collect.html",
+        "about.html",
+        "admin/admin.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/markdown-preview-modal.js?v=2": {
+      "usedBy": [
+        "passage.html",
+        "collect.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/keyboard-shortcuts.js": {
+      "usedBy": [
+        "passage.html",
+        "index.html",
+        "friends.html",
+        "collect.html",
+        "about.html",
+        "admin/admin.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/music-player.js": {
+      "usedBy": [
+        "passage.html",
+        "index.html",
+        "collect.html",
+        "about.html",
+        "admin/admin.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/quick-actions-dynamic-routes.js": {
+      "usedBy": [
+        "passage.html",
+        "markdown-editor.html",
+        "index.html",
+        "friends.html",
+        "collect.html",
+        "about.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/floating-text.js": {
+      "usedBy": [
+        "passage.html",
+        "index.html",
+        "collect.html",
+        "about.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/ecc-encrypt.js": {
+      "usedBy": [
+        "index.html",
+        "collect.html",
+        "about.html",
+        "admin/admin.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/login.js": {
+      "usedBy": [
+        "index.html",
+        "collect.html",
+        "about.html",
+        "admin/admin.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    },
+    "/js/animations/Sakara.js": {
+      "usedBy": [
+        "index.html",
+        "friends.html",
+        "collect.html",
+        "about.html"
+      ],
+      "type": "classic",
+      "defer": true,
+      "async": false
+    }
+  },
+  "pageDependencies": {
+    "passage.html": {
+      "totalScripts": 14,
+      "sharedScripts": [
+        "/js/npm/katex-0.16.27/dist/katex.min.js",
+        "/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js",
+        "/js/npm/mermaid@11.12.2/dist/mermaid.min.js",
+        "/js/modal-animations.js",
+        "/js/markdown-preview-modal.js?v=2",
+        "/js/keyboard-shortcuts.js",
+        "/js/music-player.js",
+        "/js/quick-actions-dynamic-routes.js",
+        "/js/floating-text.js"
+      ],
+      "pageSpecificScripts": [
+        "/js/highlight.min.js",
+        "/js/passage-shortcuts.js",
+        "/js/passage-focus-mode.js",
+        "/js/article-summary.js",
+        "/js/virtual-scroll.js"
+      ],
+      "details": [
+        {
+          "src": "/js/npm/katex-0.16.27/dist/katex.min.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/npm/katex-0.16.27/dist/katex.min.js\" defer>"
+        },
+        {
+          "src": "/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js\" defer>"
+        },
+        {
+          "src": "/js/npm/mermaid@11.12.2/dist/mermaid.min.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/npm/mermaid@11.12.2/dist/mermaid.min.js\" defer>"
+        },
+        {
+          "src": "/js/highlight.min.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/highlight.min.js\" defer>"
+        },
+        {
+          "src": "/js/modal-animations.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/modal-animations.js\" defer>"
+        },
+        {
+          "src": "/js/markdown-preview-modal.js?v=2",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/markdown-preview-modal.js?v=2\" defer>"
+        },
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/keyboard-shortcuts.js\" defer>"
+        },
+        {
+          "src": "/js/passage-shortcuts.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/passage-shortcuts.js\" defer>"
+        },
+        {
+          "src": "/js/passage-focus-mode.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/passage-focus-mode.js\" defer>"
+        },
+        {
+          "src": "/js/article-summary.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/article-summary.js\" defer>"
+        },
+        {
+          "src": "/js/music-player.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/music-player.js\" defer>"
+        },
+        {
+          "src": "/js/virtual-scroll.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/virtual-scroll.js\" defer>"
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/quick-actions-dynamic-routes.js\" defer>"
+        },
+        {
+          "src": "/js/floating-text.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/floating-text.js\" defer>"
+        }
+      ]
+    },
+    "markdown-editor.html": {
+      "totalScripts": 5,
+      "sharedScripts": [
+        "/js/npm/katex-0.16.27/dist/katex.min.js",
+        "/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js",
+        "/js/npm/mermaid@11.12.2/dist/mermaid.min.js",
+        "/js/quick-actions-dynamic-routes.js"
+      ],
+      "pageSpecificScripts": [
+        "/js/npm/marked@14.1.4/marked.min.js"
+      ],
+      "details": [
+        {
+          "src": "/js/npm/marked@14.1.4/marked.min.js",
+          "type": "classic",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script src=\"/js/npm/marked@14.1.4/marked.min.js\">"
+        },
+        {
+          "src": "/js/npm/katex-0.16.27/dist/katex.min.js",
+          "type": "classic",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script src=\"/js/npm/katex-0.16.27/dist/katex.min.js\">"
+        },
+        {
+          "src": "/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js",
+          "type": "classic",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script src=\"/js/npm/katex-0.16.27/dist/contrib/auto-render.min.js\">"
+        },
+        {
+          "src": "/js/npm/mermaid@11.12.2/dist/mermaid.min.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script defer src=\"/js/npm/mermaid@11.12.2/dist/mermaid.min.js\">"
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/quick-actions-dynamic-routes.js\" defer>"
+        }
+      ]
+    },
+    "index.html": {
+      "totalScripts": 8,
+      "sharedScripts": [
+        "/js/ecc-encrypt.js",
+        "/js/login.js",
+        "/js/modal-animations.js",
+        "/js/keyboard-shortcuts.js",
+        "/js/music-player.js",
+        "/js/quick-actions-dynamic-routes.js",
+        "/js/floating-text.js",
+        "/js/animations/Sakara.js"
+      ],
+      "pageSpecificScripts": [],
+      "details": [
+        {
+          "src": "/js/ecc-encrypt.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/ecc-encrypt.js\" defer>"
+        },
+        {
+          "src": "/js/login.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/login.js\" defer>"
+        },
+        {
+          "src": "/js/modal-animations.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/modal-animations.js\" defer>"
+        },
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/keyboard-shortcuts.js\" defer>"
+        },
+        {
+          "src": "/js/music-player.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/music-player.js\" defer>"
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/quick-actions-dynamic-routes.js\" defer>"
+        },
+        {
+          "src": "/js/floating-text.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/floating-text.js\" defer>"
+        },
+        {
+          "src": "/js/animations/Sakara.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/animations/Sakara.js\" defer>"
+        }
+      ]
+    },
+    "friends.html": {
+      "totalScripts": 3,
+      "sharedScripts": [
+        "/js/keyboard-shortcuts.js",
+        "/js/quick-actions-dynamic-routes.js",
+        "/js/animations/Sakara.js"
+      ],
+      "pageSpecificScripts": [],
+      "details": [
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/keyboard-shortcuts.js\" defer>"
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/quick-actions-dynamic-routes.js\" defer>"
+        },
+        {
+          "src": "/js/animations/Sakara.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/animations/Sakara.js\" defer>"
+        }
+      ]
+    },
+    "collect.html": {
+      "totalScripts": 10,
+      "sharedScripts": [
+        "/js/ecc-encrypt.js",
+        "/js/login.js",
+        "/js/modal-animations.js",
+        "/js/markdown-preview-modal.js?v=2",
+        "/js/keyboard-shortcuts.js",
+        "/js/music-player.js",
+        "/js/quick-actions-dynamic-routes.js",
+        "/js/floating-text.js",
+        "/js/animations/Sakara.js"
+      ],
+      "pageSpecificScripts": [
+        "/js/collect-focus-mode.js"
+      ],
+      "details": [
+        {
+          "src": "/js/ecc-encrypt.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/ecc-encrypt.js\" defer>"
+        },
+        {
+          "src": "/js/login.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/login.js\" defer>"
+        },
+        {
+          "src": "/js/modal-animations.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/modal-animations.js\" defer>"
+        },
+        {
+          "src": "/js/markdown-preview-modal.js?v=2",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/markdown-preview-modal.js?v=2\" defer>"
+        },
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/keyboard-shortcuts.js\" defer>"
+        },
+        {
+          "src": "/js/music-player.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/music-player.js\" defer>"
+        },
+        {
+          "src": "/js/collect-focus-mode.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/collect-focus-mode.js\" defer>"
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/quick-actions-dynamic-routes.js\" defer>"
+        },
+        {
+          "src": "/js/floating-text.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/floating-text.js\" defer>"
+        },
+        {
+          "src": "/js/animations/Sakara.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/animations/Sakara.js\" defer>"
+        }
+      ]
+    },
+    "about.html": {
+      "totalScripts": 11,
+      "sharedScripts": [
+        "/js/ecc-encrypt.js",
+        "/js/login.js",
+        "/js/modal-animations.js",
+        "/js/keyboard-shortcuts.js",
+        "/js/music-player.js",
+        "/js/quick-actions-dynamic-routes.js",
+        "/js/floating-text.js",
+        "/js/animations/Sakara.js"
+      ],
+      "pageSpecificScripts": [
+        "/js/about-inline-1.js",
+        "/js/about-inline-2.js",
+        "/js/about-focus-mode.js"
+      ],
+      "details": [
+        {
+          "src": "/js/about-inline-1.js",
+          "type": "module",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script type=\"module\" src=\"/js/about-inline-1.js\">"
+        },
+        {
+          "src": "/js/about-inline-2.js",
+          "type": "module",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script type=\"module\" src=\"/js/about-inline-2.js\">"
+        },
+        {
+          "src": "/js/ecc-encrypt.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/ecc-encrypt.js\" defer>"
+        },
+        {
+          "src": "/js/login.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/login.js\" defer>"
+        },
+        {
+          "src": "/js/modal-animations.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/modal-animations.js\" defer>"
+        },
+        {
+          "src": "/js/about-focus-mode.js",
+          "type": "classic",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script src=\"/js/about-focus-mode.js\">"
+        },
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "type": "classic",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script src=\"/js/keyboard-shortcuts.js\">"
+        },
+        {
+          "src": "/js/music-player.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/music-player.js\" defer>"
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/quick-actions-dynamic-routes.js\" defer>"
+        },
+        {
+          "src": "/js/floating-text.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/floating-text.js\" defer>"
+        },
+        {
+          "src": "/js/animations/Sakara.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/animations/Sakara.js\" defer>"
+        }
+      ]
+    },
+    "admin/filemanager.html": {
+      "totalScripts": 1,
+      "sharedScripts": [],
+      "pageSpecificScripts": [
+        "/js/filemanager.js?v=4"
+      ],
+      "details": [
+        {
+          "src": "/js/filemanager.js?v=4",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/filemanager.js?v=4\" defer>"
+        }
+      ]
+    },
+    "admin/dyn-routing.html": {
+      "totalScripts": 1,
+      "sharedScripts": [],
+      "pageSpecificScripts": [
+        "/js/dyn-routing.js"
+      ],
+      "details": [
+        {
+          "src": "/js/dyn-routing.js",
+          "type": "classic",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script src=\"/js/dyn-routing.js\">"
+        }
+      ]
+    },
+    "admin/admin.html": {
+      "totalScripts": 9,
+      "sharedScripts": [
+        "/js/ecc-encrypt.js",
+        "/js/login.js",
+        "/js/modal-animations.js",
+        "/js/keyboard-shortcuts.js",
+        "/js/music-player.js"
+      ],
+      "pageSpecificScripts": [
+        "/js/admin-inline-1.js",
+        "/js/admin-inline-2.js?v=3",
+        "/js/markdown-preview-modal.js?v=3",
+        "/js/admin-inline-4.js"
+      ],
+      "details": [
+        {
+          "src": "/js/admin-inline-1.js",
+          "type": "module",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script type=\"module\" src=\"/js/admin-inline-1.js\">"
+        },
+        {
+          "src": "/js/admin-inline-2.js?v=3",
+          "type": "module",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script type=\"module\" src=\"/js/admin-inline-2.js?v=3\">"
+        },
+        {
+          "src": "/js/ecc-encrypt.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/ecc-encrypt.js\" defer>"
+        },
+        {
+          "src": "/js/login.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/login.js\" defer>"
+        },
+        {
+          "src": "/js/modal-animations.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/modal-animations.js\" defer>"
+        },
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/keyboard-shortcuts.js\" defer>"
+        },
+        {
+          "src": "/js/markdown-preview-modal.js?v=3",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/markdown-preview-modal.js?v=3\" defer>"
+        },
+        {
+          "src": "/js/admin-inline-4.js",
+          "type": "module",
+          "defer": false,
+          "async": false,
+          "fullMatch": "<script type=\"module\" src=\"/js/admin-inline-4.js\">"
+        },
+        {
+          "src": "/js/music-player.js",
+          "type": "classic",
+          "defer": true,
+          "async": false,
+          "fullMatch": "<script src=\"/js/music-player.js\" defer>"
+        }
+      ]
+    }
+  },
+  "recommendations": [
+    {
+      "type": "extraction",
+      "priority": "high",
+      "title": "提取共享脚本为公共模块",
+      "description": "以下脚本被多个页面共享，建议提取为公共模块",
+      "scripts": [
+        {
+          "src": "/js/keyboard-shortcuts.js",
+          "usedBy": 6,
+          "pages": [
+            "passage.html",
+            "index.html",
+            "friends.html",
+            "collect.html",
+            "about.html",
+            "admin/admin.html"
+          ]
+        },
+        {
+          "src": "/js/quick-actions-dynamic-routes.js",
+          "usedBy": 6,
+          "pages": [
+            "passage.html",
+            "markdown-editor.html",
+            "index.html",
+            "friends.html",
+            "collect.html",
+            "about.html"
+          ]
+        },
+        {
+          "src": "/js/modal-animations.js",
+          "usedBy": 5,
+          "pages": [
+            "passage.html",
+            "index.html",
+            "collect.html",
+            "about.html",
+            "admin/admin.html"
+          ]
+        },
+        {
+          "src": "/js/music-player.js",
+          "usedBy": 5,
+          "pages": [
+            "passage.html",
+            "index.html",
+            "collect.html",
+            "about.html",
+            "admin/admin.html"
+          ]
+        },
+        {
+          "src": "/js/floating-text.js",
+          "usedBy": 4,
+          "pages": [
+            "passage.html",
+            "index.html",
+            "collect.html",
+            "about.html"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "merging",
+      "priority": "medium",
+      "title": "合并页面特定脚本",
+      "description": "以下页面引用了多个脚本，建议合并为单个文件以减少 HTTP 请求",
+      "pages": [
+        {
+          "page": "passage.html",
+          "count": 14
+        },
+        {
+          "page": "markdown-editor.html",
+          "count": 5
+        },
+        {
+          "page": "index.html",
+          "count": 8
+        },
+        {
+          "page": "collect.html",
+          "count": 10
+        },
+        {
+          "page": "about.html",
+          "count": 11
+        },
+        {
+          "page": "admin/admin.html",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "type": "performance",
+      "priority": "low",
+      "title": "考虑使用 defer/async 优化加载",
+      "description": "以下脚本没有使用 defer 或 async，考虑添加这些属性以优化页面加载性能",
+      "scripts": [
+        "/js/npm/marked@14.1.4/marked.min.js",
+        "/js/about-inline-1.js",
+        "/js/about-inline-2.js",
+        "/js/about-focus-mode.js",
+        "/js/dyn-routing.js",
+        "/js/admin-inline-1.js",
+        "/js/admin-inline-2.js?v=3",
+        "/js/admin-inline-4.js"
+      ]
+    }
+  ]
+}

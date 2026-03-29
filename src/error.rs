@@ -5,6 +5,7 @@
 
 use actix_web::{HttpResponse, error::ResponseError, http::StatusCode};
 use std::fmt;
+use no_panic::no_panic;
 
 /// 应用程序统一错误类型
 #[derive(Debug)]
@@ -66,6 +67,7 @@ impl ResponseError for AppError {
         HttpResponse::build(status).json(error_response)
     }
 
+    #[no_panic]
     fn status_code(&self) -> StatusCode {
         match self {
             AppError::Database(_) | AppError::Internal(_) | AppError::Cache(_) => {
@@ -83,6 +85,7 @@ impl ResponseError for AppError {
 
 impl AppError {
     /// 返回错误类型字符串
+    #[no_panic]
     pub fn error_type(&self) -> &'static str {
         match self {
             AppError::Database(_) => "database_error",

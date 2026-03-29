@@ -264,6 +264,14 @@ fn init_jemalloc() -> Result<(), String> {
 
 /// 初始化 mimalloc 配置
 #[cfg(feature = "mimalloc-alloc")]
+    // ⚠️ 重要说明：
+    // mimalloc 在 dynamic linker 阶段就完成初始化，早于 main()。
+    // 以下 set_var 调用对大多数选项不会生效。
+    // 要使配置真正生效，必须在进程启动前通过 systemd Environment= 或
+    // 启动脚本设置这些环境变量。
+    //
+    // 真正有效的运行时 API 是 libmimalloc_sys::mi_option_set()，
+    // 部分选项（purge_delay 等）可以在运行时随时修改。
 fn init_mimalloc() -> Result<(), String> {
     tracing::info!("初始化 mimalloc 分配器（极限内存节省配置）");
 

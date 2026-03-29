@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use std::time::Duration;
+use no_panic::no_panic;
 
 /// 缓存后端 trait - 定义所有缓存后端必须实现的接口
 #[async_trait]
@@ -37,6 +38,7 @@ pub enum CacheError {
 
 impl CacheError {
     /// 判断是否为需要触发降级的严重错误（超时或连接错误）
+    #[no_panic]
     pub fn is_degradation_trigger(&self) -> bool {
         matches!(
             self,
@@ -55,6 +57,7 @@ pub struct CacheConfig {
 }
 
 impl Default for CacheConfig {
+    #[no_panic]
     fn default() -> Self {
         Self {
             default_ttl: 3600,
@@ -64,6 +67,7 @@ impl Default for CacheConfig {
 }
 
 impl CacheConfig {
+    #[no_panic]
     pub fn new(default_ttl: u64, enable_fallback: bool) -> Self {
         Self {
             default_ttl,

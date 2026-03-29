@@ -3134,6 +3134,7 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "urlencoding",
+ "zstd",
 ]
 
 [[package]]

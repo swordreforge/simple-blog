@@ -78,14 +78,42 @@ pub fn configure_static_routes(cfg: &mut web::ServiceConfig) {
 }
 
 /// 从内嵌文件系统提供 CSS 文件
-async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
+#[allow(unused_variables)]
+async fn serve_embedded_css(
+    path: web::Path<String>,
+    req: actix_web::HttpRequest,
+) -> Result<HttpResponse> {
     let filename = path.into_inner();
     let embed_path = format!("templates/css/{}", filename);
 
-    // 优先尝试从内嵌文件系统获取
+    #[cfg(feature = "compressed-embed")]
+    {
+        // 检查浏览器是否支持 zstd 压缩
+        let supports_zstd = req
+            .headers()
+            .get(actix_web::http::header::ACCEPT_ENCODING)
+            .and_then(|v| v.to_str().ok())
+            .map(|enc| enc.contains("zstd"))
+            .unwrap_or(false);
+
+        // 如果浏览器支持 zstd，尝试返回压缩文件
+        if supports_zstd {
+            if let Some(compressed) = crate::embedded::get_embedded_file_compressed(&embed_path) {
+                return Ok(HttpResponse::Ok()
+                    .content_type("text/css; charset=utf-8")
+                    .insert_header(("Content-Encoding", "zstd"))
+                    .insert_header(("Vary", "Accept-Encoding"))
+                    .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
+                    .body(compressed));
+            }
+        }
+    }
+
+    // 优先尝试从内嵌文件系统获取（解压版本）
     if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
+            .insert_header(("Vary", "Accept-Encoding"))
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(content));
     }
@@ -95,6 +123,7 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
+            .insert_header(("Vary", "Accept-Encoding"))
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(fs::read(file_path).await?));
     }
@@ -104,6 +133,7 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/css; charset=utf-8")
+            .insert_header(("Vary", "Accept-Encoding"))
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(fs::read(file_path).await?));
     }
@@ -112,14 +142,42 @@ async fn serve_embedded_css(path: web::Path<String>) -> Result<HttpResponse> {
 }
 
 /// 从内嵌文件系统提供 JavaScript 文件
-async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
+#[allow(unused_variables)]
+async fn serve_embedded_js(
+    path: web::Path<String>,
+    req: actix_web::HttpRequest,
+) -> Result<HttpResponse> {
     let filename = path.into_inner();
     let embed_path = format!("templates/js/{}", filename);
 
-    // 优先尝试从内嵌文件系统获取
+    #[cfg(feature = "compressed-embed")]
+    {
+        // 检查浏览器是否支持 zstd 压缩
+        let supports_zstd = req
+            .headers()
+            .get(actix_web::http::header::ACCEPT_ENCODING)
+            .and_then(|v| v.to_str().ok())
+            .map(|enc| enc.contains("zstd"))
+            .unwrap_or(false);
+
+        // 如果浏览器支持 zstd，尝试返回压缩文件
+        if supports_zstd {
+            if let Some(compressed) = crate::embedded::get_embedded_file_compressed(&embed_path) {
+                return Ok(HttpResponse::Ok()
+                    .content_type("text/javascript; charset=utf-8")
+                    .insert_header(("Content-Encoding", "zstd"))
+                    .insert_header(("Vary", "Accept-Encoding"))
+                    .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
+                    .body(compressed));
+            }
+        }
+    }
+
+    // 优先尝试从内嵌文件系统获取（解压版本）
     if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
+            .insert_header(("Vary", "Accept-Encoding"))
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(content));
     }
@@ -129,6 +187,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
+            .insert_header(("Vary", "Accept-Encoding"))
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(fs::read(file_path).await?));
     }
@@ -138,6 +197,7 @@ async fn serve_embedded_js(path: web::Path<String>) -> Result<HttpResponse> {
     if file_path.exists() {
         return Ok(HttpResponse::Ok()
             .content_type("text/javascript; charset=utf-8")
+            .insert_header(("Vary", "Accept-Encoding"))
             .insert_header(("Cache-Control", "public, max-age=31536000, immutable"))
             .body(fs::read(file_path).await?));
     }

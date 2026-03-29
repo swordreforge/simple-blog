@@ -78,6 +78,7 @@ once_cell = { version = "1.21", default-features = false, features = ["std", "al
 
 # 文件嵌入
 rust-embed = { version = "8.11", default-features = false, features = ["include-exclude"] }
+zstd = { version = "0.13", default-features = false, optional = true }
 
 # 中文文本摘要库（本地路径）
 rustblog-wip-for-summarize-in-zh-cn = { path = "./summarize-in-zh-cn" }
@@ -125,10 +126,12 @@ simd = ["simd-json"]
 jemalloc = ["tikv-jemallocator"]
 mimalloc-alloc = ["mimalloc"]
 tcmalloc-alloc = ["tcmalloc"]
+compressed-embed = ["zstd"]
 
 [profile.release]
 opt-level = "z"
 lto = "fat"
+rpath = false
 codegen-units = 1
 panic = "abort"
 overflow-checks = false
@@ -146,47 +149,47 @@ strip = true
 [profile.release.package.p256]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 [profile.release.package.ecdsa]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 [profile.release.package.elliptic-curve]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 
 [profile.release.package.aes-gcm]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 
 [profile.release.package.argon2]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 
 [profile.release.package.sha2]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 
 [profile.release.package.rusqlite]
 opt-level = "z"
 codegen-units = 1
-overflow-checks = true
+overflow-checks = false
 debug = false
 strip = true
 # 其他第三方库使用极致压缩（禁用 overflow-checks）

@@ -23,6 +23,8 @@ lazy_static::lazy_static! {
 /// 从内嵌文件系统创建 Tera 实例
 fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
     use crate::embedded::EmbeddedAssets;
+    #[cfg(feature = "compressed-embed")]
+    use crate::embedded::EmbeddedAssetsCompressed;
 
     let mut tera = Tera::default();
     tera.autoescape_on(vec!["html"]);
@@ -30,32 +32,70 @@ fn create_embedded_tera() -> Result<Tera, Box<dyn std::error::Error>> {
     println!("🔍 调试：开始从内嵌文件加载模板...");
     let mut found_templates = Vec::new();
 
-    // 遍历内嵌的模板文件
-    for path in EmbeddedAssets::iter() {
-        let path_str = path.as_ref();
+    // 遍历内嵌的模板文件并加载
+    #[cfg(feature = "compressed-embed")]
+    {
+        // 压缩模式：从 EmbeddedAssetsCompressed 遍历 templates
+        // 注意：EmbeddedAssetsCompressed 的文件路径没有 templates/ 前缀
+        // 因为 build.rs 将文件直接压缩到 embedded-compressed/ 下
+        for path in EmbeddedAssetsCompressed::iter() {
+            let path_str = path.as_ref();
+            if path_str.ends_with(".html") {
+                let embed_path = format!("templates/{}", path_str);
+                if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
+                    let name = path_str.to_string();
+                    let content_str = std::str::from_utf8(&content)?;
 
-        // 只处理 templates 目录下的 HTML 文件
-        if path_str.starts_with("templates/") && path_str.ends_with(".html")
-            && let Some(content) = EmbeddedAssets::get(&path) {
-                // 移除 "templates/" 前缀，保留子目录结构
-                // 例如: "templates/admin/admin.html" -> "admin/admin.html"
-                let name = path_str.strip_prefix("templates/")
-                    .ok_or("Path should start with 'templates/' after check")?;
-                let content_str = std::str::from_utf8(&content.data)?;
-
-                println!("  ✓ 加载模板: {} ({} bytes)", name, content.data.len());
-                found_templates.push(name.to_string());
-
-                // 使用 add_raw_template 方法直接添加模板内容
-                tera.add_raw_template(name, content_str)?;
+                    println!("  ✓ 加载模板: {} ({} bytes)", name, content.len());
+                    found_templates.push(name.clone());
+                    tera.add_raw_template(&name, content_str)?;
+                } else {
+                    eprintln!("  ✗ 无法读取模板文件: {}", embed_path);
+                }
             }
+        }
     }
+
+    #[cfg(not(feature = "compressed-embed"))]
+    {
+        // 非压缩模式：从 EmbeddedAssets 遍历 templates
+        for path in EmbeddedAssets::iter() {
+            let path_str = path.as_ref();
+            if path_str.starts_with("templates/") && path_str.ends_with(".html") {
+                let embed_path = path_str.to_string();
+                if let Some(content) = crate::embedded::get_embedded_file(&embed_path) {
+                    // 移除 "templates/" 前缀作为模板名称
+                    // 例如: "templates/admin/admin.html" -> "admin/admin.html"
+                    let name = path_str
+                        .strip_prefix("templates/")
+                        .ok_or("Path should start with 'templates/' in non-compressed mode")?
+                        .to_string();
+                    let content_str = std::str::from_utf8(&content)?;
+
+                    println!("  ✓ 加载模板: {} ({} bytes)", name, content.len());
+                    found_templates.push(name.clone());
+                    tera.add_raw_template(&name, content_str)?;
+                } else {
+                    eprintln!("  ✗ 无法读取模板文件: {}", embed_path);
+                }
+            }
+        }
+    }
+
+    println!("🔍 找到 {} 个模板文件", found_templates.len());
 
     if found_templates.is_empty() {
         eprintln!("❌ 错误: 没有找到任何内嵌模板文件！");
-        eprintln!("🔍 所有嵌入的文件:");
+        eprintln!("🔍 遍历 EmbeddedAssets:");
         for path in EmbeddedAssets::iter() {
             eprintln!("  - {}", path.as_ref());
+        }
+        #[cfg(feature = "compressed-embed")]
+        {
+            eprintln!("🔍 遍历 EmbeddedAssetsCompressed:");
+            for path in EmbeddedAssetsCompressed::iter() {
+                eprintln!("  - {}", path.as_ref());
+            }
         }
         return Err("No embedded templates found".into());
     } else {

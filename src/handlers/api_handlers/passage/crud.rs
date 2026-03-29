@@ -7,7 +7,6 @@ use chrono_tz::Tz;
 use futures_util::future;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
-use tracing::{warn, info};
 
 use super::markdown::{convert_markdown_to_html, update_markdown_file, update_markdown_file_name};
 use super::validation::{ensure_category_exist, ensure_tags_exist};
@@ -1026,47 +1025,6 @@ pub async fn update(
             if let Some(uuid) = passage_uuid.clone() {
                 crate::audit::AUDIT_LOGGER
                     .log_passage_update(user_id, &username, id, &uuid, client_ip);
-            }
-
-            // 自动保存历史版本
-            if let Some(uuid) = passage_uuid.clone() {
-                let db_pool = state.get_pool();
-                let cache = state.cache.clone();
-                let passage_id = id;
-                let passage_uuid_clone = uuid.clone();
-                let passage_clone = passage.clone();
-
-                tokio::spawn(async move {
-                    use crate::db::repositories::{PassageRepository, PassageVersionRepository};
-                    use std::sync::Arc;
-
-                    let version_repo = PassageVersionRepository::new(db_pool.clone());
-                    let passage_repo_arc = Arc::new(PassageRepository::new(db_pool.clone()));
-                    
-                    let version_service = crate::services::passage_version_service::PassageVersionService::new(
-                        version_repo,
-                        passage_repo_arc,
-                        cache,
-                    );
-
-                    // 获取更新前的文章
-                    let old_passage = match PassageRepository::new(db_pool.clone()).get_by_id(passage_id).await {
-                        Ok(p) => p,
-                        _ => return,
-                    };
-
-                    // 尝试自动保存版本
-                    if let Err(e) = version_service.auto_save_version(
-                        passage_id,
-                        &passage_uuid_clone,
-                        &old_passage,
-                        &passage_clone,
-                    ).await {
-                        warn!("自动保存文章历史版本失败 (文章 {}, 错误: {})", passage_id, e);
-                    } else {
-                        info!("自动保存文章历史版本成功 (文章 {})", passage_id);
-                    }
-                });
             }
 
             HttpResponse::Ok().json(serde_json::json!({
