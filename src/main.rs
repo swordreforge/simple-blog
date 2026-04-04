@@ -23,8 +23,77 @@ use crate::handlers::AppState;
 use crate::init::initialize_database;
 use crate::routes::create_router;
 
+/// Parse command line arguments
+fn parse_args() -> (String, u16) {
+    let mut host = String::from("127.0.0.1");
+    let mut port = 3000;
+    let args: Vec<String> = std::env::args().collect();
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "-h" | "--help" => {
+                print_help();
+                std::process::exit(0);
+            }
+            "--host" => {
+                if i + 1 < args.len() {
+                    host = args[i + 1].clone();
+                    i += 2;
+                } else {
+                    eprintln!("Error: --host requires a value\n");
+                    print_help();
+                    std::process::exit(1);
+                }
+            }
+            "-p" | "--port" => {
+                if i + 1 < args.len() {
+                    match args[i + 1].parse::<u16>() {
+                        Ok(p) => port = p,
+                        Err(_) => {
+                            eprintln!("Error: Invalid port number '{}'\n", args[i + 1]);
+                            print_help();
+                            std::process::exit(1);
+                        }
+                    }
+                    i += 2;
+                } else {
+                    eprintln!("Error: --port requires a value\n");
+                    print_help();
+                    std::process::exit(1);
+                }
+            }
+            _ => {
+                eprintln!("Error: Unknown argument: '{}'\n", args[i]);
+                print_help();
+                std::process::exit(1);
+            }
+        }
+    }
+
+    (host, port)
+}
+
+/// Print help message
+fn print_help() {
+    println!("Usage: staticwallpaper [OPTIONS]");
+    println!();
+    println!("Options:");
+    println!("  -h, --help         Show this help message");
+    println!("      --host <HOST>  Server host address (default: 127.0.0.1)");
+    println!("  -p, --port <PORT>  Server port number (default: 3000)");
+    println!();
+    println!("Examples:");
+    println!("  staticwallpaper --host 0.0.0.0 --port 8080");
+    println!("  staticwallpaper -p 8080");
+    println!("  staticwallpaper --help");
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Parse command line arguments
+    let (host, port) = parse_args();
+
     // Initialize tracing
     tracing_subscriber::registry()
         .with(
@@ -62,7 +131,7 @@ async fn main() -> Result<()> {
         .layer(TraceLayer::new_for_http());
 
     // Bind to address
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     println!("🦊 Server is running at http://{}\n", addr);

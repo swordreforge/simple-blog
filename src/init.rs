@@ -61,7 +61,7 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> R
                     Ok(m) => {
                         let created = m.created().ok();
                         let modified = m.modified().ok();
-                        let timestamp = created
+                        created
                             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                             .map(|d| d.as_millis() as i64)
                             .or_else(|| {
@@ -71,8 +71,7 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> R
                                         .map(|d| d.as_millis() as i64)
                                 })
                             })
-                            .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
-                        timestamp
+                            .unwrap_or_else(|| chrono::Utc::now().timestamp_millis())
                     }
                     Err(_) => chrono::Utc::now().timestamp_millis(),
                 };
