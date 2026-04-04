@@ -11,6 +11,8 @@ fn estimate_quality_by_target_size(
     target_size: usize,
     max_attempts: u32,
 ) -> Result<Vec<u8>> {
+    let tolerance = 0.1; // 10% tolerance
+    let tolerance_size = (target_size as f32 * tolerance) as usize;
     let mut quality_range: RangeInclusive<f32> = 0.0..=100.0;
     let mut best_data = None;
     let mut best_diff = f32::INFINITY;
@@ -27,6 +29,13 @@ fn estimate_quality_by_target_size(
         if diff < best_diff {
             best_diff = diff;
             best_data = Some(encoded.clone());
+        }
+
+        // Early termination if within tolerance (and not exceeding target)
+        if current_size <= target_size && (target_size - current_size) <= tolerance_size {
+            tracing::info!("Target size reached with tolerance: {} KB (target: {} KB)",
+                current_size / 1024, target_size / 1024);
+            return Ok(encoded);
         }
 
         if current_size > target_size {
