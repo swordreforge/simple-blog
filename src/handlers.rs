@@ -6,6 +6,7 @@ use axum::{
     Json,
 };
 use axum::extract::multipart::Field;
+use futures_util::StreamExt;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -169,8 +170,8 @@ pub async fn upload_wallpaper(
 
     let mut wallpaper_type: Option<WallpaperType> = None;
     let mut tags = String::new();
-    let mut file_bytes: Option<Vec<u8>> = None;
     let mut original_filename: Option<String> = None;
+    let mut temp_file_path: Option<std::path::PathBuf> = None;
     let mut field_count = 0;
 
     // Process all fields
@@ -179,7 +180,7 @@ pub async fn upload_wallpaper(
         field_count += 1;
         tracing::info!("Processing field #{}", field_count);
 
-        let field: Field = match field_result {
+        let mut field: Field = match field_result {
             Ok(Some(f)) => f,
             Ok(None) => {
                 tracing::info!("No more fields to process");
@@ -220,19 +221,61 @@ pub async fn upload_wallpaper(
                     original_filename = Some(filename.clone());
                     tracing::info!("Found file field with filename: '{}'", filename);
 
-                    match field.bytes().await {
-                        Ok(bytes) => {
-                            let size = bytes.len();
-                            tracing::info!("Successfully read {} bytes from file '{}'", size, filename);
-                            tracing::info!("File size: {} KB", size / 1024);
-                            file_bytes = Some(bytes.to_vec());
-                        }
-                        Err(e) => {
-                            tracing::error!("Failed to read file bytes for '{}': {:?}", filename, e);
-                            tracing::error!("Error details: {}", e);
-                            return Err(StatusCode::BAD_REQUEST);
+                    // 使用流式读取，直接写入临时文件，避免将整个文件加载到内存
+                    let temp_path = state.wallpaper_dir.join("temp_upload").join(filename);
+                    fs::create_dir_all(temp_path.parent().unwrap()).await.map_err(|e| {
+                        tracing::error!("Failed to create temp directory: {:?}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+
+                    let mut file = fs::File::create(&temp_path).await.map_err(|e| {
+                        tracing::error!("Failed to create temp file: {:?}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR
+                    })?;
+
+                    use tokio::io::AsyncWriteExt;
+                    let mut total_size: u64 = 0;
+                    const MAX_UPLOAD_SIZE: u64 = 20 * 1024 * 1024; // 20MB 限制
+
+                    // Field 实现了 Stream 特性，可以直接使用 next() 读取数据块
+                    while let Some(chunk_result) = field.next().await {
+                        match chunk_result {
+                            Ok(bytes) => {
+                                total_size += bytes.len() as u64;
+                                if total_size > MAX_UPLOAD_SIZE {
+                                    drop(file);
+                                    fs::remove_file(&temp_path).await.ok();
+                                    tracing::error!("File size exceeds limit: {} bytes", total_size);
+                                    return Err(StatusCode::PAYLOAD_TOO_LARGE);
+                                }
+                                if let Err(e) = file.write_all(&bytes).await {
+                                    drop(file);
+                                    fs::remove_file(&temp_path).await.ok();
+                                    tracing::error!("Failed to write chunk to temp file: {:?}", e);
+                                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                                }
+                            }
+                            Err(e) => {
+                                drop(file);
+                                fs::remove_file(&temp_path).await.ok();
+                                tracing::error!("Failed to read chunk: {:?}", e);
+                                return Err(StatusCode::BAD_REQUEST);
+                            }
                         }
                     }
+
+                    // 确保所有数据都写入磁盘
+                    if let Err(e) = file.flush().await {
+                        drop(file);
+                        fs::remove_file(&temp_path).await.ok();
+                        tracing::error!("Failed to flush temp file: {:?}", e);
+                        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                    }
+                    drop(file);
+                    tracing::info!("Successfully saved file to temp path: {} KB", total_size / 1024);
+
+                    // 保存临时文件路径用于后续处理
+                    temp_file_path = Some(temp_path);
                 } else {
                     tracing::warn!("File field has no filename");
                 }
@@ -244,15 +287,15 @@ pub async fn upload_wallpaper(
     }
 
     tracing::info!("Processed {} fields total", field_count);
-    tracing::info!("Final values - type: {:?}, filename: {:?}, tags: '{}', bytes present: {}",
-        wallpaper_type, original_filename, tags, file_bytes.is_some());
+    tracing::info!("Final values - type: {:?}, filename: {:?}, tags: '{}', temp_file: {:?}",
+        wallpaper_type, original_filename, tags, temp_file_path.is_some());
 
     let wallpaper_type = wallpaper_type.ok_or_else(|| {
         tracing::error!("Missing wallpaper_type");
         StatusCode::BAD_REQUEST
     })?;
-    let bytes = file_bytes.ok_or_else(|| {
-        tracing::error!("Missing file_bytes");
+    let temp_path = temp_file_path.ok_or_else(|| {
+        tracing::error!("Missing temp_file_path");
         StatusCode::BAD_REQUEST
     })?;
     let original_filename = original_filename.ok_or_else(|| {
@@ -263,6 +306,7 @@ pub async fn upload_wallpaper(
     tracing::info!("Validating file type for '{}'", original_filename);
     if !is_image_file(&original_filename) {
         tracing::error!("File '{}' is not a valid image file", original_filename);
+        fs::remove_file(&temp_path).await.ok();
         return Err(StatusCode::BAD_REQUEST);
     }
 
@@ -270,18 +314,11 @@ pub async fn upload_wallpaper(
     let target_dir = state.wallpaper_dir.join(wallpaper_type.as_str());
     tracing::info!("Target directory: {:?}", target_dir);
 
-    fs::create_dir_all(&target_dir).await.map_err(|e| {
+    if let Err(e) = fs::create_dir_all(&target_dir).await {
         tracing::error!("Failed to create directory {:?}: {:?}", target_dir, e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
-
-    let temp_path = target_dir.join(format!("temp_{}", original_filename));
-    tracing::info!("Temporary file path: {:?}", temp_path);
-
-    fs::write(&temp_path, &bytes).await.map_err(|e| {
-        tracing::error!("Failed to write temp file {:?}: {:?}", temp_path, e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+        fs::remove_file(&temp_path).await.ok();
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
 
     tracing::info!("File written successfully, starting WebP conversion");
 
@@ -301,6 +338,24 @@ pub async fn upload_wallpaper(
 
     fs::remove_file(&temp_path).await.ok();
 
+    // 计算文件哈希值
+    let file_hash = tokio::task::block_in_place(|| {
+        crate::image::calculate_hash(&webp_path)
+    }).map_err(|e| {
+        tracing::error!("Failed to calculate file hash: {:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+
+    tracing::info!("File hash: {}", file_hash);
+
+    // 检查是否已存在相同哈希的图片
+    if let Ok(Some(existing)) = state.db.get_wallpaper_by_hash(&file_hash, &wallpaper_type).await {
+        tracing::info!("Duplicate image detected. Existing file: {}", existing.filename);
+        // 删除刚生成的文件
+        fs::remove_file(&webp_path).await.ok();
+        return Err(StatusCode::CONFLICT);
+    }
+
     tracing::info!("Inserting wallpaper record into database");
     let wallpaper_id = state
         .db
@@ -310,6 +365,7 @@ pub async fn upload_wallpaper(
             wallpaper_type,
             &tags,
             chrono::Utc::now().timestamp_millis(),
+            &file_hash,
         )
         .await
         .map_err(|e| {

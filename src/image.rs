@@ -1,4 +1,6 @@
 use anyhow::{Context, Result};
+use image::RgbImage;
+use sha2::{Digest, Sha256};
 use std::ops::RangeInclusive;
 use std::path::Path;
 use zenwebp::{EncodeRequest, LossyConfig, PixelLayout};
@@ -13,13 +15,29 @@ fn estimate_quality_by_target_size(
 ) -> Result<Vec<u8>> {
     let tolerance = 0.1; // 10% tolerance
     let tolerance_size = (target_size as f32 * tolerance) as usize;
-    let mut quality_range: RangeInclusive<f32> = 0.0..=100.0;
+    const MIN_QUALITY: f32 = 20.0; // 设置最小质量，避免过度压缩导致偏绿
+    let mut quality_range: RangeInclusive<f32> = MIN_QUALITY..=100.0;
     let mut best_data = None;
     let mut best_diff = f32::INFINITY;
 
     for _ in 0..max_attempts {
         let mid = (quality_range.start() + quality_range.end()) / 2.0;
-        let config = LossyConfig::new().with_quality(mid);
+
+        // 根据质量范围调整编码方法，优化色度采样和亮度保留
+        // method 0-6: 0=最快，6=最慢但质量最好
+        // 更高的 method 值会使用更好的色度采样策略，保留更多颜色信息
+        let (method, _description) = match mid {
+            q if q >= 70.0 => (6, "best"),      // 高质量：使用最佳方法，保留完整色度信息
+            q if q >= 50.0 => (5, "high"),      // 高质量：使用较好的方法
+            q if q >= 40.0 => (4, "medium"),    // 中等质量：平衡速度和质量
+            q if q >= 30.0 => (3, "balanced"),  // 中低质量：平衡
+            _ => (2, "low"),                    // 低质量：但质量不低于 MIN_QUALITY
+        };
+
+        let config = LossyConfig::new()
+            .with_quality(mid)
+            .with_method(method);
+
         let encoded = EncodeRequest::lossy(&config, rgb, PixelLayout::Rgb8, width, height)
             .encode()
             .context("Failed to encode WebP during quality estimation")?;
@@ -49,7 +67,36 @@ fn estimate_quality_by_target_size(
         }
     }
 
-    best_data.ok_or_else(|| anyhow::anyhow!("Failed to estimate quality"))
+    // 如果无法达到目标大小（因为设置了最小质量限制），返回最佳结果并警告
+    if let Some(data) = best_data {
+        if data.len() > target_size {
+            tracing::warn!(
+                "Cannot reach target size {} KB without excessive quality loss. Best result: {} KB (quality >= {})",
+                target_size / 1024,
+                data.len() / 1024,
+                MIN_QUALITY
+            );
+        }
+        return Ok(data);
+    }
+
+    Err(anyhow::anyhow!("Failed to estimate quality"))
+}
+
+/// 将 RGBA 图像与白色背景合成，转换为 RGB 图像
+/// 这样可以避免边缘发绿的问题，因为透明区域会被白色填充
+fn flatten_rgba_to_rgb(rgba: &image::RgbaImage, bg_color: [u8; 3]) -> RgbImage {
+    let (width, height) = (rgba.width(), rgba.height());
+    let mut rgb = RgbImage::new(width, height);
+    for (x, y, pixel) in rgba.enumerate_pixels() {
+        let alpha = pixel[3] as f32 / 255.0;
+        let inv_alpha = 1.0 - alpha;
+        let r = (pixel[0] as f32 * alpha + bg_color[0] as f32 * inv_alpha) as u8;
+        let g = (pixel[1] as f32 * alpha + bg_color[1] as f32 * inv_alpha) as u8;
+        let b = (pixel[2] as f32 * alpha + bg_color[2] as f32 * inv_alpha) as u8;
+        rgb.put_pixel(x, y, image::Rgb([r, g, b]));
+    }
+    rgb
 }
 
 pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: usize) -> Result<()> {
@@ -62,15 +109,20 @@ pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: us
         let img = image::open(&input_path)
             .context(format!("Failed to load image: {:?}", input_path))?;
 
-        // 2. Convert to RGB8 format for zenwebp encoding
-        // 使用 RGB8 而不是 RGBA8 以避免颜色通道顺序问题
-        let rgb_img = img.to_rgb8();
+        // 2. 先转换为 RGBA8 格式，以便正确处理透明通道
+        let rgba_img = img.to_rgba8();
+
+        // 3. 将 RGBA 与白色背景合成，避免边缘发绿
+        // 透明区域会被白色填充，边缘的半透明像素会正确混合
+        let white_bg = [255, 255, 255];
+        let rgb_img = flatten_rgba_to_rgb(&rgba_img, white_bg);
+
         let (width, height) = (rgb_img.width(), rgb_img.height());
 
-        // 3. Get raw pixel data
+        // 4. Get raw pixel data
         let rgb_pixels = rgb_img.into_raw();
 
-        // 4. Encode to WebP
+        // 5. Encode to WebP
         let webp_data = if max_size == 0 {
             // No size limit, use high quality (85)
             tracing::info!("No size limit, using quality 85");
@@ -85,7 +137,7 @@ pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: us
                 .context("Failed to estimate quality for target size")?
         };
 
-        // 5. Write WebP data to file
+        // 6. Write WebP data to file
         std::fs::write(&output_path, webp_data)
             .context(format!("Failed to write WebP file: {:?}", output_path))?;
 
@@ -117,4 +169,29 @@ pub fn get_supported_extensions() -> &'static [&'static str] {
 pub fn is_image_file(filename: &str) -> bool {
     let ext = get_file_extension(filename);
     get_supported_extensions().contains(&ext.as_str())
+}
+
+/// 计算文件的 SHA256 哈希值
+/// 使用流式读取分块计算哈希值，避免将整个文件加载到内存
+pub fn calculate_hash(file_path: &Path) -> Result<String> {
+    use std::io::Read;
+
+    let file = std::fs::File::open(file_path)
+        .context(format!("Failed to open file: {:?}", file_path))?;
+
+    let mut reader = std::io::BufReader::new(file);
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 8192]; // 8KB 缓冲区，平衡内存和性能
+
+    loop {
+        let n = reader.read(&mut buffer)
+            .context(format!("Failed to read file: {:?}", file_path))?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buffer[..n]);
+    }
+
+    let hash = hasher.finalize();
+    Ok(format!("{:x}", hash))
 }

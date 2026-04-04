@@ -72,12 +72,15 @@ impl AuthManager {
         let sessions = self.sessions.read().await;
         let session = sessions.get(token)?;
 
+        // 检查会话是否过期
         if chrono::Utc::now().timestamp_millis() > session.expires_at {
             drop(sessions);
+            // 会话过期，移除并返回 None
             self.sessions.write().await.remove(token);
             return None;
         }
 
+        // 返回用户信息
         Some(User {
             id: session.user_id,
             username: session.username.clone(),
@@ -92,6 +95,11 @@ impl AuthManager {
         let now = chrono::Utc::now().timestamp_millis();
         let mut sessions = self.sessions.write().await;
         sessions.retain(|_, session| session.expires_at > now);
+    }
+
+    /// 获取当前会话数量（包括过期的）
+    pub async fn get_session_count(&self) -> usize {
+        self.sessions.read().await.len()
     }
 
     pub async fn login(&self, request: &LoginRequest) -> Result<Option<(User, String)>> {

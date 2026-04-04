@@ -55,10 +55,10 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
     let error = Arc::new(Mutex::new(0));
 
     // 并发控制：限制同时进行的任务数量
-    // 使用 CPU 核心数，但最多不超过 8 个
-    let max_concurrent = std::cmp::min(num_cpus::get(), 8);
+    // 使用 CPU 核心数 x 2，但最多不超过 16 个
+    let max_concurrent = std::cmp::min(num_cpus::get() * 2, 44);
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
-    println!("🚀 使用 {} 个并发任务处理文件", max_concurrent);
+    println!("🚀 使用 {} 个并发任务处理文件 (CPU 核心数: {})", max_concurrent, num_cpus::get());
 
     // 收集所有任务
     let mut tasks = Vec::new();
@@ -150,6 +150,11 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                         }
                     }
 
+                    // 计算文件哈希值
+                    let file_hash = tokio::task::block_in_place(|| {
+                        crate::image::calculate_hash(&file_path)
+                    }).unwrap_or_else(|_| String::new());
+
                     match db
                         .insert_wallpaper(
                             &filename,
@@ -157,6 +162,7 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                             crate::models::WallpaperType::from_str(&type_str).unwrap(),
                             "",
                             created_at,
+                            &file_hash,
                         )
                         .await
                     {

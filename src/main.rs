@@ -140,6 +140,9 @@ async fn main() -> Result<()> {
     // Initialize database from existing files
     initialize_database(&db, &wallpaper_dir, max_size).await?;
 
+    // Migrate missing hash values for existing records
+    db.migrate_missing_hashes(&wallpaper_dir).await?;
+
     // Create application state
     let app_state = AppState {
         db: db.clone(),
@@ -162,10 +165,21 @@ async fn main() -> Result<()> {
     // Start session cleanup task
     let auth_manager_cleanup = auth_manager.clone();
     tokio::spawn(async move {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3600));
+        // 每10分钟清理一次过期会话，避免长时间运行后内存累积
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));
         loop {
             interval.tick().await;
+            let before_count = auth_manager_cleanup.get_session_count().await;
             auth_manager_cleanup.cleanup_expired_sessions().await;
+            let after_count = auth_manager_cleanup.get_session_count().await;
+
+            if before_count > 0 {
+                tracing::info!(
+                    "Cleaned up {} expired session(s), {} active session(s) remaining",
+                    before_count - after_count,
+                    after_count
+                );
+            }
         }
     });
 

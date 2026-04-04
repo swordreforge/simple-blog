@@ -10,6 +10,7 @@ pub struct Wallpaper {
     pub wallpaper_type: WallpaperType,
     pub tags: String,
     pub created_at: i64,
+    pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type)]
