@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::collections::HashSet;
 use std::path::Path;
+use tokio::fs;
 
 use crate::db::Database;
 use crate::image::is_image_file;
@@ -19,7 +20,7 @@ pub async fn initialize_database(db: &Database, wallpaper_dir: &Path) -> Result<
 }
 
 async fn scan_directory(dir: &Path) -> Result<Vec<String>> {
-    let mut entries = tokio::fs::read_dir(dir).await?;
+    let mut entries = fs::read_dir(dir).await?;
     let mut files = Vec::new();
 
     while let Some(entry) = entries.next_entry().await? {
@@ -56,7 +57,7 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> R
             }
             Ok(None) => {
                 let file_path = dir.join(filename);
-                let metadata = tokio::fs::metadata(&file_path).await;
+                let metadata = fs::metadata(&file_path).await;
                 let created_at = match metadata {
                     Ok(m) => {
                         let created = m.created().ok();

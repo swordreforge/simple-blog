@@ -7,10 +7,11 @@ mod init;
 mod models;
 mod routes;
 
+use tokio::fs;
+
 use anyhow::Result;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::signal;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{
     layer::SubscriberExt,
@@ -109,8 +110,8 @@ async fn main() -> Result<()> {
     let db_path = current_dir.join("wallpapers.db");
 
     // Create wallpaper directories
-    tokio::fs::create_dir_all(wallpaper_dir.join("pc")).await?;
-    tokio::fs::create_dir_all(wallpaper_dir.join("mo")).await?;
+    fs::create_dir_all(wallpaper_dir.join("pc")).await?;
+    fs::create_dir_all(wallpaper_dir.join("mo")).await?;
 
     // Initialize database
     let db = Arc::new(Database::new(db_path).await?);
@@ -146,38 +147,8 @@ async fn main() -> Result<()> {
         }
     });
 
-    // Start server
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    // Start server using axum with tokio
+    axum::serve(listener, app).await?;
 
     Ok(())
-}
-
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        _ = ctrl_c => {
-            tracing::info!("Ctrl+C received, shutting down gracefully...");
-        },
-        _ = terminate => {
-            tracing::info!("SIGTERM received, shutting down gracefully...");
-        },
-    }
 }

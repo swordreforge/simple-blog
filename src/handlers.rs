@@ -10,6 +10,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tokio::fs;
 
 use crate::auth::AuthManager;
 use crate::db::Database;
@@ -268,22 +269,18 @@ pub async fn upload_wallpaper(
     let target_dir = state.wallpaper_dir.join(wallpaper_type.as_str());
     tracing::info!("Target directory: {:?}", target_dir);
 
-    tokio::fs::create_dir_all(&target_dir)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to create directory {:?}: {:?}", target_dir, e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    fs::create_dir_all(&target_dir).await.map_err(|e| {
+        tracing::error!("Failed to create directory {:?}: {:?}", target_dir, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     let temp_path = target_dir.join(format!("temp_{}", original_filename));
     tracing::info!("Temporary file path: {:?}", temp_path);
 
-    tokio::fs::write(&temp_path, &bytes)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to write temp file {:?}: {:?}", temp_path, e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    fs::write(&temp_path, &bytes).await.map_err(|e| {
+        tracing::error!("Failed to write temp file {:?}: {:?}", temp_path, e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     tracing::info!("File written successfully, starting WebP conversion");
 
@@ -301,9 +298,7 @@ pub async fn upload_wallpaper(
 
     tracing::info!("WebP conversion completed successfully");
 
-    tokio::fs::remove_file(&temp_path)
-        .await
-        .ok();
+    fs::remove_file(&temp_path).await.ok();
 
     tracing::info!("Inserting wallpaper record into database");
     let wallpaper_id = state
@@ -364,7 +359,7 @@ pub async fn delete_wallpaper(
             .join(wallpaper.wallpaper_type.as_str())
             .join(&wallpaper.filename);
 
-        tokio::fs::remove_file(&file_path).await.ok();
+        fs::remove_file(&file_path).await.ok();
 
         match state.db.delete_wallpaper(id).await {
             Ok(()) => Ok(Json(serde_json::json!({ "success": true }))),
@@ -429,7 +424,7 @@ async fn handle_random_wallpaper(
         .join(wallpaper.wallpaper_type.as_str())
         .join(&wallpaper.filename);
 
-    match tokio::fs::read(&file_path).await {
+    match fs::read(&file_path).await {
         Ok(bytes) => {
             let mut headers = HeaderMap::new();
             headers.insert("content-type", "image/webp".parse().unwrap());

@@ -1,31 +1,35 @@
 use anyhow::{Context, Result};
 use std::path::Path;
-use tokio::process::Command;
 
 pub async fn convert_to_webp(input_path: &Path, output_path: &Path) -> Result<()> {
-    let output = Command::new("ffmpeg")
-        .args([
-            "-i",
-            input_path.to_str().unwrap(),
-            "-c:v",
-            "libwebp",
-            "-quality",
-            "85",
-            "-y",
-            output_path.to_str().unwrap(),
-        ])
-        .output()
-        .await
-        .context("Failed to execute ffmpeg")?;
+    // Use blocking task for FFmpeg conversion since it's CPU intensive
+    let input_path = input_path.to_path_buf();
+    let output_path = output_path.to_path_buf();
 
-    if !output.status.success() {
-        anyhow::bail!(
-            "FFmpeg conversion failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
+    tokio::task::block_in_place(|| {
+        let output = std::process::Command::new("ffmpeg")
+            .args([
+                "-i",
+                input_path.to_str().unwrap(),
+                "-c:v",
+                "libwebp",
+                "-quality",
+                "85",
+                "-y",
+                output_path.to_str().unwrap(),
+            ])
+            .output()
+            .context("Failed to execute ffmpeg")?;
 
-    Ok(())
+        if !output.status.success() {
+            anyhow::bail!(
+                "FFmpeg conversion failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+        }
+
+        Ok(())
+    })
 }
 
 pub fn generate_timestamped_filename(original_name: &str) -> String {
