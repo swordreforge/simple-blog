@@ -486,14 +486,11 @@ async fn handle_random_wallpaper(
             let mut headers = HeaderMap::new();
             headers.insert("content-type", "image/webp".parse().unwrap());
             headers.insert("cache-control", "public, max-age=3600".parse().unwrap());
-            headers.insert(
-                "x-width",
-                params.width.unwrap_or_else(|| "auto".to_string()).parse().unwrap(),
-            );
-            headers.insert(
-                "x-height",
-                params.height.unwrap_or_else(|| "auto".to_string()).parse().unwrap(),
-            );
+            // 使用静态字符串 "auto"，避免每次都创建新的 String
+            let width_header = params.width.as_deref().unwrap_or("auto");
+            let height_header = params.height.as_deref().unwrap_or("auto");
+            headers.insert("x-width", width_header.parse().unwrap());
+            headers.insert("x-height", height_header.parse().unwrap());
             headers.insert("x-tags", wallpaper.tags.parse().unwrap());
 
             (headers, bytes).into_response()

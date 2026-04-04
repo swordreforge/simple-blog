@@ -17,7 +17,7 @@ const SESSION_TTL: i64 = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Session {
     pub user_id: i64,
-    pub username: String,
+    pub username: Arc<str>,
     pub expires_at: i64,
 }
 
@@ -60,7 +60,7 @@ impl AuthManager {
 
         let session = Session {
             user_id,
-            username: username.to_string(),
+            username: Arc::from(username),  // 使用 Arc::from 直接创建 Arc<str>
             expires_at: chrono::Utc::now().timestamp_millis() + SESSION_TTL,
         };
 
@@ -80,10 +80,10 @@ impl AuthManager {
             return None;
         }
 
-        // 返回用户信息
+        // 返回用户信息，使用 Arc::clone 避免深拷贝
         Some(User {
             id: session.user_id,
-            username: session.username.clone(),
+            username: session.username.clone(),  // Arc::clone 只是增加引用计数
         })
     }
 
@@ -116,7 +116,7 @@ impl AuthManager {
                 return Ok(Some((
                     User {
                         id: user.id,
-                        username: user.username,
+                        username: user.username.into(),  // 将 String 转换为 Arc<str>
                     },
                     token,
                 )));
@@ -136,7 +136,7 @@ impl AuthManager {
 
         Ok(User {
             id: user_id,
-            username: username.to_string(),
+            username: Arc::from(username),  // 使用 Arc::from 直接创建 Arc<str>
         })
     }
 

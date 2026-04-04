@@ -251,15 +251,15 @@ impl Database {
             if wallpaper.hash.is_empty() {
                 let db = self.clone();
                 let wallpaper_dir = wallpaper_dir.clone();
-                        let type_str = wallpaper.wallpaper_type.as_str().to_string();
-                        let filename = wallpaper.filename.clone();
+                        let type_str = wallpaper.wallpaper_type.as_str();  // 使用 &str 避免克隆
+                        let filename = wallpaper.filename.clone();  // 保留 clone，因为要在任务中使用
                         let id = wallpaper.id;
                         let updated_counter = updated.clone();
                         let err_counter = error.clone();
-                
+
                         let task = tokio::spawn(async move {
-                            let file_path = wallpaper_dir.join(&type_str).join(&filename);
-                
+                            let file_path = wallpaper_dir.join(type_str).join(&filename);
+
                             match tokio::task::block_in_place(|| crate::image::calculate_hash(&file_path)) {
                                 Ok(hash) => {
                                     match sqlx::query("UPDATE wallpapers SET hash = ? WHERE id = ?")

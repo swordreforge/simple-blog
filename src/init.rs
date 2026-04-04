@@ -54,16 +54,38 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
     let compressed = Arc::new(Mutex::new(0));
     let error = Arc::new(Mutex::new(0));
 
-    // 并发控制：限制同时进行的任务数量
-    // 使用 CPU 核心数 x 2，但最多不超过 16 个
-    let max_concurrent = std::cmp::min(num_cpus::get() * 2, 44);
-    let semaphore = Arc::new(Semaphore::new(max_concurrent));
-    println!("🚀 使用 {} 个并发任务处理文件 (CPU 核心数: {})", max_concurrent, num_cpus::get());
+    // 根据文件大小分组：小文件（<5MB）可以并行处理，大文件（>=5MB）串行处理
+    // 这可以避免同时处理多个大文件导致的内存峰值
+    let mut small_files = Vec::new();
+    let mut large_files = Vec::new();
+    const LARGE_FILE_THRESHOLD: u64 = 5 * 1024 * 1024; // 5MB
+
+    for filename in &files {
+        let file_path = dir.join(filename);
+        if let Ok(metadata) = fs::metadata(&file_path).await {
+            if metadata.len() >= LARGE_FILE_THRESHOLD {
+                large_files.push(filename.clone());
+            } else {
+                small_files.push(filename.clone());
+            }
+        } else {
+            small_files.push(filename.clone());
+        }
+    }
+
+    // 计算合理的并发数：根据CPU核心数和内存情况
+    // 小文件并发数 = CPU核心数 + 2，但不超过12
+    let cpu_count = num_cpus::get();
+    let max_concurrent_small = std::cmp::min(cpu_count + 2, 12);
+    let semaphore = Arc::new(Semaphore::new(max_concurrent_small));
+    println!("🚀 使用 {} 个并发任务处理小文件 (<5MB), {} 个大文件将串行处理",
+        max_concurrent_small, large_files.len());
 
     // 收集所有任务
     let mut tasks = Vec::new();
 
-    for filename in files {
+    // 处理小文件（并行）
+    for filename in small_files {
         let filename = filename.clone();
         let db = db.clone();
         let dir = dir.clone();
@@ -189,9 +211,132 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
         tasks.push(task);
     }
 
-    // 等待所有任务完成
+    // 等待所有小文件任务完成
     for task in tasks {
         let _ = task.await;
+    }
+
+    // 串行处理大文件（>=5MB），避免内存峰值
+    if !large_files.is_empty() {
+        println!("\n📦 开始串行处理 {} 个大文件 (>=5MB)...", large_files.len());
+
+        for filename in large_files {
+            let filename = filename.clone();
+            let db = db.clone();
+            let dir = dir.clone();
+            let type_str = r#type.to_string();
+            let added_counter = added.clone();
+            let skipped_counter = skipped.clone();
+            let compressed_counter = compressed.clone();
+            let error_counter = error.clone();
+
+            match db.get_wallpaper_by_filename(&filename, crate::models::WallpaperType::from_str(&type_str).unwrap()).await {
+                Ok(Some(_)) => {
+                    // File already exists in database, check if it needs compression
+                    if max_size > 0 {
+                        let file_path = dir.join(&filename);
+                        if let Ok(metadata) = fs::metadata(&file_path).await {
+                            let file_size = metadata.len();
+                            if file_size > max_size as u64 {
+                                println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                    filename,
+                                    file_size / 1024,
+                                    max_size / 1024
+                                );
+
+                                match convert_to_webp(&file_path, &file_path, max_size).await {
+                                    Ok(_) => {
+                                        let mut c = compressed_counter.lock().await;
+                                        *c += 1;
+                                        // Get new file size
+                                        if let Ok(new_metadata) = fs::metadata(&file_path).await {
+                                            println!("     ✅ 压缩完成: {} KB", new_metadata.len() / 1024);
+                                        }
+                                    }
+                                    Err(e) => {
+                                        println!("     ❌ 压缩失败: {}", e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    let mut s = skipped_counter.lock().await;
+                    *s += 1;
+                    println!("  ⏭️  跳过: {} (已存在)", filename);
+                }
+                Ok(None) => {
+                    let file_path = dir.join(&filename);
+                    let metadata = fs::metadata(&file_path).await;
+                    let created_at = match metadata {
+                        Ok(m) => {
+                            let created = m.created().ok();
+                            let modified = m.modified().ok();
+                            created
+                                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                                .map(|d| d.as_millis() as i64)
+                                .or_else(|| {
+                                    modified.and_then(|t| {
+                                        t.duration_since(std::time::UNIX_EPOCH)
+                                            .ok()
+                                            .map(|d| d.as_millis() as i64)
+                                    })
+                                })
+                                .unwrap_or_else(|| chrono::Utc::now().timestamp_millis())
+                        }
+                        Err(_) => chrono::Utc::now().timestamp_millis(),
+                    };
+
+                    // Compress if file size exceeds max_size
+                    if max_size > 0 {
+                        if let Ok(m) = fs::metadata(&file_path).await {
+                            if m.len() > max_size as u64 {
+                                println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                    filename,
+                                    m.len() / 1024,
+                                    max_size / 1024
+                                );
+                                if let Err(e) = convert_to_webp(&file_path, &file_path, max_size).await {
+                                    println!("     ❌ 压缩失败: {}", e);
+                                }
+                            }
+                        }
+                    }
+
+                    // 计算文件哈希值
+                    let file_hash = tokio::task::block_in_place(|| {
+                        crate::image::calculate_hash(&file_path)
+                    }).unwrap_or_else(|_| String::new());
+
+                    match db
+                        .insert_wallpaper(
+                            &filename,
+                            &filename,
+                            crate::models::WallpaperType::from_str(&type_str).unwrap(),
+                            "",
+                            created_at,
+                            &file_hash,
+                        )
+                        .await
+                    {
+                        Ok(_) => {
+                            let mut a = added_counter.lock().await;
+                            *a += 1;
+                            println!("  ✅ 添加: {}", filename);
+                        }
+                        Err(_e) => {
+                            let mut e = error_counter.lock().await;
+                            *e += 1;
+                            println!("  ❌ 错误: {} - {}", filename, _e);
+                        }
+                    }
+                }
+                Err(_e) => {
+                    let mut e = error_counter.lock().await;
+                    *e += 1;
+                    println!("  ❌ 错误: {} - {}", filename, _e);
+                }
+            }
+        }
     }
 
     // 读取最终统计

@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use image::RgbImage;
 use sha2::{Digest, Sha256};
 use std::ops::RangeInclusive;
 use std::path::Path;
@@ -17,7 +16,7 @@ fn estimate_quality_by_target_size(
     let tolerance_size = (target_size as f32 * tolerance) as usize;
     const MIN_QUALITY: f32 = 20.0; // 设置最小质量，避免过度压缩导致偏绿
     let mut quality_range: RangeInclusive<f32> = MIN_QUALITY..=100.0;
-    let mut best_data = None;
+    let mut best_data: Option<Vec<u8>> = None;
     let mut best_diff = f32::INFINITY;
 
     for _ in 0..max_attempts {
@@ -44,16 +43,17 @@ fn estimate_quality_by_target_size(
         let current_size = encoded.len();
         let diff = (current_size as f32 - target_size as f32).abs();
 
+        // 只在找到更好的结果时才更新，避免不必要的克隆
         if diff < best_diff {
             best_diff = diff;
-            best_data = Some(encoded.clone());
+            best_data = Some(encoded);  // 直接转移所有权，不克隆
         }
 
         // Early termination if within tolerance (and not exceeding target)
         if current_size <= target_size && (target_size - current_size) <= tolerance_size {
             tracing::info!("Target size reached with tolerance: {} KB (target: {} KB)",
                 current_size / 1024, target_size / 1024);
-            return Ok(encoded);
+            return Ok(best_data.unwrap());  // 从best_data中取出最佳结果
         }
 
         if current_size > target_size {
@@ -83,20 +83,25 @@ fn estimate_quality_by_target_size(
     Err(anyhow::anyhow!("Failed to estimate quality"))
 }
 
-/// 将 RGBA 图像与白色背景合成，转换为 RGB 图像
-/// 这样可以避免边缘发绿的问题，因为透明区域会被白色填充
-fn flatten_rgba_to_rgb(rgba: &image::RgbaImage, bg_color: [u8; 3]) -> RgbImage {
+/// 将 RGBA 图像与白色背景合成，直接生成 RGB 像素数据
+/// 避免创建中间图像缓冲区，减少内存分配
+fn rgba_to_rgb_with_white_bg(rgba: &image::RgbaImage) -> Vec<u8> {
     let (width, height) = (rgba.width(), rgba.height());
-    let mut rgb = RgbImage::new(width, height);
-    for (x, y, pixel) in rgba.enumerate_pixels() {
+    let pixel_count = (width * height) as usize;
+    let mut rgb_pixels = Vec::with_capacity(pixel_count * 3);
+
+    for pixel in rgba.pixels() {
         let alpha = pixel[3] as f32 / 255.0;
         let inv_alpha = 1.0 - alpha;
-        let r = (pixel[0] as f32 * alpha + bg_color[0] as f32 * inv_alpha) as u8;
-        let g = (pixel[1] as f32 * alpha + bg_color[1] as f32 * inv_alpha) as u8;
-        let b = (pixel[2] as f32 * alpha + bg_color[2] as f32 * inv_alpha) as u8;
-        rgb.put_pixel(x, y, image::Rgb([r, g, b]));
+        let r = (pixel[0] as f32 * alpha + 255.0 * inv_alpha) as u8;
+        let g = (pixel[1] as f32 * alpha + 255.0 * inv_alpha) as u8;
+        let b = (pixel[2] as f32 * alpha + 255.0 * inv_alpha) as u8;
+        rgb_pixels.push(r);
+        rgb_pixels.push(g);
+        rgb_pixels.push(b);
     }
-    rgb
+
+    rgb_pixels
 }
 
 pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: usize) -> Result<()> {
@@ -109,18 +114,27 @@ pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: us
         let img = image::open(&input_path)
             .context(format!("Failed to load image: {:?}", input_path))?;
 
-        // 2. 先转换为 RGBA8 格式，以便正确处理透明通道
-        let rgba_img = img.to_rgba8();
+        let (width, height) = (img.width(), img.height());
 
-        // 3. 将 RGBA 与白色背景合成，避免边缘发绿
-        // 透明区域会被白色填充，边缘的半透明像素会正确混合
-        let white_bg = [255, 255, 255];
-        let rgb_img = flatten_rgba_to_rgb(&rgba_img, white_bg);
-
-        let (width, height) = (rgb_img.width(), rgb_img.height());
-
-        // 4. Get raw pixel data
-        let rgb_pixels = rgb_img.into_raw();
+        // 2. 根据原图颜色类型处理，避免不必要的内存拷贝
+        let rgb_pixels: Vec<u8> = match img.color() {
+            // 如果原图已经是RGB格式，直接使用
+            image::ColorType::Rgb8 => {
+                tracing::debug!("Original image is RGB8, using directly");
+                img.to_rgb8().into_raw()
+            }
+            // 如果是RGBA格式，需要与白色背景合成
+            image::ColorType::Rgba8 => {
+                tracing::debug!("Original image is RGBA8, converting to RGB with white background");
+                let rgba_img = img.to_rgba8();
+                rgba_to_rgb_with_white_bg(&rgba_img)
+            }
+            // 其他格式，转换为RGB
+            _ => {
+                tracing::debug!("Original image is {:?}, converting to RGB", img.color());
+                img.to_rgb8().into_raw()
+            }
+        };
 
         // 5. Encode to WebP
         let webp_data = if max_size == 0 {
@@ -159,7 +173,7 @@ pub fn get_file_extension(filename: &str) -> String {
         .rsplit('.')
         .next()
         .unwrap_or("")
-        .to_lowercase()
+        .to_ascii_lowercase()
 }
 
 pub fn get_supported_extensions() -> &'static [&'static str] {
@@ -167,7 +181,11 @@ pub fn get_supported_extensions() -> &'static [&'static str] {
 }
 
 pub fn is_image_file(filename: &str) -> bool {
-    let ext = get_file_extension(filename);
+    let ext = filename
+        .rsplit('.')
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
     get_supported_extensions().contains(&ext.as_str())
 }
 
@@ -193,5 +211,6 @@ pub fn calculate_hash(file_path: &Path) -> Result<String> {
     }
 
     let hash = hasher.finalize();
-    Ok(format!("{:x}", hash))
+    // 使用 hex::encode 替代 format!，性能更好
+    Ok(hex::encode(hash))
 }

@@ -2542,6 +2542,7 @@ dependencies = [
  "axum",
  "chrono",
  "futures-util",
+ "hex",
  "image",
  "mime_guess",
  "num_cpus",
