@@ -6,7 +6,7 @@ use tokio::fs;
 use crate::db::Database;
 use crate::image::is_image_file;
 
-pub async fn initialize_database(db: &Database, wallpaper_dir: &Path) -> Result<()> {
+pub async fn initialize_database(db: &Database, wallpaper_dir: &Path, _max_size: usize) -> Result<()> {
     println!("🚀 开始初始化数据库...\n");
 
     sync_wallpapers(db, wallpaper_dir, "pc").await?;

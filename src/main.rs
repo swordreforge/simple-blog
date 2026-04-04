@@ -25,9 +25,10 @@ use crate::init::initialize_database;
 use crate::routes::create_router;
 
 /// Parse command line arguments
-fn parse_args() -> (String, u16) {
+fn parse_args() -> (String, u16, usize) {
     let mut host = String::from("127.0.0.1");
     let mut port = 3000;
+    let mut max_size = 300 * 1024; // Default 300KB
     let args: Vec<String> = std::env::args().collect();
 
     let mut i = 1;
@@ -64,6 +65,23 @@ fn parse_args() -> (String, u16) {
                     std::process::exit(1);
                 }
             }
+            "--max-size" => {
+                if i + 1 < args.len() {
+                    match args[i + 1].parse::<usize>() {
+                        Ok(size) => max_size = size,
+                        Err(_) => {
+                            eprintln!("Error: Invalid max-size value '{}'\n", args[i + 1]);
+                            print_help();
+                            std::process::exit(1);
+                        }
+                    }
+                    i += 2;
+                } else {
+                    eprintln!("Error: --max-size requires a value\n");
+                    print_help();
+                    std::process::exit(1);
+                }
+            }
             _ => {
                 eprintln!("Error: Unknown argument: '{}'\n", args[i]);
                 print_help();
@@ -72,7 +90,7 @@ fn parse_args() -> (String, u16) {
         }
     }
 
-    (host, port)
+    (host, port, max_size)
 }
 
 /// Print help message
@@ -80,20 +98,22 @@ fn print_help() {
     println!("Usage: staticwallpaper [OPTIONS]");
     println!();
     println!("Options:");
-    println!("  -h, --help         Show this help message");
-    println!("      --host <HOST>  Server host address (default: 127.0.0.1)");
-    println!("  -p, --port <PORT>  Server port number (default: 3000)");
+    println!("  -h, --help           Show this help message");
+    println!("      --host <HOST>    Server host address (default: 127.0.0.1)");
+    println!("  -p, --port <PORT>    Server port number (default: 3000)");
+    println!("      --max-size <KB>  Maximum WebP file size in KB (default: 300, 0 = no limit)");
     println!();
     println!("Examples:");
     println!("  staticwallpaper --host 0.0.0.0 --port 8080");
-    println!("  staticwallpaper -p 8080");
+    println!("  staticwallpaper -p 8080 --max-size 500");
+    println!("  staticwallpaper --max-size 0  # No size limit");
     println!("  staticwallpaper --help");
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse command line arguments
-    let (host, port) = parse_args();
+    let (host, port, max_size) = parse_args();
 
     // Initialize tracing
     tracing_subscriber::registry()
@@ -118,13 +138,14 @@ async fn main() -> Result<()> {
     let auth_manager = Arc::new(AuthManager::new(db.clone()));
 
     // Initialize database from existing files
-    initialize_database(&db, &wallpaper_dir).await?;
+    initialize_database(&db, &wallpaper_dir, max_size).await?;
 
     // Create application state
     let app_state = AppState {
         db: db.clone(),
         auth_manager: auth_manager.clone(),
         wallpaper_dir,
+        max_size,
     };
 
     // Create router
@@ -136,6 +157,7 @@ async fn main() -> Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     println!("🦊 Server is running at http://{}\n", addr);
+    println!("📏 Maximum WebP size: {} KB\n", max_size / 1024);
 
     // Start session cleanup task
     let auth_manager_cleanup = auth_manager.clone();

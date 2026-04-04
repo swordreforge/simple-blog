@@ -25,6 +25,7 @@ pub struct AppState {
     pub db: Arc<Database>,
     pub auth_manager: Arc<AuthManager>,
     pub wallpaper_dir: PathBuf,
+    pub max_size: usize,
 }
 
 // 鉴权辅助函数
@@ -289,7 +290,7 @@ pub async fn upload_wallpaper(
     let webp_path = target_dir.join(&webp_filename);
     tracing::info!("WebP output path: {:?}", webp_path);
 
-    convert_to_webp(&temp_path, &webp_path)
+    convert_to_webp(&temp_path, &webp_path, state.max_size)
         .await
         .map_err(|e| {
             tracing::error!("Failed to convert to WebP: {:?}", e);
