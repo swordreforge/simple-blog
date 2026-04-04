@@ -5,7 +5,7 @@ use zenwebp::{EncodeRequest, LossyConfig, PixelLayout};
 
 /// Estimate quality by target file size using binary search
 fn estimate_quality_by_target_size(
-    rgba: &[u8],
+    rgb: &[u8],
     width: u32,
     height: u32,
     target_size: usize,
@@ -20,7 +20,7 @@ fn estimate_quality_by_target_size(
     for _ in 0..max_attempts {
         let mid = (quality_range.start() + quality_range.end()) / 2.0;
         let config = LossyConfig::new().with_quality(mid);
-        let encoded = EncodeRequest::lossy(&config, rgba, PixelLayout::Rgba8, width, height)
+        let encoded = EncodeRequest::lossy(&config, rgb, PixelLayout::Rgb8, width, height)
             .encode()
             .context("Failed to encode WebP during quality estimation")?;
         let current_size = encoded.len();
@@ -62,25 +62,26 @@ pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: us
         let img = image::open(&input_path)
             .context(format!("Failed to load image: {:?}", input_path))?;
 
-        // 2. Convert to RGBA8 format for zenwebp encoding
-        let rgba_img = img.to_rgba8();
-        let (width, height) = (rgba_img.width(), rgba_img.height());
+        // 2. Convert to RGB8 format for zenwebp encoding
+        // 使用 RGB8 而不是 RGBA8 以避免颜色通道顺序问题
+        let rgb_img = img.to_rgb8();
+        let (width, height) = (rgb_img.width(), rgb_img.height());
 
         // 3. Get raw pixel data
-        let rgba_pixels = rgba_img.into_raw();
+        let rgb_pixels = rgb_img.into_raw();
 
         // 4. Encode to WebP
         let webp_data = if max_size == 0 {
             // No size limit, use high quality (85)
             tracing::info!("No size limit, using quality 85");
             let config = LossyConfig::new().with_quality(85.0);
-            EncodeRequest::lossy(&config, &rgba_pixels, PixelLayout::Rgba8, width, height)
+            EncodeRequest::lossy(&config, &rgb_pixels, PixelLayout::Rgb8, width, height)
                 .encode()
                 .context("Failed to encode WebP image")?
         } else {
             // Use quality estimation to fit within max_size
             tracing::info!("Target size: {} KB", max_size / 1024);
-            estimate_quality_by_target_size(&rgba_pixels, width, height, max_size, 10)
+            estimate_quality_by_target_size(&rgb_pixels, width, height, max_size, 10)
                 .context("Failed to estimate quality for target size")?
         };
 

@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use crate::models::{UserWithPasswordHash, Wallpaper, WallpaperType};
 
+#[derive(Clone)]
 pub struct Database {
     pool: Pool<Sqlite>,
 }
