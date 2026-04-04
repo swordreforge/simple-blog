@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use sqlx::{sqlite::SqlitePool, Pool, Sqlite};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::models::{UserWithPasswordHash, Wallpaper, WallpaperType};
 
@@ -52,7 +52,8 @@ impl Database {
             "#,
         )
         .execute(&self.pool)
-        .await.ok(); // 忽略字段已存在的错误
+        .await
+        .ok(); // 忽略字段已存在的错误
 
         // 创建用户表
         sqlx::query(
@@ -78,30 +79,27 @@ impl Database {
         Ok(count.0 > 0)
     }
 
-    pub async fn create_user(
-        &self,
-        username: &str,
-        password_hash: &str,
-    ) -> Result<i64> {
-        let result = sqlx::query(
-            "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)"
-        )
-        .bind(username)
-        .bind(password_hash)
-        .bind(chrono::Utc::now().timestamp_millis())
-        .execute(&self.pool)
-        .await?;
+    pub async fn create_user(&self, username: &str, password_hash: &str) -> Result<i64> {
+        let result =
+            sqlx::query("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)")
+                .bind(username)
+                .bind(password_hash)
+                .bind(chrono::Utc::now().timestamp_millis())
+                .execute(&self.pool)
+                .await?;
 
         Ok(result.last_insert_rowid())
     }
 
-    pub async fn get_user_by_username(&self, username: &str) -> Result<Option<UserWithPasswordHash>> {
-        let user = sqlx::query_as::<_, UserWithPasswordHash>(
-            "SELECT * FROM users WHERE username = ?"
-        )
-        .bind(username)
-        .fetch_optional(&self.pool)
-        .await?;
+    pub async fn get_user_by_username(
+        &self,
+        username: &str,
+    ) -> Result<Option<UserWithPasswordHash>> {
+        let user =
+            sqlx::query_as::<_, UserWithPasswordHash>("SELECT * FROM users WHERE username = ?")
+                .bind(username)
+                .fetch_optional(&self.pool)
+                .await?;
         Ok(user)
     }
 
@@ -137,7 +135,8 @@ impl Database {
         let query = if tag_filter.is_some() {
             let mut q = "SELECT * FROM wallpapers WHERE type = ?".to_string();
             if let Some(ref tags) = tag_filter {
-                let tag_conditions: Vec<String> = tags.iter().map(|_| "tags LIKE ?".to_string()).collect();
+                let tag_conditions: Vec<String> =
+                    tags.iter().map(|_| "tags LIKE ?".to_string()).collect();
                 q.push_str(&format!(" AND ({})", tag_conditions.join(" OR ")));
             }
             q
@@ -167,10 +166,12 @@ impl Database {
         wallpaper_type: Option<WallpaperType>,
     ) -> Result<Vec<Wallpaper>> {
         let wallpapers = if let Some(wt) = wallpaper_type {
-            sqlx::query_as::<_, Wallpaper>("SELECT * FROM wallpapers WHERE type = ? ORDER BY created_at DESC")
-                .bind(wt.as_str())
-                .fetch_all(&self.pool)
-                .await?
+            sqlx::query_as::<_, Wallpaper>(
+                "SELECT * FROM wallpapers WHERE type = ? ORDER BY created_at DESC",
+            )
+            .bind(wt.as_str())
+            .fetch_all(&self.pool)
+            .await?
         } else {
             sqlx::query_as::<_, Wallpaper>("SELECT * FROM wallpapers ORDER BY created_at DESC")
                 .fetch_all(&self.pool)
@@ -185,7 +186,7 @@ impl Database {
         wallpaper_type: WallpaperType,
     ) -> Result<Option<Wallpaper>> {
         let wallpaper = sqlx::query_as::<_, Wallpaper>(
-            "SELECT * FROM wallpapers WHERE filename = ? AND type = ?"
+            "SELECT * FROM wallpapers WHERE filename = ? AND type = ?",
         )
         .bind(filename)
         .bind(wallpaper_type.as_str())
@@ -199,13 +200,12 @@ impl Database {
         hash: &str,
         wallpaper_type: &WallpaperType,
     ) -> Result<Option<Wallpaper>> {
-        let wallpaper = sqlx::query_as::<_, Wallpaper>(
-            "SELECT * FROM wallpapers WHERE hash = ? AND type = ?"
-        )
-        .bind(hash)
-        .bind(wallpaper_type.as_str())
-        .fetch_optional(&self.pool)
-        .await?;
+        let wallpaper =
+            sqlx::query_as::<_, Wallpaper>("SELECT * FROM wallpapers WHERE hash = ? AND type = ?")
+                .bind(hash)
+                .bind(wallpaper_type.as_str())
+                .fetch_optional(&self.pool)
+                .await?;
         Ok(wallpaper)
     }
 
@@ -227,7 +227,7 @@ impl Database {
     }
 
     /// 为数据库中哈希值为空的记录计算并填充哈希值
-    pub async fn migrate_missing_hashes(&self, wallpaper_dir: &PathBuf) -> Result<()> {
+    pub async fn migrate_missing_hashes(&self, wallpaper_dir: &Path) -> Result<()> {
         use std::sync::Arc;
         use tokio::sync::Mutex;
 
@@ -250,42 +250,43 @@ impl Database {
         for wallpaper in wallpapers {
             if wallpaper.hash.is_empty() {
                 let db = self.clone();
-                let wallpaper_dir = wallpaper_dir.clone();
-                        let type_str = wallpaper.wallpaper_type.as_str();  // 使用 &str 避免克隆
-                        let filename = wallpaper.filename.clone();  // 保留 clone，因为要在任务中使用
-                        let id = wallpaper.id;
-                        let updated_counter = updated.clone();
-                        let err_counter = error.clone();
+                let wallpaper_dir = wallpaper_dir.to_path_buf();
+                let type_str = wallpaper.wallpaper_type.as_str(); // 使用 &str 避免克隆
+                let filename = wallpaper.filename.clone(); // 保留 clone，因为要在任务中使用
+                let id = wallpaper.id;
+                let updated_counter = updated.clone();
+                let err_counter = error.clone();
 
-                        let task = tokio::spawn(async move {
-                            let file_path = wallpaper_dir.join(type_str).join(&filename);
+                let task = tokio::spawn(async move {
+                    let file_path = wallpaper_dir.join(type_str).join(&filename);
 
-                            match tokio::task::block_in_place(|| crate::image::calculate_hash(&file_path)) {
-                                Ok(hash) => {
-                                    match sqlx::query("UPDATE wallpapers SET hash = ? WHERE id = ?")
-                                        .bind(&hash)
-                                        .bind(id)
-                                        .execute(&db.pool)
-                                        .await
-                                    {
-                                        Ok(_) => {
-                                            let mut c = updated_counter.lock().await;
-                                            *c += 1;
-                                            println!("  ✅ 更新: {}", filename);
-                                        }
-                                        Err(_e) => {
-                                            let mut e = err_counter.lock().await;
-                                            *e += 1;
-                                            println!("  ❌ 更新失败: {} - {}", filename, _e);
-                                        }
-                                    }
+                    match tokio::task::block_in_place(|| crate::image::calculate_hash(&file_path)) {
+                        Ok(hash) => {
+                            match sqlx::query("UPDATE wallpapers SET hash = ? WHERE id = ?")
+                                .bind(&hash)
+                                .bind(id)
+                                .execute(&db.pool)
+                                .await
+                            {
+                                Ok(_) => {
+                                    let mut c = updated_counter.lock().await;
+                                    *c += 1;
+                                    println!("  ✅ 更新: {}", filename);
                                 }
                                 Err(_e) => {
-                                                            let mut e = err_counter.lock().await;
-                                                            *e += 1;
-                                                            println!("  ❌ 计算哈希失败: {} - {}", filename, _e);
-                                                        }                            }
-                        });
+                                    let mut e = err_counter.lock().await;
+                                    *e += 1;
+                                    println!("  ❌ 更新失败: {} - {}", filename, _e);
+                                }
+                            }
+                        }
+                        Err(_e) => {
+                            let mut e = err_counter.lock().await;
+                            *e += 1;
+                            println!("  ❌ 计算哈希失败: {} - {}", filename, _e);
+                        }
+                    }
+                });
 
                 tasks.push(task);
             }

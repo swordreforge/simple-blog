@@ -21,7 +21,10 @@ pub fn create_router(state: AppState) -> Router {
         .route("/me", get(get_me))
         .route("/wallpapers", get(get_wallpapers))
         .route("/upload", post(upload_wallpaper))
-        .route("/wallpapers/:id/tags", axum::routing::put(update_wallpaper_tags))
+        .route(
+            "/wallpapers/:id/tags",
+            axum::routing::put(update_wallpaper_tags),
+        )
         .route("/wallpapers/:id", axum::routing::delete(delete_wallpaper))
         .with_state(state.clone())
         .layer(axum::extract::DefaultBodyLimit::max(50 * 1024 * 1024));

@@ -6,7 +6,11 @@ use tokio::fs;
 use crate::db::Database;
 use crate::image::{convert_to_webp, is_image_file};
 
-pub async fn initialize_database(db: &Database, wallpaper_dir: &Path, max_size: usize) -> Result<()> {
+pub async fn initialize_database(
+    db: &Database,
+    wallpaper_dir: &Path,
+    max_size: usize,
+) -> Result<()> {
     println!("🚀 开始初始化数据库...\n");
 
     sync_wallpapers(db, wallpaper_dir, "pc", max_size).await?;
@@ -39,14 +43,23 @@ async fn scan_directory(dir: &Path) -> Result<Vec<String>> {
     Ok(files)
 }
 
-async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_size: usize) -> Result<()> {
+async fn sync_wallpapers(
+    db: &Database,
+    wallpaper_dir: &Path,
+    r#type: &str,
+    max_size: usize,
+) -> Result<()> {
     use std::sync::Arc;
     use tokio::sync::{Mutex, Semaphore};
 
     let dir = wallpaper_dir.join(r#type);
     let files = scan_directory(&dir).await.unwrap_or_default();
 
-    println!("📁 扫描 {} 目录: 找到 {} 个图片文件", r#type.to_uppercase(), files.len());
+    println!(
+        "📁 扫描 {} 目录: 找到 {} 个图片文件",
+        r#type.to_uppercase(),
+        files.len()
+    );
 
     // 共享计数器
     let added = Arc::new(Mutex::new(0));
@@ -78,8 +91,11 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
     let cpu_count = num_cpus::get();
     let max_concurrent_small = std::cmp::min(cpu_count + 2, 12);
     let semaphore = Arc::new(Semaphore::new(max_concurrent_small));
-    println!("🚀 使用 {} 个并发任务处理小文件 (<5MB), {} 个大文件将串行处理",
-        max_concurrent_small, large_files.len());
+    println!(
+        "🚀 使用 {} 个并发任务处理小文件 (<5MB), {} 个大文件将串行处理",
+        max_concurrent_small,
+        large_files.len()
+    );
 
     // 收集所有任务
     let mut tasks = Vec::new();
@@ -100,7 +116,13 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
             // 获取信号量许可
             let _permit = semaphore.acquire().await.unwrap();
 
-            match db.get_wallpaper_by_filename(&filename, crate::models::WallpaperType::from_str(&type_str).unwrap()).await {
+            match db
+                .get_wallpaper_by_filename(
+                    &filename,
+                    crate::models::WallpaperType::from_str(&type_str).unwrap(),
+                )
+                .await
+            {
                 Ok(Some(_)) => {
                     // File already exists in database, check if it needs compression
                     if max_size > 0 {
@@ -108,7 +130,8 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                         if let Ok(metadata) = fs::metadata(&file_path).await {
                             let file_size = metadata.len();
                             if file_size > max_size as u64 {
-                                println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                println!(
+                                    "  🔄 压缩: {} ({} KB -> 目标 {} KB)",
                                     filename,
                                     file_size / 1024,
                                     max_size / 1024
@@ -120,7 +143,10 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                                         *c += 1;
                                         // Get new file size
                                         if let Ok(new_metadata) = fs::metadata(&file_path).await {
-                                            println!("     ✅ 压缩完成: {} KB", new_metadata.len() / 1024);
+                                            println!(
+                                                "     ✅ 压缩完成: {} KB",
+                                                new_metadata.len() / 1024
+                                            );
                                         }
                                     }
                                     Err(e) => {
@@ -160,12 +186,15 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                     if max_size > 0 {
                         if let Ok(m) = fs::metadata(&file_path).await {
                             if m.len() > max_size as u64 {
-                                println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                println!(
+                                    "  🔄 压缩: {} ({} KB -> 目标 {} KB)",
                                     filename,
                                     m.len() / 1024,
                                     max_size / 1024
                                 );
-                                if let Err(e) = convert_to_webp(&file_path, &file_path, max_size).await {
+                                if let Err(e) =
+                                    convert_to_webp(&file_path, &file_path, max_size).await
+                                {
                                     println!("     ❌ 压缩失败: {}", e);
                                 }
                             }
@@ -173,9 +202,9 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                     }
 
                     // 计算文件哈希值
-                    let file_hash = tokio::task::block_in_place(|| {
-                        crate::image::calculate_hash(&file_path)
-                    }).unwrap_or_else(|_| String::new());
+                    let file_hash =
+                        tokio::task::block_in_place(|| crate::image::calculate_hash(&file_path))
+                            .unwrap_or_else(|_| String::new());
 
                     match db
                         .insert_wallpaper(
@@ -218,7 +247,10 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
 
     // 串行处理大文件（>=5MB），避免内存峰值
     if !large_files.is_empty() {
-        println!("\n📦 开始串行处理 {} 个大文件 (>=5MB)...", large_files.len());
+        println!(
+            "\n📦 开始串行处理 {} 个大文件 (>=5MB)...",
+            large_files.len()
+        );
 
         for filename in large_files {
             let filename = filename.clone();
@@ -230,7 +262,13 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
             let compressed_counter = compressed.clone();
             let error_counter = error.clone();
 
-            match db.get_wallpaper_by_filename(&filename, crate::models::WallpaperType::from_str(&type_str).unwrap()).await {
+            match db
+                .get_wallpaper_by_filename(
+                    &filename,
+                    crate::models::WallpaperType::from_str(&type_str).unwrap(),
+                )
+                .await
+            {
                 Ok(Some(_)) => {
                     // File already exists in database, check if it needs compression
                     if max_size > 0 {
@@ -238,7 +276,8 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                         if let Ok(metadata) = fs::metadata(&file_path).await {
                             let file_size = metadata.len();
                             if file_size > max_size as u64 {
-                                println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                println!(
+                                    "  🔄 压缩: {} ({} KB -> 目标 {} KB)",
                                     filename,
                                     file_size / 1024,
                                     max_size / 1024
@@ -250,7 +289,10 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                                         *c += 1;
                                         // Get new file size
                                         if let Ok(new_metadata) = fs::metadata(&file_path).await {
-                                            println!("     ✅ 压缩完成: {} KB", new_metadata.len() / 1024);
+                                            println!(
+                                                "     ✅ 压缩完成: {} KB",
+                                                new_metadata.len() / 1024
+                                            );
                                         }
                                     }
                                     Err(e) => {
@@ -290,12 +332,15 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                     if max_size > 0 {
                         if let Ok(m) = fs::metadata(&file_path).await {
                             if m.len() > max_size as u64 {
-                                println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                println!(
+                                    "  🔄 压缩: {} ({} KB -> 目标 {} KB)",
                                     filename,
                                     m.len() / 1024,
                                     max_size / 1024
                                 );
-                                if let Err(e) = convert_to_webp(&file_path, &file_path, max_size).await {
+                                if let Err(e) =
+                                    convert_to_webp(&file_path, &file_path, max_size).await
+                                {
                                     println!("     ❌ 压缩失败: {}", e);
                                 }
                             }
@@ -303,9 +348,9 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_
                     }
 
                     // 计算文件哈希值
-                    let file_hash = tokio::task::block_in_place(|| {
-                        crate::image::calculate_hash(&file_path)
-                    }).unwrap_or_else(|_| String::new());
+                    let file_hash =
+                        tokio::task::block_in_place(|| crate::image::calculate_hash(&file_path))
+                            .unwrap_or_else(|_| String::new());
 
                     match db
                         .insert_wallpaper(
@@ -362,7 +407,9 @@ async fn cleanup_orphaned_records(db: &Database, wallpaper_dir: &Path, r#type: &
     let file_set: HashSet<String> = files.into_iter().collect();
 
     let wallpapers = db
-        .get_all_wallpapers(Some(crate::models::WallpaperType::from_str(r#type).unwrap()))
+        .get_all_wallpapers(Some(
+            crate::models::WallpaperType::from_str(r#type).unwrap(),
+        ))
         .await
         .unwrap_or_default();
 
@@ -383,7 +430,11 @@ async fn cleanup_orphaned_records(db: &Database, wallpaper_dir: &Path, r#type: &
     }
 
     if removed > 0 {
-        println!("\n🧹 {} 目录清理完成: 删除了 {} 条无效记录", r#type.to_uppercase(), removed);
+        println!(
+            "\n🧹 {} 目录清理完成: 删除了 {} 条无效记录",
+            r#type.to_uppercase(),
+            removed
+        );
     }
 
     Ok(())

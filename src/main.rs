@@ -13,10 +13,7 @@ use anyhow::Result;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
-use tracing_subscriber::{
-    layer::SubscriberExt,
-    util::SubscriberInitExt,
-};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::auth::AuthManager;
 use crate::db::Database;
@@ -152,8 +149,7 @@ async fn main() -> Result<()> {
     };
 
     // Create router
-    let app = create_router(app_state)
-        .layer(TraceLayer::new_for_http());
+    let app = create_router(app_state).layer(TraceLayer::new_for_http());
 
     // Bind to address
     let addr: SocketAddr = format!("{}:{}", host, port).parse()?;

@@ -26,16 +26,14 @@ fn estimate_quality_by_target_size(
         // method 0-6: 0=最快，6=最慢但质量最好
         // 更高的 method 值会使用更好的色度采样策略，保留更多颜色信息
         let (method, _description) = match mid {
-            q if q >= 70.0 => (6, "best"),      // 高质量：使用最佳方法，保留完整色度信息
-            q if q >= 50.0 => (5, "high"),      // 高质量：使用较好的方法
-            q if q >= 40.0 => (4, "medium"),    // 中等质量：平衡速度和质量
-            q if q >= 30.0 => (3, "balanced"),  // 中低质量：平衡
-            _ => (2, "low"),                    // 低质量：但质量不低于 MIN_QUALITY
+            q if q >= 70.0 => (6, "best"), // 高质量：使用最佳方法，保留完整色度信息
+            q if q >= 50.0 => (5, "high"), // 高质量：使用较好的方法
+            q if q >= 40.0 => (4, "medium"), // 中等质量：平衡速度和质量
+            q if q >= 30.0 => (3, "balanced"), // 中低质量：平衡
+            _ => (2, "low"),               // 低质量：但质量不低于 MIN_QUALITY
         };
 
-        let config = LossyConfig::new()
-            .with_quality(mid)
-            .with_method(method);
+        let config = LossyConfig::new().with_quality(mid).with_method(method);
 
         let encoded = EncodeRequest::lossy(&config, rgb, PixelLayout::Rgb8, width, height)
             .encode()
@@ -46,14 +44,17 @@ fn estimate_quality_by_target_size(
         // 只在找到更好的结果时才更新，避免不必要的克隆
         if diff < best_diff {
             best_diff = diff;
-            best_data = Some(encoded);  // 直接转移所有权，不克隆
+            best_data = Some(encoded); // 直接转移所有权，不克隆
         }
 
         // Early termination if within tolerance (and not exceeding target)
         if current_size <= target_size && (target_size - current_size) <= tolerance_size {
-            tracing::info!("Target size reached with tolerance: {} KB (target: {} KB)",
-                current_size / 1024, target_size / 1024);
-            return Ok(best_data.unwrap());  // 从best_data中取出最佳结果
+            tracing::info!(
+                "Target size reached with tolerance: {} KB (target: {} KB)",
+                current_size / 1024,
+                target_size / 1024
+            );
+            return Ok(best_data.unwrap()); // 从best_data中取出最佳结果
         }
 
         if current_size > target_size {
@@ -111,8 +112,8 @@ pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: us
     // Use blocking task for image conversion since it's CPU intensive
     tokio::task::block_in_place(|| {
         // 1. Load the image using image library (supports PNG, JPEG, GIF, etc.)
-        let img = image::open(&input_path)
-            .context(format!("Failed to load image: {:?}", input_path))?;
+        let img =
+            image::open(&input_path).context(format!("Failed to load image: {:?}", input_path))?;
 
         let (width, height) = (img.width(), img.height());
 
@@ -161,10 +162,7 @@ pub async fn convert_to_webp(input_path: &Path, output_path: &Path, max_size: us
 
 pub fn generate_timestamped_filename(original_name: &str) -> String {
     let timestamp = chrono::Utc::now().timestamp_millis();
-    let ext = original_name
-        .rsplit('.')
-        .next()
-        .unwrap_or("webp");
+    let ext = original_name.rsplit('.').next().unwrap_or("webp");
     format!("{}.{}", timestamp, ext)
 }
 
@@ -194,15 +192,16 @@ pub fn is_image_file(filename: &str) -> bool {
 pub fn calculate_hash(file_path: &Path) -> Result<String> {
     use std::io::Read;
 
-    let file = std::fs::File::open(file_path)
-        .context(format!("Failed to open file: {:?}", file_path))?;
+    let file =
+        std::fs::File::open(file_path).context(format!("Failed to open file: {:?}", file_path))?;
 
     let mut reader = std::io::BufReader::new(file);
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 8192]; // 8KB 缓冲区，平衡内存和性能
 
     loop {
-        let n = reader.read(&mut buffer)
+        let n = reader
+            .read(&mut buffer)
             .context(format!("Failed to read file: {:?}", file_path))?;
         if n == 0 {
             break;

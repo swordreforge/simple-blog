@@ -48,7 +48,9 @@ impl AuthManager {
         let parsed_hash = PasswordHash::new(hash)
             .map_err(|e| anyhow::anyhow!("Failed to parse password hash: {}", e))?;
         let argon2 = Argon2::default();
-        Ok(argon2.verify_password(password.as_bytes(), &parsed_hash).is_ok())
+        Ok(argon2
+            .verify_password(password.as_bytes(), &parsed_hash)
+            .is_ok())
     }
 
     pub async fn generate_session_token(&self, user_id: i64, username: &str) -> String {
@@ -60,7 +62,7 @@ impl AuthManager {
 
         let session = Session {
             user_id,
-            username: Arc::from(username),  // 使用 Arc::from 直接创建 Arc<str>
+            username: Arc::from(username), // 使用 Arc::from 直接创建 Arc<str>
             expires_at: chrono::Utc::now().timestamp_millis() + SESSION_TTL,
         };
 
@@ -83,7 +85,7 @@ impl AuthManager {
         // 返回用户信息，使用 Arc::clone 避免深拷贝
         Some(User {
             id: session.user_id,
-            username: session.username.clone(),  // Arc::clone 只是增加引用计数
+            username: session.username.clone(), // Arc::clone 只是增加引用计数
         })
     }
 
@@ -103,20 +105,15 @@ impl AuthManager {
     }
 
     pub async fn login(&self, request: &LoginRequest) -> Result<Option<(User, String)>> {
-        let user = self
-            .db
-            .get_user_by_username(&request.username)
-            .await?;
+        let user = self.db.get_user_by_username(&request.username).await?;
 
         if let Some(user) = user {
             if self.verify_password(&request.password, &user.password_hash)? {
-                let token = self
-                    .generate_session_token(user.id, &user.username)
-                    .await;
+                let token = self.generate_session_token(user.id, &user.username).await;
                 return Ok(Some((
                     User {
                         id: user.id,
-                        username: user.username.into(),  // 将 String 转换为 Arc<str>
+                        username: user.username.into(), // 将 String 转换为 Arc<str>
                     },
                     token,
                 )));
@@ -136,7 +133,7 @@ impl AuthManager {
 
         Ok(User {
             id: user_id,
-            username: Arc::from(username),  // 使用 Arc::from 直接创建 Arc<str>
+            username: Arc::from(username), // 使用 Arc::from 直接创建 Arc<str>
         })
     }
 

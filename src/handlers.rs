@@ -1,11 +1,11 @@
 use anyhow::Result;
+use axum::extract::multipart::Field;
 use axum::{
     extract::{Multipart, Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
-use axum::extract::multipart::Field;
 use futures_util::StreamExt;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -17,8 +17,8 @@ use crate::auth::AuthManager;
 use crate::db::Database;
 use crate::image::{convert_to_webp, generate_timestamped_filename, is_image_file};
 use crate::models::{
-    ApiResponse, CheckInitResponse, InitAdminRequest, LoginRequest,
-    UpdateTagsRequest, User, Wallpaper, WallpaperType,
+    ApiResponse, CheckInitResponse, InitAdminRequest, LoginRequest, UpdateTagsRequest, User,
+    Wallpaper, WallpaperType,
 };
 
 #[derive(Clone)]
@@ -30,13 +30,8 @@ pub struct AppState {
 }
 
 // 鉴权辅助函数
-async fn verify_auth(
-    state: &AppState,
-    headers: &HeaderMap,
-) -> Result<User, StatusCode> {
-    let auth_header = headers
-        .get("Authorization")
-        .and_then(|h| h.to_str().ok());
+async fn verify_auth(state: &AppState, headers: &HeaderMap) -> Result<User, StatusCode> {
+    let auth_header = headers.get("Authorization").and_then(|h| h.to_str().ok());
 
     if let Some(auth_header) = auth_header {
         if let Some(token) = auth_header.strip_prefix("Bearer ") {
@@ -70,7 +65,11 @@ pub async fn init_admin(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    match state.auth_manager.create_admin_account(&req.username, &req.password).await {
+    match state
+        .auth_manager
+        .create_admin_account(&req.username, &req.password)
+        .await
+    {
         Ok(user) => {
             let token = state
                 .auth_manager
@@ -101,10 +100,7 @@ pub async fn login(
     }
 }
 
-pub async fn logout(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Json<ApiResponse<()>> {
+pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> Json<ApiResponse<()>> {
     if let Some(auth_header) = headers.get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if let Some(token) = auth_str.strip_prefix("Bearer ") {
@@ -115,13 +111,8 @@ pub async fn logout(
     Json(ApiResponse::success(()))
 }
 
-pub async fn get_me(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Json<serde_json::Value> {
-    let auth_header = headers
-        .get("Authorization")
-        .and_then(|h| h.to_str().ok());
+pub async fn get_me(State(state): State<AppState>, headers: HeaderMap) -> Json<serde_json::Value> {
+    let auth_header = headers.get("Authorization").and_then(|h| h.to_str().ok());
 
     if let Some(auth_header) = auth_header {
         if let Some(token) = auth_header.strip_prefix("Bearer ") {
@@ -147,9 +138,7 @@ pub async fn get_wallpapers(
 ) -> Result<Json<Vec<Wallpaper>>, StatusCode> {
     verify_auth(&state, &headers).await?;
 
-    let wallpaper_type = params
-        .get("type")
-        .and_then(|t| WallpaperType::from_str(t));
+    let wallpaper_type = params.get("type").and_then(|t| WallpaperType::from_str(t));
 
     match state.db.get_all_wallpapers(wallpaper_type).await {
         Ok(wallpapers) => Ok(Json(wallpapers)),
@@ -197,8 +186,12 @@ pub async fn upload_wallpaper(
         let filename = field.file_name().map(|n| n.to_string());
         let content_type = field.content_type().map(|ct| ct.to_string());
 
-        tracing::info!("Field details - name: '{}', filename: {:?}, content_type: {:?}",
-            name, filename, content_type);
+        tracing::info!(
+            "Field details - name: '{}', filename: {:?}, content_type: {:?}",
+            name,
+            filename,
+            content_type
+        );
 
         match name {
             "type" => {
@@ -223,10 +216,12 @@ pub async fn upload_wallpaper(
 
                     // 使用流式读取，直接写入临时文件，避免将整个文件加载到内存
                     let temp_path = state.wallpaper_dir.join("temp_upload").join(filename);
-                    fs::create_dir_all(temp_path.parent().unwrap()).await.map_err(|e| {
-                        tracing::error!("Failed to create temp directory: {:?}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR
-                    })?;
+                    fs::create_dir_all(temp_path.parent().unwrap())
+                        .await
+                        .map_err(|e| {
+                            tracing::error!("Failed to create temp directory: {:?}", e);
+                            StatusCode::INTERNAL_SERVER_ERROR
+                        })?;
 
                     let mut file = fs::File::create(&temp_path).await.map_err(|e| {
                         tracing::error!("Failed to create temp file: {:?}", e);
@@ -245,7 +240,10 @@ pub async fn upload_wallpaper(
                                 if total_size > MAX_UPLOAD_SIZE {
                                     drop(file);
                                     fs::remove_file(&temp_path).await.ok();
-                                    tracing::error!("File size exceeds limit: {} bytes", total_size);
+                                    tracing::error!(
+                                        "File size exceeds limit: {} bytes",
+                                        total_size
+                                    );
                                     return Err(StatusCode::PAYLOAD_TOO_LARGE);
                                 }
                                 if let Err(e) = file.write_all(&bytes).await {
@@ -272,7 +270,10 @@ pub async fn upload_wallpaper(
                         return Err(StatusCode::INTERNAL_SERVER_ERROR);
                     }
                     drop(file);
-                    tracing::info!("Successfully saved file to temp path: {} KB", total_size / 1024);
+                    tracing::info!(
+                        "Successfully saved file to temp path: {} KB",
+                        total_size / 1024
+                    );
 
                     // 保存临时文件路径用于后续处理
                     temp_file_path = Some(temp_path);
@@ -287,8 +288,13 @@ pub async fn upload_wallpaper(
     }
 
     tracing::info!("Processed {} fields total", field_count);
-    tracing::info!("Final values - type: {:?}, filename: {:?}, tags: '{}', temp_file: {:?}",
-        wallpaper_type, original_filename, tags, temp_file_path.is_some());
+    tracing::info!(
+        "Final values - type: {:?}, filename: {:?}, tags: '{}', temp_file: {:?}",
+        wallpaper_type,
+        original_filename,
+        tags,
+        temp_file_path.is_some()
+    );
 
     let wallpaper_type = wallpaper_type.ok_or_else(|| {
         tracing::error!("Missing wallpaper_type");
@@ -322,8 +328,10 @@ pub async fn upload_wallpaper(
 
     tracing::info!("File written successfully, starting WebP conversion");
 
-    let webp_filename = generate_timestamped_filename(&original_filename)
-        .replace(&format!(".{}", crate::image::get_file_extension(&original_filename)), ".webp");
+    let webp_filename = generate_timestamped_filename(&original_filename).replace(
+        &format!(".{}", crate::image::get_file_extension(&original_filename)),
+        ".webp",
+    );
     let webp_path = target_dir.join(&webp_filename);
     tracing::info!("WebP output path: {:?}", webp_path);
 
@@ -339,18 +347,24 @@ pub async fn upload_wallpaper(
     fs::remove_file(&temp_path).await.ok();
 
     // 计算文件哈希值
-    let file_hash = tokio::task::block_in_place(|| {
-        crate::image::calculate_hash(&webp_path)
-    }).map_err(|e| {
-        tracing::error!("Failed to calculate file hash: {:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    let file_hash = tokio::task::block_in_place(|| crate::image::calculate_hash(&webp_path))
+        .map_err(|e| {
+            tracing::error!("Failed to calculate file hash: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     tracing::info!("File hash: {}", file_hash);
 
     // 检查是否已存在相同哈希的图片
-    if let Ok(Some(existing)) = state.db.get_wallpaper_by_hash(&file_hash, &wallpaper_type).await {
-        tracing::info!("Duplicate image detected. Existing file: {}", existing.filename);
+    if let Ok(Some(existing)) = state
+        .db
+        .get_wallpaper_by_hash(&file_hash, &wallpaper_type)
+        .await
+    {
+        tracing::info!(
+            "Duplicate image detected. Existing file: {}",
+            existing.filename
+        );
         // 删除刚生成的文件
         fs::remove_file(&webp_path).await.ok();
         return Err(StatusCode::CONFLICT);
@@ -374,7 +388,11 @@ pub async fn upload_wallpaper(
         })?;
 
     tracing::info!("=== Upload completed successfully ===");
-    tracing::info!("Wallpaper ID: {}, Filename: {}", wallpaper_id, webp_filename);
+    tracing::info!(
+        "Wallpaper ID: {}, Filename: {}",
+        wallpaper_id,
+        webp_filename
+    );
 
     Ok(Json(serde_json::json!({
         "success": true,
@@ -393,7 +411,9 @@ pub async fn update_wallpaper_tags(
 
     match state.db.update_wallpaper_tags(id, &req.tags).await {
         Ok(()) => Ok(Json(serde_json::json!({ "success": true }))),
-        Err(_) => Ok(Json(serde_json::json!({ "success": false, "error": "Failed to update tags" }))),
+        Err(_) => Ok(Json(
+            serde_json::json!({ "success": false, "error": "Failed to update tags" }),
+        )),
     }
 }
 
@@ -404,11 +424,7 @@ pub async fn delete_wallpaper(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     verify_auth(&state, &headers).await?;
 
-    let wallpapers = state
-        .db
-        .get_all_wallpapers(None)
-        .await
-        .unwrap_or_default();
+    let wallpapers = state.db.get_all_wallpapers(None).await.unwrap_or_default();
 
     if let Some(wallpaper) = wallpapers.iter().find(|w| w.id == id) {
         let file_path = state
@@ -420,7 +436,9 @@ pub async fn delete_wallpaper(
 
         match state.db.delete_wallpaper(id).await {
             Ok(()) => Ok(Json(serde_json::json!({ "success": true }))),
-            Err(_) => Ok(Json(serde_json::json!({ "success": false, "error": "Failed to delete wallpaper" }))),
+            Err(_) => Ok(Json(
+                serde_json::json!({ "success": false, "error": "Failed to delete wallpaper" }),
+            )),
         }
     } else {
         Err(StatusCode::NOT_FOUND)
