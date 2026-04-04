@@ -4,15 +4,15 @@ use std::path::Path;
 use tokio::fs;
 
 use crate::db::Database;
-use crate::image::is_image_file;
+use crate::image::{convert_to_webp, is_image_file};
 
-pub async fn initialize_database(db: &Database, wallpaper_dir: &Path, _max_size: usize) -> Result<()> {
+pub async fn initialize_database(db: &Database, wallpaper_dir: &Path, max_size: usize) -> Result<()> {
     println!("🚀 开始初始化数据库...\n");
 
-    sync_wallpapers(db, wallpaper_dir, "pc").await?;
+    sync_wallpapers(db, wallpaper_dir, "pc", max_size).await?;
     cleanup_orphaned_records(db, wallpaper_dir, "pc").await?;
 
-    sync_wallpapers(db, wallpaper_dir, "mo").await?;
+    sync_wallpapers(db, wallpaper_dir, "mo", max_size).await?;
     cleanup_orphaned_records(db, wallpaper_dir, "mo").await?;
 
     println!("\n✅ 数据库初始化完成!\n");
@@ -39,7 +39,7 @@ async fn scan_directory(dir: &Path) -> Result<Vec<String>> {
     Ok(files)
 }
 
-async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> Result<()> {
+async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str, max_size: usize) -> Result<()> {
     let dir = wallpaper_dir.join(r#type);
     let files = scan_directory(&dir).await.unwrap_or_default();
 
@@ -47,11 +47,39 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> R
 
     let mut added = 0;
     let mut skipped = 0;
+    let mut compressed = 0;
     let mut error = 0;
 
     for filename in &files {
         match db.get_wallpaper_by_filename(filename, crate::models::WallpaperType::from_str(r#type).unwrap()).await {
             Ok(Some(_)) => {
+                // File already exists in database, check if it needs compression
+                if max_size > 0 {
+                    let file_path = dir.join(filename);
+                    if let Ok(metadata) = fs::metadata(&file_path).await {
+                        let file_size = metadata.len();
+                        if file_size > max_size as u64 {
+                            println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                filename,
+                                file_size / 1024,
+                                max_size / 1024
+                            );
+
+                            match convert_to_webp(&file_path, &file_path, max_size).await {
+                                Ok(_) => {
+                                    compressed += 1;
+                                    // Get new file size
+                                    if let Ok(new_metadata) = fs::metadata(&file_path).await {
+                                        println!("     ✅ 压缩完成: {} KB", new_metadata.len() / 1024);
+                                    }
+                                }
+                                Err(e) => {
+                                    println!("     ❌ 压缩失败: {}", e);
+                                }
+                            }
+                        }
+                    }
+                }
                 skipped += 1;
                 println!("  ⏭️  跳过: {} (已存在)", filename);
             }
@@ -76,6 +104,22 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> R
                     }
                     Err(_) => chrono::Utc::now().timestamp_millis(),
                 };
+
+                // Compress if file size exceeds max_size
+                if max_size > 0 {
+                    if let Ok(m) = fs::metadata(&file_path).await {
+                        if m.len() > max_size as u64 {
+                            println!("  🔄 压缩: {} ({} KB -> 目标 {} KB)",
+                                filename,
+                                m.len() / 1024,
+                                max_size / 1024
+                            );
+                            if let Err(e) = convert_to_webp(&file_path, &file_path, max_size).await {
+                                println!("     ❌ 压缩失败: {}", e);
+                            }
+                        }
+                    }
+                }
 
                 match db
                     .insert_wallpaper(
@@ -107,6 +151,9 @@ async fn sync_wallpapers(db: &Database, wallpaper_dir: &Path, r#type: &str) -> R
     println!("\n📊 {} 目录同步完成:", r#type.to_uppercase());
     println!("   ✅ 新增: {}", added);
     println!("   ⏭️  跳过: {}", skipped);
+    if max_size > 0 && compressed > 0 {
+        println!("   🔄 压缩: {}", compressed);
+    }
     println!("   ❌ 错误: {}", error);
 
     Ok(())
