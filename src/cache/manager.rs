@@ -380,11 +380,14 @@ impl CacheManager {
                 self.consecutive_failures.store(0, Ordering::Relaxed);
                 self.record_operation(false);
 
-                // 如果启用了降级，同时设置到备用缓存
-                if self.fallback_enabled.load(Ordering::Relaxed)
-                    && let Some(fallback) = &self.fallback {
-                        let _ = fallback.set(key, value, ttl).await;
-                    }
+                // 主缓存健康时跳过 fallback 写入（正常运行下写流量减半）；
+                // 仅在刚从降级恢复时一次性预热 fallback，以便下次降级时有热数据
+                if was_degraded
+                    && self.fallback_enabled.load(Ordering::Relaxed)
+                    && let Some(fallback) = &self.fallback
+                {
+                    let _ = fallback.set(key, value, ttl).await;
+                }
                 Ok(())
             }
             Err(e) => {

@@ -110,6 +110,8 @@ impl ViewBatchProcessor {
 
         let mut batch = Vec::with_capacity(adaptive_state.current_batch_size);
         let mut interval = tokio::time::interval(Duration::from_secs(config.batch_timeout));
+        // SQL 字符串按批次大小缓存，避免每次 flush 都重建（消除堆分配和字符串拼接）
+        let mut sql_cache: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
 
         if config.adaptive {
             let mut adaptive_interval =
@@ -126,14 +128,14 @@ impl ViewBatchProcessor {
 
                                 // 达到批量大小，立即写入
                                 if batch.len() >= adaptive_state.current_batch_size
-                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch, &mut sql_cache).await {
                                         tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                             }
                             None => {
                                 // 通道关闭，写入剩余记录并退出
                                 if !batch.is_empty()
-                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch, &mut sql_cache).await {
                                         tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                                 break;
@@ -144,7 +146,7 @@ impl ViewBatchProcessor {
                     _ = interval.tick() => {
                         // 超时，写入当前批次
                         if !batch.is_empty()
-                            && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                            && let Err(e) = Self::flush_batch(&pool, &mut batch, &mut sql_cache).await {
                                 tracing::error!("批量写入阅读记录失败: {}", e);
                             }
                     }
@@ -165,14 +167,14 @@ impl ViewBatchProcessor {
 
                                 // 达到批量大小，立即写入
                                 if batch.len() >= config.batch_size
-                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch, &mut sql_cache).await {
                                         tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                             }
                             None => {
                                 // 通道关闭，写入剩余记录并退出
                                 if !batch.is_empty()
-                                    && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                                    && let Err(e) = Self::flush_batch(&pool, &mut batch, &mut sql_cache).await {
                                         tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                                 break;
@@ -183,7 +185,7 @@ impl ViewBatchProcessor {
                     _ = interval.tick() => {
                         // 超时，写入当前批次
                         if !batch.is_empty()
-                            && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
+                            && let Err(e) = Self::flush_batch(&pool, &mut batch, &mut sql_cache).await {
                                 tracing::error!("批量写入阅读记录失败: {}", e);
                             }
                     }
@@ -257,6 +259,7 @@ impl ViewBatchProcessor {
     async fn flush_batch(
         pool: &Arc<Pool<SqliteConnectionManager>>,
         batch: &mut Vec<ViewRecord>,
+        sql_cache: &mut std::collections::HashMap<usize, String>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if batch.is_empty() {
             return Ok(());
@@ -267,17 +270,19 @@ impl ViewBatchProcessor {
         // article_views 表的插入字段数（passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at）
         const FIELDS_PER_RECORD: usize = 9;
 
-        // 构建多行 INSERT 语句，单次 SQL 插入所有记录，减少 SQL 解析和执行次数
+        // 按批次大小缓存 SQL 字符串，命中时直接复用，避免每次 flush 都重新分配和拼接
         let n = batch.len();
-        let row_placeholder = "(?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        let placeholders = std::iter::repeat(row_placeholder)
-            .take(n)
-            .collect::<Vec<_>>()
-            .join(", ");
-        let sql = format!(
-            "INSERT INTO article_views (passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at) VALUES {}",
-            placeholders
-        );
+        let sql = sql_cache.entry(n).or_insert_with(|| {
+            let row_placeholder = "(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            let placeholders = std::iter::repeat(row_placeholder)
+                .take(n)
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "INSERT INTO article_views (passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at) VALUES {}",
+                placeholders
+            )
+        });
 
         // 将所有记录的参数展开为扁平列表（与 rusqlite chrono feature 格式保持一致）
         // rusqlite 的 chrono feature 使用 "%Y-%m-%dT%H:%M:%S%.fZ" 格式存储 DateTime<Utc>

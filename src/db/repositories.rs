@@ -1,7 +1,6 @@
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{OptionalExtension, params};
-use smallvec::SmallVec;
 use std::sync::Arc;
 
 use super::models::*;
@@ -280,8 +279,9 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
         let conn = pool.get()?;
+        // 省略 summarize（自动摘要）列，列表页不使用该字段
         let mut stmt = conn.prepare_cached(
-            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
+            "SELECT id, uuid, title, content, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
              FROM passages ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
 
@@ -294,18 +294,18 @@ impl PassageRepository {
                     content: row.get(3)?,
                     original_content: row.get(4)?,
                     summary: row.get(5)?,
-                    summarize: row.get(6)?,
-                    author: row.get(7)?,
-                    tags: row.get(8)?,
-                    category: row.get(9)?,
-                    status: row.get(10)?,
-                    file_path: row.get(11)?,
-                    visibility: row.get(12)?,
-                    is_scheduled: row.get(13)?,
-                    published_at: row.get(14)?,
-                    cover_image: row.get(15)?,
-                    created_at: row.get(16)?,
-                    updated_at: row.get(17)?,
+                    summarize: None, // 列表页不需要自动摘要，避免传输大字段
+                    author: row.get(6)?,
+                    tags: row.get(7)?,
+                    category: row.get(8)?,
+                    status: row.get(9)?,
+                    file_path: row.get(10)?,
+                    visibility: row.get(11)?,
+                    is_scheduled: row.get(12)?,
+                    published_at: row.get(13)?,
+                    cover_image: row.get(14)?,
+                    created_at: row.get(15)?,
+                    updated_at: row.get(16)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -326,8 +326,10 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
         let conn = pool.get()?;
+        // 省略 content（HTML 渲染结果）和 summarize（自动摘要），列表页只需 original_content
         let mut stmt = conn.prepare_cached(
-            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+            "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+             file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
              FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
         )?;
 
@@ -337,21 +339,21 @@ impl PassageRepository {
                     id: Some(row.get(0)?),
                     uuid: Some(row.get(1)?),
                     title: row.get(2)?,
-                    content: row.get(3)?,
-                    original_content: row.get(4)?,
-                    summary: row.get(5)?,
-                    summarize: row.get(6)?,
-                    author: row.get(7)?,
-                    tags: row.get(8)?,
-                    category: row.get(9)?,
-                    status: row.get(10)?,
-                    file_path: row.get(11)?,
-                    visibility: row.get(12)?,
-                    is_scheduled: row.get(13)?,
-                    published_at: row.get(14)?,
-                    cover_image: row.get(15)?,
-                    created_at: row.get(16)?,
-                    updated_at: row.get(17)?,
+                    content: String::new(), // 列表页不需要 HTML 渲染内容
+                    original_content: row.get(3)?,
+                    summary: row.get(4)?,
+                    summarize: None, // 列表页不需要自动摘要
+                    author: row.get(5)?,
+                    tags: row.get(6)?,
+                    category: row.get(7)?,
+                    status: row.get(8)?,
+                    file_path: row.get(9)?,
+                    visibility: row.get(10)?,
+                    is_scheduled: row.get(11)?,
+                    published_at: row.get(12)?,
+                    cover_image: row.get(13)?,
+                    created_at: row.get(14)?,
+                    updated_at: row.get(15)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -398,7 +400,7 @@ impl PassageRepository {
             };
 
             let query = r#"
-                SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                SELECT id, uuid, title, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
                 FROM passages 
                 WHERE status = 'published' AND (created_at < ? OR (created_at = ? AND id < ?))
                 ORDER BY created_at DESC, id DESC
@@ -414,21 +416,21 @@ impl PassageRepository {
                             id: Some(row.get(0)?),
                             uuid: Some(row.get(1)?),
                             title: row.get(2)?,
-                            content: row.get(3)?,
-                            original_content: row.get(4)?,
-                            summary: row.get(5)?,
-                            summarize: row.get(6)?,
-                            author: row.get(7)?,
-                            tags: row.get(8)?,
-                            category: row.get(9)?,
-                            status: row.get(10)?,
-                            file_path: row.get(11)?,
-                            visibility: row.get(12)?,
-                            is_scheduled: row.get(13)?,
-                            published_at: row.get(14)?,
-                            cover_image: row.get(15)?,
-                            created_at: row.get(16)?,
-                            updated_at: row.get(17)?,
+                            content: String::new(), // 列表页不需要 HTML 渲染内容
+                            original_content: row.get(3)?,
+                            summary: row.get(4)?,
+                            summarize: None, // 列表页不需要自动摘要
+                            author: row.get(5)?,
+                            tags: row.get(6)?,
+                            category: row.get(7)?,
+                            status: row.get(8)?,
+                            file_path: row.get(9)?,
+                            visibility: row.get(10)?,
+                            is_scheduled: row.get(11)?,
+                            published_at: row.get(12)?,
+                            cover_image: row.get(13)?,
+                            created_at: row.get(14)?,
+                            updated_at: row.get(15)?,
                         })
                     },
                 )?
@@ -448,7 +450,7 @@ impl PassageRepository {
         } else {
             // 第一页，没有游标
             let query = r#"
-                SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
+                SELECT id, uuid, title, original_content, summary, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
                 FROM passages 
                 WHERE status = 'published'
                 ORDER BY created_at DESC, id DESC
@@ -462,21 +464,21 @@ impl PassageRepository {
                         id: Some(row.get(0)?),
                         uuid: Some(row.get(1)?),
                         title: row.get(2)?,
-                        content: row.get(3)?,
-                        original_content: row.get(4)?,
-                        summary: row.get(5)?,
-                        summarize: row.get(6)?,
-                        author: row.get(7)?,
-                        tags: row.get(8)?,
-                        category: row.get(9)?,
-                        status: row.get(10)?,
-                        file_path: row.get(11)?,
-                        visibility: row.get(12)?,
-                        is_scheduled: row.get(13)?,
-                        published_at: row.get(14)?,
-                        cover_image: row.get(15)?,
-                        created_at: row.get(16)?,
-                        updated_at: row.get(17)?,
+                        content: String::new(), // 列表页不需要 HTML 渲染内容
+                        original_content: row.get(3)?,
+                        summary: row.get(4)?,
+                        summarize: None, // 列表页不需要自动摘要
+                        author: row.get(5)?,
+                        tags: row.get(6)?,
+                        category: row.get(7)?,
+                        status: row.get(8)?,
+                        file_path: row.get(9)?,
+                        visibility: row.get(10)?,
+                        is_scheduled: row.get(11)?,
+                        published_at: row.get(12)?,
+                        cover_image: row.get(13)?,
+                        created_at: row.get(14)?,
+                        updated_at: row.get(15)?,
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -587,64 +589,108 @@ impl PassageRepository {
         tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
         let conn = pool.get()?;
 
-        // 构建 WHERE 条件
-        // 最多 4 个条件（status + year + month + day），每个约 20 字符
-        let mut conditions = Vec::with_capacity(4);
-        conditions.push("status = 'published'".to_string());
-        // 使用SmallVec优化小数组，减少堆分配（最多6个参数：year, month, day, limit, offset）
-        let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 6]> = SmallVec::new();
-
-        if let Some(y) = year {
-            conditions.push("created_year = ?".to_string());
-            params.push(Box::new(y));
-        }
-        if let Some(m) = month {
-            conditions.push("created_month = ?".to_string());
-            params.push(Box::new(m));
-        }
-        if let Some(d) = day {
-            conditions.push("created_day = ?".to_string());
-            params.push(Box::new(d));
-        }
-
-        let where_clause = conditions.join(" AND ");
-        let sql = format!(
-            "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
-             FROM passages WHERE {} ORDER BY created_at DESC LIMIT ? OFFSET ?",
-            where_clause
-        );
-
-        // 转换参数为 rusqlite::Params
-        let mut sql_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
-        sql_params.push(&limit);
-        sql_params.push(&offset);
-
-        // 动态 SQL 使用 prepare 而非 prepare_cached，避免缓存膨胀
-        let mut stmt = conn.prepare(&sql)?;
-        let passages = stmt
-            .query_map(sql_params.as_slice(), |row| {
+        // 省略 content（HTML）和 summarize（自动摘要），列表页不需要这两个大字段
+        // 穷举 year/month/day 的 8 种组合，全部使用固定 SQL + prepare_cached，
+        // 消除动态字符串拼接和 Box<dyn ToSql> 堆分配，并保持高缓存命中率
+        macro_rules! map_row {
+            ($row:ident) => {
                 Ok(Passage {
-                    id: Some(row.get(0)?),
-                    uuid: Some(row.get(1)?),
-                    title: row.get(2)?,
-                    content: row.get(3)?,
-                    original_content: row.get(4)?,
-                    summary: row.get(5)?,
-                    summarize: row.get(6)?,
-                    author: row.get(7)?,
-                    tags: row.get(8)?,
-                    category: row.get(9)?,
-                    status: row.get(10)?,
-                    file_path: row.get(11)?,
-                    visibility: row.get(12)?,
-                    is_scheduled: row.get(13)?,
-                    published_at: row.get(14)?,
-                    cover_image: row.get(15)?,
-                    created_at: row.get(16)?,
-                    updated_at: row.get(17)?,
+                    id: Some($row.get(0)?),
+                    uuid: Some($row.get(1)?),
+                    title: $row.get(2)?,
+                    content: String::new(), // 列表页不需要 HTML 渲染内容
+                    original_content: $row.get(3)?,
+                    summary: $row.get(4)?,
+                    summarize: None, // 列表页不需要自动摘要
+                    author: $row.get(5)?,
+                    tags: $row.get(6)?,
+                    category: $row.get(7)?,
+                    status: $row.get(8)?,
+                    file_path: $row.get(9)?,
+                    visibility: $row.get(10)?,
+                    is_scheduled: $row.get(11)?,
+                    published_at: $row.get(12)?,
+                    cover_image: $row.get(13)?,
+                    created_at: $row.get(14)?,
+                    updated_at: $row.get(15)?,
                 })
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
+            };
+        }
+
+        let passages: Vec<Passage> = match (year, month, day) {
+            (None, None, None) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (Some(y), None, None) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_year = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![y, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (None, Some(m), None) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_month = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![m, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (None, None, Some(d)) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_day = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![d, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (Some(y), Some(m), None) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_year = ? AND created_month = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![y, m, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (Some(y), None, Some(d)) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_year = ? AND created_day = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![y, d, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (None, Some(m), Some(d)) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_month = ? AND created_day = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![m, d, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+            (Some(y), Some(m), Some(d)) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT id, uuid, title, original_content, summary, author, tags, category, status, \
+                     file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at \
+                     FROM passages WHERE status = 'published' AND created_year = ? AND created_month = ? AND created_day = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+                )?;
+                stmt.query_map(params![y, m, d, limit, offset], |row| map_row!(row))?
+                    .collect::<Result<Vec<_>, _>>()?
+            }
+        };
 
         Ok(passages)
         })
@@ -1060,17 +1106,15 @@ impl CommentRepository {
     /// 创建评论
     pub async fn create(&self, comment: &Comment) -> Result<(), Box<dyn std::error::Error>> {
         let pool = self.pool.clone();
-    let comment = comment.clone();
+        let username = comment.username.clone();
+        let content = comment.content.clone();
+        let passage_uuid = comment.passage_uuid.clone();
+        let created_at = comment.created_at;
         tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO comments (username, content, passage_uuid, created_at) VALUES (?, ?, ?, ?)",
-            params![
-                &comment.username,
-                &comment.content,
-                &comment.passage_uuid,
-                &comment.created_at,
-            ],
+            params![username, content, passage_uuid, created_at],
         )?;
         Ok(())
         })
@@ -1333,8 +1377,8 @@ impl ArticleViewRepository {
         tokio::task::spawn_blocking(move || -> Result<ArticleStatsData, DbError> {
         let conn = pool.get()?;
 
-        // 获取文章信息
-        let passage = pool.get()?.query_row(
+        // 获取文章信息（复用同一个连接，避免两次 pool.get()）
+        let passage = conn.query_row(
             "SELECT id, title FROM passages WHERE uuid = ?",
             params![passage_uuid],
             |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)),
@@ -1572,21 +1616,19 @@ impl CategoryRepository {
     /// 创建分类
     pub async fn create(&self, category: &Category) -> Result<i64, Box<dyn std::error::Error>> {
         let pool = self.pool.clone();
-    let category = category.clone();
+        let name = category.name.clone();
+        let description = category.description.clone();
+        let icon = category.icon.clone();
+        let sort_order = category.sort_order;
+        let is_enabled = category.is_enabled;
+        let created_at = category.created_at;
+        let updated_at = category.updated_at;
         tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO categories (name, description, icon, sort_order, is_enabled, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?)",
-            params![
-                &category.name,
-                &category.description,
-                &category.icon,
-                &category.sort_order,
-                &category.is_enabled,
-                &category.created_at,
-                &category.updated_at,
-            ],
+            params![name, description, icon, sort_order, is_enabled, created_at, updated_at],
         )?;
         Ok(conn.last_insert_rowid())
         })
@@ -1695,22 +1737,20 @@ impl CategoryRepository {
     /// 更新分类
     pub async fn update(&self, category: &Category) -> Result<(), Box<dyn std::error::Error>> {
         let pool = self.pool.clone();
-    let category = category.clone();
+        let id = category.id;
+        let name = category.name.clone();
+        let description = category.description.clone();
+        let icon = category.icon.clone();
+        let sort_order = category.sort_order;
+        let is_enabled = category.is_enabled;
+        let updated_at = category.updated_at;
         tokio::task::spawn_blocking(move || -> Result<(), DbError> {
-        let id = category.id.ok_or("分类 ID 不能为空")?;
+        let id = id.ok_or("分类 ID 不能为空")?;
         let conn = pool.get()?;
         conn.execute(
             "UPDATE categories SET name = ?, description = ?, icon = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
              WHERE id = ?",
-            params![
-                &category.name,
-                &category.description,
-                &category.icon,
-                &category.sort_order,
-                &category.is_enabled,
-                &category.updated_at,
-                id,
-            ],
+            params![name, description, icon, sort_order, is_enabled, updated_at, id],
         )?;
         Ok(())
         })
@@ -2478,24 +2518,22 @@ impl AttachmentRepository {
 
     pub async fn create(&self, attachment: &Attachment) -> Result<(), Box<dyn std::error::Error>> {
         let pool = self.pool.clone();
-    let attachment = attachment.clone();
+        let file_name = attachment.file_name.clone();
+        let stored_name = attachment.stored_name.clone();
+        let file_path = attachment.file_path.clone();
+        let file_type = attachment.file_type.clone();
+        let content_type = attachment.content_type.clone();
+        let file_size = attachment.file_size;
+        let passage_uuid = attachment.passage_uuid.clone();
+        let visibility = attachment.visibility;
+        let show_in_passage = attachment.show_in_passage;
+        let uploaded_at = attachment.uploaded_at;
         tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO attachments (file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            params![
-                &attachment.file_name,
-                &attachment.stored_name,
-                &attachment.file_path,
-                &attachment.file_type,
-                &attachment.content_type,
-                &attachment.file_size,
-                &attachment.passage_uuid,
-                &attachment.visibility,
-                &attachment.show_in_passage,
-                &attachment.uploaded_at,
-            ],
+            params![file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at],
         )?;
         Ok(())
         })
@@ -3947,13 +3985,49 @@ impl PassageVersionRepository {
         .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
-    /// 获取最新版本
+    /// 获取最新版本（单次 SQL 查询，避免两次 spawn_blocking + 两次 DB 往返）
     pub async fn get_latest_version(&self, passage_id: i64) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
-        let latest_version_number = self.get_latest_version_number(passage_id).await?;
-        if latest_version_number == 0 {
-            return Ok(None);
-        }
-        self.get_by_version_number(passage_id, latest_version_number).await
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash, \
+                    title, content, tags, category, cover_image, \
+                    change_type, change_reason, created_at, created_by, parent_version_id, branch_name \
+             FROM passage_versions \
+             WHERE passage_id = ?1 \
+             ORDER BY version_number DESC \
+             LIMIT 1"
+        )?;
+        let version = stmt
+            .query_row(params![passage_id], |row| {
+                Ok(PassageVersion {
+                    id: Some(row.get(0)?),
+                    passage_id: row.get(1)?,
+                    passage_uuid: row.get(2)?,
+                    version_number: row.get(3)?,
+                    file_path: row.get(4)?,
+                    file_size: row.get(5)?,
+                    file_hash: row.get(6)?,
+                    title: row.get(7)?,
+                    content: row.get(8)?,
+                    tags: row.get(9)?,
+                    category: row.get(10)?,
+                    cover_image: row.get(11)?,
+                    change_type: row.get(12)?,
+                    change_reason: row.get(13)?,
+                    created_at: row.get(14)?,
+                    created_by: row.get(15)?,
+                    parent_version_id: row.get(16)?,
+                    branch_name: row.get(17)?,
+                })
+            })
+            .optional()?;
+        Ok(version)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 限制版本数量（删除旧版本）
@@ -3966,52 +4040,49 @@ impl PassageVersionRepository {
         
         let conn = pool.get()?;
         
-        // 获取当前版本总数
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM passage_versions WHERE passage_id = ?1",
-            params![passage_id],
-            |row| row.get(0),
+        // 直接查询超出配额的旧版本（省去 COUNT(*) 查询，减少一次 SQL 往返）
+        // 思路：取按 created_at ASC 排列的所有版本，跳过最新的 max_versions 条，余下的就是要删除的
+        let mut stmt = conn.prepare_cached(
+            "SELECT id, file_path FROM passage_versions \
+             WHERE passage_id = ?1 \
+             ORDER BY created_at ASC \
+             LIMIT -1 OFFSET ?2"
         )?;
         
-        if count as usize > max_versions {
-            let to_delete = count as usize - max_versions;
-            
-            // 获取要删除的版本 ID 和文件路径
-            let mut stmt = conn.prepare_cached(
-                "SELECT id, file_path FROM passage_versions 
-                 WHERE passage_id = ?1 
-                 ORDER BY created_at ASC 
-                 LIMIT ?2"
-            )?;
-            
-            let versions_to_delete = stmt
-                .query_map(params![passage_id, to_delete as i64], |row| {
-                    Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
-                })?
-                .collect::<Result<Vec<_>, _>>()?;
-            
-            // 删除数据库记录
-            conn.execute(
-                "DELETE FROM passage_versions 
-                 WHERE passage_id = ?1 
-                 AND id IN (
-                     SELECT id FROM passage_versions 
-                     WHERE passage_id = ?1 
-                     ORDER BY created_at ASC 
-                     LIMIT ?2
-                 )",
-                params![passage_id, to_delete as i64],
-            )?;
-            
-            // 删除历史文件
-            for (_, file_path) in versions_to_delete {
-                let path = std::path::PathBuf::from(&file_path);
-                if path.exists() {
-                    std::fs::remove_file(&path)?;
-                }
+        let versions_to_delete: Vec<(i64, String)> = stmt
+            .query_map(params![passage_id, max_versions as i64], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        
+        if versions_to_delete.is_empty() {
+            return Ok(());
+        }
+        
+        let to_delete = versions_to_delete.len();
+        
+        // 删除数据库记录
+        conn.execute(
+            "DELETE FROM passage_versions \
+             WHERE passage_id = ?1 \
+             AND id IN ( \
+                 SELECT id FROM passage_versions \
+                 WHERE passage_id = ?1 \
+                 ORDER BY created_at ASC \
+                 LIMIT -1 OFFSET ?2 \
+             )",
+            params![passage_id, max_versions as i64],
+        )?;
+        
+        // 删除历史文件
+        for (_, file_path) in versions_to_delete {
+            let path = std::path::PathBuf::from(&file_path);
+            if path.exists() {
+                std::fs::remove_file(&path)?;
             }
         }
         
+        tracing::debug!("删除 {} 个旧版本 (passage_id={})", to_delete, passage_id);
         Ok(())
         })
         .await

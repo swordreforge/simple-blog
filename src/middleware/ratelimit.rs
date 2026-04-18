@@ -1,6 +1,7 @@
 use actix_web::{Error, FromRequest, HttpRequest, HttpResponse, dev::Payload};
 use dashmap::DashMap;
 use std::{
+    collections::VecDeque,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -8,7 +9,8 @@ use std::{
 /// 滑动窗口计数器
 #[derive(Debug, Clone)]
 struct SlidingWindow {
-    timestamps: Vec<Instant>,
+    /// 时间戳严格单调递增，所以过期条目一定在队头，用 VecDeque 可以 O(1) pop_front
+    timestamps: VecDeque<Instant>,
     window_size: Duration,
     max_requests: usize,
     last_accessed: Instant, // 添加最后访问时间，用于 LRU 清理
@@ -18,7 +20,7 @@ impl SlidingWindow {
     fn new(window_size: Duration, max_requests: usize) -> Self {
         let now = Instant::now();
         Self {
-            timestamps: Vec::with_capacity(max_requests),
+            timestamps: VecDeque::with_capacity(max_requests),
             window_size,
             max_requests,
             last_accessed: now,
@@ -29,12 +31,15 @@ impl SlidingWindow {
         let now = Instant::now();
         self.last_accessed = now; // 更新访问时间
         let cutoff = now - self.window_size;
-        self.timestamps.retain(|&t| t > cutoff);
+        // 过期条目严格在队头（时间戳单调递增），逐个 pop_front 即可，O(已过期数)
+        while self.timestamps.front().map_or(false, |&t| t <= cutoff) {
+            self.timestamps.pop_front();
+        }
 
         if self.timestamps.len() >= self.max_requests {
             false
         } else {
-            self.timestamps.push(now);
+            self.timestamps.push_back(now);
             true
         }
     }
@@ -105,9 +110,9 @@ impl RateLimiter {
 
         // DashMap 支持并发迭代和删除
         self.second_windows
-            .retain(|_, window| window.timestamps.last().is_some_and(|&t| t > second_cutoff));
+            .retain(|_, window| window.timestamps.back().is_some_and(|&t| t > second_cutoff));
         self.minute_windows
-            .retain(|_, window| window.timestamps.last().is_some_and(|&t| t > minute_cutoff));
+            .retain(|_, window| window.timestamps.back().is_some_and(|&t| t > minute_cutoff));
 
         // 检查条目数是否超过限制，如果超过则使用 LRU 策略删除最久未使用的条目
         if self.second_windows.len() > self.max_entries {

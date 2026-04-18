@@ -55,70 +55,41 @@ where
         Box::pin(async move {
             let res = service.call(req).await;
 
-            let duration = start_time.elapsed();
-            let status = res
+            let duration_us = start_time.elapsed().as_micros();
+            let status_code = res
                 .as_ref()
-                .map(|r| r.status())
-                .unwrap_or(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR);
-            let status_code = status.as_u16();
+                .map(|r| r.status().as_u16())
+                .unwrap_or(500);
 
-            // 格式化延迟
-            let duration_ms = duration.as_millis();
-            let duration_str = if duration_ms < 1 {
-                format!("{}μs", duration.as_micros())
-            } else if duration_ms < 1000 {
-                format!("{}ms", duration_ms)
-            } else {
-                format!("{:.2}s", duration.as_secs_f64())
-            };
-
-            // 获取错误信息（如果有）
-            let error_info = if res.is_err() {
-                match res.as_ref().err() {
-                    Some(e) => format!(" - 错误: {}", e),
-                    None => String::new(),
-                }
-            } else {
-                String::new()
-            };
-
-            // 构建完整的查询字符串
-            let full_path = if query.is_empty() {
-                String::from(&path)
-            } else {
-                format!("{}?{}", path, query)
-            };
-
-            // 根据状态码使用不同的颜色（在终端中）
-            let status_color = if status_code < 300 {
-                "\x1b[32m" // 绿色
-            } else if status_code < 400 {
-                "\x1b[33m" // 黄色
-            } else if status_code < 500 {
-                "\x1b[31m" // 红色
-            } else {
-                "\x1b[35m" // 紫色
-            };
-            let reset_color = "\x1b[0m";
-
-            // 构建日志消息
-            let log_message = format!(
-                "[{}] {} {} -> {}{}{} - {}{}",
-                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
-                method,
-                full_path,
-                status_color,
-                status_code,
-                reset_color,
-                duration_str,
-                error_info
-            );
-
-            // 根据状态码选择日志级别
+            // 使用 tracing 结构化字段：subscriber 按需格式化，
+            // 避免每个请求产生 3–4 次临时 String 堆分配
             if status_code >= 500 {
-                eprintln!("{}", log_message);
+                tracing::error!(
+                    method = %method,
+                    path = %path,
+                    query = %query,
+                    status = status_code,
+                    latency_us = duration_us,
+                    "request error"
+                );
+            } else if status_code >= 400 {
+                tracing::warn!(
+                    method = %method,
+                    path = %path,
+                    query = %query,
+                    status = status_code,
+                    latency_us = duration_us,
+                    "request warning"
+                );
             } else {
-                println!("{}", log_message);
+                tracing::info!(
+                    method = %method,
+                    path = %path,
+                    query = %query,
+                    status = status_code,
+                    latency_us = duration_us,
+                    "request"
+                );
             }
 
             res
