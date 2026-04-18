@@ -67,20 +67,10 @@ pub struct CacheLockGuard {
 
 impl Drop for CacheLockGuard {
     fn drop(&mut self) {
-        // 清理不再使用的锁
+        // 释放信号量许可证；DashMap 条目在下一次 acquire 时被懒清理，
+        // 无需在 drop 里 spawn 异步任务，避免每次释放都产生 5 秒睡眠的 tokio 任务
         if let Some(permit) = self.permit.take() {
             drop(permit);
-
-            // 异步清理锁（避免阻塞 drop）
-            let key = self.key.clone();
-            let locks = Arc::clone(&self.local_locks);
-            tokio::spawn(async move {
-                tokio::time::sleep(Duration::from_secs(5)).await;
-                if let Some(entry) = locks.get(&key)
-                    && entry.available_permits() > 0 {
-                        locks.remove(&key);
-                    }
-            });
         }
     }
 }

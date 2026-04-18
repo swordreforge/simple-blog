@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::RwLock;
+use parking_lot::RwLock;
 use tokio::time::{Duration, interval};
 
 use crate::db::models::DynamicRoute;
@@ -136,40 +136,41 @@ impl MemoryRouteStorage {
                 interval_timer.tick().await;
 
                 // 定期清理已禁用的路由（可选功能）
-                if let Ok(mut routes) = routes.write()
-                    && let Ok(mut path_index) = path_index.write() {
-                        // 清理已禁用的路由
-                        let disabled_routes: Vec<i64> = routes
-                            .iter()
-                            .filter(|(_, route)| !route.enabled)
-                            .map(|(id, _)| *id)
-                            .collect();
+                {
+                    let mut routes = routes.write();
+                    let mut path_index = path_index.write();
+                    // 清理已禁用的路由
+                    let disabled_routes: Vec<i64> = routes
+                        .iter()
+                        .filter(|(_, route)| !route.enabled)
+                        .map(|(id, _)| *id)
+                        .collect();
 
-                        for id in disabled_routes {
+                    for id in disabled_routes {
+                        if let Some(route) = routes.remove(&id) {
+                            path_index.remove(&route.path);
+                        }
+                    }
+
+                    // 检查路由数量限制
+                    if routes.len() > max_routes {
+                        // 按创建时间排序，删除最旧的
+                        let mut route_list: Vec<_> = routes.iter().collect();
+                        route_list.sort_by_key(|a| a.1.created_at);
+
+                        let to_remove = route_list.len() - max_routes;
+                        let ids_to_remove: Vec<i64> = route_list
+                            .iter()
+                            .take(to_remove)
+                            .map(|(id, _)| **id)
+                            .collect();
+                        for id in ids_to_remove {
                             if let Some(route) = routes.remove(&id) {
                                 path_index.remove(&route.path);
                             }
                         }
-
-                        // 检查路由数量限制
-                        if routes.len() > max_routes {
-                            // 按创建时间排序，删除最旧的
-                            let mut route_list: Vec<_> = routes.iter().collect();
-                            route_list.sort_by_key(|a| a.1.created_at);
-
-                            let to_remove = route_list.len() - max_routes;
-                            let ids_to_remove: Vec<i64> = route_list
-                                .iter()
-                                .take(to_remove)
-                                .map(|(id, _)| **id)
-                                .collect();
-                            for id in ids_to_remove {
-                                if let Some(route) = routes.remove(&id) {
-                                    path_index.remove(&route.path);
-                                }
-                            }
-                        }
                     }
+                }
             }
         });
     }
@@ -177,7 +178,7 @@ impl MemoryRouteStorage {
     /// 生成下一个ID
     #[allow(dead_code)]
     fn next_id(&self) -> i64 {
-        let mut id = self.next_id.write().unwrap();
+        let mut id = self.next_id.write();
         let current = *id;
         *id += 1;
         current
@@ -186,7 +187,7 @@ impl MemoryRouteStorage {
     /// 获取存储统计信息
     #[allow(dead_code)]
     pub fn get_stats(&self) -> RouteStorageStats {
-        let routes = self.routes.read().unwrap();
+        let routes = self.routes.read();
         RouteStorageStats {
             total_routes: routes.len(),
             enabled_routes: routes.values().filter(|r| r.enabled).count(),
@@ -199,8 +200,8 @@ impl MemoryRouteStorage {
 #[async_trait::async_trait]
 impl RouteStorage for MemoryRouteStorage {
     async fn save_route(&self, route: &DynamicRoute) -> Result<i64, StorageError> {
-        let mut routes = self.routes.write().unwrap();
-        let mut path_index = self.path_index.write().unwrap();
+        let mut routes = self.routes.write();
+        let mut path_index = self.path_index.write();
 
         // 检查路由数量限制
         if routes.len() >= self.max_routes && !routes.contains_key(&route.id.unwrap_or(0)) {
@@ -236,14 +237,14 @@ impl RouteStorage for MemoryRouteStorage {
     }
 
     async fn load_route(&self, id: i64) -> Result<Option<DynamicRoute>, StorageError> {
-        let routes = self.routes.read().unwrap();
+        let routes = self.routes.read();
         Ok(routes.get(&id).cloned())
     }
 
     async fn load_route_by_path(&self, path: &str) -> Result<Option<DynamicRoute>, StorageError> {
-        let path_index = self.path_index.read().unwrap();
+        let path_index = self.path_index.read();
         if let Some(&id) = path_index.get(path) {
-            let routes = self.routes.read().unwrap();
+            let routes = self.routes.read();
             Ok(routes.get(&id).cloned())
         } else {
             Ok(None)
@@ -251,8 +252,8 @@ impl RouteStorage for MemoryRouteStorage {
     }
 
     async fn delete_route(&self, id: i64) -> Result<(), StorageError> {
-        let mut routes = self.routes.write().unwrap();
-        let mut path_index = self.path_index.write().unwrap();
+        let mut routes = self.routes.write();
+        let mut path_index = self.path_index.write();
 
         if let Some(route) = routes.remove(&id) {
             path_index.remove(&route.path);
@@ -262,23 +263,23 @@ impl RouteStorage for MemoryRouteStorage {
     }
 
     async fn list_routes(&self) -> Result<Vec<DynamicRoute>, StorageError> {
-        let routes = self.routes.read().unwrap();
+        let routes = self.routes.read();
         Ok(routes.values().cloned().collect())
     }
 
     async fn count_routes(&self) -> Result<usize, StorageError> {
-        let routes = self.routes.read().unwrap();
+        let routes = self.routes.read();
         Ok(routes.len())
     }
 
     async fn route_exists(&self, id: i64) -> Result<bool, StorageError> {
-        let routes = self.routes.read().unwrap();
+        let routes = self.routes.read();
         Ok(routes.contains_key(&id))
     }
 
     async fn clear_all(&self) -> Result<(), StorageError> {
-        let mut routes = self.routes.write().unwrap();
-        let mut path_index = self.path_index.write().unwrap();
+        let mut routes = self.routes.write();
+        let mut path_index = self.path_index.write();
         routes.clear();
         path_index.clear();
         Ok(())

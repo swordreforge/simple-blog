@@ -2,6 +2,7 @@
 //!
 //! 用于优化缓存管理器的滑动窗口，减少内存分配和提高性能
 
+use crossbeam_queue::ArrayQueue;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
@@ -14,26 +15,29 @@ pub struct RingBufferEntry<T> {
     pub timestamp: Instant,
 }
 
-/// 无锁环形缓冲区
+/// 环形缓冲区
 ///
-/// 使用原子操作实现线程安全的环形缓冲区，适用于高频写入场景
+/// 基于 crossbeam_queue::ArrayQueue 实现真正的 lock-free push 路径，
+/// 适用于高频写入 + 低频读取的场景（例如缓存管理器的滑动窗口统计）。
+///
+/// 语义：容量满时 push 会弹出最老的条目（FIFO），再插入新条目。
 pub struct RingBuffer<T> {
-    /// 存储数据的数组（使用Mutex保证线程安全）
-    data: parking_lot::Mutex<Vec<Option<RingBufferEntry<T>>>>,
-    /// 当前写入位置
+    /// Lock-free 无界 FIFO 队列（有界容量）
+    data: ArrayQueue<RingBufferEntry<T>>,
+    /// 单调递增写入计数，用于诊断 / 测试
     write_index: AtomicU64,
     /// 缓冲区容量
     capacity: usize,
 }
 
-impl<T: Clone> RingBuffer<T> {
+impl<T: Clone + Send> RingBuffer<T> {
     /// 创建新的环形缓冲区
     ///
     /// # 参数
     /// - `capacity`: 缓冲区容量
     pub fn new(capacity: usize) -> Self {
         Self {
-            data: parking_lot::Mutex::new(vec![None; capacity]),
+            data: ArrayQueue::new(capacity),
             write_index: AtomicU64::new(0),
             capacity,
         }
@@ -45,61 +49,68 @@ impl<T: Clone> RingBuffer<T> {
     /// - `data`: 要写入的数据
     ///
     /// # 返回
-    /// 被覆盖的旧数据（如果有）
+    /// 被驱逐的最老条目（容量满时）
     pub fn push(&self, data: T) -> Option<RingBufferEntry<T>> {
-        let index = self.write_index.fetch_add(1, Ordering::Relaxed) % self.capacity as u64;
-        let entry = RingBufferEntry {
+        self.write_index.fetch_add(1, Ordering::Relaxed);
+        let mut entry = RingBufferEntry {
             data,
             timestamp: Instant::now(),
         };
-
-        // 使用 unsafe 避免边界检查（因为我们已经确保索引有效）
-        
-
-        unsafe {
-            let mut data_guard = self.data.lock();
-            let slot = data_guard.get_unchecked_mut(index as usize);
-            slot.replace(entry)
+        loop {
+            // 尝试直接 push（lock-free）
+            entry = match self.data.push(entry) {
+                Ok(()) => return None,
+                Err(e) => e, // 队列满，e 是被拒绝的条目
+            };
+            // 队列满：驱逐最老的条目（队头），然后重试
+            let evicted = self.data.pop();
+            match self.data.push(entry) {
+                Ok(()) => return evicted,
+                Err(e) => {
+                    // 另一个线程抢先填了空位，继续重试
+                    entry = e;
+                }
+            }
         }
     }
 
-    /// 读取指定位置的数据
+    /// 读取指定位置的数据（仅供测试使用，生产路径请用 iter_valid）
     ///
-    /// # 参数
-    /// - `index`: 读取位置
-    ///
-    /// # 返回
-    /// 数据的克隆（如果存在）
+    /// 注意：此方法会暂时排空队列再重新入队，不适合高并发场景。
     #[allow(dead_code)]
     pub fn get(&self, index: usize) -> Option<T> {
         if index >= self.capacity {
             return None;
         }
-
-        let data_guard = self.data.lock();
-        unsafe {
-            data_guard
-                .get_unchecked(index)
-                .as_ref()
-                .map(|e| e.data.clone())
+        // 排空队列，取第 index 个，然后全部重新入队
+        let all: Vec<RingBufferEntry<T>> = std::iter::from_fn(|| self.data.pop()).collect();
+        let result = all.get(index).map(|e| e.data.clone());
+        for entry in all {
+            let _ = self.data.push(entry);
         }
+        result
     }
 
-    /// 获取所有有效数据的迭代器
+    /// 获取滑动窗口内所有有效条目
     ///
     /// # 参数
-    /// - `max_age`: 最大年龄，超过此时间的条目将被过滤
+    /// - `max_age`: 超过此时间的条目将被丢弃（清理过期数据）
     ///
     /// # 返回
-    /// 有效数据迭代器
+    /// 有效条目列表
     pub fn iter_valid(&self, max_age: std::time::Duration) -> Vec<RingBufferEntry<T>> {
-        let data_guard = self.data.lock();
-        data_guard
-            .iter()
-            .filter_map(|opt| opt.as_ref())
-            .filter(|entry| entry.timestamp.elapsed() < max_age)
-            .cloned()
-            .collect()
+        // 排空队列：保留有效条目并重新入队，丢弃过期条目（顺便清理）
+        let all: Vec<RingBufferEntry<T>> = std::iter::from_fn(|| self.data.pop()).collect();
+        let mut valid = Vec::with_capacity(all.len());
+        for entry in all {
+            if entry.timestamp.elapsed() < max_age {
+                valid.push(entry.clone());
+                // 重新入队；若队列被并发 push 填满则丢弃（可接受的近似统计）
+                let _ = self.data.push(entry);
+            }
+            // 过期条目不重新入队，起到 GC 作用
+        }
+        valid
     }
 
     /// 获取缓冲区容量
@@ -108,7 +119,7 @@ impl<T: Clone> RingBuffer<T> {
         self.capacity
     }
 
-    /// 获取当前写入位置
+    /// 获取当前写入计数（单调递增）
     #[allow(dead_code)]
     pub fn write_index(&self) -> u64 {
         self.write_index.load(Ordering::Relaxed)
@@ -117,10 +128,7 @@ impl<T: Clone> RingBuffer<T> {
     /// 清空缓冲区
     #[allow(dead_code)]
     pub fn clear(&self) {
-        let mut data_guard = self.data.lock();
-        for slot in data_guard.iter_mut() {
-            *slot = None;
-        }
+        while self.data.pop().is_some() {}
     }
 }
 

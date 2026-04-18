@@ -101,6 +101,9 @@ glob = { version = "0.3", default-features = false }
 # 小数组优化
 smallvec = { version = "1.13", default-features = false }
 
+# Lock-free 队列（用于 RingBuffer）
+crossbeam-queue = { version = "0.3", default-features = false, features = ["std"] }
+
 # 结构化日志
 tracing = { version = "0.1", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["env-filter", "fmt", "std", "ansi"] }
