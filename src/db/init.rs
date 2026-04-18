@@ -24,12 +24,12 @@ pub fn init_db(db_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     // 使用 with_init 确保连接池中的每个新连接都继承 PRAGMA 设置
     let manager = SqliteConnectionManager::file(db_path).with_init(|conn| {
         conn.execute_batch(
-            "PRAGMA busy_timeout = 30000;
-             PRAGMA journal_mode = WAL;
-             PRAGMA synchronous = NORMAL;
-             PRAGMA cache_size = -64000;
-             PRAGMA temp_store = MEMORY;
-             PRAGMA mmap_size = 268435456;
+            "PRAGMA busy_timeout = 30000;\
+             PRAGMA journal_mode = WAL;\
+             PRAGMA synchronous = NORMAL;\
+             PRAGMA cache_size = -64000;\
+             PRAGMA temp_store = MEMORY;\
+             PRAGMA mmap_size = 268435456;\
              PRAGMA wal_autocheckpoint = 1000;",
         )
     });

@@ -400,23 +400,24 @@ fn build_template_settings_from_map(map: &HashMap<String, String>) -> TemplateSe
 }
 
 /// 从缓存获取模板设置（缓存未命中时查数据库，60 秒 TTL）
+///
+/// 使用 moka 的 `get_with` 保证并发场景下只有一个线程执行 DB 查询，
+/// 其余线程等待并复用同一结果，避免缓存击穿。
 pub fn get_cached_template_settings() -> Arc<TemplateSettings> {
     const KEY: u8 = 0;
-    if let Some(cached) = SETTINGS_CACHE.get(&KEY) {
-        return cached;
-    }
-    let settings = Arc::new(
-        if let Ok(pool) = crate::db::get_db_pool_sync()
-            && let Ok(conn) = pool.get()
-            && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-        {
-            build_template_settings_from_map(&map)
-        } else {
-            TemplateSettings::default()
-        },
-    );
-    SETTINGS_CACHE.insert(KEY, settings.clone());
-    settings
+    SETTINGS_CACHE.get_with(KEY, || {
+        Arc::new(
+            if let Ok(pool) = crate::db::get_db_pool_sync()
+                && let Ok(conn) = pool.get()
+                && let Ok(map) =
+                    crate::db::repositories::SettingRepository::get_all_as_map(&conn)
+            {
+                build_template_settings_from_map(&map)
+            } else {
+                TemplateSettings::default()
+            },
+        )
+    })
 }
 
 /// 使设置缓存失效（在保存设置后调用）
