@@ -18,6 +18,13 @@ lazy_static::lazy_static! {
         // 如需转义，在模板中使用 | escape 过滤器
         Arc::new(tera)
     };
+
+    /// 模板设置缓存（60 秒 TTL），避免每次页面请求都查数据库
+    static ref SETTINGS_CACHE: moka::sync::Cache<u8, Arc<TemplateSettings>> =
+        moka::sync::Cache::builder()
+            .max_capacity(1)
+            .time_to_live(std::time::Duration::from_secs(60))
+            .build();
 }
 
 /// 从内嵌文件系统创建 Tera 实例
@@ -392,6 +399,31 @@ fn build_template_settings_from_map(map: &HashMap<String, String>) -> TemplateSe
     settings
 }
 
+/// 从缓存获取模板设置（缓存未命中时查数据库，60 秒 TTL）
+pub fn get_cached_template_settings() -> Arc<TemplateSettings> {
+    const KEY: u8 = 0;
+    if let Some(cached) = SETTINGS_CACHE.get(&KEY) {
+        return cached;
+    }
+    let settings = Arc::new(
+        if let Ok(pool) = crate::db::get_db_pool_sync()
+            && let Ok(conn) = pool.get()
+            && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
+        {
+            build_template_settings_from_map(&map)
+        } else {
+            TemplateSettings::default()
+        },
+    );
+    SETTINGS_CACHE.insert(KEY, settings.clone());
+    settings
+}
+
+/// 使设置缓存失效（在保存设置后调用）
+pub fn invalidate_settings_cache() {
+    SETTINGS_CACHE.invalidate_all();
+}
+
 /// 从数据库加载外观设置
 pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::error::Error>> {
     let pool = crate::db::get_db_pool_sync()?;
@@ -462,12 +494,9 @@ pub fn load_appearance_settings() -> Result<AppearanceSettings, Box<dyn std::err
     Ok(settings)
 }
 
-/// 从数据库加载模板设置
+/// 从数据库加载模板设置（经由缓存）
 pub fn load_template_settings() -> Result<TemplateSettings, Box<dyn std::error::Error>> {
-    let pool = crate::db::get_db_pool_sync()?;
-    let conn = pool.get()?;
-    let map = crate::db::repositories::SettingRepository::get_all_as_map(&conn)?;
-    Ok(build_template_settings_from_map(&map))
+    Ok((*get_cached_template_settings()).clone())
 }
 
 /// 将 AppearanceSettings 转换为 TemplateSettings
@@ -540,15 +569,7 @@ pub fn create_index_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "RustBlog");
     context.insert("name", &settings.name);
@@ -558,7 +579,7 @@ pub fn create_index_context() -> TeraContext {
     context.insert("external_link_warning", &settings.external_link_warning);
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
     context.insert("switch_notice", &settings.switch_notice);
     context.insert("switch_notice_text", &settings.switch_notice_text);
 
@@ -589,15 +610,7 @@ pub fn create_passage_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "文章 - RustBlog");
     context.insert("name", "Dango");
@@ -606,7 +619,7 @@ pub fn create_passage_context() -> TeraContext {
     context.insert("external_link_warning", &settings.external_link_warning);
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
     context.insert("switch_notice", &settings.switch_notice);
     context.insert("switch_notice_text", &settings.switch_notice_text);
 
@@ -652,15 +665,7 @@ pub fn create_collect_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "归档 - RustBlog");
     context.insert("name", "Dango");
@@ -669,7 +674,7 @@ pub fn create_collect_context() -> TeraContext {
     context.insert("external_link_warning", &settings.external_link_warning);
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
     context.insert("switch_notice", &settings.switch_notice);
     context.insert("switch_notice_text", &settings.switch_notice_text);
     context.insert("global_avatar", &settings.global_avatar);
@@ -698,15 +703,7 @@ pub fn create_about_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "关于 - RustBlog");
     context.insert("name", "Dango");
@@ -715,7 +712,7 @@ pub fn create_about_context() -> TeraContext {
     context.insert("external_link_warning", &settings.external_link_warning);
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
     context.insert("switch_notice", &settings.switch_notice);
     context.insert("switch_notice_text", &settings.switch_notice_text);
     context.insert("global_avatar", &settings.global_avatar);
@@ -744,15 +741,7 @@ pub fn create_friends_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "友链 - RustBlog");
     context.insert("year", &format_year(&now));
@@ -761,7 +750,7 @@ pub fn create_friends_context() -> TeraContext {
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
     context.insert("global_avatar", &settings.global_avatar);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
 
     // 登录状态（前端会通过 API 检查）
     context.insert("is_logged_in", &false);
@@ -788,15 +777,7 @@ pub fn create_markdown_editor_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "编辑器 - RustBlog");
     context.insert("name", "Dango");
@@ -805,7 +786,7 @@ pub fn create_markdown_editor_context() -> TeraContext {
     context.insert("external_link_warning", &settings.external_link_warning);
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
     context.insert("switch_notice", &settings.switch_notice);
     context.insert("switch_notice_text", &settings.switch_notice_text);
     context.insert("global_avatar", &settings.global_avatar);
@@ -818,15 +799,7 @@ pub fn create_admin_context() -> TeraContext {
     let mut context = TeraContext::new();
     let now = chrono::Local::now();
 
-    // 一次性批量加载所有设置，构建 TemplateSettings
-    let settings = if let Ok(pool) = crate::db::get_db_pool_sync()
-        && let Ok(conn) = pool.get()
-        && let Ok(map) = crate::db::repositories::SettingRepository::get_all_as_map(&conn)
-    {
-        build_template_settings_from_map(&map)
-    } else {
-        TemplateSettings::default()
-    };
+    let settings = get_cached_template_settings();
 
     context.insert("title", "管理后台 - RustBlog");
     context.insert("name", "Dango");
@@ -835,7 +808,7 @@ pub fn create_admin_context() -> TeraContext {
     context.insert("external_link_warning", &settings.external_link_warning);
     context.insert("external_link_whitelist", &settings.external_link_whitelist);
     context.insert("external_link_warning_text", &settings.external_link_warning_text);
-    context.insert("settings", &settings);
+    context.insert("settings", &*settings);
     context.insert("switch_notice", &settings.switch_notice);
     context.insert("switch_notice_text", &settings.switch_notice_text);
     context.insert("global_avatar", &settings.global_avatar);

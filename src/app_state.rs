@@ -38,6 +38,10 @@ pub struct AppState {
     /// 路由类型管理器（预留，用于路由存储抽象层）
     #[allow(dead_code)]
     pub route_type_manager: Option<Arc<RouteTypeManager>>,
+    /// 文章计数缓存（跨请求共享，避免每次创建 PassageRepository 时缓存丢失）
+    passage_count_cache: Arc<parking_lot::RwLock<Option<i64>>>,
+    passage_count_published_cache: Arc<parking_lot::RwLock<Option<i64>>>,
+    passage_cache_valid: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl AppState {
@@ -57,6 +61,9 @@ impl AppState {
             route_table,
             dynamic_route_service,
             route_type_manager,
+            passage_count_cache: Arc::new(parking_lot::RwLock::new(None)),
+            passage_count_published_cache: Arc::new(parking_lot::RwLock::new(None)),
+            passage_cache_valid: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 
@@ -65,9 +72,14 @@ impl AppState {
         self.repository.get_pool()
     }
 
-    /// 获取文章 Repository
+    /// 获取文章 Repository（共享计数缓存，跨请求有效）
     pub fn passage_repository(&self) -> repositories::PassageRepository {
-        repositories::PassageRepository::new(self.get_pool())
+        repositories::PassageRepository::with_shared_cache(
+            self.get_pool(),
+            self.passage_count_cache.clone(),
+            self.passage_count_published_cache.clone(),
+            self.passage_cache_valid.clone(),
+        )
     }
 
     /// 获取用户 Repository

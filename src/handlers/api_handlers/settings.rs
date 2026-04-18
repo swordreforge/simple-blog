@@ -117,6 +117,7 @@ pub async fn update_appearance(req: web::Json<serde_json::Value>) -> impl Respon
         }
     }
 
+    crate::templates::invalidate_settings_cache();
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "外观设置已更新"
@@ -466,6 +467,7 @@ pub async fn update_template(req: web::Json<serde_json::Value>) -> HttpResponse 
         }
     }
 
+    crate::templates::invalidate_settings_cache();
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "模板设置已更新"
@@ -548,6 +550,7 @@ pub async fn update_single(req: web::Json<serde_json::Value>) -> impl Responder 
         }
     }
 
+    crate::templates::invalidate_settings_cache();
     HttpResponse::Ok().json(serde_json::json!({
         "success": true,
         "message": "设置已更新"

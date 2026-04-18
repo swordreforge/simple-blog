@@ -62,6 +62,21 @@ impl PassageRepository {
         }
     }
 
+    /// 使用外部共享的计数缓存构造（供 AppState 调用，确保缓存跨请求持久）
+    pub fn with_shared_cache(
+        pool: Arc<Pool<SqliteConnectionManager>>,
+        count_cache: Arc<parking_lot::RwLock<Option<i64>>>,
+        count_published_cache: Arc<parking_lot::RwLock<Option<i64>>>,
+        cache_valid: Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
+        Self {
+            pool,
+            count_cache,
+            count_published_cache,
+            cache_valid,
+        }
+    }
+
     /// 创建文章
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let conn = self.pool.get()?;
