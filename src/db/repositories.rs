@@ -1249,6 +1249,18 @@ impl SettingRepository {
         Ok(setting)
     }
 
+    /// 批量获取所有设置，返回 key -> value 映射（一次查询代替 N 次单独查询）
+    pub fn get_all_as_map(
+        conn: &rusqlite::Connection,
+    ) -> Result<std::collections::HashMap<String, String>, Box<dyn std::error::Error>> {
+        let mut stmt = conn.prepare("SELECT key, value FROM settings")?;
+        let map = stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?
+            .filter_map(|r| r.ok())
+            .collect();
+        Ok(map)
+    }
+
     /// 设置值
     pub fn set(
         conn: &rusqlite::Connection,
