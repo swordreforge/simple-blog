@@ -6,6 +6,8 @@ use std::sync::Arc;
 
 use super::models::*;
 
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
 /// 生成唯一的 machine ID（基于主机名或随机数）
 pub fn get_machine_id() -> [u8; 6] {
     use std::collections::hash_map::DefaultHasher;
