@@ -21,82 +21,30 @@ pub fn init_db(db_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 创建连接池并优化配置
-    let manager = SqliteConnectionManager::file(db_path);
+    // 使用 with_init 确保连接池中的每个新连接都继承 PRAGMA 设置
+    let manager = SqliteConnectionManager::file(db_path).with_init(|conn| {
+        conn.execute_batch(
+            "PRAGMA busy_timeout = 30000;\
+             PRAGMA journal_mode = WAL;\
+             PRAGMA synchronous = NORMAL;\
+             PRAGMA cache_size = -64000;\
+             PRAGMA temp_store = MEMORY;\
+             PRAGMA mmap_size = 268435456;\
+             PRAGMA wal_autocheckpoint = 1000;",
+        )
+    });
     let pool = Pool::builder()
         .max_size(DB_MAX_CONNECTIONS)
         .min_idle(Some(DB_MIN_IDLE))
         .connection_timeout(std::time::Duration::from_secs(DB_CONNECTION_TIMEOUT))
         .idle_timeout(Some(std::time::Duration::from_secs(DB_IDLE_TIMEOUT)))
         .max_lifetime(Some(std::time::Duration::from_secs(DB_MAX_LIFETIME)))
-        .test_on_check_out(true) // 获取连接时测试连接是否有效
+        .test_on_check_out(false) // 本地 SQLite 文件无需每次检验连接有效性
         .build(manager)?;
 
-    // 获取连接并初始化表结构和优化设置
+    // 获取连接并初始化表结构（PRAGMAs 已由 with_init 设置）
     {
         let conn = pool.get()?;
-
-        // 设置 busy_timeout，避免数据库锁立即失败
-        conn.query_row("PRAGMA busy_timeout = 30000;", [], |_| Ok(()))?; // 30秒超时
-
-        // 启用 WAL 模式以支持更好的并发读写
-        conn.query_row("PRAGMA journal_mode = WAL;", [], |row| {
-            let mode: String = row.get(0)?;
-            Ok(mode)
-        })?;
-
-        // 增加 WAL 文件大小限制（默认为 -1，无限制）
-        {
-            let mut stmt = conn.prepare("PRAGMA wal_autocheckpoint = 1000;")?;
-            stmt.query_row([], |_| Ok(())).or_else(|e| {
-                if e.to_string().contains("Query returned no rows") {
-                    Ok(())
-                } else {
-                    Err(e)
-                }
-            })?;
-        }
-        // 优化 SQLite 性能参数
-        {
-            let mut stmt = conn.prepare("PRAGMA synchronous = NORMAL;")?;
-            stmt.query_row([], |_| Ok(())).or_else(|e| {
-                if e.to_string().contains("Query returned no rows") {
-                    Ok(())
-                } else {
-                    Err(e)
-                }
-            })?;
-        }
-        {
-            let mut stmt = conn.prepare("PRAGMA cache_size = -64000;")?;
-            stmt.query_row([], |_| Ok(())).or_else(|e| {
-                if e.to_string().contains("Query returned no rows") {
-                    Ok(())
-                } else {
-                    Err(e)
-                }
-            })?;
-        } // 64MB 缓存
-        {
-            let mut stmt = conn.prepare("PRAGMA temp_store = MEMORY;")?;
-            stmt.query_row([], |_| Ok(())).or_else(|e| {
-                if e.to_string().contains("Query returned no rows") {
-                    Ok(())
-                } else {
-                    Err(e)
-                }
-            })?;
-        } // 临时表使用内存
-        {
-            let mut stmt = conn.prepare("PRAGMA mmap_size = 268435456;")?;
-            stmt.query_row([], |_| Ok(())).or_else(|e| {
-                if e.to_string().contains("Query returned no rows") {
-                    Ok(())
-                } else {
-                    Err(e)
-                }
-            })?;
-        } // 256MB 内存映射
-
         create_tables(&conn)?;
         seed_default_data(&conn)?;
     }
