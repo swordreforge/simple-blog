@@ -110,7 +110,7 @@ impl CacheManager {
 
                 match ValkeyCacheBackend::new(url, Some("rustblog:".to_string())).await {
                     Ok(valkey) => {
-                        println!("✅ Valkey 缓存后端初始化成功");
+                        tracing::info!("✅ Valkey 缓存后端初始化成功");
 
                         // 执行健康检查
                         if let Err(e) = valkey.health_check().await {
@@ -135,7 +135,7 @@ impl CacheManager {
                 }
             }
             "local" => {
-                println!("✅ 使用本地内存缓存");
+                tracing::info!("✅ 使用本地内存缓存");
                 let local = Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                 (local, None, None)
             }
@@ -146,12 +146,12 @@ impl CacheManager {
                         Ok(valkey) => {
                             // 执行健康检查
                             if let Err(e) = valkey.health_check().await {
-                                println!("⚠️  Valkey 不可用（健康检查失败: {}），使用本地缓存", e);
+                                tracing::warn!("Valkey 不可用（健康检查失败: {}），使用本地缓存", e);
                                 let local = Arc::new(LocalCacheBackend::new(Some(10000)))
                                     as Arc<dyn CacheBackend>;
                                 (local, None, None)
                             } else {
-                                println!("✅ 自动检测到 Valkey，使用 Valkey 缓存");
+                                tracing::info!("✅ 自动检测到 Valkey，使用 Valkey 缓存");
                                 let valkey_arc = Arc::new(valkey);
                                 let valkey_dyn = Arc::clone(&valkey_arc) as Arc<dyn CacheBackend>;
                                 let local = Arc::new(LocalCacheBackend::new(Some(10000)))
@@ -160,14 +160,14 @@ impl CacheManager {
                             }
                         }
                         Err(e) => {
-                            println!("⚠️  Valkey 不可用（连接失败: {}），使用本地缓存", e);
+                            tracing::warn!("Valkey 不可用（连接失败: {}），使用本地缓存", e);
                             let local = Arc::new(LocalCacheBackend::new(Some(10000)))
                                 as Arc<dyn CacheBackend>;
                             (local, None, None)
                         }
                     }
                 } else {
-                    println!("⚠️  未配置 Valkey URL，使用本地缓存");
+                    tracing::warn!("未配置 Valkey URL，使用本地缓存");
                     let local =
                         Arc::new(LocalCacheBackend::new(Some(10000))) as Arc<dyn CacheBackend>;
                     (local, None, None)
@@ -267,9 +267,9 @@ impl CacheManager {
     pub async fn get(&self, key: &str) -> Option<String> {
         // 如果主缓存当前不健康，尝试先检查是否恢复
         if self.valkey_backend.is_some() && !self.primary_healthy.load(Ordering::Relaxed) {
-            eprintln!("🔍 Valkey 当前不健康，尝试检查恢复状态...");
+            tracing::debug!("Valkey 当前不健康，尝试检查恢复状态...");
             if self.check_health().await.is_err() {
-                eprintln!("⚠️  Valkey 仍然不健康，使用备用缓存");
+                tracing::warn!("Valkey 仍然不健康，使用备用缓存");
                 // 仍然不健康，使用备用缓存
                 if self.fallback_enabled.load(Ordering::Relaxed)
                     && let Some(fallback) = &self.fallback {
@@ -277,7 +277,7 @@ impl CacheManager {
                     }
                 return None;
             } else {
-                println!("✅ Valkey 已恢复健康状态");
+                tracing::info!("Valkey 已恢复健康状态");
             }
         }
 
@@ -287,7 +287,7 @@ impl CacheManager {
                 // 成功获取，重置失败计数器
                 let was_degraded = !self.primary_healthy.swap(true, Ordering::Relaxed);
                 if was_degraded {
-                    println!("✅ Valkey 已从降级状态恢复");
+                    tracing::info!("Valkey 已从降级状态恢复");
                 }
                 self.consecutive_failures.store(0, Ordering::Relaxed);
                 self.record_operation(false);
@@ -313,14 +313,14 @@ impl CacheManager {
                     };
 
                     if failures >= consecutive_threshold {
-                        eprintln!(
-                            "⚠️  Valkey 连续失败 {} 次（阈值: {}），触发降级",
+                        tracing::warn!(
+                            "Valkey 连续失败 {} 次（阈值: {}），触发降级",
                             failures, consecutive_threshold
                         );
                         true
                     } else if sliding_window_triggered {
-                        eprintln!(
-                            "⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
+                        tracing::warn!(
+                            "Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
                             self.degradation_config.sliding_window_failure_rate
                         );
                         true
@@ -332,7 +332,7 @@ impl CacheManager {
                 };
 
                 if should_degrade {
-                    eprintln!("🔄 Valkey 已降级到备用缓存");
+                    tracing::warn!("Valkey 已降级到备用缓存");
                     self.primary_healthy.store(false, Ordering::Relaxed);
                 }
 
@@ -352,12 +352,12 @@ impl CacheManager {
 
         // 如果主缓存当前不健康，尝试先检查是否恢复
         if self.valkey_backend.is_some() && !self.primary_healthy.load(Ordering::Relaxed) {
-            eprintln!("🔍 Valkey 当前不健康，尝试检查恢复状态...");
+            tracing::debug!("Valkey 当前不健康，尝试检查恢复状态...");
             if self.check_health().await.is_ok() {
-                println!("✅ Valkey 已恢复健康状态");
+                tracing::info!("Valkey 已恢复健康状态");
                 // 恢复了，继续尝试主缓存
             } else {
-                eprintln!("⚠️  Valkey 仍然不健康，使用备用缓存");
+                tracing::warn!("Valkey 仍然不健康，使用备用缓存");
                 // 仍然不健康，直接使用备用缓存
                 if self.fallback_enabled.load(Ordering::Relaxed)
                     && let Some(fallback) = &self.fallback {
@@ -375,7 +375,7 @@ impl CacheManager {
                 // 成功设置，重置失败计数器
                 let was_degraded = !self.primary_healthy.swap(true, Ordering::Relaxed);
                 if was_degraded {
-                    println!("✅ Valkey 已从降级状态恢复");
+                    tracing::info!("Valkey 已从降级状态恢复");
                 }
                 self.consecutive_failures.store(0, Ordering::Relaxed);
                 self.record_operation(false);
@@ -411,13 +411,9 @@ impl CacheManager {
                     };
 
                     if failures >= threshold {
-                        eprintln!(
-                            "⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}, 触发降级",
-                            if is_critical_error {
-                                "严重错误"
-                            } else {
-                                "普通错误"
-                            },
+                        tracing::warn!(
+                            "Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}, 触发降级",
+                            if is_critical_error { "严重错误" } else { "普通错误" },
                             failures,
                             threshold,
                             if is_critical_error {
@@ -429,19 +425,15 @@ impl CacheManager {
                         );
                         true
                     } else if sliding_window_triggered {
-                        eprintln!(
-                            "⚠️  Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
+                        tracing::warn!(
+                            "Valkey 滑动窗口失败率超过阈值（{}%），触发降级",
                             self.degradation_config.sliding_window_failure_rate
                         );
                         true
                     } else {
-                        eprintln!(
-                            "⚠️  Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}",
-                            if is_critical_error {
-                                "严重错误"
-                            } else {
-                                "普通错误"
-                            },
+                        tracing::warn!(
+                            "Valkey 主缓存失败 ({}, 连续 {}/{}, 阈值: {}): {}",
+                            if is_critical_error { "严重错误" } else { "普通错误" },
                             failures,
                             threshold,
                             if is_critical_error {
@@ -458,7 +450,7 @@ impl CacheManager {
                 };
 
                 if should_degrade {
-                    eprintln!("🔄 Valkey 已降级到备用缓存");
+                    tracing::warn!("Valkey 已降级到备用缓存");
                     self.primary_healthy.store(false, Ordering::Relaxed);
                 }
 
@@ -521,7 +513,7 @@ impl CacheManager {
                 // 主缓存删除失败，尝试仅删除备用缓存
                 if self.fallback_enabled.load(Ordering::Relaxed)
                     && let Some(fallback) = &self.fallback {
-                        eprintln!("⚠️  主缓存 delete_pattern 失败: {}, 仅删除备用缓存", e);
+                        tracing::warn!("主缓存 delete_pattern 失败: {}, 仅删除备用缓存", e);
                         return fallback.delete_pattern(pattern).await;
                     }
                 Err(e)
@@ -611,7 +603,7 @@ impl CacheManager {
                 Ok(()) => {
                     let was_unhealthy = !primary_healthy.swap(true, Ordering::Relaxed);
                     if was_unhealthy {
-                        println!("✅ Valkey 连接已恢复");
+                        tracing::info!("Valkey 连接已恢复");
                         // 重置失败计数器
                         consecutive_failures.store(0, Ordering::Relaxed);
                         // 恢复正常检查频率
@@ -621,13 +613,13 @@ impl CacheManager {
                 Err(e) => {
                     let was_healthy = primary_healthy.swap(false, Ordering::Relaxed);
                     if was_healthy {
-                        eprintln!("⚠️  Valkey 健康检查失败: {}", e);
+                        tracing::warn!("Valkey 健康检查失败: {}", e);
                         // 切换到快速检查模式
                         quick_check = true;
                     }
                     // 健康检查失败也算一次失败
                     let failures = consecutive_failures.fetch_add(1, Ordering::Relaxed) + 1;
-                    eprintln!("⚠️  Valkey 连续失败次数: {}", failures);
+                    tracing::warn!("Valkey 连续失败次数: {}", failures);
                 }
             }
         }
@@ -647,13 +639,13 @@ impl CacheManager {
         loop {
             interval.tick().await;
 
-            println!("🔄 尝试重新连接 Valkey...");
+            tracing::info!("尝试重新连接 Valkey...");
 
             match ValkeyCacheBackend::new(valkey_url, Some("rustblog:".to_string())).await {
                 Ok(valkey) => {
                     match valkey.health_check().await {
                         Ok(()) => {
-                            println!("✅ Valkey 重连成功，已恢复");
+                            tracing::info!("Valkey 重连成功，已恢复");
                             // 标记为健康
                             primary_healthy.store(true, Ordering::Relaxed);
                             // 重置失败计数器
@@ -663,12 +655,12 @@ impl CacheManager {
                             break;
                         }
                         Err(e) => {
-                            eprintln!("⚠️  Valkey 重连后健康检查失败: {}", e);
+                            tracing::warn!("Valkey 重连后健康检查失败: {}", e);
                         }
                     }
                 }
                 Err(e) => {
-                    eprintln!("⚠️  Valkey 重连失败: {}", e);
+                    tracing::warn!("Valkey 重连失败: {}", e);
                 }
             }
         }

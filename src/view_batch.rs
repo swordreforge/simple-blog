@@ -123,14 +123,14 @@ impl ViewBatchProcessor {
                                 // 达到批量大小，立即写入
                                 if batch.len() >= adaptive_state.current_batch_size
                                     && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
-                                        eprintln!("批量写入阅读记录失败: {}", e);
+                                        tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                             }
                             None => {
                                 // 通道关闭，写入剩余记录并退出
                                 if !batch.is_empty()
                                     && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
-                                        eprintln!("批量写入阅读记录失败: {}", e);
+                                        tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                                 break;
                             }
@@ -141,7 +141,7 @@ impl ViewBatchProcessor {
                         // 超时，写入当前批次
                         if !batch.is_empty()
                             && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
-                                eprintln!("批量写入阅读记录失败: {}", e);
+                                tracing::error!("批量写入阅读记录失败: {}", e);
                             }
                     }
                     // 自适应调整检查
@@ -162,14 +162,14 @@ impl ViewBatchProcessor {
                                 // 达到批量大小，立即写入
                                 if batch.len() >= config.batch_size
                                     && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
-                                        eprintln!("批量写入阅读记录失败: {}", e);
+                                        tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                             }
                             None => {
                                 // 通道关闭，写入剩余记录并退出
                                 if !batch.is_empty()
                                     && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
-                                        eprintln!("批量写入阅读记录失败: {}", e);
+                                        tracing::error!("批量写入阅读记录失败: {}", e);
                                     }
                                 break;
                             }
@@ -180,7 +180,7 @@ impl ViewBatchProcessor {
                         // 超时，写入当前批次
                         if !batch.is_empty()
                             && let Err(e) = Self::flush_batch(&pool, &mut batch).await {
-                                eprintln!("批量写入阅读记录失败: {}", e);
+                                tracing::error!("批量写入阅读记录失败: {}", e);
                             }
                     }
                 }
@@ -209,7 +209,7 @@ impl ViewBatchProcessor {
         let new_batch_size = new_batch_size.clamp(config.min_batch_size, config.max_batch_size);
 
         if new_batch_size != state.current_batch_size {
-            println!(
+            tracing::info!(
                 "📊 自适应调整批量大小: {} -> {} (记录速率: {:.1}/秒)",
                 state.current_batch_size, new_batch_size, records_per_second
             );
@@ -219,7 +219,7 @@ impl ViewBatchProcessor {
 
             // 如果新批量大小小于当前批次大小，立即写入
             if batch.len() >= new_batch_size {
-                println!("⚡ 批量大小调整，立即写入当前批次");
+                tracing::debug!("⚡ 批量大小调整，立即写入当前批次");
             }
         }
 
@@ -249,7 +249,7 @@ impl ViewBatchProcessor {
         }
     }
 
-    /// 刷新批次到数据库
+    /// 刷新批次到数据库（使用单条多行 INSERT 语句提升插入效率）
     async fn flush_batch(
         pool: &Arc<Pool<SqliteConnectionManager>>,
         batch: &mut Vec<ViewRecord>,
@@ -260,36 +260,49 @@ impl ViewBatchProcessor {
 
         let conn = pool.get()?;
 
-        // 开始事务
-        let tx = conn.unchecked_transaction()?;
+        // article_views 表的插入字段数（passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at）
+        const FIELDS_PER_RECORD: usize = 9;
 
-        // 批量插入
+        // 构建多行 INSERT 语句，单次 SQL 插入所有记录，减少 SQL 解析和执行次数
+        let n = batch.len();
+        let row_placeholder = "(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        let placeholders = std::iter::repeat(row_placeholder)
+            .take(n)
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "INSERT INTO article_views (passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at) VALUES {}",
+            placeholders
+        );
+
+        // 将所有记录的参数展开为扁平列表（与 rusqlite chrono feature 格式保持一致）
+        // rusqlite 的 chrono feature 使用 "%Y-%m-%dT%H:%M:%S%.fZ" 格式存储 DateTime<Utc>
+        let mut params: Vec<rusqlite::types::Value> = Vec::with_capacity(n * FIELDS_PER_RECORD);
         for record in batch.iter() {
+            use rusqlite::types::Value;
             let view_date = record.view_time.format("%Y-%m-%d").to_string();
-            tx.execute(
-                "INSERT INTO article_views (passage_uuid, ip, user_agent, country, city, region, view_date, view_time, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                rusqlite::params![
-                    &record.passage_uuid,
-                    &record.ip,
-                    &record.user_agent,
-                    &record.country,
-                    &record.city,
-                    &record.region,
-                    &view_date,
-                    &record.view_time,
-                    &record.view_time,
-                ],
-            )?;
+            let view_time_str = record.view_time.format("%Y-%m-%dT%H:%M:%S%.fZ").to_string();
+            params.push(Value::Text(record.passage_uuid.clone()));
+            params.push(Value::Text(record.ip.clone()));
+            params.push(match &record.user_agent {
+                Some(s) => Value::Text(s.clone()),
+                None => Value::Null,
+            });
+            params.push(Value::Text(record.country.clone()));
+            params.push(Value::Text(record.city.clone()));
+            params.push(Value::Text(record.region.clone()));
+            params.push(Value::Text(view_date));
+            params.push(Value::Text(view_time_str.clone()));
+            params.push(Value::Text(view_time_str));
+            debug_assert_eq!(params.len() % FIELDS_PER_RECORD, 0, "params count should be multiple of FIELDS_PER_RECORD");
         }
 
-        // 提交事务
-        tx.commit()?;
+        conn.execute(&sql, rusqlite::params_from_iter(params.iter()))?;
 
         let count = batch.len();
         batch.clear();
 
-        println!("✅ 批量写入 {} 条阅读记录", count);
+        tracing::info!("批量写入 {} 条阅读记录", count);
         Ok(())
     }
 }
