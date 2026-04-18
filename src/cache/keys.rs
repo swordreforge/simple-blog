@@ -99,7 +99,6 @@ pub struct CacheKeyBuilder {
 impl CacheKeyBuilder {
     /// 创建新的缓存键构建器
     #[allow(dead_code)]
-    #[no_panic]
     pub fn new(namespace: CacheNamespace, resource: CacheResource) -> Self {
         Self {
             namespace,
