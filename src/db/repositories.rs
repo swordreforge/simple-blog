@@ -82,7 +82,22 @@ impl PassageRepository {
     /// 创建文章
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
         let pool = self.pool.clone();
-    let passage = passage.clone();
+        // 只提取写操作需要的字段，避免克隆完整的 Passage 结构体（包含大字符串）
+        let title = passage.title.clone();
+        let content = passage.content.clone();
+        let original_content = passage.original_content.clone();
+        let summary = passage.summary.clone();
+        let author = passage.author.clone();
+        let tags = passage.tags.clone();
+        let category = passage.category.clone();
+        let status = passage.status.clone();
+        let file_path = passage.file_path.clone();
+        let visibility = passage.visibility.clone();
+        let is_scheduled = passage.is_scheduled;
+        let published_at = passage.published_at;
+        let cover_image = passage.cover_image.clone();
+        let created_at = passage.created_at;
+        let updated_at = passage.updated_at;
         let result = tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         let conn = pool.get()?;
 
@@ -93,7 +108,7 @@ impl PassageRepository {
         use crate::services::summarize_service::SummarizeService;
         let summarize = match SettingRepository::get(&conn, "passage_summarize_enabled") {
             Ok(Some(setting)) if setting.value == "true" => Some(
-                SummarizeService::generate_summary_from_markdown(&passage.content),
+                SummarizeService::generate_summary_from_markdown(&content),
             ),
             _ => None,
         };
@@ -103,22 +118,22 @@ impl PassageRepository {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 &uuid,
-                &passage.title,
-                &passage.content,
-                &passage.original_content,
-                &passage.summary,
+                &title,
+                &content,
+                &original_content,
+                &summary,
                 &summarize,
-                &passage.author,
-                &passage.tags,
-                &passage.category,
-                &passage.status,
-                &passage.file_path,
-                &passage.visibility,
-                &passage.is_scheduled,
-                &passage.published_at,
-                &passage.cover_image,
-                &passage.created_at,
-                &passage.updated_at,
+                &author,
+                &tags,
+                &category,
+                &status,
+                &file_path,
+                &visibility,
+                &is_scheduled,
+                &published_at,
+                &cover_image,
+                &created_at,
+                &updated_at,
             ],
         )?;
         // 使缓存失效
@@ -604,7 +619,8 @@ impl PassageRepository {
         sql_params.push(&limit);
         sql_params.push(&offset);
 
-        let mut stmt = conn.prepare_cached(&sql)?;
+        // 动态 SQL 使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&sql)?;
         let passages = stmt
             .query_map(sql_params.as_slice(), |row| {
                 Ok(Passage {
@@ -648,29 +664,50 @@ impl PassageRepository {
         tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         let conn = pool.get()?;
 
-        // 构建 WHERE 条件
-        let mut conditions = vec!["status = 'published'".to_string()];
-        // 使用SmallVec优化小数组，减少堆分配（最多3个参数：year, month, day）
-        let mut params: SmallVec<[Box<dyn rusqlite::ToSql>; 3]> = SmallVec::new();
-
-        if let Some(y) = year {
-            conditions.push("created_year = ?".to_string());
-            params.push(Box::new(y));
-        }
-        if let Some(m) = month {
-            conditions.push("created_month = ?".to_string());
-            params.push(Box::new(m));
-        }
-        if let Some(d) = day {
-            conditions.push("created_day = ?".to_string());
-            params.push(Box::new(d));
-        }
-
-        let where_clause = conditions.join(" AND ");
-        let sql = format!("SELECT COUNT(*) FROM passages WHERE {}", where_clause);
-
-        let sql_params: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
-        let count: i64 = conn.query_row(&sql, sql_params.as_slice(), |row| row.get(0))?;
+        // 穷举 year/month/day 的 8 种组合，全部使用固定 SQL + prepare_cached，
+        // 消除动态字符串拼接和 Box<dyn ToSql> 堆分配，并保持高缓存命中率
+        let count: i64 = match (year, month, day) {
+            (None, None, None) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published'",
+                [],
+                |row| row.get(0),
+            )?,
+            (Some(y), None, None) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_year = ?",
+                params![y],
+                |row| row.get(0),
+            )?,
+            (None, Some(m), None) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_month = ?",
+                params![m],
+                |row| row.get(0),
+            )?,
+            (None, None, Some(d)) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_day = ?",
+                params![d],
+                |row| row.get(0),
+            )?,
+            (Some(y), Some(m), None) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_year = ? AND created_month = ?",
+                params![y, m],
+                |row| row.get(0),
+            )?,
+            (Some(y), None, Some(d)) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_year = ? AND created_day = ?",
+                params![y, d],
+                |row| row.get(0),
+            )?,
+            (None, Some(m), Some(d)) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_month = ? AND created_day = ?",
+                params![m, d],
+                |row| row.get(0),
+            )?,
+            (Some(y), Some(m), Some(d)) => conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published' AND created_year = ? AND created_month = ? AND created_day = ?",
+                params![y, m, d],
+                |row| row.get(0),
+            )?,
+        };
 
         Ok(count)
         })
@@ -682,16 +719,31 @@ impl PassageRepository {
     /// 更新文章
     pub async fn update(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
         let pool = self.pool.clone();
-    let passage = passage.clone();
+        // 只提取写操作需要的字段，避免克隆完整的 Passage 结构体（包含大字符串）
+        let id = passage.id;
+        let title = passage.title.clone();
+        let content = passage.content.clone();
+        let original_content = passage.original_content.clone();
+        let summary = passage.summary.clone();
+        let author = passage.author.clone();
+        let tags = passage.tags.clone();
+        let category = passage.category.clone();
+        let status = passage.status.clone();
+        let file_path = passage.file_path.clone();
+        let visibility = passage.visibility.clone();
+        let is_scheduled = passage.is_scheduled;
+        let published_at = passage.published_at;
+        let cover_image = passage.cover_image.clone();
+        let updated_at = passage.updated_at;
         let result = tokio::task::spawn_blocking(move || -> Result<(), DbError> {
-        let id = passage.id.ok_or("文章 ID 不能为空")?;
+        let id = id.ok_or("文章 ID 不能为空")?;
         let conn = pool.get()?;
 
         // 检查是否启用文章摘要功能
         use crate::services::summarize_service::SummarizeService;
         let summarize = match SettingRepository::get(&conn, "passage_summarize_enabled") {
             Ok(Some(setting)) if setting.value == "true" => Some(
-                SummarizeService::generate_summary_from_markdown(&passage.content),
+                SummarizeService::generate_summary_from_markdown(&content),
             ),
             _ => None,
         };
@@ -700,21 +752,21 @@ impl PassageRepository {
             "UPDATE passages SET title = ?, content = ?, original_content = ?, summary = ?, summarize = ?, author = ?, tags = ?, category = ?, status = ?, file_path = ?, visibility = ?, is_scheduled = ?, published_at = ?, cover_image = ?, updated_at = ? 
              WHERE id = ?",
             params![
-                &passage.title,
-                &passage.content,
-                &passage.original_content,
-                &passage.summary,
+                &title,
+                &content,
+                &original_content,
+                &summary,
                 &summarize,
-                &passage.author,
-                &passage.tags,
-                &passage.category,
-                &passage.status,
-                &passage.file_path,
-                &passage.visibility,
-                &passage.is_scheduled,
-                &passage.published_at,
-                &passage.cover_image,
-                &passage.updated_at,
+                &author,
+                &tags,
+                &category,
+                &status,
+                &file_path,
+                &visibility,
+                &is_scheduled,
+                &published_at,
+                &cover_image,
+                &updated_at,
                 id,
             ],
         )?;
@@ -884,7 +936,8 @@ impl PassageRepository {
         );
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
-        let mut stmt = conn.prepare_cached(&sql)?;
+        // 动态 IN 子句使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&sql)?;
         let passages = stmt
             .query_map(params.as_slice(), |row| {
                 Ok(Passage {
@@ -2479,7 +2532,8 @@ impl AttachmentRepository {
             .map(|uuid| uuid as &dyn rusqlite::ToSql)
             .collect();
 
-        let mut stmt = conn.prepare_cached(&sql)?;
+        // 动态 IN 子句使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&sql)?;
         let attachments = stmt
             .query_map(params.as_slice(), |row| {
                 Ok(Attachment {
@@ -2617,7 +2671,8 @@ impl AttachmentRepository {
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
 
-        let mut stmt = conn.prepare_cached(&sql)?;
+        // 动态 IN 子句使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&sql)?;
         let attachments = stmt
             .query_map(params.as_slice(), |row| {
                 Ok(Attachment {
@@ -3337,7 +3392,8 @@ impl DynamicRouteRepository {
             where_clause
         );
 
-        let mut stmt = conn.prepare_cached(&query)?;
+        // 动态 WHERE 子句使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&query)?;
 
         let mut final_params: Vec<Box<dyn rusqlite::ToSql>> = params;
         final_params.push(Box::new(limit));
@@ -4052,7 +4108,8 @@ impl PassageVersionRepository {
             placeholders.join(",")
         );
         
-        let mut stmt = conn.prepare_cached(&sql)?;
+        // 动态 IN 子句使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&sql)?;
         let params: Vec<&dyn rusqlite::ToSql> = ids.iter()
             .map(|id| id as &dyn rusqlite::ToSql)
             .collect();
@@ -4267,7 +4324,8 @@ impl PassageVersionRepository {
                 }
             };
 
-        let mut stmt = conn.prepare_cached(&sql)?;
+        // 动态排序字段/方向使用 prepare 而非 prepare_cached，避免缓存膨胀
+        let mut stmt = conn.prepare(&sql)?;
 
         let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter()
             .map(|b| b.as_ref())

@@ -36,6 +36,8 @@ pub struct BatchConfig {
     pub max_batch_size: usize,
     /// 自适应调整间隔（秒）
     pub adaptive_interval: u64,
+    /// 通道容量（有界通道，防止内存无限增长）
+    pub channel_capacity: usize,
 }
 
 impl Default for BatchConfig {
@@ -47,13 +49,14 @@ impl Default for BatchConfig {
             min_batch_size: 50,    // 最小50条
             max_batch_size: 500,   // 最大500条
             adaptive_interval: 30, // 每30秒调整一次
+            channel_capacity: 4096, // 有界通道容量，超出时触发背压
         }
     }
 }
 
 /// 批量处理器
 pub struct ViewBatchProcessor {
-    tx: mpsc::UnboundedSender<ViewRecord>,
+    tx: mpsc::Sender<ViewRecord>,
     _handle: tokio::task::JoinHandle<()>,
 }
 
@@ -71,7 +74,8 @@ pub(crate) struct AdaptiveState {
 impl ViewBatchProcessor {
     /// 创建新的批量处理器
     pub fn new(pool: Arc<Pool<SqliteConnectionManager>>, config: BatchConfig) -> Self {
-        let (tx, rx) = mpsc::unbounded_channel::<ViewRecord>();
+        // 使用有界通道，防止流量突增时内存无限增长
+        let (tx, rx) = mpsc::channel::<ViewRecord>(config.channel_capacity);
 
         let handle = tokio::spawn(async move {
             Self::batch_processor(pool, rx, config).await;
@@ -83,18 +87,18 @@ impl ViewBatchProcessor {
         }
     }
 
-    /// 记录阅读（异步发送）
+    /// 记录阅读（异步发送，通道满时返回 TrySendError::Full 实现背压）
     pub fn record_view(
         &self,
         record: ViewRecord,
-    ) -> Result<(), Box<mpsc::error::SendError<ViewRecord>>> {
-        self.tx.send(record).map_err(Box::new)
+    ) -> Result<(), mpsc::error::TrySendError<ViewRecord>> {
+        self.tx.try_send(record)
     }
 
     /// 批量处理器主循环
     async fn batch_processor(
         pool: Arc<Pool<SqliteConnectionManager>>,
-        mut rx: mpsc::UnboundedReceiver<ViewRecord>,
+        mut rx: mpsc::Receiver<ViewRecord>,
         config: BatchConfig,
     ) {
         let mut adaptive_state = AdaptiveState {
@@ -366,6 +370,7 @@ mod tests {
         assert_eq!(config.min_batch_size, 50);
         assert_eq!(config.max_batch_size, 500);
         assert_eq!(config.adaptive_interval, 30);
+        assert_eq!(config.channel_capacity, 4096);
     }
 
     #[test]
@@ -417,6 +422,7 @@ mod tests {
             min_batch_size: 50,
             max_batch_size: 500,
             adaptive_interval: 30,
+            channel_capacity: 4096,
         };
 
         let mut state = AdaptiveState {
