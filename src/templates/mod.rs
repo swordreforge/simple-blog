@@ -1,5 +1,6 @@
 use crate::utils::unsafe_utils::{format_date, format_datetime_short, format_year};
 use actix_web::HttpResponse;
+use tracing::error;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tera::{Context as TeraContext, Tera};
@@ -538,7 +539,7 @@ pub async fn render_template(template_name: &str, context: &TeraContext) -> Http
             .insert_header(("Cache-Control", "no-cache"))
             .body(html),
         Err(e) => {
-            eprintln!("Template rendering error: {}", e);
+            error!("Template rendering error: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to render template: {}", e))
         }
     }
@@ -557,7 +558,7 @@ pub async fn render_template_with_status(
             .insert_header(("Cache-Control", "no-cache"))
             .body(html),
         Err(e) => {
-            eprintln!("Template rendering error: {}", e);
+            error!("Template rendering error: {}", e);
             HttpResponse::build(status_code)
                 .content_type("text/plain; charset=utf-8")
                 .body(format!("Failed to render template: {}", e))
