@@ -6,6 +6,8 @@ use std::sync::Arc;
 
 use super::models::*;
 
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
 /// 生成唯一的 machine ID（基于主机名或随机数）
 pub fn get_machine_id() -> [u8; 6] {
     use std::collections::hash_map::DefaultHasher;
@@ -79,7 +81,10 @@ impl PassageRepository {
 
     /// 创建文章
     pub async fn create(&self, passage: &Passage) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let passage = passage.clone();
+        let result = tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
 
         // 生成 Flake UUID（使用基于主机名的唯一 machine ID）
         let uuid = crate::id_generator::generate_unique_id();
@@ -117,13 +122,20 @@ impl PassageRepository {
             ],
         )?;
         // 使缓存失效
-        self.invalidate_cache();
         Ok(conn.last_insert_rowid())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })?;
+        self.invalidate_cache();
+        Ok(result)
     }
 
     /// 根据 ID 获取文章
     pub async fn get_by_id(&self, id: i64) -> Result<Passage, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Passage, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE id = ?"
@@ -153,11 +165,18 @@ impl PassageRepository {
         })?;
 
         Ok(passage)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据 UUID 获取文章
     pub async fn get_by_uuid(&self, uuid: &str) -> Result<Passage, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let uuid = uuid.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Passage, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE uuid = ?"
@@ -187,6 +206,10 @@ impl PassageRepository {
         })?;
 
         Ok(passage)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据文件路径获取文章
@@ -194,7 +217,10 @@ impl PassageRepository {
         &self,
         file_path: &str,
     ) -> Result<Passage, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let file_path = file_path.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Passage, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE file_path = ?"
@@ -224,6 +250,10 @@ impl PassageRepository {
         })?;
 
         Ok(passage)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有文章
@@ -232,7 +262,9 @@ impl PassageRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages ORDER BY created_at DESC LIMIT ? OFFSET ?"
@@ -264,6 +296,10 @@ impl PassageRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(passages)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取已发布的文章
@@ -272,7 +308,9 @@ impl PassageRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
              FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
@@ -304,6 +342,10 @@ impl PassageRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(passages)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 使用游标分页获取已发布的文章（性能优化）
@@ -313,7 +355,9 @@ impl PassageRepository {
         cursor: Option<String>,
         limit: i64,
     ) -> Result<(Vec<Passage>, Option<String>), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(Vec<Passage>, Option<String>), DbError> {
+        let conn = pool.get()?;
 
         if let Some(cursor_str) = cursor {
             // 解析游标（支持新旧两种格式：'|' 和 ':'）
@@ -436,13 +480,19 @@ impl PassageRepository {
 
             Ok((passages, next_cursor))
         }
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取最新一篇已发布的文章
     pub async fn get_latest_published(
         &self,
     ) -> Result<Option<Passage>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Option<Passage>, DbError> {
+        let conn = pool.get()?;
 
         let query = r#"
 
@@ -503,6 +553,10 @@ impl PassageRepository {
             .optional()?;
 
         Ok(passage)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 按日期获取已发布的文章（支持年、月、日筛选）
@@ -514,7 +568,9 @@ impl PassageRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
+        let conn = pool.get()?;
 
         // 构建 WHERE 条件
         // 最多 4 个条件（status + year + month + day），每个约 20 字符
@@ -575,6 +631,10 @@ impl PassageRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(passages)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 统计指定日期的文章数量
@@ -584,7 +644,9 @@ impl PassageRepository {
         month: Option<i32>,
         day: Option<i32>,
     ) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
 
         // 构建 WHERE 条件
         let mut conditions = vec!["status = 'published'".to_string()];
@@ -611,12 +673,19 @@ impl PassageRepository {
         let count: i64 = conn.query_row(&sql, sql_params.as_slice(), |row| row.get(0))?;
 
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 更新文章
     pub async fn update(&self, passage: &Passage) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let passage = passage.clone();
+        let result = tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = passage.id.ok_or("文章 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
 
         // 检查是否启用文章摘要功能
         use crate::services::summarize_service::SummarizeService;
@@ -650,25 +719,40 @@ impl PassageRepository {
             ],
         )?;
         // 使缓存失效
-        self.invalidate_cache();
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })?;
+        self.invalidate_cache();
+        Ok(result)
     }
 
     /// 根据 UUID 删除文章
     pub async fn delete_by_uuid(&self, uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let uuid = uuid.to_owned();
+        let result = tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM passages WHERE uuid = ?", params![uuid])?;
         // 使缓存失效
-        self.invalidate_cache();
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })?;
+        self.invalidate_cache();
+        Ok(result)
     }
 
     /// 批量删除文章
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        let result = tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -682,8 +766,13 @@ impl PassageRepository {
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         // 使缓存失效
-        self.invalidate_cache();
         Ok(affected as i64)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })?;
+        self.invalidate_cache();
+        Ok(result)
     }
 
     /// 获取文章总数（使用缓存优化）
@@ -697,15 +786,20 @@ impl PassageRepository {
         }
 
         // 缓存未命中，查询数据库
-        let conn = self.pool.get()?;
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
-
+        let pool = self.pool.clone();
+        let count = tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row("SELECT COUNT(*) FROM passages", [], |row| row.get(0))?;
+            Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })?;
         // 更新缓存
         let mut cache = self.count_cache.write();
         *cache = Some(count);
         self.cache_valid
             .store(true, std::sync::atomic::Ordering::Relaxed);
-
         Ok(count)
     }
 
@@ -720,19 +814,24 @@ impl PassageRepository {
         }
 
         // 缓存未命中，查询数据库
-        let conn = self.pool.get()?;
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM passages WHERE status = 'published'",
-            [],
-            |row| row.get(0),
-        )?;
-
+        let pool = self.pool.clone();
+        let count = tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM passages WHERE status = 'published'",
+                [],
+                |row| row.get(0),
+            )?;
+            Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })?;
         // 更新缓存
         let mut cache = self.count_published_cache.write();
         *cache = Some(count);
         self.cache_valid
             .store(true, std::sync::atomic::Ordering::Relaxed);
-
         Ok(count)
     }
 
@@ -744,12 +843,18 @@ impl PassageRepository {
 
     /// 获取所有分类
     pub async fn get_all_categories(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<String>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT DISTINCT category FROM passages WHERE category IS NOT NULL AND category != '' ORDER BY category")?;
         let categories = stmt
             .query_map([], |row| row.get(0))?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(categories)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 批量获取文章（修复 N+1 查询问题）
@@ -757,10 +862,13 @@ impl PassageRepository {
         &self,
         ids: &[i64],
     ) -> Result<Vec<Passage>, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let ids = ids.to_vec();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -802,11 +910,17 @@ impl PassageRepository {
             })?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(passages)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取归档统计（优化归档页面查询）
     pub async fn get_archive_stats(&self) -> Result<Vec<ArchiveStats>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<ArchiveStats>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             r#"
             SELECT
@@ -831,11 +945,17 @@ impl PassageRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(stats)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取标签统计（优化标签统计查询）
     pub async fn get_tag_stats(&self) -> Result<Vec<TagStats>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<TagStats>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             r#"
             WITH tag_counts AS (
@@ -867,6 +987,10 @@ impl PassageRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(stats)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -882,7 +1006,10 @@ impl CommentRepository {
 
     /// 创建评论
     pub async fn create(&self, comment: &Comment) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let comment = comment.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO comments (username, content, passage_uuid, created_at) VALUES (?, ?, ?, ?)",
             params![
@@ -893,6 +1020,10 @@ impl CommentRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据文章 UUID 获取评论
@@ -902,7 +1033,10 @@ impl CommentRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let passage_uuid = passage_uuid.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Comment>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, content, passage_uuid, created_at FROM comments WHERE passage_uuid = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
@@ -920,6 +1054,10 @@ impl CommentRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(comments)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有评论
@@ -928,7 +1066,9 @@ impl CommentRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Comment>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, content, passage_uuid, created_at FROM comments ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
@@ -946,21 +1086,33 @@ impl CommentRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(comments)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除评论
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM comments WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 批量删除评论
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -974,13 +1126,23 @@ impl CommentRepository {
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取评论总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM comments", [], |row| row.get(0))?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据文章 UUID 获取评论数
@@ -988,13 +1150,20 @@ impl CommentRepository {
         &self,
         passage_uuid: &str,
     ) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let passage_uuid = passage_uuid.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM comments WHERE passage_uuid = ?",
             params![passage_uuid],
             |row| row.get(0),
         )?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -1013,7 +1182,9 @@ impl ArticleViewRepository {
         &self,
         limit: i64,
     ) -> Result<Vec<PopularArticleStats>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<PopularArticleStats>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT p.id, p.title, p.author, COUNT(av.id) as view_count FROM passages p 
              LEFT JOIN article_views av ON p.uuid = av.passage_uuid 
@@ -1032,6 +1203,10 @@ impl ArticleViewRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(articles)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取阅读来源（按国家统计）
@@ -1039,7 +1214,9 @@ impl ArticleViewRepository {
         &self,
         days: i64,
     ) -> Result<Vec<ViewSourceStats>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<ViewSourceStats>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT country, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
@@ -1056,6 +1233,10 @@ impl ArticleViewRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(sources)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取阅读趋势
@@ -1063,7 +1244,9 @@ impl ArticleViewRepository {
         &self,
         days: i64,
     ) -> Result<Vec<ViewTrendStats>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<ViewTrendStats>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT view_date, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
@@ -1080,6 +1263,10 @@ impl ArticleViewRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(trend)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取单篇文章的统计信息
@@ -1088,10 +1275,13 @@ impl ArticleViewRepository {
         passage_uuid: &str,
         days: i64,
     ) -> Result<ArticleStatsData, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let passage_uuid = passage_uuid.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<ArticleStatsData, DbError> {
+        let conn = pool.get()?;
 
         // 获取文章信息
-        let passage = self.pool.get()?.query_row(
+        let passage = pool.get()?.query_row(
             "SELECT id, title FROM passages WHERE uuid = ?",
             params![passage_uuid],
             |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?)),
@@ -1125,6 +1315,10 @@ impl ArticleViewRepository {
             unique_visitors,
             avg_duration,
         })
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取按城市统计的阅读数据
@@ -1132,7 +1326,9 @@ impl ArticleViewRepository {
         &self,
         days: i64,
     ) -> Result<Vec<CityStatsData>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<CityStatsData>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT city, country, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
@@ -1150,6 +1346,10 @@ impl ArticleViewRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(cities)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取按IP统计的访问数据
@@ -1157,7 +1357,9 @@ impl ArticleViewRepository {
         &self,
         days: i64,
     ) -> Result<Vec<IPStatsData>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<IPStatsData>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT ip, country, city, region, COUNT(*) as count, 
                     MIN(view_time) as first_visit, MAX(view_time) as last_visit 
@@ -1181,6 +1383,10 @@ impl ArticleViewRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(ips)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -1312,7 +1518,10 @@ impl CategoryRepository {
 
     /// 创建分类
     pub async fn create(&self, category: &Category) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let category = category.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO categories (name, description, icon, sort_order, is_enabled, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -1327,11 +1536,17 @@ impl CategoryRepository {
             ],
         )?;
         Ok(conn.last_insert_rowid())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据 ID 获取分类
     pub async fn get_by_id(&self, id: i64) -> Result<Category, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Category, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
              FROM categories WHERE id = ?",
@@ -1351,11 +1566,18 @@ impl CategoryRepository {
         })?;
 
         Ok(category)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据名称获取分类
     pub async fn get_by_name(&self, name: &str) -> Result<Category, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let name = name.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Category, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
              FROM categories WHERE name = ?",
@@ -1375,6 +1597,10 @@ impl CategoryRepository {
         })?;
 
         Ok(category)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有分类
@@ -1383,7 +1609,9 @@ impl CategoryRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Category>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Category>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at 
              FROM categories ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?",
@@ -1405,12 +1633,19 @@ impl CategoryRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(categories)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 更新分类
     pub async fn update(&self, category: &Category) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let category = category.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = category.id.ok_or("分类 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE categories SET name = ?, description = ?, icon = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
              WHERE id = ?",
@@ -1425,21 +1660,33 @@ impl CategoryRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除分类
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM categories WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 批量删除分类
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -1453,13 +1700,23 @@ impl CategoryRepository {
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取分类总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM categories", [], |row| row.get(0))?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -1475,7 +1732,10 @@ impl TagRepository {
 
     /// 创建标签
     pub async fn create(&self, tag: &Tag) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let tag = tag.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO tags (name, description, color, category_id, sort_order, is_enabled, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1491,11 +1751,17 @@ impl TagRepository {
             ],
         )?;
         Ok(conn.last_insert_rowid())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据 ID 获取标签
     pub async fn get_by_id(&self, id: i64) -> Result<Tag, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Tag, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags WHERE id = ?"
@@ -1516,11 +1782,18 @@ impl TagRepository {
         })?;
 
         Ok(tag)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据名称获取标签
     pub async fn get_by_name(&self, name: &str) -> Result<Tag, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let name = name.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Tag, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags WHERE name = ?"
@@ -1541,6 +1814,10 @@ impl TagRepository {
         })?;
 
         Ok(tag)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有标签
@@ -1549,7 +1826,9 @@ impl TagRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Tag>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Tag>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?"
@@ -1572,12 +1851,19 @@ impl TagRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(tags)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 更新标签
     pub async fn update(&self, tag: &Tag) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let tag = tag.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = tag.id.ok_or("标签 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE tags SET name = ?, description = ?, color = ?, category_id = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
              WHERE id = ?",
@@ -1593,21 +1879,33 @@ impl TagRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除标签
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM tags WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 批量删除标签
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -1621,13 +1919,23 @@ impl TagRepository {
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取标签总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM tags", [], |row| row.get(0))?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -1643,7 +1951,10 @@ impl UserRepository {
 
     /// 创建用户
     pub async fn create(&self, user: &User) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let user = user.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO users (username, password, email, role, status, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -1658,11 +1969,17 @@ impl UserRepository {
             ],
         )?;
         Ok(conn.last_insert_rowid())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据 ID 获取用户
     pub async fn get_by_id(&self, id: i64) -> Result<User, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<User, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users WHERE id = ?",
@@ -1698,6 +2015,10 @@ impl UserRepository {
         })?;
 
         Ok(user)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据用户名获取用户
@@ -1705,7 +2026,10 @@ impl UserRepository {
         &self,
         username: &str,
     ) -> Result<User, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let username = username.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<User, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users WHERE username = ?",
@@ -1741,6 +2065,10 @@ impl UserRepository {
         })?;
 
         Ok(user)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有用户
@@ -1749,7 +2077,9 @@ impl UserRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<User>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<User>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?",
@@ -1787,12 +2117,19 @@ impl UserRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(users)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 更新用户
     pub async fn update(&self, user: &User) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let user = user.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = user.id.ok_or("用户 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE users SET username = ?, password = ?, email = ?, role = ?, status = ?, updated_at = ? 
              WHERE id = ?",
@@ -1807,21 +2144,33 @@ impl UserRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除用户
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM users WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 批量删除用户
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<i64, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -1835,13 +2184,23 @@ impl UserRepository {
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let affected = conn.execute(&sql, params.as_slice())?;
         Ok(affected as i64)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取用户总数
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -1858,7 +2217,9 @@ impl MusicTrackRepository {
     pub async fn get_all_without_pagination(
         &self,
     ) -> Result<Vec<MusicTrack>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<MusicTrack>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
              FROM music_tracks ORDER BY created_at DESC",
@@ -1880,10 +2241,17 @@ impl MusicTrackRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(tracks)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn create(&self, track: &MusicTrack) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let track = track.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         let _ = conn.execute(
             "INSERT INTO music_tracks (title, artist, file_path, file_name, duration, cover_image, created_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -1898,6 +2266,10 @@ impl MusicTrackRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update_title(
@@ -1905,12 +2277,19 @@ impl MusicTrackRepository {
         id: i64,
         title: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let title = title.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE music_tracks SET title = ? WHERE id = ?",
             params![title, id],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update_cover(
@@ -1918,12 +2297,19 @@ impl MusicTrackRepository {
         id: i64,
         cover_image: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let cover_image = cover_image.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE music_tracks SET cover_image = ? WHERE id = ?",
             params![cover_image, id],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update_cover_by_filename(
@@ -1931,16 +2317,26 @@ impl MusicTrackRepository {
         file_name: &str,
         cover_image: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let file_name = file_name.to_owned();
+    let cover_image = cover_image.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE music_tracks SET cover_image = ? WHERE file_name = ?",
             params![cover_image, file_name],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<MusicTrack, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<MusicTrack, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
              FROM music_tracks WHERE id = ?",
@@ -1960,12 +2356,22 @@ impl MusicTrackRepository {
         })?;
 
         Ok(track)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM music_tracks WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -1984,7 +2390,9 @@ impl AttachmentRepository {
         limit: i64,
         offset: i64,
     ) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Attachment>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments ORDER BY uploaded_at DESC LIMIT ? OFFSET ?"
@@ -2009,10 +2417,17 @@ impl AttachmentRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(attachments)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn create(&self, attachment: &Attachment) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let attachment = attachment.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO attachments (file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -2030,6 +2445,10 @@ impl AttachmentRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据文章 UUID 列表查询附件
@@ -2037,10 +2456,12 @@ impl AttachmentRepository {
         &self,
         uuids: Vec<String>,
     ) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Attachment>, DbError> {
         if uuids.is_empty() {
             return Ok(Vec::new());
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + uuids.len()-1 个 ","
         let mut placeholders = String::with_capacity(uuids.len() * 2 - 1);
         for (i, _) in uuids.iter().enumerate() {
@@ -2078,10 +2499,16 @@ impl AttachmentRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(attachments)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<Attachment, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Attachment, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE id = ?"
@@ -2104,29 +2531,48 @@ impl AttachmentRepository {
         })?;
 
         Ok(attachment)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update(&self, attachment: &Attachment) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let attachment = attachment.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = attachment.id.ok_or("附件 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE attachments SET visibility = ?, show_in_passage = ? WHERE id = ?",
             params![&attachment.visibility, &attachment.show_in_passage, id],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM attachments WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<usize, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<usize, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -2140,16 +2586,22 @@ impl AttachmentRepository {
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
         let rows_affected = conn.execute(&sql, params.as_slice())?;
         Ok(rows_affected)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_by_ids(
         &self,
         ids: Vec<i64>,
     ) -> Result<Vec<Attachment>, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<Attachment>, DbError> {
         if ids.is_empty() {
             return Ok(Vec::new());
         }
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         // 预分配容量，每个 "?" 1 字符 + ids.len()-1 个 ","
         let mut placeholders = String::with_capacity(ids.len() * 2 - 1);
         for (i, _) in ids.iter().enumerate() {
@@ -2185,6 +2637,10 @@ impl AttachmentRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(attachments)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -2199,7 +2655,9 @@ impl AboutMainCardRepository {
     }
 
     pub async fn get_all(&self) -> Result<Vec<AboutMainCard>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<AboutMainCard>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_main_cards ORDER BY sort_order"
@@ -2222,10 +2680,16 @@ impl AboutMainCardRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(cards)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<AboutMainCard, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<AboutMainCard, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_main_cards WHERE id = ?"
@@ -2246,10 +2710,17 @@ impl AboutMainCardRepository {
         })?;
 
         Ok(card)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn create(&self, card: &AboutMainCard) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let card = card.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO about_main_cards (title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -2265,11 +2736,18 @@ impl AboutMainCardRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update(&self, card: &AboutMainCard) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let card = card.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = card.id.ok_or("主卡片 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE about_main_cards SET title = ?, icon = ?, layout_type = ?, custom_css = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
              WHERE id = ?",
@@ -2285,12 +2763,22 @@ impl AboutMainCardRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM about_main_cards WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -2305,7 +2793,9 @@ impl AboutSubCardRepository {
     }
 
     pub async fn get_all(&self) -> Result<Vec<AboutSubCard>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<AboutSubCard>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_sub_cards ORDER BY sort_order"
@@ -2331,10 +2821,16 @@ impl AboutSubCardRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(cards)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_by_id(&self, id: i64) -> Result<AboutSubCard, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<AboutSubCard, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_sub_cards WHERE id = ?"
@@ -2358,10 +2854,17 @@ impl AboutSubCardRepository {
         })?;
 
         Ok(card)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn create(&self, card: &AboutSubCard) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let card = card.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO about_sub_cards (main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -2380,11 +2883,18 @@ impl AboutSubCardRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update(&self, card: &AboutSubCard) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let card = card.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = card.id.ok_or("次卡片 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE about_sub_cards SET main_card_id = ?, title = ?, description = ?, icon = ?, link_url = ?, layout_type = ?, custom_css = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
              WHERE id = ?",
@@ -2403,12 +2913,22 @@ impl AboutSubCardRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM about_sub_cards WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -2430,7 +2950,9 @@ impl FriendLinkRepository {
     }
 
     pub async fn get_all(&self) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<FriendLink>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE is_enabled = 1 ORDER BY sort_order ASC, created_at DESC")?;
 
         let links = stmt
@@ -2450,12 +2972,18 @@ impl FriendLinkRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(links)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_all_including_disabled(
         &self,
     ) -> Result<Vec<FriendLink>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<FriendLink>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links ORDER BY sort_order ASC, created_at DESC")?;
 
         let links = stmt
@@ -2475,13 +3003,19 @@ impl FriendLinkRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(links)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn get_by_id(
         &self,
         id: i64,
     ) -> Result<Option<FriendLink>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Option<FriendLink>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE id = ?")?;
 
         let link = stmt
@@ -2501,10 +3035,17 @@ impl FriendLinkRepository {
             .optional()?;
 
         Ok(link)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn create(&self, link: &FriendLink) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let link = link.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "INSERT INTO friend_links (nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -2520,11 +3061,18 @@ impl FriendLinkRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn update(&self, link: &FriendLink) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+    let link = link.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         let id = link.id.ok_or("友链 ID 不能为空")?;
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE friend_links SET nickname = ?, link_url = ?, avatar_url = ?, motto = ?, sort_order = ?, is_enabled = ?, updated_at = ? 
              WHERE id = ?",
@@ -2540,23 +3088,39 @@ impl FriendLinkRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM friend_links WHERE id = ?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     #[allow(dead_code)]
     pub async fn count(&self) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM friend_links WHERE is_enabled = 1",
             [],
             |row| row.get(0),
         )?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -2575,7 +3139,10 @@ impl DynamicRouteRepository {
 
     /// 创建路由
     pub async fn create(&self, route: &DynamicRoute) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let route = route.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
 
         // 查找最小的未使用ID（ID复用逻辑）
         let next_id: i64 = conn
@@ -2621,6 +3188,10 @@ impl DynamicRouteRepository {
             ],
         )?;
         Ok(next_id)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据ID获取路由
@@ -2628,7 +3199,9 @@ impl DynamicRouteRepository {
         &self,
         id: i64,
     ) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Option<DynamicRoute>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE id = ?"
@@ -2662,6 +3235,10 @@ impl DynamicRouteRepository {
             .optional()?;
 
         Ok(route)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据路径获取路由
@@ -2669,7 +3246,10 @@ impl DynamicRouteRepository {
         &self,
         path: &str,
     ) -> Result<Option<DynamicRoute>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let path = path.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Option<DynamicRoute>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
                     "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
                      FROM dynamic_routes WHERE path = ?"
@@ -2703,6 +3283,10 @@ impl DynamicRouteRepository {
             .optional()?;
 
         Ok(route)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取路由列表
@@ -2713,7 +3297,9 @@ impl DynamicRouteRepository {
         route_type: Option<RouteType>,
         enabled: Option<bool>,
     ) -> Result<(Vec<DynamicRoute>, i64), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(Vec<DynamicRoute>, i64), DbError> {
+        let conn = pool.get()?;
 
         // 构建查询条件
         // 预分配容量，最多约 50 字符 (" WHERE route_type = ? AND enabled = ?")
@@ -2785,6 +3371,10 @@ impl DynamicRouteRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok((routes, total))
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 更新路由
@@ -2793,7 +3383,10 @@ impl DynamicRouteRepository {
         id: i64,
         route: &DynamicRoute,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let route = route.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "UPDATE dynamic_routes SET route_name=?, route_type=?, path=?, handler_type=?, handler_config=?, inline_template=?, template_path=?, content_type_hint=?, enabled=?, priority=?, group_id=?, is_primary_entry=?, metadata=?, updated_at=?
              WHERE id=?",
@@ -2816,13 +3409,23 @@ impl DynamicRouteRepository {
             ],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除路由
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM dynamic_routes WHERE id=?", params![id])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 根据类型删除路由
@@ -2830,17 +3433,25 @@ impl DynamicRouteRepository {
         &self,
         route_type: RouteType,
     ) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let result = conn.execute(
             "DELETE FROM dynamic_routes WHERE route_type=?",
             params![route_type],
         )?;
         Ok(result as i64)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有启用的路由
     pub async fn get_all_enabled(&self) -> Result<Vec<DynamicRoute>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<DynamicRoute>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
@@ -2874,6 +3485,10 @@ impl DynamicRouteRepository {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(routes)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取所有路由
@@ -2890,21 +3505,33 @@ impl DynamicRouteRepository {
 
     /// 删除所有路由
     pub async fn delete_all(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute("DELETE FROM dynamic_routes", [])?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 重置自增ID计数器
     ///
     /// 在清空所有路由后调用此方法，重置自增ID从1开始
     pub async fn reset_auto_increment(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         conn.execute(
             "DELETE FROM sqlite_sequence WHERE name='dynamic_routes'",
             [],
         )?;
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
 
@@ -3070,7 +3697,10 @@ impl PassageVersionRepository {
 
     /// 创建版本
     pub async fn create(&self, version: &PassageVersion) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let version = version.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         
         conn.execute(
             "INSERT INTO passage_versions 
@@ -3098,11 +3728,17 @@ impl PassageVersionRepository {
             ],
         )?;
         Ok(conn.last_insert_rowid())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取文章的所有版本
     pub async fn get_by_passage_id(&self, passage_id: i64) -> Result<Vec<PassageVersion>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<PassageVersion>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
@@ -3138,6 +3774,10 @@ impl PassageVersionRepository {
             .collect::<Result<Vec<_>, _>>()?;
         
         Ok(versions)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取特定版本
@@ -3146,7 +3786,9 @@ impl PassageVersionRepository {
         passage_id: i64,
         version_number: i32,
     ) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
@@ -3181,11 +3823,17 @@ impl PassageVersionRepository {
             .optional()?;
         
         Ok(version)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 通过 ID 获取版本
     pub async fn get_by_id(&self, id: i64) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
@@ -3220,17 +3868,27 @@ impl PassageVersionRepository {
             .optional()?;
         
         Ok(version)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取最新版本号
     pub async fn get_latest_version_number(&self, passage_id: i64) -> Result<i32, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i32, DbError> {
+        let conn = pool.get()?;
         let version_number: i32 = conn.query_row(
             "SELECT COALESCE(MAX(version_number), 0) FROM passage_versions WHERE passage_id = ?1",
             params![passage_id],
             |row| row.get(0),
         )?;
         Ok(version_number)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取最新版本
@@ -3244,11 +3902,13 @@ impl PassageVersionRepository {
 
     /// 限制版本数量（删除旧版本）
     pub async fn trim_old_versions(&self, passage_id: i64, max_versions: usize) -> Result<(), Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
         if max_versions == 0 {
             return Ok(()); // 0 表示不限制
         }
         
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         
         // 获取当前版本总数
         let count: i64 = conn.query_row(
@@ -3297,11 +3957,17 @@ impl PassageVersionRepository {
         }
         
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除文章的所有版本
     pub async fn delete_by_passage_id(&self, passage_id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         
         // 获取所有版本文件路径
         let mut stmt = conn.prepare(
@@ -3329,11 +3995,17 @@ impl PassageVersionRepository {
         }
         
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 删除单个版本
     pub async fn delete(&self, id: i64) -> Result<(), Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<(), DbError> {
+        let conn = pool.get()?;
         
         // 获取文件路径
         let file_path: Option<String> = conn.query_row(
@@ -3357,15 +4029,21 @@ impl PassageVersionRepository {
         }
         
         Ok(())
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 批量删除版本
     pub async fn delete_batch(&self, ids: Vec<i64>) -> Result<u32, Box<dyn std::error::Error>> {
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<u32, DbError> {
         if ids.is_empty() {
             return Ok(0);
         }
         
-        let conn = self.pool.get()?;
+        let conn = pool.get()?;
         
         // 获取要删除的文件路径
         let placeholders: Vec<String> = ids.iter().map(|_| "?".to_string()).collect();
@@ -3406,6 +4084,10 @@ impl PassageVersionRepository {
         }
         
         Ok(deleted_count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 检查重复内容
@@ -3414,7 +4096,10 @@ impl PassageVersionRepository {
         passage_id: i64,
         file_hash: &str,
     ) -> Result<Option<PassageVersion>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+    let file_hash = file_hash.to_owned();
+        tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
+        let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
@@ -3451,17 +4136,27 @@ impl PassageVersionRepository {
             .optional()?;
         
         Ok(version)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取版本总数
     pub async fn get_version_count(&self, passage_id: i64) -> Result<i64, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<i64, DbError> {
+        let conn = pool.get()?;
         let count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM passage_versions WHERE passage_id = ?1",
             params![passage_id],
             |row| row.get(0),
         )?;
         Ok(count)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 
     /// 获取版本列表（分页）
@@ -3472,7 +4167,9 @@ impl PassageVersionRepository {
         &self,
         query: VersionListQuery,
     ) -> Result<Vec<PassageVersion>, Box<dyn std::error::Error>> {
-        let conn = self.pool.get()?;
+        let pool = self.pool.clone();
+        tokio::task::spawn_blocking(move || -> Result<Vec<PassageVersion>, DbError> {
+        let conn = pool.get()?;
 
         // 验证排序字段和方向
         let valid_sort_fields = ["version_number", "created_at", "title"];
@@ -3601,5 +4298,9 @@ impl PassageVersionRepository {
         .collect::<Result<Vec<_>, _>>()?;
 
         Ok(versions)
+        })
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })?
+        .map_err(|e| -> Box<dyn std::error::Error> { e })
     }
 }
