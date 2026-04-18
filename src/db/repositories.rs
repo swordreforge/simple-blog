@@ -136,7 +136,7 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Passage, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE id = ?"
         )?;
@@ -177,7 +177,7 @@ impl PassageRepository {
     let uuid = uuid.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Passage, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE uuid = ?"
         )?;
@@ -221,7 +221,7 @@ impl PassageRepository {
     let file_path = file_path.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Passage, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages WHERE file_path = ?"
         )?;
@@ -265,7 +265,7 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at 
              FROM passages ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
@@ -311,7 +311,7 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Passage>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, uuid, title, content, original_content, summary, summarize, author, tags, category, status, file_path, visibility, is_scheduled, published_at, cover_image, created_at, updated_at
              FROM passages WHERE status = 'published' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
         )?;
@@ -390,7 +390,7 @@ impl PassageRepository {
                 LIMIT ?
             "#;
 
-            let mut stmt = conn.prepare(query)?;
+            let mut stmt = conn.prepare_cached(query)?;
             let passages = stmt
                 .query_map(
                     params![created_at_str, created_at_str, id_str, limit],
@@ -440,7 +440,7 @@ impl PassageRepository {
                 LIMIT ?
             "#;
 
-            let mut stmt = conn.prepare(query)?;
+            let mut stmt = conn.prepare_cached(query)?;
             let passages = stmt
                 .query_map(params![limit], |row| {
                     Ok(Passage {
@@ -508,7 +508,7 @@ impl PassageRepository {
 
                     "#;
 
-        let mut stmt = conn.prepare(query)?;
+        let mut stmt = conn.prepare_cached(query)?;
 
         let passage = stmt
             .query_row(params![], |row| {
@@ -604,7 +604,7 @@ impl PassageRepository {
         sql_params.push(&limit);
         sql_params.push(&offset);
 
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let passages = stmt
             .query_map(sql_params.as_slice(), |row| {
                 Ok(Passage {
@@ -846,7 +846,7 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<String>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT DISTINCT category FROM passages WHERE category IS NOT NULL AND category != '' ORDER BY category")?;
+        let mut stmt = conn.prepare_cached("SELECT DISTINCT category FROM passages WHERE category IS NOT NULL AND category != '' ORDER BY category")?;
         let categories = stmt
             .query_map([], |row| row.get(0))?
             .collect::<Result<Vec<_>, _>>()?;
@@ -884,7 +884,7 @@ impl PassageRepository {
         );
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let passages = stmt
             .query_map(params.as_slice(), |row| {
                 Ok(Passage {
@@ -921,7 +921,7 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<ArchiveStats>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             r#"
             SELECT
                 CAST(created_year AS TEXT) as year,
@@ -956,7 +956,7 @@ impl PassageRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<TagStats>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             r#"
             WITH tag_counts AS (
                 SELECT
@@ -1037,7 +1037,7 @@ impl CommentRepository {
     let passage_uuid = passage_uuid.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Vec<Comment>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, username, content, passage_uuid, created_at FROM comments WHERE passage_uuid = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
 
@@ -1069,7 +1069,7 @@ impl CommentRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Comment>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, username, content, passage_uuid, created_at FROM comments ORDER BY created_at DESC LIMIT ? OFFSET ?"
         )?;
 
@@ -1185,7 +1185,7 @@ impl ArticleViewRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<PopularArticleStats>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT p.id, p.title, p.author, COUNT(av.id) as view_count FROM passages p 
              LEFT JOIN article_views av ON p.uuid = av.passage_uuid 
              GROUP BY p.id ORDER BY view_count DESC LIMIT ?",
@@ -1217,7 +1217,7 @@ impl ArticleViewRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<ViewSourceStats>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT country, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
              GROUP BY country ORDER BY count DESC",
@@ -1247,7 +1247,7 @@ impl ArticleViewRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<ViewTrendStats>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT view_date, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
              GROUP BY view_date ORDER BY view_date",
@@ -1329,7 +1329,7 @@ impl ArticleViewRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<CityStatsData>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT city, country, COUNT(*) as count FROM article_views 
              WHERE view_date >= date('now', ? || ' days') 
              GROUP BY city, country ORDER BY count DESC",
@@ -1360,7 +1360,7 @@ impl ArticleViewRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<IPStatsData>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT ip, country, city, region, COUNT(*) as count, 
                     MIN(view_time) as first_visit, MAX(view_time) as last_visit 
              FROM article_views 
@@ -1447,7 +1447,7 @@ impl SettingRepository {
         conn: &rusqlite::Connection,
         key: &str,
     ) -> Result<Option<Setting>, Box<dyn std::error::Error>> {
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, key, value, type, description, category, created_at, updated_at 
              FROM settings WHERE key = ?",
         )?;
@@ -1474,7 +1474,7 @@ impl SettingRepository {
     pub fn get_all_as_map(
         conn: &rusqlite::Connection,
     ) -> Result<std::collections::HashMap<String, String>, Box<dyn std::error::Error>> {
-        let mut stmt = conn.prepare("SELECT key, value FROM settings")?;
+        let mut stmt = conn.prepare_cached("SELECT key, value FROM settings")?;
         let map = stmt
             .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?
             .filter_map(|r| r.ok())
@@ -1547,7 +1547,7 @@ impl CategoryRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Category, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
              FROM categories WHERE id = ?",
         )?;
@@ -1578,7 +1578,7 @@ impl CategoryRepository {
     let name = name.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Category, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at
              FROM categories WHERE name = ?",
         )?;
@@ -1612,7 +1612,7 @@ impl CategoryRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Category>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, name, description, icon, sort_order, is_enabled, created_at, updated_at 
              FROM categories ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?",
         )?;
@@ -1762,7 +1762,7 @@ impl TagRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Tag, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags WHERE id = ?"
         )?;
@@ -1794,7 +1794,7 @@ impl TagRepository {
     let name = name.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Tag, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags WHERE name = ?"
         )?;
@@ -1829,7 +1829,7 @@ impl TagRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Tag>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, name, description, color, category_id, sort_order, is_enabled, created_at, updated_at 
              FROM tags ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?"
         )?;
@@ -1980,7 +1980,7 @@ impl UserRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<User, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users WHERE id = ?",
         )?;
@@ -2030,7 +2030,7 @@ impl UserRepository {
     let username = username.to_owned();
         tokio::task::spawn_blocking(move || -> Result<User, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users WHERE username = ?",
         )?;
@@ -2080,7 +2080,7 @@ impl UserRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<User>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, username, password, email, role, status, created_at, updated_at
              FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?",
         )?;
@@ -2220,7 +2220,7 @@ impl MusicTrackRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<MusicTrack>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
              FROM music_tracks ORDER BY created_at DESC",
         )?;
@@ -2337,7 +2337,7 @@ impl MusicTrackRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<MusicTrack, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, title, artist, file_path, file_name, duration, cover_image, created_at 
              FROM music_tracks WHERE id = ?",
         )?;
@@ -2393,7 +2393,7 @@ impl AttachmentRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<Attachment>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments ORDER BY uploaded_at DESC LIMIT ? OFFSET ?"
         )?;
@@ -2479,7 +2479,7 @@ impl AttachmentRepository {
             .map(|uuid| uuid as &dyn rusqlite::ToSql)
             .collect();
 
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let attachments = stmt
             .query_map(params.as_slice(), |row| {
                 Ok(Attachment {
@@ -2509,7 +2509,7 @@ impl AttachmentRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Attachment, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, file_name, stored_name, file_path, file_type, content_type, file_size, passage_uuid, visibility, show_in_passage, uploaded_at 
              FROM attachments WHERE id = ?"
         )?;
@@ -2617,7 +2617,7 @@ impl AttachmentRepository {
         let params: Vec<&dyn rusqlite::ToSql> =
             ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();
 
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let attachments = stmt
             .query_map(params.as_slice(), |row| {
                 Ok(Attachment {
@@ -2658,7 +2658,7 @@ impl AboutMainCardRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<AboutMainCard>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_main_cards ORDER BY sort_order"
         )?;
@@ -2690,7 +2690,7 @@ impl AboutMainCardRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<AboutMainCard, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, title, icon, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_main_cards WHERE id = ?"
         )?;
@@ -2796,7 +2796,7 @@ impl AboutSubCardRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<AboutSubCard>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_sub_cards ORDER BY sort_order"
         )?;
@@ -2831,7 +2831,7 @@ impl AboutSubCardRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<AboutSubCard, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, main_card_id, title, description, icon, link_url, layout_type, custom_css, sort_order, is_enabled, created_at, updated_at 
              FROM about_sub_cards WHERE id = ?"
         )?;
@@ -2953,7 +2953,7 @@ impl FriendLinkRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<FriendLink>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE is_enabled = 1 ORDER BY sort_order ASC, created_at DESC")?;
+        let mut stmt = conn.prepare_cached("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE is_enabled = 1 ORDER BY sort_order ASC, created_at DESC")?;
 
         let links = stmt
             .query_map([], |row| {
@@ -2984,7 +2984,7 @@ impl FriendLinkRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<FriendLink>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links ORDER BY sort_order ASC, created_at DESC")?;
+        let mut stmt = conn.prepare_cached("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links ORDER BY sort_order ASC, created_at DESC")?;
 
         let links = stmt
             .query_map([], |row| {
@@ -3016,7 +3016,7 @@ impl FriendLinkRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Option<FriendLink>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE id = ?")?;
+        let mut stmt = conn.prepare_cached("SELECT id, nickname, link_url, avatar_url, motto, sort_order, is_enabled, created_at, updated_at FROM friend_links WHERE id = ?")?;
 
         let link = stmt
             .query_row(params![id], |row| {
@@ -3202,7 +3202,7 @@ impl DynamicRouteRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Option<DynamicRoute>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE id = ?"
         )?;
@@ -3250,7 +3250,7 @@ impl DynamicRouteRepository {
     let path = path.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Option<DynamicRoute>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
                     "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
                      FROM dynamic_routes WHERE path = ?"
                 )?;
@@ -3337,7 +3337,7 @@ impl DynamicRouteRepository {
             where_clause
         );
 
-        let mut stmt = conn.prepare(&query)?;
+        let mut stmt = conn.prepare_cached(&query)?;
 
         let mut final_params: Vec<Box<dyn rusqlite::ToSql>> = params;
         final_params.push(Box::new(limit));
@@ -3452,7 +3452,7 @@ impl DynamicRouteRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<DynamicRoute>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, route_name, route_type, path, handler_type, handler_config, inline_template, template_path, content_type_hint, enabled, priority, created_at, updated_at, created_by, group_id, is_primary_entry, metadata
              FROM dynamic_routes WHERE enabled = 1 ORDER BY priority DESC, id ASC"
         )?;
@@ -3739,7 +3739,7 @@ impl PassageVersionRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Vec<PassageVersion>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
                     change_type, change_reason, created_at, created_by, parent_version_id, branch_name
@@ -3789,7 +3789,7 @@ impl PassageVersionRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
                     change_type, change_reason, created_at, created_by, parent_version_id, branch_name
@@ -3834,7 +3834,7 @@ impl PassageVersionRepository {
         let pool = self.pool.clone();
         tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
                     change_type, change_reason, created_at, created_by, parent_version_id, branch_name
@@ -3921,7 +3921,7 @@ impl PassageVersionRepository {
             let to_delete = count as usize - max_versions;
             
             // 获取要删除的版本 ID 和文件路径
-            let mut stmt = conn.prepare(
+            let mut stmt = conn.prepare_cached(
                 "SELECT id, file_path FROM passage_versions 
                  WHERE passage_id = ?1 
                  ORDER BY created_at ASC 
@@ -3970,7 +3970,7 @@ impl PassageVersionRepository {
         let conn = pool.get()?;
         
         // 获取所有版本文件路径
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT file_path FROM passage_versions WHERE passage_id = ?1"
         )?;
         
@@ -4052,7 +4052,7 @@ impl PassageVersionRepository {
             placeholders.join(",")
         );
         
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
         let params: Vec<&dyn rusqlite::ToSql> = ids.iter()
             .map(|id| id as &dyn rusqlite::ToSql)
             .collect();
@@ -4100,7 +4100,7 @@ impl PassageVersionRepository {
     let file_hash = file_hash.to_owned();
         tokio::task::spawn_blocking(move || -> Result<Option<PassageVersion>, DbError> {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare_cached(
             "SELECT id, passage_id, passage_uuid, version_number, file_path, file_size, file_hash,
                     title, content, tags, category, cover_image, 
                     change_type, change_reason, created_at, created_by, parent_version_id, branch_name
@@ -4267,7 +4267,7 @@ impl PassageVersionRepository {
                 }
             };
 
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare_cached(&sql)?;
 
         let params_refs: Vec<&dyn rusqlite::ToSql> = params_vec.iter()
             .map(|b| b.as_ref())
